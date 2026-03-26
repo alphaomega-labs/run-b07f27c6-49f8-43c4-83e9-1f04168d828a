@@ -424,12 +424,12 @@
     {
       "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
       "size_bytes": 8830,
-      "sha256": "293df6c6c16a6f36285b267111292744fdc0f1a8057f570eb031f253ce940cbd"
+      "sha256": "b7ef190701359e50cadb37d9501b3245148d5f5bf36e5147f3aa5d8ea2db6588"
     },
     {
       "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz",
-      "size_bytes": 8494,
-      "sha256": "e8b6d271b1650eed88c9ad9d16109d96c09c5cf7cac2d52ec0f081cc6464a584"
+      "size_bytes": 8504,
+      "sha256": "bd5c2064725814e39d82ce567f0494a626b0e1e73ea378979e213f733cf294a0"
     }
   ]
 }
