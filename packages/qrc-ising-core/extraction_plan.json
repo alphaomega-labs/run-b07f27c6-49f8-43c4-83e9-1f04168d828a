@@ -1,0 +1,38 @@
+{
+  "core_contributions": [
+    "QRC-Ising scenario-level performance simulation under noise/shot/observable constraints",
+    "Symbolic theorem/claim consistency checks for robust-gap and ratio-dominance statements"
+  ],
+  "source_symbols": [
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
+      "symbols": ["SimCell", "simulate_accuracy", "bootstrap_ci", "make_row"]
+    },
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/symbolic_checks.py",
+      "symbols": ["run_symbolic_checks"]
+    }
+  ],
+  "public_api_mapping": [
+    {
+      "source_symbol": "SimCell",
+      "exported_symbol": "QRCScenario",
+      "exported_module": "qrc_ising_core.core"
+    },
+    {
+      "source_symbol": "simulate_accuracy",
+      "exported_symbol": "simulate_accuracy",
+      "exported_module": "qrc_ising_core.core"
+    },
+    {
+      "source_symbol": "make_row",
+      "exported_symbol": "simulate_metrics",
+      "exported_module": "qrc_ising_core.core"
+    },
+    {
+      "source_symbol": "run_symbolic_checks",
+      "exported_symbol": "run_symbolic_checks",
+      "exported_module": "qrc_ising_core.symbolic"
+    }
+  ]
+}

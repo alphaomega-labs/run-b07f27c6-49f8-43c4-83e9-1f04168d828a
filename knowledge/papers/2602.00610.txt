@@ -1,0 +1,673 @@
+                                                           Practical Quantum Reservoir Computing in Rydberg Atom Arrays
+
+                                                                             Dong-Sheng Liu,1, 2, 3, 4 Qing-Xuan Jie,1, 2, 3 Chang-Ling
+                                                                          Zou,1, 2, 3, 4, ∗ Xi-Feng Ren,1, 2, 3, 4, † and Guang-Can Guo1, 2, 3, 4
+                                                    1
+                                                        Laboratory of Quantum Information, University of Science and Technology of China, Hefei 230026, China
+                                                                        2
+                                                                          Center For Excellence in Quantum Information and Quantum Physics,
+                                                                          University of Science and Technology of China, Hefei 230026, China
+                                                                                 3
+                                                                                   Anhui Province Key Laboratory of Quantum Network,
+                                                                          University of Science and Technology of China, Hefei 230026, China.
+                                                           4
+                                                             Hefei National Laboratory, University of Science and Technology of China, Hefei 230088, China.
+                                                                                                (Dated: February 3, 2026)
+                                                              Quantum reservoir computing (QRC) is a promising quantum machine learning framework for
+                                                           near-term quantum platforms, yet the performance of different QRC architectures under realis-
+                                                           tic constraints remains largely unexplored. Here, we provide a comparative numerical study of
+arXiv:2602.00610v1 [quant-ph] 31 Jan 2026
+
+
+
+
+                                                           single-step-QRC (SS-QRC) and multi-step-QRC (MS-QRC) architectures implemented on a Ry-
+                                                           dberg atom array. We demonstrate that while MS-QRC performance is highly sensitive to the
+                                                           underlying dynamical phase of matter and decoherence, SS-QRC exhibits greater robustness. Using
+                                                           the randomized measurement toolbox to mitigate measurement overhead, we reveal that sampling
+                                                           noise undermines the convergence property required for MS-QRC. This leads to a significant re-
+                                                           duction in the information processing capacity (IPC) of MS-QRC, deteriorating its performance on
+                                                           nonlinear time-series benchmarks. In contrast, SS-QRC maintains high IPC and accuracy across
+                                                           both temporal and non-temporal tasks. Our results suggest SS-QRC as a preferred candidate for
+                                                           near-term practical applications due to its resilience to system configurations and statistical noise.
+
+
+                                                               I.   INTRODUCTION                                ciently circumventing the aforementioned training chal-
+                                                                                                                lenges. This framework is an extension of the paradigms
+                                               Quantum machine learning offers a promising path-                of classical reservoir computing [12] and extreme learn-
+                                            way toward accelerating data analysis by leveraging                 ing machines [13] into the quantum domain, which uses
+                                            quantum superposition and entanglement [1, 2]. How-                 a quantum system as the reservoir for information pro-
+                                            ever, many early quantum machine learning algorithms                cessing. By fixing the parameters of the quantum system
+                                            rely on fault-tolerant quantum computers and quantum                and using its complex dynamics as a high-dimensional
+                                            random-access memory, which are unavailable in the near             feature map, QRC requires training only a classical lin-
+                                            term [3]. Consequently, realizing a practical quantum               ear readout layer, significantly relaxing the control and
+                                            advantage requires a transition toward algorithms com-              operational requirements on quantum systems.
+                                            patible with noisy intermediate-scale quantum (NISQ)                   Despite the great potential of QRC, several critical fac-
+                                            devices [4].                                                        tors should be taken into account to make practical use
+                                               Variational quantum algorithms, which utilize parame-            of this framework. First, the dynamical phase of matter
+                                            terized quantum circuits for information processing, have           in the quantum system has been shown to influence QRC
+                                            emerged as leading candidates for demonstrating near-               performance [14, 15]. Localized phases typically favor lin-
+                                            term quantum advantages [5]. The power of these mod-                ear memory, whereas ergodic phases enhance nonlinear
+                                            els typically scales with the expressivity of the parame-           processing capability. Second, decoherence is an inher-
+                                            terized quantum circuits, i.e., the capability to explore a         ent feature of NISQ hardware. While some level of deco-
+                                            vast region of the Hilbert space. However, a fundamen-              herence noise can facilitate the fading memory property
+                                            tal trade-off exists between expressivity and trainability:         required for reservoir computing [16–18], excessive deco-
+                                            it has been proven that highly expressive ansatzes are              herence causes rapid information dissipation. Third, the
+                                            significantly more susceptible to the barren plateau phe-           sampling noise arising from a finite number of measure-
+                                            nomenon, where cost function gradients vanish exponen-              ment shots Ns introduces statistical fluctuations that can
+                                            tially with the system size [6, 7]. While various initial-          degrade the reservoir’s performance [19]. Finally, while
+                                            ization strategies have been proposed to mitigate barren            various QRC architectures have been proposed [10, 11], a
+                                            plateaus, these are often ineffective against noise-induced         systematic characterization of their relative performance
+                                            barren plateaus [8], necessitating complex error mitiga-            and resilience against noise remains largely unexplored.
+                                            tion schemes that increase computational overhead [9].                 In this work, we utilize a neutral atom array as a reser-
+                                               Quantum reservoir computing (QRC) [10, 11] offers                voir to investigate the impact of dynamical phases of
+                                            a promising alternative for near-term applications, effi-           matter, decoherence, and sampling noise on two QRC ar-
+                                                                                                                chitectures: single-step-QRC (SS-QRC) and multi-step-
+                                                                                                                QRC (MS-QRC). To address the measurement overhead
+                                            ∗ clzou321@ustc.edu.cn
+                                                                                                                problem, we incorporate the randomized measurement
+                                            † renxf@ustc.edu.cn
+                                                                                                                toolbox [20], which allows for efficient measurements of
+                                                                                                                                                            2
+
+                      (a) Input          Reservoir       Signal     (b)                  Measurement Classical Computer
+                            ∆i (t)                                     |0                R1           v (m)
+                                                          σ̂ix 
+                                                               z
+                                                          σ̂i        |0                 R2                        w
+                                                             ..               E(x(m) )
+                                                              .      v     ..              ..     ..                       ỹ (m)
+                        γ ∆i (t)                        σ̂iz σ̂jz         .               .      .
+                              Ω                            x     z     |0                RN
+                                                        σ̂i σ̂j 
+
+                      (c)                                                                Measurement Classical Computer
+                       |0                                                                R1           v (m)
+                                                                  ···
+                                                                                                                     w
+                       |0           E(x(1) )        E(x(2) )             E(x(m) )
+                                                                                          R2
+                               ..                                                          ..      ..                      ỹ (m)
+                                .                                                           .       .
+                       |0                                                                RN
+
+
+FIG. 1. Schematic of quantum reservoir computing (QRC) with neutral atom arrays. (a) The reservoir consists of neutral atoms
+trapped in optical tweezers. Global Rydberg excitation drives atom-atom interactions, nonlinearly mapping inputs encoded
+in local detunings ∆i (t) into an exponentially large Hilbert space. Outputs are extracted by measuring single- and two-site
+Pauli operators. (b) The single-step-QRC (SS-QRC) architecture. For each input x(m) , the reservoir evolves via a single CPTP
+map E(x(m) ). The measured signals v (m) are processed by a linear layer with weights w trained via ridge regression. (c)
+The multi-step-QRC (MS-QRC) architecture. The reservoir processes a time-series sequence x(1) , . . . , x(m) through sequential
+evolution to capture temporal dependencies, followed by measurement and linear post-processing.
+
+
+multiple local observables. Our results demonstrate a                           atom array system is (ℏ = 1) [23, 27, 28]
+striking contrast in robustness between the two architec-
+tures. Firstly, compared to MS-QRC, SS-QRC is less                                               N                    N
+                                                                                                 X                 ΩX x X V
+sensitive to dynamical phases of matter and decoherence                                   Ĥ =          ∆i n̂i +        σ̂ +      6 n̂i n̂j ,              (1)
+                                                                                                                   2 i=1 i       Rij
+noise due to its single-step nature. Additionally, in the                                        i=1                         i<j
+presence of sampling noise, while the undermining of the
+convergence property in MS-QRC leads to a severe dete-                          where N denotes the total number of atoms, n̂i = |ri ⟩⟨ri |
+rioration in its information processing capability, the SS-                     is the population on the Rydberg state, ∆i is the detun-
+QRC framework remains remarkably robust. Our results                            ing with respect to the external laser driving, which in-
+suggest that the SS-QRC is a more suitable architecture                         duces the qubit state flip (Pauli X) σ̂ix = |ri ⟩⟨gi | + |gi ⟩⟨ri |
+for practical applications of the QRC formalism in the                          with a Rabi frequency Ω, V is the nearest-neighbor Ry-
+NISQ era.                                                                       dberg blockade interaction strength, and Rij is the dis-
+                                                                                tance between the i-th and j-th atoms.
+                                                                                   For practical experiments on the atom array, decoher-
+                                                                                ence is unavoidable. The dominant decoherence of the
+                                                                                system originates from both the spontaneous decay of
+ II.   PHYSICAL MODEL OF THE RESERVOIR                                          Rydberg states and the dephasing of the ground states,
+                                                                                which can be described by the Lindblad jump opera-
+   Figure 1(a) illustrates the physical reservoir imple-                        tor [29]
+mented using a neutral atom array trapped in optical                                                       √
+tweezers [21–23]. The micrometer-scale spacing facili-                                            L̂i =        γ |gi ⟩ (α ⟨ri | + β ⟨gi |)                 (2)
+tates strong atom-atom interactions via global Rydberg
+excitation, while local light shifts enable both input en-                      for the i-th atom. Here, γ is the decay rate, and we set the
+coding and flexible detection basis selection [24]. Read-                       coefficients (α, β) = (0.025, 0.08). Then, the dynamics of
+out is performed via parallel fluorescence imaging on a                         the system is governed by the master equation
+single-photon CCD [25, 26]. This platform is highly scal-
+                                                                                                         N
+able, supporting thousands of atoms to access an ex-                                                       1
+                                                                                                                 (2L̂i ρL̂†i − L̂†i L̂i ρ − ρL̂†i L̂i ).
+                                                                                                         X
+                                                                                     ρ̇ = −i[Ĥ, ρ] +                                                      (3)
+ponentially large Hilbert space, and efficiently combines                                                    2
+                                                                                                         i=1
+global control with precise local addressing through op-
+tical channel mapping [27].                                                        Following the master equation, the physical reservoir
+   In our model, quantum information is encoded in the                          functions as a non-linear feature map projecting inputs
+ground state |gi ⟩ and the Rydberg state |ri ⟩ of the i-th                      into a high-dimensional Hilbert space to enhance linear
+atom. We define the computational basis as |0⟩i = |gi ⟩                         separability. Through sequential all-optical laser manip-
+and |1⟩i = |ri ⟩. The corresponding Hamiltonian of the                          ulation for input, the global Rydberg excitation, and
+                                                                                                                                         3
+
+readout, the generated features via the reservoir’s evo-            y (1) , . . . , y (m) into a vector y = (y (1) , . . . , y (m) )T , the
+lution are then post-processed by classical computers.              weights w of the output layer are usually trained using
+This approach offers a viable path toward demonstrat-               ridge regression [36],
+ing potential quantum advantages of NISQ devices with-
+out the overhead of optimizing system parameters. As                                  min ∥V w − y∥22 + λ∥w∥22 ,                       (5)
+                                                                                        w
+illustrated by the quantum circuits in Figs. 1(b) and (c),
+                                                  ⊗N                where ∥ · ∥2 denotes the ℓ2 norm, λ controls the degree of
+following the initialization of all qubits to |0⟩     through
+optical pumping, quantum reservoir computing can be                 regularization, and the ridge regression reduces to linear
+implemented through two different architectures, which              regression for λ = 0. The analytic solution is given by
+we call SS-QRC and MS-QRC, respectively.
+   For the SS-QRC shown in Fig. 1(b), the reservoir                                    w = (V T V + λI)−1 V T y,                       (6)
+evolves for a single time step of duration τ for each in-           with I denoting the identity matrix. This solution is
+put sample x(m) from the training set {(x(m) , y (m) )}. We         globally optimal, avoiding the issue of local minima from
+assume a one-dimensional target y (m) , though generaliza-          which traditional neural networks suffer. Furthermore,
+tion to higher dimensions is straightforward. This evo-             because the reservoir parameters remain fixed, QRC in-
+lution, driven by global Rydberg lasers is described by a           herently bypasses the barren plateau problem. By re-
+CPTP map E(x(m) ). Subsequently, individual qubits are              stricting the learning process to a classical linear readout
+measured in arbitrary basis using addressed single-qubit            layer, the training phase becomes highly efficient, making
+rotations Ri , yielding the output vector v (m) . Finally,          QRC a particularly promising candidate for demonstrat-
+inference is performed on a classical computer using a lin-         ing quantum advantages in the NISQ era. Note that, un-
+ear layer, yielding the prediction ỹ (m) = wT v (m) . This         like SS-QRC, during the training stage, a certain amount
+scheme is a quantum counterpart to classical extreme                of initial time-series data is discarded in MS-QRC to
+learning machines [30] and is frequently referred to as             wash out the influence of the initial conditions of the
+a quantum extreme learning machine [10, 31, 32]. Al-                reservoir [35].
+though the SS-QRC is inherently memoryless, incorpo-
+rating a time-delayed embedding (sliding window) intro-
+duces a short-term memory determined by the window                          III.    CHARACTERIZATION OF THE
+length [33, 34], allowing it to effectively model and ana-                              RESERVOIR
+lyze non-linear time-series data.
+   For the MS-QRC shown in Fig. 1(c), the reservoir un-                Since the reservoir relies on the dynamical evolution
+dergoes a multi-step evolution, each of duration τ , to pro-        to map the inputs to the high-dimensional space, we em-
+cess a sequence of input samples x(1) , ..., x(m) . Each sam-       ploy a triangular lattice configuration rather than a one-
+ple x(m) is sequentially encoded into the system through            dimensional chain to facilitate rapid information scram-
+a corresponding CPTP map E(x(m) ). After m steps of                 bling across the array, as shown in Fig. 2(a). Further-
+evolution, the resulting state is measured to obtain the            more, breaking spatial symmetry is crucial for minimiz-
+output vector v (m) , which is then fed to a classical com-         ing redundancy and accessing the full computational ca-
+puter for linear processing. Unlike the single-step ap-             pacity of the Hilbert space. We leverage the positional
+proach, this sequential evolution endows the system with            disorder inherent in experimental setups to naturally
+inherent short-term memory, rendering it naturally suit-            break this symmetry. This is modeled by displacing
+able for analyzing time-series data [35].                           atomic sites according to a normal distribution from the
+   For both SS- and MS-QRC, each input x(m) is encoded              ideal lattice sites, with a standard deviation of 0.04a,
+into the detunings of the atoms by                                  where a is the lattice constant.
+                           (m)                                         As the reservoir utilizes dynamical evolution for infor-
+            ∆i = ∆ + ηxi         ,   i = 1, . . . , N,       (4)    mation processing and the degree of information scram-
+                                                                    bling is largely determined by the dynamical phases of
+where ∆ represents the global bias detuning, η is the in-
+                            (m)                                     matter [37], it is important to evaluate the impact of dif-
+put scaling parameter; xi        is the ith element of the          ferent dynamical phases of matter on the reservoir per-
+         (m)
+input x . To match the system size, input vectors                   formance. The thermal phase scrambles local informa-
+with dimension smaller than N are zero-padded (i.e.,                tion rapidly to the whole system, while the information
+  (m)
+xi    = 0 for i > dim(x(m) )). The information is ex-               spreads much more slowly in the many-body localized
+tracted from the reservoir by measuring the expectation             phase, allowing the system to retain a memory of its ini-
+values of single-site and two-site Pauli operators of σ x           tial conditions over long timescales. In previous stud-
+and σ z to form the output vector v (m) .                           ies [14, 15], it has been shown that the performance of
+   Both schemes are trained in the same way: the param-             MS-QRC typically peaks at the dynamical phase transi-
+eters of the reservoir remain fixed while only the weights          tions for time-series prediction due to the trade-off be-
+of the final linear layer on the classical computer are op-         tween nonlinear mapping and linear memory. Here, we
+timized. By arranging the reservoir signals v (1) , . . . , v (m)   characterize the dynamical phases of matter in a triangu-
+into a matrix V = (v (1) , . . . , v (m) )T and the targets         lar array of N = 10 atoms shown in Fig. 2(a) by the mean
+                                                                                                                                                                     4
+
+
+     (a)                               (b)1.6                                                    tify the optimal regime, we characterize the information
+                                                          1.4                       0.51         spreading speed using the out-of-time-order correlator
+                                                                                    0.48         (OTOC) [15, 40, 41]. Although our reservoir is an open
+                                                          1.2
+
+
+
+
+                                      a/Rb
+
+
+
+
+                                                                                      ­ ®
+                                                                                    0.45         system, the closed-system OTOC provides a qualitative
+
+
+
+
+                                                                                       r
+                                                          1.0                                    guidance for determining the appropriate τ required for
+                                                                                    0.42
+                                                          0.8                                    sufficient scrambling before noise dominates the dynam-
+                                                                                    0.39
+                                                                9   6     3 0   3                ics. The OTOC is defined as
+                                                                        ∆/Ω                                              N
+   (c) 1                            (d) 1                                                                           1 X z
+                                                                                                       F (τ ) =            ⟨σ̂ (τ )σ̂iz (0)σ̂1z (τ )σ̂iz (0)⟩β ,    (9)
+                                                          0.8                                                     N − 1 i=2 1
+          0.75                      D(ρ (m) , ρ 0 (m) )   0.6
+           0.5
+ F ( τ)
+
+
+
+
+                                                          0.4                                    where σ̂1z (τ ) = eiĤτ σ̂1z (0)e−iĤτ , and ⟨·⟩β denotes averag-
+          0.25                                            0.2                                    ing over a thermal ensemble at temperature 1/β = kB T .
+             00                                             00                                   The OTOC F (τ ) for the reservoir without input (η = 0)
+             10      101      102                                       100     200              at infinite temperature is shown in Fig. 2(c). It drops
+                     Ωτ                                                  m                       to 1/2 at τ = 10/Ω, indicating that local information
+                                                                                                 has effectively scrambled throughout the system. Con-
+FIG. 2. System configuration of an array of 10 atoms. (a)                                        sequently, we select around τ = 10/Ω in the following
+The triangular lattice of 10 atoms, where the positions of                                       as the evolution duration to balance effective scrambling
+each atom (green stars) are normally distributed from the                                        against decoherence.
+ideal lattice sites (empty circles). (b) The phase diagram of                                       Additionally, the MS-QRC must possess the con-
+the atom array shown in (a), averaged over 1000 realizations                                     vergence property such that it can approximate time-
+of the atoms’ positions at η = 0. The parameters (∆/Ω =                                          invariant functions with fading memory [42]. In open
+−0.5, a/Rb = 1) marked by the black cross near the phase                                         quantum systems, this convergence is physically guar-
+boundary are used for subsequent machine learning tasks. (c)                                     anteed by the contractive nature of dissipative dynam-
+Out-of-time-order correlator F (τ ) as a function of duration τ ,
+                                                                                                 ics [43]. We characterize this convergence by evolving the
+with ∆/Ω = −0.5, a/Rb = 1, η = 0. (d) Convergence of MS-
+                                                                                                 system from two distinct initial states, ρ(0) = (|g⟩⟨g|)⊗N
+QRC characterized by the trace distance D(ρ(m) , ρ′(m) ), with
+                                                                                                 and a randomly selected mixed state ρ′(0) , both subject
+the system starting from two different initial states ρ(0) and
+ρ′(0) , and ∆/Ω = −0.5, a/Rb = 1, γ/Ω = 0.95, τ = 10/Ω,                                          to the same random input series sampled uniformly from
+η/Ω = 0.1. The shaded area in (c-d) denotes the standard                                         [−1, 1]. The convergence of the resulting states after m
+deviation across 10 realizations of the atoms’ positions.                                        steps is quantified by the trace distance [43]
+                                                                                                                                   1 (m)
+                                                                                                             D(ρ(m) , ρ′(m) ) =      ∥ρ  − ρ′(m) ∥1 ,              (10)
+level spacing ratio ⟨r⟩ [38]. By exact diagonalization and                                                                         2
+arranging the eigenvalues {El } of the Hamiltonian in Eq.                                        where ∥·∥1 denotes the trace norm. As shown in Fig. 2(d),
+(1) in ascending order, one computes                                                             the states converge after approximately 200 steps. Con-
+                                                                                                 sequently, we discard the first 200 steps in subsequent
+                  δl = El+1 − El ,                                                         (7)   simulations of MS-QRC to avoid the influence of initial
+                  rl = min{δl , δl+1 }/ max{δl , δl+1 },                                   (8)   conditions.
+                                                                                                    To assess the general temporal-task-processing capa-
+and ⟨r⟩ is the mean value of {rl }. For ergodic phase,                                           bilities of SS-QRC and MS-QRC, providing a baseline
+⟨r⟩ ≈ 0.535, and for localized phase, ⟨r⟩ ≈ 0.386 [39].                                          before benchmarking specific applications, we calculate
+The phase diagram of the atom array with respect to the                                          the information processing capacity (IPC) [44, 45] of
+lattice spacing a in units of the Rydberg blockade radius                                        these two schemes. The IPC is a comprehensive met-
+Rb and the global detuning ∆ in units of the Rabi fre-                                           ric for evaluating a reservoir’s capability to transform
+quency Ω, averaged over 1000 realizations of the atom                                            the temporal input information across a basis  Pof  orthog-
+                                                                                                                                                   ∞
+positions at η = 0 is shown in Fig. 2(b), with the black                                         onal functions. The total capacity, Ctot = d=1 Cd , is
+cross near the dynamical phase transition marking the                                            decomposed by the order of nonlinearity d, with Cd rep-
+parameters (∆/Ω = −0.5, a/Rb = 1) used in subse-                                                 resenting contributions from d-th order polynomials. As
+quent machine learning tasks. To ensure that informa-                                            shown in Fig. 3(a), the MS-QRC capacity peaks near one
+tion scrambling is dominated by the global bias detuning                                         of the dynamical phase transition regimes. Furthermore,
+∆ rather than the input drive, we set the input scaling                                          Fig. 3(b) reveals that the decay rate significantly im-
+to η/Ω = 0.1 in the following, unless otherwise specified.                                       pacts the performance of MS-QRC, which peaks around
+   In practice, the presence of decoherence imposes a                                            γ/Ω = 4. This can be explained by the convergence prop-
+trade-off on the interaction duration τ . If τ is too                                            erty of the reservoir: for a small decay rate, the reservoir
+short, the input information fails to scramble across                                            converges too slowly for the MS-QRC to function, while
+the whole system; conversely, an excessively large τ                                             for a large decay rate, the information dissipates into
+leads to information loss via decoherence. To iden-                                              the environment. In contrast, since SS-QRC relies on
+                                                                                                                                                                   5
+
+ (a) 200 MS-QRC                   (b) 200 MS-QRC                       (a)                                              (b)
+                                                                              100%                                              98%
+         150                             150
+                                                                                98%
+
+
+
+
+                                                                   Accuracy
+
+
+
+
+                                                                                                                     Accuracy
+         100                             100                                                                                    96%
+  Ctot
+
+
+
+
+                                  Ctot
+                                                                                96%
+          50                              50                                                                                    94%
+                                                                                94%
+           0 9    6     3 0   3         010 1 100 101     102                                                                   92%
+                                                                                92%              103          104                               103          104
+                      ∆/Ω                        γ/Ω                                                   Ns                                             Ns
+ (c) 200 SS-QRC                   (d) 200 SS-QRC                          (c) 25                                         (d) 50
+         150                             150
+                                                                                      20                                             40
+
+
+
+
+                                                                         kV − V true k Fro
+
+
+
+
+                                                                                                                        kV − V true k Fro
+         100                             100
+  Ctot
+
+
+
+
+                                  Ctot
+                                                                                      15                                             30
+          50                              50                                          10                                             20
+           0 9    6     3 0 3             010 1 100 101   102                          5                                             10
+                      ∆/Ω                          γ/Ω                                           103          104                               103          104
+                         1  2     3       4    5   6                                                   Ns                                             Ns
+                                                                                             Shadow (derandomized)                          Shadow (randomized)
+
+FIG. 3. Performance with respect to the global bias detuning
+∆ and the decay rate γ. (a-b) The total information process-       FIG. 4. Performance of the SS-QRC on classification tasks,
+ing capacity (IPC), denoted as Ctot , of MS-QRC with respect       using the randomized measurement toolbox. (a) Classifi-
+to the global bias detuning ∆ and decay rate γ. Ctot is de-        cation accuracy on the Iris dataset, with ∆/Ω = −0.5,
+composed according to the order of nonlinearity, represented       a/Rb = 1, γ/Ω = 0.95, τ = 10/Ω, η/Ω = 0.1. (b) Classifi-
+by bars with different colors. (c-d) The total IPC of SS-QRC       cation accuracy of SS-QRC on the entanglement-separability
+with respect to the global bias detuning ∆ and decay rate          classification task, with a/Rb = 1, γ/Ω = 0.95, τ = 16/Ω.
+γ. The dashed lines in (a) and (c) indicates the phase bound-      The dashed lines in (a-b) indicate the classification accuracy
+aries. The results are averaged over 5 realization of the atoms’   in the asymptotic limit (Ns = ∞). (c) Measurement error in
+positions, with a/Rb = 1, γ/Ω = 0.95, η/Ω = 0.1. The IPC           the Iris dataset classification task, evaluated by the Frobenius
+are calculated using 1000 input time series uniformly sam-         norm ∥V − Vtrue ∥Fro , where Vtrue denotes the matrix of read-
+pled from [-1, 1] where the first 200 time steps are used for      out signals without sampling noise. (d) Measurement error
+washout.                                                           in the entanglement-separability classification task. The er-
+                                                                   ror bars are standard deviations across 10 realizations of the
+                                                                   measurement process.
+single-step evolution rather than the multi-step evolution
+of MS-QRC, it exhibits remarkable resilience to both dy-
+namical phases of matter and decoherence, as shown in              the number of shots Ns required to predict the expec-
+Fig. 3(c-d).                                                       tation values of L observables within an additive er-
+                                                                   ror ϵ scales as Ns ∝ log(L)3w /ϵ2 , with w denoting the
+                                                                   weight of the observables [46]. The derandomized classi-
+          IV.    QRC UNDER SAMPLING NOISE                          cal shadow protocol is a deterministic variant which re-
+                                                                   places random basis selection with a greedy update pro-
+                                                                   cedure, ensuring performance that is at least as good as
+   In experiments, expectation values are obtained
+                                                                   the randomized protocols and performs much better in
+through repeated state preparations and measurements.
+                                                                   some cases [47].
+Given that each shot requires finite time, the total num-
+                                                                      In this section, we assess the robustness of SS-QRC
+ber of shots Ns is necessarily limited, making sampling
+                                                                   and MS-QRC under sampling noise, comparing the effi-
+noise an unavoidable constraint. For practical implemen-
+                                                                   ciency of the two measurement subroutines: randomized
+tations, characterizing QRC performance under these re-
+                                                                   classical shadows versus derandomized classical shadows.
+alistic conditions is essential. Furthermore, the QRC
+formalism requires measuring a large number of observ-
+ables to extract sufficient information from the reservoir.
+To circumvent the prohibitive time cost of independent                                                  A.   Classification
+measurements, we leverage the randomized measurement
+toolbox [20], which includes the randomized classical                 We first evaluate the impact of sampling noise on SS-
+shadows [46] and derandomized classical shadows [47].              QRC using two static benchmarks: the Iris dataset clas-
+   The randomized classical shadow formalism utilizes              sification and the two-qubit entanglement-separability
+random Pauli measurements to efficiently estimate the              classification tasks.
+expectation values of multiple local observables, where               The results of the Iris dataset classification are shown
+                                                                                                                                                                                              6
+
+in Fig. 4(a). In the asymptotic limit (Ns = ∞), the               (a) 200                                             (b)                  101
+                                                                                                                                                                           Ns = 4 × 104
+                                                                                       1               4
+SS-QRC achieves 100% classification accuracy. For finite                                                                                                                   Ns = 1.2 × 105
+
+
+
+
+                                                                                                                      kv (m) − v 0(m) k2
+                                                                          150          2               5                                        0
+                                                                                                                                           10
+Ns , the classification accuracy maintains over 98% for                                3               6                                                                   Ns = 2 × 105
+
+
+
+
+                                                                   Ctot
+                                                                          100
+the derandomized classical shadow protocol, consistently
+                                                                                                                                    10−1
+outperforming the randomized scheme on average. This                       50
+superiority is confirmed by the lower measurement error                                                                             10−2
+                                                                            0
+shown in Fig. 4(c).                                                             0.4   0.8    1.2 1.6       2    ∞                                   0         50         100     150     200
+                                                                                                Ns             ×105                                                       m
+   To test the system on a more challenging task, we con-         (c) 200                                             (d) 0.20
+sider the separability-entanglement classification of two-                             1               4
+qubit states. Similar to Ref. [48], we randomly generate                  150          2               5                             0.15
+
+
+
+
+                                                                                                                         N RM SE
+                                                                                       3               6
+1000 two-qubit states ρ(m) and prepare the dataset as                                                                                                                           MS-QRC
+
+
+
+
+                                                                   Ctot
+                                                                          100                                                        0.10
+                                                                                                                                                                                SS-QRC
+{(ρ(m) , α(m) ; y (m) )}1000
+                        m=1 , where y
+                                      (m)
+                                          is the binary label
+                                  (m)                                      50                                                        0.05
+of the m-th two-qubit state ρ          obtained by the posi-
+tive partial transpose criterion [49], and α(m) is a quan-                  0                                                        0.00
+                                                                                0.4   0.8    1.2 1.6       2    ∞                                       0.5        1.0         1.5      2.0
+tity denoting the geometric information of the state ρ(m)                                       Ns             ×105                                                      Ns            ×105
+extracted from a convex hull approximation [48].                 (e)
+                                                                        0.200               Target              MS-QRC                                   SS-QRC
+   In our simulation, we prepare the initial state of the
+first two Rydberg atoms directly as ρ(m) and that of the
+
+
+
+
+                                                                y (m)
+                                                                        0.195
+remaining 8 atoms as a product state of |gi ⟩⟨gi | , i =
+2, . . . , 8. The geometric information α(m) is encoded into            0.190
+                                                                             800       825           850       875         900                          925        950         975       1000
+the detuning of the 10 atoms by ∆i = α(m) for each                                                                          m
+i. The readout signals are obtained by measuring the
+single-site and two-site Pauli operators σ x and σ z of the     FIG. 5. Performance of MS-QRC and SS-QRC on time-series
+remaining 8 atoms.                                              prediction tasks under sampling noise using the derandom-
+   As shown in Fig. 4(b), the classification accuracy in        ized classical shadow protocol. (a) The IPC of MS-QRC ver-
+the asymptotic limit (Ns = ∞) is 98.5%, and the accu-           sus the number of measurement shots Ns . (b) Convergence of
+racy under sampling noise does not degrade too much             MS-QRC characterized by ∥v (m) − v ′(m) ∥2 , with the reservoir
+for Ns = 1 × 104 . For a small number of measurement            starting from two different initial states. The dashed blue
+shots, the classification accuracy based on the derandom-       curve corresponds to the asymptotic limit. (c) The IPC of
+ized classical shadow outperforms the randomized proto-         the SS-QRC. The results in (a) and (c) are averaged over 5
+                                                                realizations of the atoms positions. (d) The normalized root
+col on average; while they are comparable when Ns is
+                                                                mean square error (NRMSE) of MS-QRC and SS-QRC on the
+large. As seen in Fig. 4(d), the derandomized classical         second-order NARMA task, with the dashed lines correspond-
+shadow provides a significant reduction in measurement          ing to Ns = ∞ for the two models. Error bars are standard
+error compared to the randomized shadow when Ns is              deviations across 10 realizations of the derandomized classi-
+small.                                                          cal shadow protocol. (e) The predictions of MS-QRC and
+                                                                SS-QRC on the second-order NARMA task at Ns = 2 × 105 .
+                                                                The parameters used in (a-e) are ∆/Ω = −0.5, a/Rb = 1,
+              B.    Time-series prediction                      γ/Ω = 0.95, η/Ω = 0.1.
+
+
+  Since the derandomized classical shadow outperforms           tion task, the second-order nonlinear autoregressive mov-
+the randomized protocol, we adopt it as the measure-            ing average (NARMA) task [35],
+ment subroutine in the following and evaluate the tem-
+poral processing capability of MS-QRC and SS-QRC                                      y (m+1) = 0.4y (m) + 0.4y (m) y (m−1)
+under sampling noise. We first evaluate the IPC of                                                                                                                                      (11)
+these two QRC architectures. As shown in Fig. 5(a),                                                        + 0.6(u(m) )3 + 0.1,
+while MS-QRC exhibits high IPC in the asymptotic limit
+                                                                where the input u(m) is uniformly sampled from [0, 0.2].
+(Ns = ∞), sampling noise drastically reduces its ca-
+                                                                With a total of 1000 time steps, we use the first 200 steps
+pacity. In particular, its nonlinear processing capability
+                                                                for washout, the intermediate 600 steps for training, and
+nearly vanishes in the presence of sampling noise. This
+                                                                the last 200 steps for testing. The performance on the
+can be explained by the undermining of the convergence
+                                                                second-order NARMA task is evaluated by the normal-
+property of the MS-QRC under sampling noise, as shown
+                                                                ized root mean square error (NRMSE), defined as
+in Fig. 5(b). Note that sampling noise affects the reser-
+voir’s output signals v (m) used for learning, not the quan-
+                                                                                     v
+                                                                                     u       1000
+tum CPTP map itself. In contrast, since the SS-QRC has                             1 u 1 X (m)
+                                                                     N RM SE = t                  (ỹ  − y (m) )2 ,    (12)
+no convergence requirements, its IPC maintains up to the                          A 200 m=801
+third order under finite Ns , as shown in Fig. 5(c).
+  The robustness of SS-QRC against sampling noise is            where the normalization parameter is defined as A =
+further demonstrated using a specific time-series predic-       max{y (m) } − min{y (m) }. Compared to SS-QRC, the
+                                                                                                                            7
+
+NRMSE of MS-QRC increases more significantly under              cal fluctuations.
+sampling noise, as shown in Fig. 5(d). The predicted              The source code for this study is available in the
+time series at Ns = 2 × 105 are shown in Fig. 5(e). While       GitHub repository [51].
+the predictions of MS-QRC deviate significantly from the
+target series, the SS-QRC predictions match the target
+series closely. These results suggest that the SS-QRC ar-                      ACKNOWLEDGMENTS
+chitecture is more robust against sampling noise and is a
+preferred candidate for near-term applications.                    This work was funded by the National Key
+                                                                R&D Program (Grant Nos. 2021YFA1402004 and
+                                                                2022YFA1204704), the National Natural Science Foun-
+                                                                dation of China (Grants No. 92465201, T2325022,
+      V.    DISCUSSION AND CONCLUSION
+                                                                U23A2074 and 92265108), Quantum Science and
+                                                                Technology-National Science and Technology Major
+   While Rydberg atom arrays have been demonstrated             Project (Grants 2021ZD0303200, 2021ZD0301500), and
+as a viable platform for QRC [29, 34], a systematic char-       the CAS Project for Young Scientists in Basic Research
+acterization of how realistic constraints in the Rydberg        (No. YSBR-049). This work was also supported by the
+platform impact the performance of different QRC ar-            Fundamental Research Funds for the Central Universi-
+chitectures, specifically the MS-QRC and SS-QRC, re-            ties and USTC Research Funds of the Double First-Class
+mains to be established. In this work, we have provided         Initiative. The numerical calculations in this paper were
+a comprehensive comparative analysis of MS-QRC and              performed at the Supercomputing Center of USTC. This
+SS-QRC with a Rydberg atom array implementation, fo-            work was partially carried out at the USTC Center for
+cusing on the dynamical phases of matter, decoherence,          Micro and Nanoscale Research and Fabrication.
+and sampling noise.
+   Our findings reveal a significant distinction in the ro-
+bustness of these two QRC architectures. We demon-                      Appendix A: Details of data encoding
+strate that whereas MS-QRC is highly sensitive to the
+underlying dynamical phases of matter and decoherence,            For general non-temporal datasets {(x(m) , y (m) )}, the
+SS-QRC exhibits remarkable resilience to these system           input vectors x(m) are directly mapped onto the atomic
+configurations. Furthermore, we utilize the derandom-           array via Eq. (4). In contrast, for one-dimensional time-
+ized classical shadow as a subroutine to mitigate the           series tasks {(u(m) , y (m) )}, the scalar inputs must first
+measurement overhead of the reservoir. In the presence          be transformed into an N -dimensional vector x(m) be-
+of sampling noise, the convergence property of MS-QRC           fore encoding. The construction of x(m) differs between
+is undermined, leading to a significant decrease in its         the two architectures. For SS-QRC, the temporal se-
+IPC. Conversely, the SS-QRC still largely maintains its         quence is embedded using a sliding window of length
+IPC. These results suggest that while both models ex-           N , where N denotes the number of atoms, such that
+hibit comparable performance in the asymptotic limit            x(m) = (u(m−N +1) , . . . , u(m−1) , u(m) )T . Conversely, for
+(Ns = ∞), the SS-QRC is more robust against sampling            MS-QRC, the reservoir is driven by a uniform broad-
+noise and is thus more suitable for NISQ-era applications.      casting of the instantaneous input, such that x(m) is an
+   Future improvements could involve the application of         N -dimensional vector with all elements equal to u(m) .
+advanced denoising techniques, such as singular value de-       Following this transformation, the resulting vectors x(m)
+composition, specialized signal filtering [50], or eigentask    for both architectures are encoded into the reservoir ac-
+techniques [19], to further mitigate the effects of statisti-   cording to Eq. (4).
+
+
+
+
+ [1] M. Schuld and F. Petruccione, Machine Learning with             Kwek, and A. Aspuru-Guzik, Noisy intermediate-scale
+     Quantum Computers, Quantum Science and Technology               quantum algorithms, Rev. Mod. Phys. 94, 015004 (2022).
+     (Springer International Publishing, Cham, 2021).            [5] M. Cerezo, A. Arrasmith, R. Babbush, S. C. Benjamin,
+ [2] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,             S. Endo, K. Fujii, J. R. McClean, K. Mitarai, X. Yuan,
+     N. Wiebe, and S. Lloyd, Quantum machine learning, Na-           L. Cincio, and P. J. Coles, Variational quantum algo-
+     ture 549, 195 (2017).                                           rithms, Nature Reviews Physics 3, 625 (2021).
+ [3] D. Pastorello, Concise Guide to Quantum Machine             [6] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Bab-
+     Learning, Machine Learning: Foundations, Methodolo-             bush, and H. Neven, Barren plateaus in quantum neural
+     gies, and Applications (Springer Nature Singapore, Sin-         network training landscapes, Nature Communications 9,
+     gapore, 2023).                                                  4812 (2018).
+ [4] K. Bharti, A. Cervera-Lierta, T. H. Kyaw, T. Haug,          [7] Z. Holmes, K. Sharma, M. Cerezo, and P. J. Coles, Con-
+     S. Alperin-Lea, A. Anand, M. Degroote, H. Heimonen,             necting Ansatz Expressibility to Gradient Magnitudes
+     J. S. Kottmann, T. Menke, W.-K. Mok, S. Sim, L.-C.              and Barren Plateaus, PRX Quantum 3, 010313 (2022).
+                                                                                                                                 8
+
+ [8] S. Wang, E. Fontana, M. Cerezo, K. Sharma, A. Sone,                & Astronomy 69, 220314 (2025).
+     L. Cincio, and P. J. Coles, Noise-induced barren plateaus     [25] A. G. de Oliveira, E. Diamond-Hitchcock, D. M. Walker,
+     in variational quantum algorithms, Nature Communica-               M. T. Wells-Pestell, G. Pelegrı́, C. J. Picken, G. P. A.
+     tions 12, 6961 (2021).                                             Malcolm, A. J. Daley, J. Bass, and J. D. Pritchard,
+ [9] X. Ge, R.-B. Wu, and H. Rabitz, The optimization                   Demonstration of weighted-graph optimization on a
+     landscape of hybrid quantum–classical algorithms: From             rydberg-atom array using local light shifts, PRX Quan-
+     quantum control to NISQ applications, Annual Reviews               tum 6, 010301 (2025).
+     in Control 54, 314 (2022).                                    [26] S. Anand, C. E. Bradley, R. White, V. Ramesh, K. Singh,
+[10] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni,         and H. Bernien, A dual-species Rydberg array, Nature
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-               Physics 20, 1744 (2024).
+     tunities in quantum reservoir computing and extreme           [27] H. Bernien, S. Schwartz, A. Keesling, H. Levine, A. Om-
+     learning machines, Advanced Quantum Technologies 4,                ran, H. Pichler, S. Choi, A. S. Zibrov, M. Endres,
+     2100027 (2021).                                                    M. Greiner, V. Vuletić, and M. D. Lukin, Probing many-
+[11] S. Ghosh, K. Nakajima, T. Krisnanda, K. Fujii, and                 body dynamics on a 51-atom quantum simulator, Nature
+     T. C. H. Liew, Quantum neuromorphic computing with                 551, 579 (2017).
+     reservoir computing networks, Advanced Quantum Tech-          [28] H. Labuhn, D. Barredo, S. Ravets, S. De Léséleuc,
+     nologies 4, 2100053 (2021).                                        T. Macrı̀, T. Lahaye, and A. Browaeys, Tunable two-
+[12] M. Lukoševičius and H. Jaeger, Reservoir computing ap-           dimensional arrays of single Rydberg atoms for realizing
+     proaches to recurrent neural network training, Computer            quantum Ising models, Nature 534, 667 (2016).
+     Science Review 3, 127 (2009).                                 [29] R. A. Bravo, K. Najafi, X. Gao, and S. F. Yelin, Quantum
+[13] G.-B. Huang, D. H. Wang, and Y. Lan, Extreme learning              Reservoir Computing Using Arrays of Rydberg Atoms,
+     machines: A survey, International Journal of Machine               PRX Quantum 3, 030325 (2022).
+     Learning and Cybernetics 2, 107 (2011).                       [30] G. Huang, G.-B. Huang, S. Song, and K. You, Trends in
+[14] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. So-            extreme learning machines: A review, Neural Networks
+     riano, and R. Zambrini, Dynamical phase transitions                61, 32 (2015).
+     in quantum reservoir computing, Phys. Rev. Lett. 127,         [31] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Pa-
+     100502 (2021).                                                     ternostro, and G. M. Palma, Potential and limitations
+[15] W. Xia, J. Zou, X. Qiu, and X. Li, The reservoir learn-            of quantum extreme learning machines, Communications
+     ing power across quantum many-body localization tran-              Physics 6, 118 (2023).
+     sition, Frontiers of Physics 17, 33506 (2022).                [32] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo, V. Ci-
+[16] T. Kubota, Y. Suzuki, S. Kobayashi, Q. H. Tran, N. Ya-             mini, T. Giordani, I. Palmisano, E. Polino, N. Spagnolo,
+     mamoto, and K. Nakajima, Temporal information pro-                 F. Sciarrino, G. M. Palma, A. Ferraro, and M. Paternos-
+     cessing induced by quantum noise, Phys. Rev. Res. 5,               tro, Experimental property reconstruction in a photonic
+     023057 (2023).                                                     quantum extreme learning machine, Phys. Rev. Lett.
+[17] L. Domingo, G. Carlo, and F. Borondo, Taking advan-                132, 160802 (2024).
+     tage of noise in quantum reservoir computing, Scientific      [33] J. Butcher, D. Verstraeten, B. Schrauwen, C. Day, and
+     Reports 13, 8790 (2023).                                           P. Haycock, Reservoir computing and extreme learning
+[18] D. Fry, A. Deshmukh, S. Y.-C. Chen, V. Rastunkov, and              machines for non-linear time-series data analysis, Neural
+     V. Markov, Optimizing quantum noise-induced reservoir              Networks 38, 76 (2013).
+     computing for nonlinear and chaotic time series predic-       [34] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz, P. Wein-
+     tion, Scientific Reports 13, 19326 (2023).                         berg, M. Hamdan, A. Zhdanov, S. H. Cantu, H. Zhou,
+[19] F. Hu, G. Angelatos, S. A. Khan, M. Vives, E. Türeci,             R. A. Bravo, K. Bagnall, J. I. Basham, J. Campo,
+     L. Bello, G. E. Rowlands, G. J. Ribeill, and H. E. Türeci,        A. Choukri, R. DeAngelo, P. Frederick, D. Haines,
+     Tackling sampling noise in physical systems for machine            J. Hammett, N. Hsu, M.-G. Hu, F. Huber, P. N.
+     learning applications: Fundamental limits and eigen-               Jepsen, N. Jia, T. Karolyshyn, M. Kwon, J. Long,
+     tasks, Phys. Rev. X 13, 041020 (2023).                             J. Lopatin, A. Lukin, T. Macrı̀, O. Marković, L. A.
+[20] A. Elben, S. T. Flammia, H.-Y. Huang, R. Kueng,                    Martı́nez-Martı́nez, X. Meng, E. Ostroumov, D. Paque-
+     J. Preskill, B. Vermersch, and P. Zoller, The random-              tte, J. Robinson, P. S. Rodriguez, A. Singh, N. Sinha,
+     ized measurement toolbox, Nature Reviews Physics 5, 9              H. Thoreen, N. Wan, D. Waxman-Lenz, T. Wong, K.-H.
+     (2023).                                                            Wu, P. L. S. Lopes, Y. Boger, N. Gemelke, T. Kitagawa,
+[21] A. M. Kaufman and K.-K. Ni, Quantum science with                   A. Keesling, X. Gao, A. Bylinskii, S. F. Yelin, F. Liu, and
+     optical tweezer arrays of ultracold atoms and molecules,           S.-T. Wang, Large-scale quantum reservoir learning with
+     Nature Physics 17, 1324 (2021).                                    an analog quantum computer (2024), arXiv:2407.02553
+[22] H. J. Manetsch, G. Nomura, E. Bataille, X. Lv, K. H.               [quant-ph].
+     Leung, and M. Endres, A tweezer array with 6,100 highly       [35] K. Fujii and K. Nakajima, Harnessing disordered-
+     coherent atomic qubits, Nature 647, 60 (2025).                     ensemble quantum dynamics for machine learning, Phys.
+[23] A. Browaeys and T. Lahaye, Many-body physics with                  Rev. Appl. 8, 024030 (2017).
+     individually controlled Rydberg atoms, Nature Physics         [36] M. Lukoševičius, A Practical Guide to Applying Echo
+     16, 132 (2020).                                                    State Networks, in Neural Networks: Tricks of the Trade:
+[24] D.-Q. Ma, Q.-X. Jie, Y.-D. Hu, W.-Y. Zhu, Y.-C. Zhang,             Second Edition, edited by G. Montavon, G. B. Orr, and
+     H.-J. Fan, X.-K. Zhong, G.-J. Chen, Y.-L. Zhang, T.-               K.-R. Müller (Springer Berlin Heidelberg, Berlin, Heidel-
+     Y. Zhang, X.-F. Ren, L. Chen, Z.-B. Wang, G.-C. Guo,               berg, 2012) pp. 659–686.
+     and C.-L. Zou, Volcano architecture for scalable quan-        [37] R. J. Lewis-Swan, A. Safavi-Naini, A. M. Kaufman, and
+     tum processor units, Science China Physics, Mechanics              A. M. Rey, Dynamics of quantum information, Nature
+                                                                                                                            9
+
+     Reviews Physics 1, 627 (2019).                             [45] T. Kubota, H. Takahashi, and K. Nakajima, Unifying
+[38] V. Oganesyan and D. A. Huse, Localization of interacting        framework for information processing in stochastically
+     fermions at high temperature, Phys. Rev. B 75, 155111           driven dynamical systems, Phys. Rev. Res. 3, 043135
+     (2007).                                                         (2021).
+[39] Y. Y. Atas, E. Bogomolny, O. Giraud, and G. Roux, Dis-     [46] H.-Y. Huang, R. Kueng, and J. Preskill, Predicting many
+     tribution of the Ratio of Consecutive Level Spacings in         properties of a quantum system from very few measure-
+     Random Matrix Ensembles, Phys. Rev. Lett. 110, 084101           ments, Nature Physics 16, 1050 (2020).
+     (2013).                                                    [47] H.-Y. Huang, R. Kueng, and J. Preskill, Efficient estima-
+[40] B. Swingle, Unscrambling the physics of out-of-time-            tion of pauli observables by derandomization, Phys. Rev.
+     order correlators, Nature Physics 14, 988 (2018).               Lett. 127, 030503 (2021).
+[41] A. Kutvonen, K. Fujii, and T. Sagawa, Optimizing a         [48] S. Lu, S. Huang, K. Li, J. Li, J. Chen, D. Lu,
+     quantum reservoir computer for time series prediction,          Z. Ji, Y. Shen, D. Zhou, and B. Zeng, Separability-
+     Scientific Reports 10, 14687 (2020).                            entanglement classifier via machine learning, Phys. Rev.
+[42] J. Chen and H. I. Nurdin, Learning nonlinear input–             A 98, 012315 (2018).
+     output maps with dissipative quantum systems, Quan-        [49] R. Horodecki, P. Horodecki, M. Horodecki, and
+     tum Information Processing 18, 198 (2019).                      K. Horodecki, Quantum entanglement, Rev. Mod. Phys.
+[43] M. A. Nielsen and I. L. Chuang, Quantum Computation             81, 865 (2009).
+     and Quantum Information, 10th ed. (Cambridge Univer-       [50] O. Ahmed, F. Tennie, and L. Magri, Optimal training of
+     sity Press, Cambridge ; New York, 2010).                        finitely sampled quantum reservoir computers for fore-
+[44] J. Dambre, D. Verstraeten, B. Schrauwen, and S. Massar,         casting of chaotic dynamics, Quantum Machine Intelli-
+     Information Processing Capacity of Dynamical Systems,           gence 7, 31 (2025).
+     Scientific Reports 2, 514 (2012).                          [51] D.-S. Liu, Q.-X. Jie, C.-L. Zou, X.-F. Ren, and G.-C.
+                                                                     Guo, Practical quantum reservoir computing in Rydberg
+                                                                     atom arrays, GitHub (2026).
+

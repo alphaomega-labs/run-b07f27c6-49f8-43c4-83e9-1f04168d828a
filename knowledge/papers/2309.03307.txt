@@ -1,0 +1,877 @@
+                                                 Several fitness functions and entanglement gates in quantum kernel generation
+
+                                                                                                   Haiyan Wang∗
+                                                         School of Mathematical and Natural Science, Arizona State University, Phoenix, AZ 85069, USA
+
+                                                            Quantum machine learning (QML) represents a promising frontier in the quantum technologies.
+                                                         In this pursuit of quantum advantage, the quantum kernel method for support vector machine has
+                                                         emerged as a powerful approach. Entanglement, a fundamental concept in quantum mechanics,
+                                                         assumes a central role in quantum computing. In this paper, we investigate the optimal number
+                                                         of entanglement gates in the quantum kernel feature maps by a multi-objective genetic algorithm.
+                                                         We distinct the fitness functions of genetic algorithm for non-local gates for entanglement and local
+                                                         gates to gain insights into the benefits of employing entanglement gates. Our experiments reveal
+                                                         that the optimal configuration of quantum circuits for the quantum kernel method incorporates
+arXiv:2309.03307v3 [quant-ph] 19 Nov 2023
+
+
+
+
+                                                         a proportional number of non-local gates for entanglement. The result complements the prior
+                                                         literature on quantum kernel generation where non-local gates were largely suppressed. Furthermore,
+                                                         we demonstrate that the separability indexes of data can be leveraged to estimate the number of
+                                                         non-local gates required for the quantum support vector machine’s feature maps. This insight can be
+                                                         helpful in selecting appropriate parameters, such as the entanglement parameter, in various quantum
+                                                         programming packages like https://qiskit.org/ based on data analysis. Our findings offer valuable
+                                                         guidance for enhancing the efficiency and accuracy of quantum machine learning algorithms.
+                                                         Keywords: support vector machine; quantum feature map; genetic algorithm; entanglement gate
+
+
+
+
+                                                                                              1.   INTRODUCTION
+
+                                               Quantum machine learning (QML) stands out as one of the most promising and fascinating applications of quantum
+                                            technologies. In this pursuit of quantum advantage, the quantum kernel method via support vector machine has
+                                            emerged as a powerful approach, drawing attention from various research groups [3, 9, 11, 12, 18, 19, 22, 23, 25,
+                                            27, 29, 31, 32, 35, 49]. In [12], two effective approaches were introduced for the construction of quantum SVMs: the
+                                            Quantum Kernel Estimator and the Quantum Variational Classifier. These methods harness classical data and map it
+                                            into the quantum state space via a quantum feature map. A pivotal element in this procedure is the quantum circuit,
+                                            which facilitates the transformation of the dataset from its initial low-dimensional real space to a higher-dimensional
+                                            quantum state space, commonly referred to as the Hilbert space
+                                               The choice of an appropriate feature map, matched to a suitable kernel, emerges as a decisive factor in the success of
+                                            kernel methods. The selection of the right feature map becomes particularly critical depending on the dataset under
+                                            consideration. Genetic algorithms, rooted in the principles of natural selection, naturally emerge as a valuable tool for
+                                            classical support vector machines [6], and have been applied to quantum computing in a considerable number of works
+                                            [7, 39, 40, 54] and quantum support vector machines [2, 5, 8]. [2] first proposed the genetic algorithm for the auto
+                                            generation of feature map in quantum support vector machine. Additional advancements [13, 20] have introduced
+                                            the automatic generation of quantum circuits through the utilization of multi-objective genetic algorithms. These
+                                            algorithms provide a potent avenue for optimizing gate or circuit structures, circumventing common challenges like
+                                            local minima and barren plateaus [36–38].
+                                               Entanglement, a fundamental concept in quantum mechanics, plays a pivotal role in enabling quantum computing.
+                                            In their work, [14] presented an automated search algorithm aimed at determining the optimal layout for entanglement
+                                            in supervised quantum machine learning. They accomplished this using sequential model-based optimization (SMBO).
+                                            Their empirical findings demonstrate that the quantum embedding architecture produced by the automated search
+                                            algorithm surpasses manually designed architectures in terms of predictive performance.
+                                               In this paper, we investigate the optimal number of entanglement gates in the quantum feature maps for quantum
+                                            support vector machine by multi-objective genetic algorithm. We use three fitness functions that simultaneously
+                                            maximizes classification accuracy while minimizing the gate costs of the quantum feature map’s circuit. We separate
+                                            the fitness functions for local gates and non-local (controlled-NOT (CNOT) ) gates. By doing so, we obtain a
+
+
+                                            ∗ haiyan.wang@asu.edu
+                                                                                                                         2
+
+set of non-dominated points that reveal a more balanced configuration of quantum circuits for the quantum kernel
+method, incorporating a proportional number of CNOT gates to facilitate entanglement. This result complements the
+previous works [2, 8] where their design of fitness functions has predominantly led to a suppression of entanglement
+gates. In addition, the experiments in this paper scale well for larger qubits than the previous work in [14] where
+their experiment requires a significantly larger amount of computational resources.
+   The results of this paper indicate that various separability indexes can be used to help assessing the construct
+efficient quantum circuits for achieving high accuracy. Currently, the documentations for quantum kernels at
+https://qiskit.org/ do not provide a guide for how these parameters should be chosen. For example, the entanglement
+parameter of ZZFeatureMap has three options: linear, full and circular. The results of this paper can be used to help
+choosing these parameters based on analysis of data.
+   Key new contributions of this paper are 1) using three fitness functions for a genetic algorithm to show that the
+optimal quantum circuits for the quantum kernel map incorporates a proportional number of entanglement gates,
+which complements the result in [2, 8]; 2) experimentally demonstrating that the separability indexes of data could
+be used to estimate the number of entanglement gates based on analysis of data.
+
+
+                      2.   SUPPORT VECTOR MACHINE WITH QUANTUM KERNELS
+
+                                                  2.1.       Support vector machine
+
+   Support vector machines (SVMs) are a supervised learning method used for classification and regression. The goal
+is to find the optimal hyperplane that separates two classes by maximizing the margin. Mathematically, for a given
+labeled training set (xi , yi ) where xi are the features and yi are the labels (+1 or -1), the optimization problem is:
+
+
+                      minimize    ||w||2                                      subject to yi (w · xi + b) ≥ 1,   ∀i
+where w is the normal vector to the hyperplane, b is the bias term, and the constraints ensure we maximize the
+margin. This optimization finds the maximum margin hyperplane. The xi points nearest the hyperplane are called
+support vectors. Overall, SVMs are powerful for complex classification and regression tasks. The primal optimization
+problem can be alternatively represented as the Lagrange dual problem:
+
+                                                             n                n   n
+                                                             X            1 XX
+                                     max L(α) =                    αi −             αi αj yi yj xi · xj
+                                                             i=1
+                                                                          2 i=1 j=1
+                                                 n                                                                     (1)
+                                                 X
+                                         s.t.          αi yi = 0, αi ≥ 0
+                                                 i=1
+
+
+   Given a function Φ, which maps a data point x to higher dimensional space, the above problem can be transformed
+into
+
+                                                       n                  n   n
+                                                       X            1 XX
+                                 max L(α) =                  αi −             αi αj yi yj Φ(xi ) · Φ(xj )
+                                                       i=1
+                                                                    2 i=1 j=1
+                                           n                                                                           (2)
+                                           X
+                                  s.t.           αi yi = 0, αi ≥ 0
+                                           i=1
+
+The kernel function, denoted as K(xi , xj ) = Φ(xi ) · Φ(xj ), enables SVM computations by only requiring knowledge
+of how to compute the inner product of Φ(xi ) and Φ(xj ), rather than explicit knowledge of the feature map Φ.
+Kernel methods encompass a collection of pattern analysis algorithms that rely on the utilization of kernel functions,
+functioning within high-dimensional feature spaces. To handle non-linear problems, SVMs use kernel functions to
+map the data to a higher dimensional space where separation is possible. The kernel function operates by implicitly
+mapping input data into these higher-dimensional spaces, thereby simplifying the problem-solving process. In essence,
+kernels possess the ability to transform originally non-linearly separable data distributions into linearly separable ones,
+a phenomenon commonly referred to as the ”kernel trick.”
+                                                                                                                       3
+
+                                            2.2.     Quantum kernel method
+
+   In the context of quantum computing, the Quantum Kernel Estimator detailed in [12] presents effective strategies
+for constructing a quantum SVM. A significant challenge in quantum machine learning lies in the effective encoding
+of classical information into quantum states for quantum computing. [12] achieves this by encoding data within the
+quantum state space through a quantum feature map. The choice of the feature map is a pivotal decision, often
+contingent on the characteristics of the dataset to be classified. It is worth noting that the feature map’s significance
+extends beyond utilizing quantum state space as a feature space; it also involves the manner in which data is mapped
+into this high-dimensional space.
+   Through the utilization of quantum circuits, a data point x = (xj ) ∈ Rn is transformed into an n-qubit quantum
+feature state, |Φ(x⟩⟨Φ(x)|. This naturally leads to the definition of the kernel as K(x, z) = |⟨Φ(x)|Φ(z)⟩|2 . The kernel
+method can be seamlessly integrated into quantum computing by through a unitary operator UΦ(x) applied to the
+initial state |0⟩n , |Φ(x)⟩ = UΦ(x) |0⟩n . This approach facilitates the mapping of data points into the quantum Hilbert
+space [30], thereby leveraging the substantial advantages of quantum computing.
+
+
+                                                                      †
+                                    K(x, z) = |⟨Φ(x)|Φ(z)⟩|2 = |⟨0n |UΦ(x )UΦ(z) |0n ⟩|2                             (3)
+
+
+
+  In [12], various widely-recognized feature maps like ZFeatureMap and ZZFeatureMap are proposed. One approach
+to customization involves employing a Pauli feature map and specifying a set of Pauli gates, deviating from the default
+Z gates. For example, a representative form of our tailored quantum feature map might take the following structure:
+
+                                                                                             d
+                                           X                                  X
+                       UΦ(x) = exp i           ϕ{j,k} (x)Zj ⊗ Zk  exp i       ϕ{j} (x)Pj  H ⊗n 
+                                           j,k                                j
+
+
+where Pj can be one of the rotation gates I, X, Y, Z. The depth d = 1 version of this quantum circuit is shown in Table
+1 below for n = 2 qubits, and the coefficient ϕS (x), where S is chosen to represent a set consisting of independent
+qubits or qubit pairs, e.g.,
+                                                (
+                                                   xi                 if S = {i}
+                                      ϕS : x 7→                                                                     (4)
+                                                   (π − xi )(π − xj ) if S = {i, j}
+
+to encode the data.
+
+                                            |0⟩      H    R       •       •
+
+                                            |0⟩      H    R           R
+
+
+                                      TABLE 1: Quantum circuit for n = 2 qubits
+
+
+The circuit in Table 1 involves a layer of Hadamard gates H ⊗2 , followed by a subsequent layer of single-qubit gates
+R = eiϕj (x)Pj . These R gates are characterized by a set of angles ϕj (x), each associated with a distinct axis, and
+ϕj (x) is contingent on the feature data. The diagonal entangling gate eiϕ{0,1} (x)Z0 ⊗Z1 is parametrized by an angle
+ϕ{0,1} (x) and can be implemented using two CNOT gates and one R = eiϕ{0,1} (x)Z1 gate as shown in Table 1, here
+CNOT gate is used to establish entanglement among qubits. Specifically, the quantum gate is acted on 2 qubits,
+which has matrix representation:
+
+                                                                   
+                                                            1 0 0 0
+                                                          0 1 0 0
+                                                   CNOT = 
+                                                          0 0 0 1
+                                                                    
+
+                                                                  0 0 1 0
+                                                                                                                             4
+
+   The first qubit serves as the control qubit, while the second one is designated as the target qubit. If the control
+qubit is in the state |0⟩, the target qubit retains its original state. Conversely, when the control qubit is in the state |1⟩,
+the target qubit undergoes a bitwise flip. The classical counterpart of the CNOT gate corresponds to the reversible
+XOR gate.
+   Designing an appropriate kernel function for diverse datasets presents a formidable challenge. In our research, we
+employ a genetic algorithm to implement a global optimization approach for refining the structure of the quantum
+circuit. This methodology has proven to be effective in overcoming typical obstacles, such as barren plateaus, often
+encountered in conventional optimization techniques. As a result, it yields high-quality learning kernels [2, 10].
+
+
+                          3.   EVOLUTIONARY MULTI-OBJECTIVE OPTIMIZATION
+
+
+   Genetic algorithms belong to the category of optimization methodologies that draw inspiration from the mechanisms
+of evolution. These algorithms traverse a solution space by iteratively refining a population of individuals. Over
+successive generations, genetic operations dictate the choice of offspring aimed at enhancing one or more objectives.
+This evolutionary dynamic effectively culminates in the selection of highly suitable individuals from within a vast
+configuration space.
+   In the process of generating new solutions, a pair of ”parent” solutions is chosen from a previously selected pool.
+Through techniques like crossover and mutation, a ”child” solution is then created, inheriting many characteristics
+from its ”parents.” New pairs of parents are selected for each child, and this cycle continues until a fresh population of
+solutions, of the desired size, is formed. The effectiveness and applicability of a genetic algorithm depend significantly
+on the choice of genetic operations. Among these, the selection operator assumes a pivotal role as it determines a
+subset of the existing population to form a new generation through crossover and mutation operations. Mutation
+introduces random alterations to selected individuals’ information, facilitating exploration of distant regions within
+the solution space. In contrast, crossover enables more radical exploration by exchanging genetic information between
+two individuals. Notably, mutation and crossover probabilities are fixed values, fine-tuned for optimal performance,
+while the selection probability is directly proportional to individuals’ fitness.
+   To ensure the genetic algorithm’s efficiency and convergence, early stopping conditions are employed to assess
+whether the evolutionary process has achieved its objectives. These conditions may involve monitoring the convergence
+or saturation of the fitness objective, maintaining a minimum accuracy threshold to continue the process, or setting
+a maximum number of generations. By leveraging these essential components, genetic algorithms emerge as valuable
+tools for addressing intricate optimization tasks across various domains.
+   An Evolutionary Multi-Objective Optimization (EMO) problem entails multiple objective functions that are subject
+to either minimization or maximization. Similar to single-objective optimization problems, multi-objective optimiza-
+tion problems may also incorporate various constraints that must be adhered to by all feasible solutions, including
+the optimal ones. For further insights, refer to [1, 4, 24].
+   For multi-objective optimization, optimal solutions are characterized by a mathematical concept known as partial
+ordering, and this concept is described using the term ”domination.” In this paper, our focus is primarily on addressing
+unconstrained optimization problems, which are free from any equality, inequality, or bound constraints. The notion
+of domination between two solutions is articulated as follows: Solution x(1) is deemed to dominate another solution,
+x(2) , only if both of the following conditions hold true:
+
+   1. The solution x(1) is no worse than x(2) in all objectives (for minimization problem, each component of x(1) is
+      less than or equal to that of x(2) ). Consequently, the comparison between these solutions is made by evaluating
+      their objective function values or by examining the positions of the corresponding points z(1) and z(2) ) within
+      the objective space.
+
+   2. The solution x(1) is strictly better than x(2) in at least one objective (for minimization problem, one component
+      of x(1) is strictly less than the corresponding component of x(2) , in addition to item 1)
+
+  Points that remain not dominated by any other members within a set are termed as non-dominated points of class
+one, or simply non-dominated points. One distinctive feature of any two such points is that improvements in one
+objective only occur at the expense of at least one other objective—a trade-off relationship. This trade-off property
+among non-dominated points is interesting as it encourages the exploration of a diverse array of such points before
+reaching a final decision. If the set of points contains all possible points within the search space, the points residing
+                                                                                                                       5
+
+                                                     Crossover and
+              Initial population
+                                                       Mutation
+
+                                                    Combined Parent
+                                                     and Offspring
+                                                      Population
+
+               SVM with Quan-
+                                                   Fitness Evaluation
+                 tum Kernel
+
+
+                                                     Non-dominated
+                                                        Sorting
+
+                                                     Rejection and
+                                                     Crowding Dis-
+                                                     tance Sorting
+
+                  Get the                                                    no            Continue the
+                                      yes           Stopping Criteria
+                Pareto Fronts                                                           Selected Population
+
+                           FIG. 1: Non-dominated Sorting Genetic Algorithm (NSGA-II)
+
+
+on the non-domination front, by definition, are immune to domination by any other point within the objective space.
+Consequently, they represent the Pareto-optimal points, collectively constituting the Pareto-optimal front.
+  The Non-dominated Sorting Genetic Algorithm (NSGA-II) was initially designed, in response to the limitations of
+early evolutionary algorithms such as the lack of elitism, as outlined by Deb in [4], stands as one of the widely adopted
+Evolutionary Multi-Objective Optimization (EMO) techniques. The procedure of NSGA-II is illustrated in Figure 1
+and can be summarized as follows.
+
+   • Initial Population: The process starts with the creation of an initial population of potential solutions. This
+     population represents a set of candidate solutions to the optimization problem.
+
+   • Crossover and Mutation: Genetic operations such as crossover (recombination of individuals) and mutation
+     (introducing small random changes) are applied to the individuals in the population. These operations mimic
+     the principles of natural selection and genetic evolution.
+
+   • Combined Parent and Offspring Population: The results of the crossover and mutation operations are
+     combined with the parent population to form a new generation of potential solutions. This process is essential
+     for exploring a broader solution space.
+
+   • Fitness Evaluation: The fitness of each individual in the combined population is evaluated. In multi-objective
+     optimization, fitness may be defined with respect to multiple objectives, seeking solutions that optimize several
+     criteria simultaneously.
+
+   • Non-dominated Sorting: The individuals are sorted based on their dominance. In this step, solutions are
+     categorized into non-dominated fronts, where no solution is worse than another in all objectives. These fronts
+     help identify the Pareto-optimal solutions, which represent the best trade-offs between objectives.
+
+   • Rejection and Crowding Distance Sorting: Solutions that do not belong to the Pareto-optimal fronts are
+     rejected. Additionally, a crowding distance sorting mechanism is used to further differentiate solutions within
+     the same front, favoring diverse and well-distributed solutions.
+
+   • Stopping Criteria: A check is made to determine if the specified number of generations has been reached. If
+     not, the algorithm proceeds to the next generation. If the termination condition is met, the algorithm stops.
+     To avoid over fitting, comparisons with the baseline methods are also implemented.
+                                                                                                                       6
+
+   • Get Pareto Fronts: At the end of the algorithm, the Pareto fronts represent the optimal solutions that achieve
+     a balance between conflicting objectives. These solutions offer decision-makers a range of trade-off options.
+
+   • Continue with Selected Population: Depending on the problem and its requirements, the selected pop-
+     ulation of solutions can be used as a starting point for further analyses, optimizations, or decision-making
+     processes.
+
+   • SVM with Quantum Kernel: For our work, we use a Support Vector Machine (SVM) with a quantum
+     kernel feature map to evaluate the fitness of solutions. The quantum kernel map is used to capture complex
+     data relationships.
+
+   The resulting Pareto fronts for quantum feature maps serve as clear visual representations of the methodology for
+achieving high accuracy while keeping gate costs minimal. These Pareto-optimal fronts provide a useful means to an-
+alyze cost-effective trade-off strategies, especially in cases where numerous objectives might conflict with one another.
+While we only consider the gate costs associated with the maximum accuracy in this paper, further examination of the
+three-dimensional Pareto-optimal fronts and their projections onto two-dimensional spaces could offer deeper insights
+into the significant influence of entanglements on quantum kernel accuracy.
+
+
+                       4.   QUANTUM KERNEL FOR SUPPORT VECTOR MACHINE
+
+                                        4.1.   Genetic quantum feature map
+
+
+   Based on the method to generate quantum feature maps with a multi-objective optimization process in [2], here
+in this paper, we choose to implement the NSGA-II algorithm, which autonomously generates quantum feature
+maps for support vector machines. As we discuss before, the NSGA-II algorithm uses elitism and other features to
+maintain diversity within the Pareto set. It actively seeks out circuits that, once trained through a support vector
+machine, maximize accuracy, all while striving to minimize circuit complexity. This complexity is measured in terms
+of local gates (including Hadamard gates and rotation gates) and CNOT gates. The algorithm’s selection process for
+individuals advancing to the next generation depends on Pareto-dominance and density-based metrics as illustrated
+in Figure 1.
+   In this paper, we separate CNOT gates from local gates and add additional optimizing functions. We modified
+the encoding method [2, 8] to create a quantum circuit with a minimum of local and CNOT gates and maximum of
+accuracy. To simplify the problem, we choose the feature number as the number of qubits (N ). The encoding scheme
+in this paper begins with N number of H gates and N possible rotation gates and extra two bits to indicate a rotation
+with respect to X, Y, Z, followed by possible H entanglement which can be implemented by two rotation gates and a
+CNOT gates as shown in Table 1,    the last two bits are reserved for repetitions. The encoding bit string is of size ,
+N ( rotation for each qubit) + N2 ( number of possible CNOT gates) + 2( type of rotation) + 2( repetition). We also
+include the data into the encoding. Because the feature number is the same as the number of qubits, thus the i-th
+gene that operates on the qubits of the quantum register possibly depends on the i-th variable from the input data
+x ∈ Rn as in Equation (4).
+   The genetic algorithm randomly initiates the initial population of individuals. The evaluation function deciphers
+each individual, constructing an associated quantum circuit. This circuit, in conjunction with the training dataset,
+is employed to assess the corresponding kernel matrices, which are then integrated into SVM algorithms for fitness
+function computation. Individuals exhibiting superior fitness are more likely to be selected and subjected to diverse
+genetic operations, including mutation, crossover, and selection, resulting in the creation of a new generation of
+individuals or quantum circuits. This iterative process continues until the convergence criteria are met. To illustrate
+the comprehensive encoding scheme encompassing various types of gates, we employ three qubits and allocate 10 bits
+per gene, as depicted in Figures 2 and 3.
+
+
+                                               4.2.   Fitness functions
+
+
+  Fitness, in this context, serves as the objective function or cost function. It takes a solution as input and yields
+the fitness score for that solution. Based on the fitness functions proposed in [2], we introduce three fitness functions
+                                                                                                                      7
+
+
+
+
+FIG. 2: Example for the encoding scheme: the number of qubits is 3, the binary bits are [1, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+the first three bits for 3 rotation gates, and next two bits indicates the rotation with respect to X, Y, Z, followed 3
+                          bits for possible entanglements, the last two bits are for repetitions.
+
+                            111                   10                011                  10
+
+
+                          Each bit
+                                              two bits
+                        indicates if                             three bits
+                                            for rotation                              two bits
+                          three is a                             for entan-
+                                            with respect                              for repts
+                        rotation for                              glements
+                                             to X, Y, Z
+                         each qubit
+
+ FIG. 3: Example for the encoding scheme: the number of qubits is 3. the first three bits for 3 rotation gates, and
+next two bits indicates the rotation with respect to X, Y, Z, followed 3 bits for possible entanglements, the last two
+                                               bits are for repetitions.
+
+
+below (5), our aim is twofold: to maximize accuracy and minimize both of local and non-loccal gate costs.
+In tackling multi-objective problems, a common strategy involves identifying the Pareto front [1, 4, 24], which includes
+selecting high-dominance points using crowd distance techniques. Recognizing that different gates may have distinct
+costs [2, 8, 21], we distinguish CNOT gates from local gates and introduce three fitness optimization functions.
+The resulting three-dimensional Pareto fronts offer valuable insights for devising cost-effective trade-off strategies.
+Accuracy, in this context, denotes the mean accuracy achieved on the provided test data and labels, using the SVM
+model generated by a quantum circuit. Gate costs are computed by counting the sequence of basic physical operations
+required for quantum computer implementation.
+
+                               
+                                (maximize)Fitness 1 = prediction accuracy
+                                 (minimize)Fitness 2 = local gates = Rgate + Hgate                                  (5)
+                                 (minimize)Fitness 3 = CNOT gate
+                               
+
+   We choose not to introduce weights to the objective functions; such weighting could exert influence on both accuracy
+and gate count, potentially affects the optimization process. Our fitness function is designed for optimizing two key
+aspects: the maximization of classification accuracy and the minimization of the variational circuit’s complexity for
+both local and non-local gates. In the pursuit of this optimization, we undertake a rigorous evaluation process. This
+process involves K-fold cross validation. Utilizing the quantum circuit along with the training set, we compute the
+classifier, employing the quantum kernel SVM. Subsequently, we measure the model’s performance by averaging its
+accuracy over the test set.
+
+
+                                  5.   EXPERIMENTS WITH TWO DATASETS
+
+                                           5.1.   Experimental Procedure
+
+   The experiment leverages a combination of high-dimensional NSGA-II (Non-dominated Sorting Genetic Algorithm
+II) and quantum feature mapping for achieving higher accuracy. We use two datasets: one is the breast cancer dataset
+containing 30 features, and the other is the Iris dataset with 4 features. To intensify the challenge for achieving high
+accuracy, we opt not to employ principal component analysis (PCA) for dimension reduction. Once the each individual
+gene is encoded for quantum feature maps as in Section 4, we proceed to genetic algorithm operators such as selection,
+                                                                                                                           8
+
+
+
+
+                                                      K-fold Repetition
+
+
+
+
+                                                                   Compute
+                                                                   Accuracy
+                                                Construct         and others
+        Data Prepro-          NSGA-II
+                                                Quantum           (Classical          NSGA-II
+        cess (K-fold,          Process                                                                  Get Pareto
+                                              Feature Map          Support             Process
+         population          (Crossover,                                                                  Fronts
+                                              and Compute           Vector           (Sorting,..)
+        encoding,..)          Mutation)
+                                              Kernel Matrix      Machine with
+                                                                  Quantum
+                                                                    Kernel)
+
+
+
+
+                                                     NSGA-II Repetition
+
+
+
+
+                        FIG. 4: Experimental procedure with NSGA-II and quantum feature map
+
+
+crossover, and mutation to generate the next generation of individuals. Then we compute the kernel of a quantum
+SVM while training a classifier with the provided training dataset. In each loop, we evaluate the accuracy of the
+classifier using the test dataset and assess the effective size of the circuit in terms of the number of local and entangling
+gates it contains. The procedure is organized into a series of interconnected steps represented by distinct rectangular
+blocks as in Figure 4. Special cares have been taken to avoid over fitting by implementing K-fold cross validation and
+comparison with baseline model’s performance.
+
+   • Data Preprocess: The initial step involves the preprocessing of the data using a K-fold strategy, ensuring that
+     the dataset is divided into subsets for training and testing. This is a common technique in machine learning
+     to assess the model’s performance and robustness. In addition, individual gene in populations are encoded for
+     quantum feature maps.
+
+   • NSGA-II Process (Crossover, Mutation): NSGA-II, a multi-objective optimization algorithm, is applied
+     to the problem. It encompasses various genetic operators such as crossover and mutation, designed to evolve a
+     population of potential solutions to improve their quality with respect to multiple objectives.
+
+   • Construct Quantum Feature Map and Compute Kernel Matrix: Here, a quantum feature map is
+     constructed, which is a crucial element of quantum computing used to transform classical data into a quantum
+     state. The procedure also involves computing a kernel matrix, which is a fundamental concept in machine
+     learning for capturing data relationships.
+
+   • Classical Support Vector Machine to Compute Accuracy: A classical Support Vector Machine (SVM)
+     with the quantum kernel is employed to compute the accuracy of the model’s predictions, which improves the
+     effectiveness of the powerful classical method in machine learning.
+
+   • NSGA-II Process (Sorting): Another iteration of the NSGA-II process is performed, potentially refining the
+     solutions generated earlier.
+                                                                                                                       9
+
+   • Get the Pareto Fronts: The final step aims to obtain the Pareto fronts, which are solutions that represent the
+     optimal trade-offs between conflicting objectives. These Pareto fronts are often used to guide decision-making
+     in multi-objective optimization problems.
+
+
+                                               5.2.   Breast cancer dataset
+
+
+  We initiate our analysis with the breast cancer dataset, sourced from Sklearn [34, 55]. This dataset contains
+measurements of breast tissue derived from a medical imaging technique, including various measurements related to
+cell nuclei. The primary objective is to ascertain whether a tumor is benign (harmless) or malignant (cancerous and
+dangerous). The breast cancer dataset, imported from scikit-learn, comprises 569 samples, encompassing 30 real,
+positive features. These features encompass attributes related to cancer mass, such as mean radius, mean texture,
+mean perimeter, and more. Among these samples, 212 are labeled as ”malignant,” while 357 are labeled as ”benign.”
+  Subsequently, we randomly select a number of features equal to the number of quantum circuits for training. To
+ensure robustness in our analysis, we randomly selected 50 feature combinations for each qubit size. Having our
+training and testing datasets prepared, we proceed with the previously outlined procedure to compute the training
+and testing kernel matrices.
+                          We start with initial random population of 100 individuals represented as binary chains,
+each comprising N + N2 + 4 bits, where N represents the number of qubits. We use 20% crossover and mutation
+rate. To get a more realistic accuracy, we use the 5-fold cross-validation methods to have 5 different training and
+test subsets and then average accuracy and other outputs. We use a combination of generation number and accuracy
+as stopping criterion. These quantum kernels can subsequently be integrated into classical kernel methods. The
+NSGA-II typically run only 10 generations to achieve higher accuracy than the classical SVMs.
+  We conducted a comprehensive comparison of various kernels and quantum feature mapping techniques. Specifically,
+we assessed the performance of four well-established classical kernels (Linear, Poly, RBF, Sigmoid) and Logistic
+Regression, Naive Bayes K-Neighbors and Decision Tree. The results, summarized in Table 2, showcase the average
+best accuracy achieved by each prediction method across different feature and qubit configurations.
+  Our findings reveal that, in comparison to classical kernel methods, the quantum kernel generated by the genetic
+algorithm consistently outperforms all classical kernels with the dataset. These results underscore the suitability of
+the quantum kernel for the given dataset, highlighting its potential as a powerful tool for enhancing classification
+tasks.
+
+ TABLE 2: Accuracy comparison for prediction methods with breast cancer dataset. The accuracy is calculated as
+                     the average of the best accuracies for 50 randomly selected features.
+
+                                                               Number of features/qubits
+Prediction Method
+                              2          3             4        5          6         7        8         9         10
+SVM (Linear)                 0.85       0.89          0.91     0.92      0.93       0.94    0.95       0.95      0.95
+SVM (Poly)                   0.85        0.9          0.92     0.93      0.93       0.94    0.94       0.95      0.95
+SVM (RBF)                    0.85       0.89          0.91     0.92      0.93       0.94    0.94       0.95      0.95
+SVM (Sigmoid)                 0.8       0.83          0.84     0.85      0.87       0.88    0.88       0.88       0.9
+Logistic Regression          0.85       0.89          0.91     0.92      0.93       0.94    0.94       0.94      0.95
+Naive Bayes                  0.84       0.89           0.9     0.91      0.91       0.92    0.92       0.92      0.93
+K-Neighbors                  0.84       0.88           0.9     0.92      0.93       0.93    0.94       0.94      0.95
+Decision Tree                0.85       0.88           0.9     0.91      0.91       0.92    0.92       0.92      0.93
+SVM (Quantum kernel)         0.87       0.92          0.94     0.95      0.96       0.96    0.97       0.97      0.97
+
+
+  Furthermore, Table 3 provides valuable insights into the average quantities of local and CNOT gates associated
+with our quantum circuits. It’s noteworthy that in our experiments with the dataset, we observe a reasonable
+proportionality between the number of CNOT gates and the number of local gates. This finding deviates from the
+observations made in [2, 8], where entanglement gates were predominantly suppressed.
+  The discrepancy may be attributed to the optimization functions employed in [2], which introduce weighting factors
+to strike a balance between the relative significance of the two performance metrics. As detailed in [2], assigning a
+                                                                                                                           10
+
+TABLE 3: Gate numbers of Quantum feature map with breast cancer data. The gate numbers are calculated as the
+                  average gates with the best accuracies of 50 randomly selected features.
+
+                                                               Number of features/qubits
+Gate
+                       2        3             4               5           6           7           8       9              10
+Local gates           9.11     12.1       15.88           18.07         22.23          29.29     33.1    38.63          41.79
+CNOT gates            2.07     4.67        8.5            11.71         17.66          26.77      33     41.03          46.66
+
+
+
+high weight to accuracy can lead to a convergence into a single individual and lose the necessary genetic diversity
+crucial for minimizing the quantum circuit’s size throughout evolution.
+
+
+                                                       5.3.   Iris dataset
+
+
+
+  TABLE 4: Accuracy comparison for the kernel methods with Iris dataset. The best accuracy for each prediction
+                                     method with the different features
+
+                                                                             Number of features/qubits
+Prediction methods
+                                                   2                             3                                4
+SVM (Linear)                                      0.93                             0.96                          0.97
+SVM (Poly)                                        0.93                             0.96                          0.98
+SVM (RBF)                                         0.94                             0.95                          0.95
+SVM (Sigmoid)                                     0.90                             0.93                          0.95
+Logistic Regression                               0.91                             0.94                          0.95
+Naive Bayes                                       0.91                             0.94                          0.95
+K-Neighbors                                       0.91                             0.94                          0.95
+Decision Tree                                     0.92                             0.96                          0.97
+SVM(Quantum Kernel)                               0.94                             0.98                          0.99
+
+
+
+  TABLE 5: Gate numbers for the quantum kernel method with Iris data. Gate numbers with the best accuracy
+
+                                                                        Number of features/qubits
+Gate
+                                          2                                 3                                     4
+Local gates                              4.07                                   5.05                             8.4
+CNOT gates                               0.47                                    0.6                             3.6
+
+
+  Next, our attention turns to the Iris dataset, which has three distinct types of irises: Setosa, Versicolour, and
+Virginica. This dataset includes measurements of petal and sepal length, organized in a 150x4 array format, where
+the rows represent individual samples, and the columns encompass Sepal Length, Sepal Width, Petal Length, and
+Petal Width.
+  Given the dataset’s relatively limited feature set of only 4 features, instead of random feature selection, we opt to
+evaluate the performance with 2, 3, and 4 features individually. In fact, this equates to a total of 6 features when using
+2 qubits, 4 features with 3 qubits, and a single feature represented by 4 qubits. Subsequently, we execute a consistent
+procedure, measuring accuracy and facilitating a comparative analysis of quantum SVM kernels with classical SVM
+kernels and and Logistic Regression, Naive Bayes, K-Neighbors and Decision Tree.
+  We employ the same procedure as applied to the breast cancer dataset to perform a comparative analysis of various
+kernels, including those generated from quantum feature maps. Having our training and testing datasets prepared,
+we proceed with the previously outlined procedure to compute the training and testing kernel matrices. We use 20%
+                                                                                                                         11
+
+crossover and mutation rate. To get a more realistic accuracy, we use the 5-fold cross-validation methods to have 5
+different training and test subsets and then average accuracy and other outputs. The NSGA-II typically run only 20
+generations to achieve higher accuracy than the classical SVMs. Table 4 showcases the highest accuracy achieved by
+each prediction method across varying numbers of features or qubits.
+   When assessing the classical kernel methods, it becomes evident that the quantum kernel generated by a genetic
+algorithm either matches or surpasses the performance of classical kernels with this dataset. Table 5 provides insights
+into the corresponding counts of local and CNOT gates utilized within the quantum circuits. Notably, for the Iris
+dataset, it is observed that the numbers of CNOT gates are small compared to the breast cancer dataset. This
+phenomenon may be attributed to the effectiveness of local gates in achieving high accuracy, making the inclusion of
+entanglements unnecessary in this scenario.
+
+
+                                     5.4.   Data separability and non-local gates
+
+   In this section, our objective is to look into the impact of data complexity, specifically, data separability, on
+the prevalence of entanglement circuits. The efficacy of a SVM classifier is contingent on two critical factors: the
+classifier model itself and the degree of separability or complexity inherent in the datasets under consideration. This
+characterization of data complexity often takes into account various factors, such as the data distribution, as well as
+estimates of the shape and size of the decision boundary [17].
+   For the sake of comparison and a quantitative assessment of dataset separability, we have chosen three distinct
+indices as measures. These indices provide valuable insights into the separability of the datasets and are instrumental
+in our analysis.
+   The first index is the separability index (SI) measure which estimates the average number of instances in a dataset
+that have a nearest neighbor with the same label. Since this is a fraction, the index varies between 0-1 or 0-100%.
+Another separability measure, based on the class distance or margin is the hypothesis margin index (HMI), introduced
+in [16]. It measures the distance between an object’s nearest neighbor of the same class (near-hit) and a nearest
+neighbor of the opposing class (near-miss) and sums over these.
+
+
+                                   θP (x) = 12 (∥x − nearmiss(x)∥ − ∥x − nearhit(x)∥)
+
+where nearhit (x) and nearmiss (x) denote the nearest point to x in P with the same and different label, respectively.
+Therefore, large hypothesis-margin ensures large sample-margin, and the dataset has high separability. Margins occupy
+a pivotal position in contemporary machine learning research, serving as essential metrics to gauge the classifier’s
+confidence during decision-making. These margins serve a dual purpose: they are employed to establish theoretical
+generalization bounds and provide valuable insights for algorithm design. It is imperative to note that as the near-miss
+distance increases and near-hit values decrease, the hypothesis margin index proportionally expands.
+   The third index is the distance-based separability index (DSI) which was recently introduced in [15]. They iden-
+tified scenarios where different data classes are blended within the same distribution as particularly challenging for
+classifiers to disentangle. Prior to introducing the DSI (Data Separability Index), we first introduce two funda-
+mental components: the intra-class distance (ICD) and the between-class distance (BCD) sets. These components
+are instrumental in the computation of the DSI. Suppose X and Y have Nx and Ny data points, respectively.
+The intra-class distance (ICD) set {dx } is a set of distances between any two points in the same class (X), as:
+{dx } = {∥xi − xj ∥2 |xi , xj ∈ X; xi ̸= xj }. The between-class distance (BCD) set {dx,y } is the set of distances between
+any two points from different classes (X and Y ), as {dx,y } = {∥xi − yj ∥2 | xi ∈ X; yj ∈ Y }. The metric for all distances
+is Euclidean (l2 norm). We firstly introduce the computation of the DSI for a dataset containing only two classes X
+and Y . First, the ICD sets of X and Y : {dx }, {dy } and the BCD set: {dx,y } are computed by their definitions. The
+similarities between the ICD and BCD sets are then computed using the the Kolmogorov–Smirnov (KS) distance
+
+                                  sx = KS({dx }, {dx,y }), and sy = KS({dy }, {dx,y }).
+
+Finally, the DSI is the average of the two KS distances:
+
+                                                                 (sx + sy )
+                                               DSI({X, Y }) =               .
+                                                                     2
+                                                                                                                          12
+
+                                 TABLE 6: Separability indexes of breast cancer data
+
+                                                               Number of features/qubits
+Separability Index
+                          2          3            4        5            6           7          8           9             10
+SI                       0.78       0.82       0.84       0.87         0.88            0.88   0.88       0.89         0.90
+HMI                      4.18       5.82       7.47       8.53        10.82           10.75   11.61      12.46        13.36
+DSI                      0.27       0.28       0.32       0.34         0.38            0.35   0.35       0.36         0.37
+
+
+                                      TABLE 7: Separability indexes of Iris data
+
+                                                                        Number of features/qubits
+Separability Index
+                                              2                              3                                    4
+SI                                            0.9                             0.94                               0.95
+HMI                                          8.29                             10.46                              12.19
+DSI                                          0.78                             0.80                               0.82
+
+
+
+   For the breast cancer dataset, for each qubit size, we randomly select 50 combinations of the features with this
+size, Tables 6 presents the corresponding average numbers of the three separability indexes along with each number
+of the features/qubits. For comparison, we calculated the corresponding average three separability indexes for three
+qubits/features in Table 7 for the Iris dataset (in fact, there are only 6 features with 2 qubits, and 4 features with 3
+qubits and one feature with 4 qubits). This comparison of the separability indexes for the two datasets may explain
+why we need more CNOT gates for the breast cancer dataset. From the definitions, it is clear that the higher the
+three indexes are, the easier it is to separate a dataset. Clearly the separability indexes for the Iris dataset are larger
+than those of the breast cancer dataset, which explains why the quantum feature maps for the breast cancer dataset
+needs more CNOT gates to achieve high accuracy. For the Iris data, which has much higher separability indexes,
+and it seems that the CNOT gates are almost zero. In addition, for the breast cancer dataset, we see that the higher
+dimensions of features/qubits, the more CNOT gates are needed. This indicates that entanglements may be only
+needed for lower separability indexes and high dimensional qubits.
+
+
+                                      6.   CONCLUSION AND DISCUSSION
+
+   Entanglement, a fundamental concept in quantum mechanics, serves as a critical factor in empowering quantum
+computing. In this paper, we explore the optimization of entanglement gates within quantum feature maps for
+quantum support vector machines using a genetic algorithm (specifically NSGA-II). Our approach involves using a
+multi-objective genetic algorithm with three fitness functions to achieve two key objectives simultaneously: maximizing
+classification accuracy and minimizing the gate costs associated with the quantum feature map’s circuit. These gate
+costs in the optimization are separated into two distinct functions: one for local gates and another specific to non-local
+gates.
+   As a result, we acquire a collection of high dimensional non-dominated points that unveil a quantum circuit con-
+figuration for the quantum kernel method. The analysis of this three-dimensional set of non-dominated points yields
+insights into the influence of entanglement gates on the performance of quantum support vector machines. The ex-
+perimental results in this work shed light on the composition of quantum kernel maps for support vector machines,
+indicating a proportional inclusion of CNOT gates to promote entanglement. These findings complement prior find-
+ings in [2, 8], where CNOT gates were significantly suppressed. Our experiments also suggest that higher-dimensional
+qubits may need a greater number of CNOT gates to achieve high prediction accuracy.
+   This study also employs three separability indexes to investigate the impact of data on the configuration of feature
+maps in quantum support vector machines. Our experiments, while still needs theoretical analysis, reveal that, for
+the same dataset, higher-dimensional qubits may require an increased number of CNOT gates to achieve improved
+prediction accuracy. Moreover, datasets with less separability indexes tend to benefit from additional CNOT gates
+to attain high prediction accuracy. These findings highlight the utility of various separability indexes in aiding the
+design of efficient quantum circuits for achieving higher accuracy.
+                                                                                                                         13
+
+   It’s noteworthy that the current documentation for quantum kernels on https://qiskit.org/ lacks guidance on pa-
+rameter selection. For instance, the entanglement parameter in ZZFeatureMap offers three options: linear, full, and
+circular. The insights from this paper can serve as a valuable resource for making informed decisions regarding these
+parameters based on data analysis.
+   The experiments of data separability reveal an interesting trend: less data separability necessitates the utilization
+of more CNOT gates to achieve accurate predictions. This observation can be useful for the design of more efficient
+quantum circuits for machine learning applications. Future research could focus on refining indexes and metrics for
+assessing data separability, potentially unveiling the presence of a quantum advantage more effectively.
+   The potential advantages of using quantum kernel estimation to enhance machine learning applications are still
+under exploration [49]. There is no universally superior model in machine learning; the effectiveness of a model often
+depends on the distribution and nature of the training data. In addition to the separability indexes we discussed in
+this paper, various metrics have been introduced to measure the performance and efficiency of quantum kernels within
+machine learning applications. One such methodology, developed by [9], centers on the geometric difference of data
+within feature spaces. This metric provides valuable insights into the variations in prediction errors [19].
+   The Pareto fronts generated from multiple fitness functions for genetic algorithms illustrate the methodology for
+attaining high accuracy while concurrently minimizing gate costs and other associated properties. While we only
+examine the gate costs associated the maximum accuracy in this paper, it would be interesting to carefully study
+cost-effective trade-off strategies of different circuit configurations in a future work, particularly in scenarios where
+multiple objectives may be in conflict with each other. Further exploration of high-dimensional Pareto-optimal fronts
+and their projections will provide additional insights into the substantial influence of entanglements on quantum
+kernel accuracy.
+
+
+                                             7.   ACKNOWLEDGMENTS
+
+ The author would like to thank Allison Brayro, Nao Yamamoto, Sergio Altares-López, Juan José Garcı́a-Ripoll,
+Angela Ribeiro, Nam Nguyen for reading an earlier draft of this paper and providing comments.
+
+
+                                                  8.   DECLARATIONS
+
+  Funding: No funding is associated with the paper.
+  Availability of data and materials: The datasets used in paper are publicly available in the Python package sklearn.
+
+
+
+
+ [1] E.B. Alaia, I.H. Dridi, H. Bouchriha and P. Borne, Genetic algorithm with pareto front selection for multi-criteria op-
+     timization of multi-depots and multi- vehicle pickup and delivery problems with time windows, 2014 15th International
+     Conference on Sciences and Techniques of Automatic Control and Computer Engineering, pp. 488-493, (2014).
+ [2] S. Altares-López, A. Ribeiro, J.J. Garcı́a-Ripoll, Automatic design of quantum feature maps, Quantum Science and Tech-
+     nology, vol. 6, no. 4, (2021).
+ [3] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost, N. Wiebe and S. Lloyd, Quantum machine learning, Nature 549, pp.
+     195-202, (2017).
+ [4] K. Deb, S. Agrawal, A. Pratap, T. Meyarivan, A fast and Elitist multi-objective Genetic Algorithm: NSGA-II., IEEE
+     Transactions on Evolutionary Computation. 2002;6(2):182-197.
+ [5] S. S. Kavitha and Narasimha Kaulgud, Quantum machine learning for support vector machine classification, Evolutionary
+     Intelligence, (2022), https://doi.org/10.1007/s12065-022-00756-5
+ [6] Weizhen Ji, Deer Liu, Yifei Meng, Yun Xue, A review of genetic-based evolutionary algorithms in SVM parameters opti-
+     mization, Evolutionary Intelligence (2021) 14:1389–1414, https://doi.org/10.1007/s12065-020-00439-z
+ [7] P. Chen, L. Yuan, Y. He and S. Luo, An improved SVM classifier based on double chains quantum genetic algorithm and
+     its application in analogue circuit diagnosis, Neurocomputing, vol. 211, pp. 202-211, (2016).
+ [8] B.-S. Chen, J.-L. Chern , Generating quantum feature maps for SVM classifier, arXiv:2207.11449, (2022).
+ [9] Huang H-Y, Broughton M, Mohseni M, Babbush R, Boixo S, Neven H, McClean JR Power of data in quantum machine
+     learning, Nature Communications (2021) 12(1). https://doi.org/10.1038/s41467- 021-22539-9
+[10] M. Gönen and E. Alpaydin, Multiple Kernel Learning Algorithms, Journal of Machine Learning Research, vol. 12, pp.
+     2211-2268, (2011).
+                                                                                                                               14
+
+[11] J.R. Glick, T.P. Gujarati, A.D. Córcoles, Y. Kim, A. Kandala, J.M. Gambetta and K. Temme, Covariant quantum kernels
+     for data with group structure, APS March Meeting 2022, vol. 67, no. 3, (2022).
+[12] V. Havlı́ček, A.D. Córcoles, K. Temme, M. Takita,, M. Kandala, J.M. Chow and J.M. Gambetta, Supervised learning with
+     quantum-enhanced feature spaces, Nature 567, pp. 209-212, (2019).
+[13] D. Chivilikhin, A. Samarin, V. Ulyantsev, I. Iorsh, A.R. Oganov and O. Kyriienko, MoG-VQE: Multiobjective genetic
+     variational quantum eigensolver, arXiv:2007.04424, (2020).
+[14] Nguyen, N. and Chen, K.C., Quantum embedding search for quantum machine learning, IEEE Access, 10, pp. 41444-41456
+     (2022), DOI: 10.1109/ACCESS.2022.3167398
+[15] S. Guan, M. Loew, A novel intrinsic measure of data separability, Appl Intell 52, 17734–17750 (2022).
+     https://doi.org/10.1007/s10489-022-03395-6
+[16] R. Gilad-Bachrach, A. Navot, N. Tishby, Margin based feature selection - theory and algorithms, ICML ’04: Proceedings
+     of the twenty-first international conference on Machine learning, July 2004. https://doi.org/10.1145/1015330.1015352
+[17] Ana C. Lorena and Luı́s P. F. Garcia and Jens Lehmann and Marcilio C. P. Souto and Tin Kam Ho How Complex Is
+     Your Classification Problem?: A Survey on Measuring Classification Complexity ACM Computing Surveys, 52(5), 2019,
+     https://doi.org/10.1145/3347711,
+[18] A. Baughman, K. Yogaraj, R. Hebbar, S. Ghosh, R.U. Haq and Y. Chhabra, Study of Feature Importance for Quantum
+     Machine Learning Models, arXiv:2202.11204, (2022).
+[19] Di Marcantonio, Francesco and Incudini, Massimiliano and Tezza, Davide and Grossi, Michele, Quantum Advantage Seeker
+     with Kernels (QuASK): a software framework to speed up the research in quantum machine learning, Quantum Machine
+     Intelligence 5 (1), 2023
+[20] B. Barán, A. Carballude and M. Villagra Neighbor Optimization of N-Dimensional Quantum Circuits, SN Computer
+     Science 2, 2021
+[21] S. Lee, S.J. Lee, T. Kim, J.S. Lee, J. Biamonte and M. Perkowski, The cost of quantum gate primitives, Journal of
+     Multiple-Valued Logic and Soft Computing, vol. 12, No. 5-6. pp. 561-573, (2006).
+[22] Y. Liu, S. Arunachalam and K. Temme, A rigorous and robust quantum speed-up in supervised machine learning, Nature
+     Physics, vol. 17, pp. 1013-1017, (2021).
+[23] M. Mafu and M. Senekane, Design and Implementation of Efficient Quantum Support Vector Machine, 2021 International
+     Conference on Electrical, Computer and Energy Technologies, pp. 1-4, (2021).
+[24] K. Miettinen, Nonlinear Multiobjective Optimization, Boston: Kluwer; 1999.
+[25] S. Moradi, C. Brandner, C. Spielvogel, D. Krajnc, S. Hillmich, R. Wille, W. Drexler and L. Papp, Clinical data classification
+     with noisy intermediate scale quantum computers, Scientific Reports, vol. 12, no. 1851, (2022).
+[26] G. Aleksandrowicz et al, Qiskit: An Open-source Framework for Quantum Computing, Zenodo, (2019).
+[27] P. Rebentrost, M. Mohseni, and S. Lloyd, Quantum Support Vector Machine for Big Data Classification, Physical Review
+     Letters 113, 130503, (2014).
+[28] M. Schuld, N. Killoran Is quantum advantage the right goal for quantum machine learning? PRX Quantum 3:030101.
+     (2022) https://doi.org/10.1103/PRXQuantum.3.030101
+[29] M. Schuld, Quantum machine learning models are kernel methods, arXiv:2101.11020, (2021).
+[30] M. Schuld and N. Killoran, Quantum Machine Learning in Feature Hilbert Spaces, Physical Review Letters 122, 040504,
+     (2019).
+[31] M. Schuld, I. Sinayskiy and F. Petruccione, An introduction to quantum machine learning, Contemporary Physics, vol. 56,
+     (2015).
+[32] J.E. Park, B. Quanz, S. Wood, H. Higgins and R. Harishankar, Practical application improvement to Quantum SVM:
+     theory to practice, arXiv:2012.07725, (2020).
+[33] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Babbush, and H. Neven Barren plateaus in quantum neural network
+     training landscapes Nature Communications, 9 (2018), URL https://doi.org/10.1038/s41467-018-07090-4
+[34] F. Pedregosa, G. Varoquaux and A. Gramfort et al, Scikit-learn: Machine Learning in Python, Journal of Machine Learning
+     Research, vol. 12, pp. 2825-2830, (2011).
+[35] Y. Suzuki, H. Yano, Q. Gao, S. Uno, T. Tanaka, M. Akiyama and N. Yamamoto, Analysis and synthesis of feature map
+     for kernel-based quantum classifier, Quantum Machine Intelligence, vol. 2, no. 9, (2020).
+[36] R. Li, U. Alvarez-Rodriguez, L. Lamata, and E. Solano Quantum Measurements and Quantum Metrology 2017 4 1–7 ISSN
+     2299-114X
+[37] L. Lamata, U. Alvarez-Rodriguez, J. D. Martı́n-Guerrero, M. Sanz, and E. Solano 2018 Quantum Science and Technology
+     4 014007 ISSN 2058-9565 URL http://dx.doi.org/10.1088/2058-9565/aae22b
+[38] D. Chivilikhin, A. Samarin, V. Ulyantsev, I. Iorsh, A. R. Oganov, and O. Kyriienko 2020 Mog-vqe: Multiobjective genetic
+     variational quantum eigensolver (Preprint 2007.04424)
+[39] Rafael Lahoz-Beltra Quantum Genetic Algorithms for Computer Scientists Computers 2016, 5(4), 24,
+     https://doi.org/10.3390/computers5040024
+[40] Giovanni Acampora, Autilia Vitiello Implementing evolutionary optimization on actual quantum processors Information
+     Sciences 575 (2021) 542–562
+                                                                                                                          15
+
+[41] M. Schuld and I. Petruccione, Quantum natural gradient, Physical Review A, 103(3), 032630 (2021).
+[42] K. Mitarai, M. Negoro, M. Kitagawa, and K. Fujii, Quantum circuit learning, Physical Review A, 98(3), 032309 (2018).
+[43] A. Abbas, D. Sutter, C. Zoufal, A. Lucchi, A. Figalli, and S. Woerner, The power of quantum neural networks, Nature
+     Computational Science, 1(6), 403-409 (2021).
+[44] J.R. McClean, S. Boixo, V.N. Smelyanskiy, R.B.abbasnne, A.W. Harrow, I.L. Markov, and T. Monz, Barren plateaus in
+     quantum neural network training landscapes, Nature Communications, 9(1), 4812 (2018).
+[45] Z. Holmes, R. Schmied, and P. F. O’Malley, Breakdown of training in deep quantum learning, Quantum, 5, 462 (2021).
+[46] Z. Wang, A. Chia, Z. Wang, Y. Gong, J. Roland, and S. Lloyd, Training quantum circuits with projective measurement,
+     arXiv:2106.11495, (2021).
+[47] A. Arrasmith, M. Cerezo, P. Czarnik, L. Cincio, and P.J. Coles, Effect of barren plateaus on gradient-free optimization,
+     Quantum, 5, 558 (2021).
+[48] Z. Holmes, K. Sharma, and P.F. O’Malley, Expressibility and entangling capability of parameterized quantum circuits for
+     hybrid quantum-classical algorithms, Physical Review Research, 4(3), 033099 (2022).
+[49] M. Schuld and N. Killoran, Quantum machine learning for the quantum class, arXiv:2201.01548, (2022).
+[50] L. Liu and P. Rebentrost, An adaptive quantum algorithm for linear systems of equations, arXiv:1811.05371, (2018).
+[51] V. Bergholm, J. Izaac, M. Schuld, C. Gogolin, M. Broughton, and N. Killoran, PennyLane: Automatic differentiation of
+     hybrid quantum-classical computations, arXiv:1811.04968, (2018).
+[52] A. Anis, T. Bromley, J. Broughton, J. Izaac, T. Killoran, C. Bergholm, N. Cottrell, S. Gidney, T. Gokyigit, S. Guha, et
+     al, Tensorflow quantum: A software framework for quantum machine learning, arXiv:2101.01178, (2021).
+[53] J.L. Rojo-Álvarez, A. Muñoz, M. Maudes, and C. Jutten, Functional component analysis for functional data, Chemometrics
+     and Intelligent Laboratory Systems, 176, 91-98 (2018).
+[54] Samuel Yen-Chi Chen and Chih-Min Huang and Chia-Wei Hsing and Hsi-Sheng Goan and Ying-Jer Kao, Variational
+     quantum reinforcement learning via evolutionary optimization Machine Learning: Science and Technology, 3(1) (2022)
+     https://dx.doi.org/10.1088/2632-2153/ac4559
+[55] Zwitter,Matjaz      and     Soklic,Milan.   Breast     Cancer.    UCI     Machine     Learning     Repository    (1988).
+     https://doi.org/10.24432/C51P4M.
+

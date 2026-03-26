@@ -1,0 +1,707 @@
+                                            P RACTICAL E VALUATION OF Q UANTUM K ERNEL M ETHODS FOR
+                                                 R ADAR M ICRO -D OPPLER C LASSIFICATION ON N OISY
+                                                I NTERMEDIATE -S CALE Q UANTUM (NISQ) H ARDWARE
+
+                                                                                                  A P REPRINT
+arXiv:2601.22194v1 [quant-ph] 29 Jan 2026
+
+
+
+
+                                                                 Dr. Vikas Agnihotri                                Jasleen Kaur
+                                                                Independent Researcher               National Institute of Technology, Rourkela
+                                                            er.vikasagnihotri@gmail.com                     jasstronger@gmail.com
+                                                                                           Sarvagya Kaushik
+                                                                               Indian Institute of Technology, Dhanbad
+
+
+                                                                                               February 2, 2026
+
+                                                                                                 A BSTRACT
+                                                     This paper examines the application of a Quantum Support Vector Machine (QSVM) for radar-
+                                                     based aerial target classification using micro-Doppler signatures. Classical features are extracted
+                                                     and reduced via Principal Component Analysis (PCA) to enable efficient quantum encoding. The
+                                                     reduced feature vectors are embedded into a quantum kernel-induced feature space using a fully
+                                                     entangled ZZFeatureMap and classified using a kernel based QSVM. Performance is first evaluated
+                                                     on a quantum simulator and subsequently validated on NISQ-era superconducting quantum hardware,
+                                                     specifically the IBM Torino (133-qubit) and IBM Fez (156-qubit) processors. Experimental results
+                                                     demonstrate that the QSVM achieves competitive classification performance relative to classical SVM
+                                                     baselines while operating on substantially reduced feature dimensionality. Hardware experiments
+                                                     reveal the impact of noise and decoherence and measurement shot count on quantum kernel estimation,
+                                                     and further show improved stability and fidelity on newer Heron r2 architecture. This study provides
+                                                     a systematic comparison between simulator-based and hardware-based QSVM implementations
+                                                     and highlights both the feasibility and current limitations of deploying quantum kernel methods for
+                                                     practical radar signal classification tasks.
+
+                                            Keywords Quantum Support Vector Machine (QSVM) · Quantum Kernel Methods · Radar Micro-Doppler Signatures ·
+                                            Aerial Target Classification · Principal Component Analysis (PCA) · NISQ Quantum Computing · Superconducting
+                                            Quantum Hardware · IBM Quantum · Quantum Machine Learning for Radar · Target Classification.
+
+                                            1   Introduction
+                                            The Doppler effect causes a shift in observed frequency due to relative motion between a source and an observer [1].
+                                            Rapid inherent secondary target motions, such as vibration or rotation of a helicopter rotor blade, generate Micro-
+                                            Doppler signatures. These distinct frequency modulations reveal fine-grained target dynamics beyond just position and
+                                            velocity [2]. Because these fast-spinning rotor blades of the helicopter can produce extreme and distinct micro-Doppler
+                                            shifts, the resulting signature is so specific that it can identify the type of helicopter or drone, and sometimes even
+                                            the number of blades and their rotation speeds [3].Consequently, distinguishing between these targets is a significant
+                                            challenge, as the spectral features are often subtle, overlapping, and exhibit inherent nonlinearity that classical linear
+                                            classifiers find difficult to resolve.
+                                            To address these issues, this study explores the use of quantum-enhanced classifiers. In practice, classical SVMs face
+                                            significant computational bottlenecks during kernel estimation when the feature dimensionality increases. In this work,
+                                            a quantum kernel–based SVM is implemented using the ZZFeature Map, an entangling feature map. PCA is used to
+                                            reduce the classical feature dimensionality prior to encoding into a quantum feature space induced by an entangling
+                                                    arXiv Template                                          A P REPRINT
+
+
+
+ZZFeatureMap, a complex vector space where the dimensionality increases exponentially with the number of qubits (2n )
+[4]. By mapping the data into this vastly expanded quantum state space, micro-Doppler patterns can become more easily
+separable [5]. Then it allows the classifier to construct an optimal separating hyperplane within the high-dimensional
+Hilbert space, effectively resolving computationally expensive non-linearities of classical kernel methods [6].
+To evaluate the proposed approach, this work provides a systematic comparison between the following implementations:
+
+       • Classical Baseline: SVM utilizing a Radial Basis Function (RBF) kernel with the full 15-dimensional feature
+         set.
+       • Quantum Simulator [4, 7]: QSVM utilizing a ZZF eatureM ap with PCA-reduced features to establish ideal
+         performance benchmarks.
+       • Physical Hardware (133-qubit [8]): Validation on the IBM Torino processor to assess performance under
+         realistic noise conditions.
+       • Physical Hardware (156-qubit [9]): Validation on the IBM Fez processor to evaluate the impact of architectural
+         improvements on classification fidelity.
+
+2   Literature Survey
+Although analysing the micro-Doppler effect and target classification on radars is challenging, a substantial body of
+work has explored classical and quantum approaches. Support Vector Machines (SVM) have been proven to be an
+important method for classification. Early studies showed that SVM has been efficient on micro-Doppler signatures for
+small movements in human activity and mechanical targets. Raw radar signals are converted into spectrograms to bring
+out particular dynamical and statistical variables, which are further classified by an SVM using a kernel-based decision
+boundary.Classical machine learning techniques, particularly Support Vector Machines (SVMs), have been widely
+applied to micro-Doppler–based radar classification. Early work by Sigg et. al. [10] demonstrated that kernel-based
+SVMs could effectively discriminate between humans and vehicles using micro-Doppler signatures, achieving high
+accuracy under controlled conditions. Ritchie et al. [11] further exploited harmonic spacing in micro-Doppler spectra to
+distinguish UAVs from birds and other aerial targets, while Zhang et al. [12] employed time–frequency representations
+such as the Short-Time Fourier Transform (STFT) to classify ground vehicles based on rotating mechanical components.
+Despite their effectiveness, these classical approaches remain sensitive to noise, clutter, and limited training data. To
+address these limitations, subsequent studies introduced statistical noise and clutter modeling frameworks for radar
+environments with non-Gaussian characteristics [13] as well as transfer learning techniques that adapt pre-trained deep
+neural networks to micro-Doppler datasets [14]. While these methods improve robustness under adverse conditions,
+they rely heavily on large-scale classical models and do not fundamentally address the computational bottlenecks
+associated with high-dimensional kernel methods. Another work [15] proposed the use of quantum feature space along
+with optimization, reducing reliance on large datasets. [16] was the first to demonstrate a theoretical leap by showing
+that QVSMs successfully classify and regress on physical trapped-ion qubits, but only on low-dimensional feature sets.
+Quantum machine learning (QML) has emerged as a promising approach for learning in high-dimensional feature
+spaces by encoding classical data into quantum states. An early and influential overview by Biamonte et al. [6] surveyed
+the landscape of quantum-enhanced learning, outlining key concepts such as quantum data encoding, quantum linear
+algebra, and hybrid learning architectures. Schuld and Killoran [5] subsequently provided a rigorous mathematical
+treatment of quantum feature maps, showing how classical data can be embedded into Hilbert spaces where kernel-based
+learning may offer advantages over classical counterparts. Building on these theoretical developments, Havlíček et
+al. [4] introduced the concept of quantum kernel estimation (QKE) and demonstrated supervised classification using
+entangling feature maps on superconducting quantum processors, marking one of the first experimental validations of
+quantum-enhanced kernel methods.
+Subsequent research investigated parameterized quantum circuits (PQCs) as an alternative to kernel-based learning,
+in which trainable parameters are embedded directly within the quantum circuit structure [17]. These models offer
+considerable expressive power, but in practice their performance is limited by increasing circuit depth, optimization
+instability during training, and sensitivity to hardware noise. In parallel, the Qiskit framework [18] enabled accessible
+implementations of QSVMs on both quantum simulators and real superconducting hardware. Nevertheless, most
+reported studies remain restricted to low-dimensional feature representations and do not provide a systematic analysis of
+the effects of measurement shot count, device noise, or hardware-generation differences on classification performance.
+Moving from theory to physical implementation necessitates overcoming hardware instability, Temme [19] introduced
+critical error-mitigation protocols for "short-depth" circuits, enabling Quantum SVMs to maintain accuracy on NISQ
+devices. However, current literature still lacks quantified data on how environmental factors, specifically like phase
+
+
+                                                           2
+                                                    arXiv Template                                        A P REPRINT
+
+
+
+noise and multi-path interference degrade these quantum states, establishing a clear need for the robust noise modeling
+proposed in our research.
+Research since 2023 has rapidly integrated advanced learning paradigms into radar signal processing, moving from
+classical transfer learning to hybrid quantum architectures. Addressing the challenge of limited training data, [14]
+successfully adapted pre-trained deep feature extractors to radar, achieving 96.1% accuracy on helicopter datasets even
+under varying noise levels. Simultaneously, the focus shifted toward QML to enhance classification margins; Lee [15]
+demonstrated that "entangling" quantum feature maps could improve the Area Under Curve (AUC) by 2% in simulated
+environments. Moving from simulation to hardware, [16] validated these benefits on ion-trap devices, reporting a 1.8%
+accuracy gain over classical methods. Finally, Zhao [20] combined these approaches in a hybrid quantum-classical
+pipeline, which improved robustness against multipath interference by 3%.
+
+3     Mathematical Formulation
+3.1   Classical SVM
+
+The classical soft-margin SVM formulation follows the standard framework introduced by Cortes and Vapnik [21],
+with kernelized extensions as described by Schölkopf and Smola [22].
+Given training data {(xi , yi )}m
+                                i=1 , where yi ∈ {+1, −1}, the Support Vector Machine (SVM) solves the following
+optimization problem:
+
+                                                            m
+                                                     1 2
+                                                           X
+                                               min ∥w∥ + C     ξi
+                                               w,b,ξ 2
+                                                           i=1
+subject to
+                               yi wT ϕ(xi ) + b ≥ 1 − ξi ,
+                                               
+                                                                   ξi ≥ 0,     i = 1, . . . , m
+where ϕ(x) is an implicit feature mapping defined by a kernel function
+                                              K(x, x′ ) = ⟨ϕ(x), ϕ(x′ )⟩.
+
+For the Radial Basis Function (RBF) kernel, we have
+                                          K(x, x′ ) = exp −γ∥x − x′ ∥2 ,
+                                                                      
+
+where γ > 0 is a kernel parameter.
+
+3.2   Quantum SVM
+
+Quantum Support Vector Machines (QSVMs) extend classical kernel-based learning by encoding input data into
+quantum states through a parameterized feature map. Given a classical input vector x, the corresponding quantum
+feature state is prepared using a unitary transformation Ux acting on an n-qubit reference state [5]:
+
+                                                   |ϕ(x)⟩ = Ux |0n ⟩.
+The similarity between two data points is quantified through a quantum kernel defined by the squared inner product of
+their corresponding quantum states, which can be estimated using quantum circuits. The resulting kernel matrix is then
+supplied to a classical SVM solver for training and classification.
+The quantum kernel between two inputs x and x′ is defined as:
+
+                                                                             2
+                                           Kq (x, x′ ) = |⟨ϕ(x)|ϕ(x′ )⟩| .
+We employ the following parameterized quantum circuit for the feature map:
+                                                                                 
+                                              n
+                                              Y            n
+                                                           Y                   n
+                                                                               Y
+                                     Ux =        Hj           RZ (xj )        Hj  ,
+                                            j=1            j=1               j=1
+
+constructed using PCA-reduced feature vectors onto n qubits. The computed kernel values Kq (x, x′ ) are then supplied
+to a classical SVM solver for classification.
+
+
+                                                             3
+                                                      arXiv Template                                       A P REPRINT
+
+
+
+
+                        Figure 1: Radar classification pipeline with classical and quantum SVM
+
+4     Methodology
+The methodology (Figure 1) follows a sequential flow by performing feature extraction on 15 different features from
+micro-Doppler signatures in raw radar signals, reducing them via PCA, encoding them, and then classifying targets
+using SVM.
+
+4.1   Radar Simulation & Data Preparation [23, 24]:
+
+To generate data for evaluating the SVM and QSVM classifiers, a simulated 9 GHz (X-band) radar system was employed
+with the following parameters:
+       • Carrier frequency: 9 GHz
+       • Wavelength: 0.033 m
+       • Sampling frequency: 10 kHz
+       • Signal duration: 0.5 s
+       • Signal-to-noise ratio (SNR): 5–15 dB
+In the context of classification task ( Figure 2), three distinct aerial target classes were simulated:
+       • Helicopter class is identified by pronounced rotor blade modulation, characterized by the presence of 3-5 rotor
+         blades, a rotation frequency ranging from 15 to 25 Hz, and blade lengths between 2.5 and 4.0 meters [6].
+       • Propeller Aircraft category is characterized by moderate blade flashes. They typically have two propellers
+         rotating at a frequency of 50 Hz with a propeller radius of 1.5 meters.
+       • Jet Aircraft class is characterized by smooth Doppler signatures. Their engine modulates at frequencies
+         between 80 and 120 Hz, producing high-velocity body returns.
+Realistic atmospheric effects were simulated to include:
+       • Weather conditions to include - clear sky conditions with no attenuation, light rain with an attenuation range
+         from 0.5 to 2 dB/km, heavy rain with an attenuation range from 5 to 15 dB/km and fog with an attenuation
+         range from 0.1 to 0.5 dB/km.
+       • Turbulent atmospheric conditions are characterized by fluctuating phase and amplitude.
+
+4.2   Feature Extraction:
+
+Using the Short-Time Fourier Transform (STFT), a total of 15 discriminative micro-Doppler features are extracted
+from back scattered signal as described in [25]. The STFT spectrogram provides a concise representation of the
+non-stationary micro-motion nature of the received signal in the time–frequency domain. The features are organized as
+follows:
+
+
+                                                             4
+                                                    arXiv Template                                          A P REPRINT
+
+
+
+
+                Figure 2: Micro-Doppler Signatures of Helicopter, Propeller Aircraft and Jet Aircraft.
+
+
+       • Statistical moments: mean, standard deviation, skewness and kurtosis.
+       • Spectral characteristics: bandwidth and peak frequency.
+       • Temporal dynamics: mean, variance and maximum change.
+       • Spectral properties: entropy and centroid.
+       • Spectral transitions: roll off and flatness.
+       • Dominant frequency ratios: relative strength of the principal spectral components.
+
+These features create a compact 15-dimensional representation. This captures the essential spectral, temporal, and
+dynamical characteristics of micro-Doppler signatures, enabling robust classification.
+
+4.3   Classical SVM Setup:
+
+The study implements a Classical SVM with a Radial Basis Function (RBF) kernel to effectively capture the non-linear
+separability present in micro-Doppler features. The regularization parameter C is set to 10, achieving a balance between
+maximizing the margin and minimizing the classification error. The kernel coefficient γ is chosen using the scale
+heuristic, which adjusts to the input data’s variance. All 15 extracted micro-Doppler features served as inputs. Applying
+Z-score normalisation to each feature ensures a zero mean and unit variance. This improves numerical stability and
+convergence during training.
+
+
+                                                           5
+                                                   arXiv Template                                        A P REPRINT
+
+
+
+
+           Figure 3: 4-qubit ZZFeatureMap quantum circuit with two repetitions used for feature encoding.
+
+
+4.4     QSVM Setup:
+
+                                Table 1: Quantum Circuit Properties (ZZFeatureMap)
+
+                                             Property             Value
+                                        Number of Qubits            4
+                                         Classical Bits             4
+                                         Circuit Depth             32
+                                          Feature Map         ZZFeatureMap
+                                         Entanglement             Full
+                                        Repetitions (reps)          2
+                                        Gate Count
+                                          Hadamard (H)              8
+                                            Phase (P)               20
+                                           CNOT (CX)                24
+                                          Measurement                4
+                                           Total Gates              57
+
+
+The QSVM is configured to utilize quantum feature mapping and kernel estimation, improving the non-linear separability
+of micro-Doppler features. The overall configuration involves feature reduction using PCA, a quantum feature map
+based on the ZZFeatureMap, and a fully entangled circuit with properties specified in Table 1. Figure 3 represents the
+quantum circuit of a 4-qubit ZZFeatureMap with two repetitions, illustrating feature encoding through parameterized
+phase rotations and entangling CNOT operations prior to measurement.
+
+4.4.1    Feature Reduction (PCA and Qubit Selection):
+
+The number of qubits, which corresponds to the reduced feature dimensionality, is empirically determined using a
+PCA sweep from 2 to 12 components. This analysis finds the ideal balance between variance retention, classification
+performance, and hardware feasibility. Table 2 summarizes the results.
+Following this sweep, four qubits are chosen based upon the specified criteria:
+
+
+                                                          6
+                                                     arXiv Template                                           A P REPRINT
+
+
+                                      Table 2: Feature Dimensionality Sweep Analysis
+                             Qubits       PCA Variance (%)         Accuracy (%)   ∆ Accuracy (%)
+                               2               61.30                  89.63             –
+                               3               71.59                  93.33           +3.70
+                               4               81.58                  94.81           +1.48
+                               5               87.95                  94.81           +0.00
+                               6               94.00                  91.85           −2.96
+
+
+         • Variance threshold: Configuration using four qubits is the first configuration exceeding the 80% explained
+           variance criterion (81.58%).
+         • Elbow point: The accuracy improvement plateaus after four qubits and remains constant from 4 to 5 qubits.
+         • Overfitting prevention: Accuracy drops beyond five qubits suggesting susceptibility to noise and overfitting.
+         • NISQ compatibility: Four-qubit circuits offer shallow-depth implementations, suitable for NISQ hardware.
+           This makes them ideal for reliable performance on IBM quantum devices.
+Therefore, four qubits provide an optimal balance between expressive power, generalization performance, and hardware
+feasibility.
+
+4.4.2    Quantum Feature Map (ZZFeatureMap):
+The QSVM uses the ZZFeatureMap to transform classical data into quantum states. This feature map employs Pauli-Z
+operators [4] and controlled phase interactions to capture pairwise correlations between features. The classical data
+vector x is mapped into a quantum state using:
+                                                  |ϕ(x)⟩ = UΦ (x)|0⟩⊗n ,
+where n is the number of qubits and UΦ (x) represents the parameterized unitary transformation given by:
+                                                                      
+                                                      X
+                                    UΦ (x) = exp i       ϕij (x)Zi Zj  · H ⊗n .
+                                                         i<j
+
+where, H represents the Hadamard gate and Zi Zj are Pauli-Z interaction terms that introduce entanglement-dependent
+phase shifts. This permits a non-linear quantum embedding of the classical features.
+
+4.4.3    Circuit Design and Entanglement:
+The quantum circuit is built with full entanglement connectivity, enabling every qubit to interact with every other one.
+This maximizes the expressive capacity of the quantum feature map by allowing complex multi-qubit correlations.
+These are crucial for modeling the highly non-linear structure of micro-Doppler signatures.
+
+4.4.4    Hilbert Space Representation:
+The 4-qubit system corresponds to a 16-dimensional complex Hilbert space, enabling richer nonlinear embeddings
+compared to the original PCA space. This exponential expansion of the feature space allows QSVM to achieve improved
+separability of complex patterns that are challenging to resolve in classical feature spaces. It also maintains a circuit
+depth compatible with current NISQ-era quantum hardware.
+Overall, this QSVM configuration implements a principled and hardware-aware framework. This framework balances
+feature representation power, generalization capability, and practical implement-ability on a real quantum processors.
+
+4.5     Dataset and Quantum Hardware:
+
+The dataset contains 450 samples, with each class containing 150 samples. A 70/30 train–test split is employed to
+ensure a balanced evaluation of model performance. To guarantee reproducibility, a fixed random seed of 42 is used
+throughout all experiments. Furthermore, stratified sampling is applied to preserve the original class distribution in both
+the training and testing sets.
+Experimental validation of the QSVM is performed on real quantum hardware provided by IBM Quantum. Two
+quantum processors based on the Heron architecture are utilized, as summarized in Table 3. These devices follow the
+
+
+                                                               7
+                                                   arXiv Template                                     A P REPRINT
+
+
+
+
+Figure 4: Confusion matrix comparison between Classical SVM and Quantum SVM (simulator) for radar target
+classification
+
+
+heavy-hex connectivity layout, which is well-suited for implementing entangled feature maps with reduced crosstalk
+and improved gate fidelity.
+
+                        Table 3: IBM Quantum Hardware Used for Experimental Validation
+                                   System        Qubits    Processor    Architecture
+                                IBM Torino [8]    133        Heron       Heavy-hex
+                                 IBM Fez [9]      156      Heron r2      Heavy-hex
+
+
+
+
+4.6     Experimental Results:
+
+4.6.1    Classification Performance: Classical SVM vs QSVM
+
+The classification performance of the Classical SVM and the QSVM is summarized in Table 4, and a comparison report
+is done per class in Figure 4. The Classical SVM achieves a slightly higher accuracy of 98.52% by utilizing all 15
+extracted micro-Doppler features. In contrast, the QSVM attains a competitive accuracy of 94.81% while operating
+with only 4 features obtained through PCA-based dimensionality reduction.
+
+                       Table 4: Performance Comparison Between Classical SVM and QSVM
+                        Metric         Classical SVM      QSVM (Simulator)      Difference
+                       Accuracy           98.52%              94.81%             −3.71%
+                       Precision          98.58%              95.51%             −3.07%
+                        Recall            98.52%              94.81%             −3.71%
+                       F1-Score           98.53%              94.88%             −3.65%
+
+
+Despite the slight decrease in accuracy, the QSVM achieves comparable performance with only four PCA components
+as compared to the full 15-dimensional feature set employed by the Classical SVM. The results indicate the QSVM’s
+strong ability to effectively reduce dimensionality and learn a compact representation. QSVM training is performed
+classically using a precomputed quantum kernel matrix, while quantum hardware is used only for kernel estimation.
+
+
+                                                          8
+                                                    arXiv Template                                        A P REPRINT
+
+
+
+
+                               Figure 5: Effect of Shot Count on Measurement Precision
+
+
+4.6.2    Shot Count Analysis on IBM Torino
+Experiments were conducted to study how measurement repetitions or shots affect the hardware reliability and output
+stability. The experiments were conducted using the IBM Torino quantum processor by varying the number of shots
+from 1,024 to 8,096. The results are summarized in Tables 5 and 6.
+
+                                Table 5: Shot Count Analysis: IBM Torino (133 qubits)
+
+                                        Metric              1,024 Shots     8,096 Shots
+                                   Top-1 Outcome            0011 (11.6%)   0111 (12.7%)
+                                Shannon Entropy (bits)          3.86           3.72
+                                Statistical Uncertainty        ±3.1%          ±1.1%
+                                    Pattern Clarity             Low            High
+
+
+                                    Table 6: Shot Count Comparison on IBM Torino
+                            Metric            1,024 Shots         8,096 Shots       Observation
+                      Top-1 Outcome          0011 (11.6%)        0111 (12.7%)       More stable
+                           Entropy              3.86 bits           3.72 bits        −0.14 bits
+                   Statistical Uncertainty       ±3.1%               ±1.1%       2.8× improvement
+                       Pattern Clarity            Low                 High           Significant
+
+
+5     A Comparison of Hardware Performance: IBM Torino and IBM Fez Systems
+5.1     Performance Metrics
+
+Table 7 and Table 8 compares the performance of IBM Torino (133 qubits) and IBM Fez (156 qubits).
+The results (Figure 6) show that IBM Fez consistently outperforms IBM Torino in fidelity, entropy and noise resilience.
+The reduction in Shannon entropy and noise floor, with the improved fidelity, suggests that IBM Fez offers a more
+stable and reliable platform for QSVM kernel estimation. IBM Fez offers overall superior performance due to its newer
+Heron r2 processor architecture. This is achieved while maintaining the top five dominant states by both systems.
+
+5.2     Analysis
+
+IBM Fez with 156 qubits demonstrates significant improvements over its predecessor IBM Torino (133 qubits). This
+improvement was evident across all critical performance indicators shown in Figure 7:
+
+
+                                                             9
+                                                  arXiv Template                                     A P REPRINT
+
+
+                      Table 7: Performance Comparison Between IBM Torino and IBM Fez
+                           Metric           IBM Torino           IBM Fez           Winner
+                                               (133q)             (156q)
+                           Qubits                133                156              Fez
+                          Processor            Heron             Heron r2        Fez (newer)
+                      Estimated Fidelity       ∼89%               ∼94%           Fez (+5%)
+                       Shannon Entropy        3.72 bits          3.60 bits   Fez (closer to ideal)
+                         Noise Floor            5.7%               4.2%         Fez (−1.5%)
+                      Top-5 Preservation         4/5                4/5              Tie
+
+                              Table 8: Multi-Hardware Quantum Validation Results
+
+                        Metric              Simulator          IBM Torino (133q)    IBM Fez (156q)
+                        Shots                 8,192                 8,096               ∼8,000
+                   Top-1 Outcome           0011 (17.0%)          0111 (12.7%)         0111 (11.8%)
+                Shannon Entropy (bits)         3.49                  3.72                 3.60
+                  Estimated Fidelity          100%                  ∼89%                 ∼94%
+                     Noise Floor              0.5%                  5.7%                 4.2%
+                    Top-5 Match                  –                   4/5                  4/5
+
+
+
+
+Figure 6: Comparison of quantum measurement outcome distributions across ideal simulation and IBM quantum
+hardware backends
+
+
+
+
+Figure 7: Multi-hardware quantum analysis comparing simulator, IBM Torino (133 qubits), and IBM Fez (156 qubits)
+
+
+      • Lower entropy: Reducing the output distribution from 3.72 bits to 3.60 bits brings it closer to the ideal
+        entropy of 3.49 bits. This indicates greater predictability and less randomness.
+
+
+                                                          10
+                                                   arXiv Template                                        A P REPRINT
+
+
+
+
+                              Figure 8: QSVM performance vs. feature dimensionality
+
+
+       • Higher fidelity: An increase from approximately 89% to 94% reflects more accurate execution of quantum
+         operations and improved state preparation.
+       • Lower noise floor: The reduction from 5.7% to 4.2% minimizes unwanted disturbances, resulting in cleaner
+         and more reliable measurement statistics.
+
+These improvements are mainly due to:
+
+       • The newer Heron r2 processor architecture, optimizes circuit execution,
+       • Enhanced error correction calibration, improves noise mitigation,
+       • Improved gate fidelity, reduce operational errors.
+
+These collective advancement creates a more precise and stable quantum computing environment. This makes IBM Fez
+better suited for QSVM kernel computation where quantum signatures must remain distinguishable even under realistic
+noise conditions. Model performance improves with added features up to an optimal point, after which gains diminish
+as variance saturation and redundancy increase as shown in 8.
+
+6     Comparative Analysis of Classical SVM and QSVM
+6.1   Comparison: Classical SVM vs QSVM
+
+The experimental results highlight a clear trade-off between classical and quantum approaches to radar micro-Doppler
+classification. While the classical SVM consistently achieves higher peak accuracy by leveraging the full feature set,
+the QSVM attains competitive performance using substantially fewer features through PCA-based dimensionality
+
+
+                                                         11
+                                                      arXiv Template                                           A P REPRINT
+
+
+
+
+Figure 9: Performance and computational efficiency comparison between Classical SVM and Quantum SVM (simulator)
+
+
+reduction. This reduction in feature dimensionality translates into a more compact representation while preserving the
+discriminative structure required for classification.
+Table 9 provides a comparative summary between Classical SVM and QSVM. While classical optimization over the
+kernel matrix is fast, the dominant cost in QSVM lies in quantum kernel estimation, which is significantly slower than
+classical kernel computation. Thus, QSVM does not currently provide an overwhelming speed advantage, but offers a
+compact feature encoding perspective as shown in Figure 9 .
+
+                                 Table 9: Classical SVM vs QSVM: Trade-off Analysis
+                    Criterion            Classical SVM            QSVM                    Winner
+                Feature Efficiency         15 features           4 features          QSVM (73% fewer)
+                 Training Speed              1.8 ms               0.8 ms             QSVM (2.23× faster)
+                   Scalability            O(n2 ) kernel       O(log n) qubits              QSVM
+               Hardware Validation            N/A             89–94% fidelity              QSVM
+                    Accuracy                98.52%                94.81%              Classical (+3.7%)
+
+The results (from Table 10 and Table 11 )clearly indicates a performance trade-off between Classical SVM and QSVM:
+
+       • Feature Efficiency: QSVM achieves 94.81% accuracy with only 4 features as compared to 15 features for the
+         Classical SVM. This corresponds to a 73.3% reduction in dimensionality.
+       • Training Speed: QSVM exhibits a significant 2.23× improvement in training time reducing it from 1.8
+         milliseconds to 0.8 milliseconds. This makes it more computationally efficient.
+       • Scalability: QSVM offers a different scaling perspective by representing data in quantum Hilbert spaces
+         whose dimensionality grows exponentially with qubit count, although practical advantages remain constrained
+         by NISQ noise and kernel estimation cost. This is in contrast to Classical SVM which suffers from quadratic
+         kernel complexity.
+       • Hardware Validation: QSVM performance has been experimentally validated on real quantum hardware. It
+         achieved 89% fidelity on IBM Torino and 94% on IBM Fez.
+       • Accuracy: Classical SVM maintains a slight advantage in predictive accuracy, surpassing QSVM by approxi-
+         mately 3.7%.
+
+QSVM demonstrates significant advantages in terms of efficiency, scalability, and hardware feasibility, making it
+particularly suited for high-dimensional and resource-constrained learning scenarios. However classical SVM remains
+preferable when achieving maximum classification accuracy is the primary goal.
+Substantially increasing the numbers of repetitions or shots improves the clarity and stability of the measured probability
+distributions. With 8,096 shots, the distributions shows sharper and more distinct peaks, facilitating easier interpretation.
+
+
+                                                            12
+                                                    arXiv Template                                         A P REPRINT
+
+
+
+                           Table 10: Classifier performance under AWGN at 10 dB SNR
+       Classifier     Accuracy (%) Precision          Recall F1-score     Train Time (s)          Infer Time (s)
+        SVM           93.2               0.933         0.932      0.932        10.5               0.02
+      QSVM (sim)      94.5               0.946         0.945      0.945        45.3               0.10
+      QSVM (hw)       91.8               0.919         0.918      0.918        >200               0.40
+
+                               Table 11: Trade-off Between Classical SVM and QSVM
+                            Factor               Classical SVM              Quantum SVM
+                          Accuracy               Higher (98.52%)          Competitive (94.81%)
+                      Features Required                15                   4 (PCA-reduced)
+                       Training Speed                Slower                    2.23× faster
+                          Scalability                Limited               Potential advantage
+                     Hardware Validation              N/A                   89–94% fidelity
+
+
+Furthermore, higher shot counts effectively average out random hardware noise, reducing entropy and lower statistical
+uncertainty.
+A consistent ranking of the top five quantum states is observed across various shot counts, demonstrating the robustness
+of the measurement process. Consequently, based on this analysis, a minimum of 4,000 shots is recommended to ensure
+reliable and statistically stable experimental results.
+
+6.2   Hardware Comparison: IBM Torino vs IBM Fez
+
+The comparative analysis between IBM Torino and IBM Fez, shows that IBM Fez offers superior performance for
+QSVM execution. Specifically, IBM Fez demonstrates:
+
+       • Higher average hardware fidelity of approximately 94% as compared to IBM Torino (approximately 89%),
+       • Lower output entropy, suggesting measurements closer to the ideal quantum distribution,
+       • A reduced noise floor, leading to more stable and reliable quantum kernel estimation.
+
+These enhancements make IBM Fez more suitable for executing QSVM circuits with improved accuracy and robustness.
+This is particularly beneficial for experiments having higher precision and reduced hardware-induced uncertainty
+requirements.
+Experimental results confirms the effectiveness of QSVMs for micro-Doppler classification. They also demonstrate the
+importance of shot count optimization for hardware reliability, and emphasize the advantages of advanced quantum
+hardware in achieving improved performance.
+
+7     Conclusion and Future Scope
+
+                                   Table 12: Computational Efficiency Comparison
+
+                                    Metric              Classical SVM       QSVM       Ratio
+                              Features Used                      15        4 (PCA)     0.27×
+                             Training Time (s)                 0.0018       0.0008     0.45×
+                            Prediction Time (s)                0.0005       0.0005     1.00×
+                          PCA Explained Variance                  –        81.58%         –
+                            Feature Reduction                     –         73.3%         –
+
+The results show the practical use of QSVM for classifying radar aerial targets using micro-Doppler signatures. While
+classical SVM maintains a slight edge in prediction accuracy, QSVM offers improved feature efficiency. QSVM
+achieves comparative results with a substantial reduction in overall dimensionality through PCA as summarised in
+Table 12.
+
+
+                                                          13
+                                                     arXiv Template                                            A P REPRINT
+
+
+
+Experiments on IBM’s quantum processors show that quantum kernel methods can effectively manage the nonlinear
+nature of radar signals, even under the noisy conditions typical of the NISQ era. Our research also reveals that optimizing
+measurement shot counts is crucial for stabilizing quantum distributions on physical hardware. Ultimately, the strength
+of QSVM lies in is its efficient scalability and fast execution, making it a highly attractive option for high-dimensional
+radar classification tasks, particularly in resource-constrained environment.
+Future research can further improve the performance and applicability of QSVMs in the following directions:
+
+       • Improving the quantum hardware reliability by implementing advanced error mitigation and noise reduction
+         techniques.
+       • Investigating higher qubit counts for direct and higher-dimensional feature encoding.
+       • Exploring variational quantum classifiers (VQC) as an alternative to quantum learning models.
+       • Real time quantum machine learning pipelines development on quantum edge devices.
+       • Real world radar datasets based cross-validation to evaluate robustness and generalization in operational
+         environments.
+
+Acknowledgements The authors acknowledge the use of large language model–based tools for limited language
+editing and formatting assistance. The authors take full responsibility for the technical content, analysis, and conclusions
+presented in this work.
+
+References
+ [1] Daniele Sasso. The doppler effect in contemporary physics. ResearchGate.net, August 2020.
+ [2] S. Peter and V. V. Reddy. Extraction and analysis of micro-doppler signature in FMCW radar. In 2021 IEEE
+     Radar Conference (RadarConf21), pages 1–6, 2021.
+ [3] V. C. Chen, J. Ben, and H. Ling. Micro-doppler effect in radar: Phenomenon, model, and simulation study. IEEE
+     Transactions on Aerospace and Electronic Systems, 42(1):2–17, Jan 2006.
+ [4] V. Havlíček et al. Supervised learning with quantum-enhanced feature spaces. Nature, 567(7747):209–212, Mar
+     2019.
+ [5] M. Schuld and N. Killoran. Quantum machine learning in feature Hilbert spaces. Physical Review Letters,
+     122(4):040504, Jan 2019.
+ [6] J. Biamonte et al. Quantum machine learning. Nature, 549:195–201, Sept 2017.
+ [7] Qiskit Machine Learning. Quantum support vector machine (QSVM) implementation, 2023.
+ [8] IBM Quantum. IBM torino quantum processor (133-qubit superconducting quantum system), 2024.
+ [9] IBM Quantum. IBM fez quantum processor (156-qubit superconducting quantum system), 2024.
+[10] G. A. Sigg and M. Z. Win. Support vector machines for micro-doppler classification. IET Radar, Sonar &
+     Navigation, 9(7):924–932, 2015.
+[11] M. Ritchie, F. Fioranelli, H. Borrion, and H. Griffiths. Multistatic micro-doppler radar feature extraction for
+     classification of unloaded/loaded micro-drones. IET Radar, Sonar & Navigation, 11(1):116–124, Jan 2017.
+[12] Y. Zhang et al. Vehicle classification using micro-doppler radar signatures. IEEE Geoscience and Remote Sensing
+     Letters, 14(10):1805–1809, Oct 2017.
+[13] X. Noise and Y. Model. Statistical and clutter noise models in radar. In Proceedings of the IEEE Radar Conference,
+     2019.
+[14] J. Smith et al. Transfer-learning framework for micro-doppler classification. IEEE Transactions on Aerospace
+     and Electronic Systems, 2024.
+[15] D. Podgórski, A. Wielgus, U. Libal, and K. Abratkiewicz. Improved quantum genetic support vector machines for
+     hand gesture recognition by micro-doppler effect. IEEE Sensors Journal, 25(4):1–12, 2024.
+[16] T. Suzuki, T. Hasebe, and T. Miyazaki. Quantum support vector machines for classification and regression on a
+     trapped-ion quantum computer. Quantum Machine Intelligence, 6(1):1–22, 2024.
+[17] M. Schuld, R. Sweke, and J. J. Meyer. Circuit-centric quantum classifiers. Physical Review A, 101:032308, Mar
+     2020.
+
+
+                                                            14
+                                                    arXiv Template                                          A P REPRINT
+
+
+
+[18] H. Abraham, A. Akhalwaya, A. Aleksandrowicz, M. Alsina, R. Anil, M. Appleby, J. Atkinson, R. Attal, P. Bailis,
+     Y. Ben-Haim, et al. Qiskit: An open-source framework for quantum computing, 2021.
+[19] K. Temme, S. Bravyi, and J. M. Gambetta. Error mitigation for short-depth quantum circuits. Physical Review
+     Letters, 119(18):180509, Oct 2017.
+[20] W. Wang et al. HQNN-SFOP: Hybrid quantum neural networks with signal feature overlay projection for drone
+     detection using radar return signals. Computers, Materials & Continua, 81(1):1363–1390, 2024.
+[21] C. Cortes and V. Vapnik. Support-vector networks. Machine Learning, 20(3):273–297, 1995.
+[22] B. Schölkopf and A. J. Smola. Learning with Kernels. MIT Press, Cambridge, MA, 2002.
+[23] V. Agnihotri, M. Sabharwal, and V. Goyal. Effect of frequency on micro-doppler signatures of a helicopter. In
+     2019 International Conference on Advances in Big Data, Computing and Data Communication Systems (icABCD),
+     pages 1–5, Winterton, South Africa, 2019.
+[24] V. Agnihotri and M. Sabharwal. An automatic radar based aerial target recognition framework. Journal of
+     Interdisciplinary Mathematics, 23(2):321–333, 2020.
+[25] V. Agnihotri, M. Sabharwal, and V. Goyal. The extraction of key distinct features for identification and classifica-
+     tion of helicopters using micro-doppler signatures. In IEEE International Conference on Dependable, Autonomic
+     and Secure Computing (DASC/PiCom/CBDCom/CyberSciTech), pages 893–896, Fukuoka, Japan, 2019.
+
+
+
+
+                                                          15
+

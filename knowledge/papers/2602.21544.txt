@@ -1,0 +1,519 @@
+                                              Efficient time-series prediction on NISQ devices via time-delayed quantum extreme
+                                                                                 learning machine
+                                                Mio Kawanabe,1 Saud Čindrak,2 Kathy Lüdge,2 Jun-ichi Shirakashi,1, ∗ Tetsuo Shibuya,3 and Hiroshi Imai4
+                                                                           1
+                                                                               Department of Electrical Engineering and Computer Science,
+                                                                 Tokyo University of Agriculture and Technology, Koganei, Tokyo 184-8588, Japan
+                                                                     2
+                                                                       Institute of Physics, Technische Universität Ilmenau, Ilmenau, Germany
+                                                                           3
+                                                                             Division of Medical Data Informatics, Human Genome Center,
+                                                             The Institute of Medical Science, The University of Tokyo, Minato, Tokyo 108-8639, Japan
+                                                                             4
+                                                                               The Graduate School of Information Science and Technology,
+                                                                                The University of Tokyo, Bunkyo, Tokyo 113-8656, Japan
+                                                                                               (Dated: February 26, 2026)
+                                                            We proposed a time-delayed quantum extreme learning machine (TD-QELM) for efficient time-
+                                                          series prediction on noisy intermediate-scale quantum (NISQ) devices. By encoding multiple past
+arXiv:2602.21544v1 [quant-ph] 25 Feb 2026
+
+
+
+
+                                                          inputs simultaneously, TD-QELM achieves shallow circuit depth independent of sequence length,
+                                                          thereby, mitigating noise accumulation and reducing computational complexity. Experiments using
+                                                          the NARMA benchmark on both noiseless simulations and IBM’s 127-qubit processor demonstrate
+                                                          that TD-QELM consistently outperforms conventional quantum reservoir computing in prediction
+                                                          accuracy and noise robustness. These results highlight TD-QELM as a practical and scalable frame-
+                                                          work for time-series learning on current NISQ hardware.
+
+
+                                               Introduction. In recent years, quantum computing has
+                                            emerged as a transformative technology with the poten-
+                                            tial to revolutionize a wide range of scientific and engi-
+                                            neering disciplines [1]. However, current quantum com-
+                                            puters remain limited by noise originating from imper-
+                                            fections in quantum hardware, placing them in the era of
+                                            noisy intermediate-scale quantum (NISQ) devices [2, 3].
+                                            Quantum algorithms that promise computational advan-
+                                            tage typically require millions of qubits and deep circuits,
+                                            rendering them impractical for near-term devices.
+                                               Among the various approaches compatible with
+                                            NISQ hardware, quantum machine learning (QML) has               FIG. 1. Conceptual Diagrams of QRC and TD-QELM. (a)
+                                            emerged as a promising and robust framework [4–7].              In the restarting protocol, input encoding and unitary evo-
+                                            QML explores how machine learning algorithms can be             lution UR are sequentially applied at each timestep to incor-
+                                                                                                            porate past information. This causes circuit depth and com-
+                                            efficiently implemented using quantum systems. Within
+                                                                                                            putational cost to grow quadratically with sequence length
+                                            this field, quantum reservoir computing (QRC) employs           M . (b) The current input st and N − 1 time-delayed in-
+                                            quantum systems as dynamical reservoirs in which only           puts st , st−1 , . . . , st−(N −1) are simultaneously encoded into N
+                                            the readout layer is trained [8]. This approach has at-         qubits, keeping the circuit shallow regardless of M .
+                                            tracted significant attention, particularly in the domains
+                                            of time-series forecasting and nonlinear dynamical mod-
+                                            eling [9–19]. Recent research show cases that optimal           trinsic noise inherent to superconducting quantum pro-
+                                            performance is achieved at dynamical phase transitions          cessors can enhance performance in time-series learning
+                                            [20] and at the edge of quantum chaos [21]. Furthermore,        tasks [10].
+                                            [22, 23] introduced a measure based on Krylov complex-             Despite these advantages, QRC faces a fundamental
+                                            ity, showing near-perfect correlations with data expres-        challenge when applied to sequential data. Each mea-
+                                            sivity in QRC, thus linking computational performance           surement collapses the quantum state, leading to a loss
+                                            with insights into complex quantum systems.                     of quantum information [8]. Reconstructing the system
+                                               Although noise is often detrimental in quantum algo-         state therefore requires re-initializing the entire time se-
+                                            rithms, specific types of noise have been shown to en-          ries up to the current step, resulting in increasing com-
+                                            hance computational performance in QRC [9, 10, 24–29].          putational overhead and circuit depth [30–34]. In noisy
+                                            For instance, dissipative QRC has been shown to out-            circuits, this results in noise accumulation, which further
+                                            perform noiseless implementations [9, 25, 26, 29]. In a         degrades performance. Several strategies have been pro-
+                                            similar vein, Suzuki et al. demonstrated that the in-           posed to mitigate these limitations. Mujal et al. em-
+                                                                                                            ployed weak measurements, while Čindrak et al. ex-
+                                                                                                            ploited the fading-memory property of the reservoir to
+                                                                                                            periodically reset the system [30, 33]. Other studies have
+                                            ∗ shrakash@cc.tuat.ac.jp
+                                                                                                            introduced feedback mechanisms or auxiliary qubits to
+                                                                                                                                  2
+
+counteract state collapse [31, 34, 35]. Although these
+techniques improve practicality, QRC still relies on se-
+quential processing, handling one timestep at a time.
+   To address these challenges, we propose the Time-
+Delayed Quantum Extreme Learning Machine (TD-
+QELM), inspired by the classical Time-Delayed Extreme
+Learning Machine (TD-ELM) [36]. TD-QELM mitigates
+the issues of circuit depth and computational cost by
+considering only a subset of past inputs and enabling
+parallelized input encoding, similar to previous works
+[15, 30, 37, 38]. This design yields quantum circuits
+whose depth is independent of the input sequence length,
+thereby suppressing noise accumulation and reducing
+                                                                  FIG. 2. (a) Connectivity map of the qubits used in the ex-
+computational complexity from quadratic to linear order.
+                                                                  periment within the ibm kawasaki device topology (partially
+The authors of [39] provided evidence that QELM archi-            shown), where each qi represents a qubit. The connections
+tectures built from random circuits exhibit strong con-           define a hardware-specific topology E. (b) Hardware-efficient
+centration effects, which severely limit their learning ca-       circuit using Trotterization, designed to implement a multi-
+pability. To avoid these issues, our approach employs the         qubit quantum system under real-device connectivity con-
+transverse-field Ising model as a structured reservoir in         straints. This design reduces gate operations while maintain-
+the noiseless simulation. We then implement this reser-           ing sufficient entanglement on NISQ hardware.
+voir via a one-step Trotterization of a 6-qubit model, re-
+sulting in shallow quantum circuits on IBM’s 127-qubit
+superconducting processor ibm kawasaki as well as its             state matrix Xt,k = xt,k with X ∈ RT,K and xt =
+corresponding simulator FakeKawasaki [40].                        (xt,1 , . . . , xt,K ). To increase the readout dimension,
+   The effectiveness of TD-QELM is evaluated using the            time-multiplexing at NV times τn = nT /NV with n ∈
+Nonlinear AutoRegressive Moving Average (NARMA)                   {1, 2, . . . , NV } is employed, resulting in a total of NR =
+benchmark for time-series forecasting. Our results show           KNV expectation values per input. The predicted out-
+that TD-QELM consistently outperforms the standard                put is then given by
+QRC protocol across different noise conditions. In partic-                                  yt = xt wout ,                      (4)
+ular, TD-QELM maintains stable performance for longer
+input sequences, whereas QRC performance deteriorates             where the readout weights wout are optimized to mini-
+due to increasing noise accumulation. These results indi-         mize the loss L = (y − ŷ)2 , and are obtained as
+cate that TD-QELM enables more robust and resource-
+efficient time-series forecasting on current NISQ devices.                           wout = (X ⊤ X)−1 X ⊤ ŷ,                   (5)
+   Quantum reservoir computing. Quantum Reservoir
+                                                                  where ŷ is the desired target vector. A finite number
+Computing (QRC) aims to leverage the large Hilbert
+                                                                  of √
+                                                                     measurements introduces shot noise proportional to
+space of a quantum system to perform time-series pre-
+                                                                  1/ Nshots , which acts both as a limiting factor and as
+diction tasks [8]. The system is described by a Hamil-
+                                                                  an effective regularizer [30].
+tonian H and its corresponding unitary operator UR =
+                                                                     Since the quantum state collapses after each measure-
+exp(−iHT ) for some T > 0. The approach typically
+                                                                  ment, the system must be fully reinitialized at every in-
+works by first encoding the current input st of a time
+                                                                  put of the time series (see Fig. 1(a)). The sn -th input
+series (st )t into one of the qubits via
+                                                                  therefore requires nenc = n encodings and nR = n reser-
+                           √             √                        voir evolutions. The computational cost of QRC for a
+              |ψin (st )⟩ = 1 − st |0⟩ + st |1⟩ ,       (1)
+                                                                  time series of length M is
+which is applied to the first qubit. The full system state                            M
+is then given by
+                                                                                      X          M (M + 1)
+                                                                            TQRC =          n=             ∈ O(M 2 ),           (6)
+                                                                                     n=1
+                                                                                                     2
+       ρin (st ) = |ψin (st )⟩ ⟨ψin (st )| ⊗ Tr1 ρ(st−1 ) , (2)
+                                                                  demonstrating quadratic scaling [8, 30].
+where ρ(st−1 ) denotes the system state before encoding.             Time-Delayed QELM. To address the need for re-
+After evolution under the reservoir UR , the system state         initializing the full time series, we propose a Quantum
+becomes                                                           Extreme Learning Machine approach for time-series pre-
+                                                                  diction, termed TD-QELM(see Fig. 1(b)). In TD-
+                   ρ(st ) = UR ρin (st ) UR† .             (3)    QELM, the system is initialized in the state |ψinit ⟩ =
+                                                                  |00 . . . 0⟩ for each input st . As input to the TD-
+  In QRC, expectation values of the observables                   QELM, we consider a vector of N previous inputs,
+  (k)
+{σz }k=1,...,K define the reservoir output features and           st = (st−τ1 , st−τ2 , . . . , st−τN ). After encoding, the result-
+                            (k)     
+are given by xt,k = Tr σz ρ(st ) . They form the                  ing state is |ψin,t ⟩ = UE (st ) |ψinit ⟩ . In this work, each
+                                                                                                                                       3
+
+component of st is encoded into a separate qubit follow-               For comparison, in machine learning one typically em-
+ing Eq. (1). After evolution under UR , the output state               ploys a variance-normalized error measure NMSEvar =
+                                                                       PT            target 2 PT            2
+and density matrix are given by                                           t=1 (yt − yt     ) / t=1 yt − E[y] , where E[y] =
+                                                                            PT
+    |ψ(st )⟩ = UR |ψin,t ⟩ ,     ρ(st ) = |ψ(st )⟩ ⟨ψ(st )| .    (7)   T −1 t=1 yt denotes the expectation value of the target
+                                                                       signal. The two errors are related as follows (see App.
+                                                                                                                           A
+Given that the number of qubits is N , this approach re-                                                        
+                                                                                                                           E[y]2
+
+quires only nenc = 1 encoding of the input vector st and               for the derivation): NMSEvar = NMSE 1 + var[y]           .
+nR = 1 reservoir evolution UR . The computational cost                   To test TD-QELM, we compare this method against
+for TD-QELM is therefore                                               standard QRC practices. The most commonly used
+                               M
+                                                                       quantum reservoir in QRC is the transverse-field Ising
+                               X                                       model, given by
+             TTD-QELM =              1 = M ∈ O(M ),              (8)
+                               n=1                                                       X                        X
+                                                                                   H=        Ji,j σx(i) σx(j) + h   σz(i) ,       (12)
+showing linear complexity with respect to the length of                                  i,j∈E                     i
+the time series.
+   A standard benchmark for testing both the nonlinear-                where Ji,j are sampled uniformly from the interval [−5, 5]
+ity and memory capacity of a reservoir is the NARMA10                  and the external field is set to h = 5. For a statistical
+time-series prediction task, which is defined as                       analysis, we consider ten realizations of such reservoirs
+                               9
+                               X                                       with random Ji,j and plot the averaged performance. For
+   yt+1 = 0.3yt + 0.05yt             yt−d + 1.5st st−9 + 0.1,    (9)   the theoretical simulations, we allow interactions between
+                               d=0                                     all qubits, i.e., the connectivity matrix is E1 = {(i, j) |
+                                                                       i, j ∈ {0, . . . , NS − 1}}, where NS = 6 is the number
+where st is uniformly distributed in [0, 0.2]. The time-               of qubits. To implement quantum reservoirs on actual
+step t input-encoding we employ for the TD-QELM is                     hardware, and considering that the current generation of
+defined as                                                             NISQ devices cannot support large circuit depths, we
+   |ψin,t ⟩ =|ψ(st )⟩ ⊗ |ψ(st−1 )⟩ ⊗ |ψ(st−2 )⟩                        employ a simple one-step Trotterization, as illustrated
+                                                                       schematically in Fig. 2(b) [3]. This results in the unitary
+              ⊗ |ψ(st−9 )⟩ ⊗ |ψ(st−10 )⟩ ⊗ |ψ(st−11 )⟩,         (10)
+                                                                       circuit
+which follows the information processing capacity analy-                                            ! N                 !
+                                                                                          NS             S
+sis of Kubota [41, 42]. Such delayed input encoding has                                   Y   (i)
+                                                                                                        Y    (i,j)
+                                                                            U (θ) =          RZ (2h)       RXX (2Ji,j )       (13)
+been shown to significantly increase task performance in
+                                                                                       i=0               i,j=0
+classical reservoir computing [43–45]. The target at time-
+step t is given by yt+1 according to Eq. (9). As a perfor-             proposed by Kandala et al. [29, 46, 47]. Simulations of
+mance metric, we compute the signal Normalized Mean                    both TD-QELM and QRC with connectivity E1 were
+Squared Error (NMSE), as commonly used in quantum                      performed using the aer simulator density matrix
+reservoir computing (QRC) [11], where y = (y1 , . . . , yT )           backend in IBM Qiskit.
+and ytarget = (y1target , . . . , yTtarget ) denote the output and        We then consider a quantum hardware platform with
+target signals, with yttarget = yt+1 (Eq. (9)), which is               restricted qubit coupling topology, given by E2 =
+defined as                                                             {(0, 1), (1, 2), (1, 3), (3, 4), (4, 5)}. These circuits are
+                            PT                 target 2                implemented on the 127-qubit NISQ device ibm kawasaki
+                                 t=1 (yt − yt        )
+               NMSE = P              T      target 2
+                                                        .      (11)    (see Fig. 2(a)), and a corresponding backend simulation
+                                         (y
+                                     t=1 t        )                    FakeKawasaki is also performed.
+                                                                          Results. Table I summarizes the NMSE for TD-QELM,
+                                                                       QRC, and a linear model (LR). For TD-QELM and QRC,
+TABLE I. NMSE of TD-QELM and QRC for the NARMA10                       the NMSE values are averaged over 10 quantum sys-
+task with varying readout dimension NR = NV NS . The re-               tems. We use a 1-step Trotter circuit and measure the
+sults of a linear regression model (LR) with readout dimension                                                             (i)
+are shown for comparison. Boldface indicates the best NMSE             six sites in the Pauli-z direction, given by σz , a total of
+for each readout dimension. Results are computed on a time             NV ∈ {5, 10, 20, 50, 100} times. For comparison, we con-
+series of length M = 5000, with 10% used for washout, 70%              sider the last NR inputs, xt = (st , st−1 , . . . , st−NR +1 ), as
+for training, and 20% for testing.                                     the system state and construct a linear regression (LR)
+                                                                       model. Training is performed in the same manner. We
+ Readout        TD-QELM                  QRC             LR
+ dim. NR         NMSE                    NMSE           NMSE           use M = 5000 data points in total, allocating 10% for
+                                                                       washout, 70% for training, and 20% for testing.
+ 30            9.83 · 10−4             3.33 · 10−3   7.47 · 10−4          With a small readout dimension (NR = 30), the
+ 60            4.55 · 10−4             2.73 · 10−3   7.38 · 10−4       best-performing model is the linear model (LR), which
+ 120           3.08 · 10−4             2.06 · 10−3   7.58 · 10−4       successfully captures the required memory aspects of
+ 300           2.68 · 10−4             1.85 · 10−3   8.34 · 10−4
+                                                                       the NARMA10 task. However, increasing the read-
+ 600           2.73 · 10−4             1.59 · 10−3   1.04 · 10−3
+                                                                       out dimension allows the TD-QELM to sample more
+                                                                                                                          4
+
+       0.010                                                         0.26
+                                          TD-QELM( =0)                          NARMA10               QRC(ibm)
+                                          TD-QELM(Fake)              0.24       TD-QELM(ibm)
+       0.008                              TD-QELM(ibm)
+                                          QRC( =0)                   0.22
+                                          QRC(Fake)
+       0.006                              QRC(ibm)                   0.20
+NMSE
+
+
+
+
+                                                                yt
+       0.004                                                         0.18
+                                                                     0.16
+       0.002
+                                                                     0.14
+       0.000                                                         0.12
+                200       400      600       800      1000              450           460            470            480
+                          Input length M                                                 Timestep t
+FIG. 3. Average NMSE of TD-QELM and QRC as a function           FIG. 4. Time-series output for the NARMA10 task obtained
+of input length M under ideal noiseless simulation (γ = 0), a   on the ibm kawasaki quantum hardware. The black curve
+hardware-mimicking noise model (FakeKawasaki, denoted as        shows the target signal (NARMA10), while the orange and
+“Fake” in the legend), and a real NISQ device (ibm kawasaki,    green curves correspond to the outputs of TD-QELM (ibm)
+denoted as “ibm”), using 10% washout, 70% training, and         and QRC (ibm), respectively.
+20% testing. NS = 6 sites are considered with NV = 1 multi-
+plexing. TD-QELM maintains low NMSE even for long input
+sequences, whereas QRC shows rapid performance degrada-
+tion. Error bars indicate the range between the maximum
+                                                                with the input length M (see Eq. (6)). This quadratic
+and minimum values over 10 trials.                              overhead results in increased circuit depth on quantum
+                                                                hardware, making the system more susceptible to de-
+                                                                coherence and gate errors [9]. To test the influence of
+effectively from the large Hilbert space, thereby im-           noise accumulation due to decoherence and gate errors,
+proving task performance and achieving an error of              we adopt a simple QRC architecture without time mul-
+NMSE(TD − QELM) = 2.73 · 10−4 , while the LR model              tiplexing (NV = 1).
+stagnates due to the lack of nonlinearity in the input             As before, the initial 10% of each sequence was used
+data, reaching only NMSE(LR) = 7.38 · 10−4 . QRC,               for washout, 70% for training, and 20% for testing. Each
+on the other hand, exhibits errors roughly one order of         circuit was executed with Nshots = 8192. Under these
+magnitude larger than TD-QELM, with NMSE(QRC) =                 conditions, QRC could be executed up to 300 timesteps in
+1.59 · 10−3 . This limitation arises from constant input        simulation with FakeKawasaki and up to 500 timesteps
+overwriting, which prevents the system from accessing           on the real device (ibm kawasaki ), due to computational
+distant past inputs and performing the nonlinear opera-         resource limitations.
+tions required for the NARMA10 task.                               Figure 3 illustrates the relationship between input
+   Overall, these results suggest that, although TD-            length and prediction performance for TD-QELM (or-
+QELM has a restricted memory due to the encoding win-           ange) and QRC (green) under different environments. In
+dow, this limitation actually induces rich nonlinear fea-       the noiseless simulation, both TD-QELM (light orange)
+tures in the readout, thereby enhancing overall task per-       and QRC (light green) remain largely constant with re-
+formance, consistent with the findings reported in [30].        spect to input length. However, when executed on real
+   Next, we investigate both the QRC and TD-QELM                IBM quantum devices, QRC’s NMSE (dark green) in-
+protocols on actual quantum hardware, with a particular         creases substantially for longer inputs. This behavior
+focus on noise accumulation. To this end, we examine            is mainly attributed to the repeated re-initialization of
+how the input length affects the prediction performance         the full time series, which increases the total number of
+of TD-QELM and QRC under three different conditions:            circuit executions. In the presence of noise on current
+(i) ideal noise-free simulation (γ = 0), (ii) simulation        quantum hardware, this results in performance degrada-
+using the hardware-noise model FakeKawasaki from the            tion, as evidenced by the significantly increased NMSE
+Qiskit package, and (iii) execution on the NISQ device          for M > 400. TD-QELM (dark orange), in contrast,
+ibm kawasaki, based on IBM’s 127-qubit Eagle supercon-          maintains stable performance with respect to the input
+ducting processor. The input length was varied from             length M , since each input requires the same number of
+M = 100 to M = 1000 timesteps in increments of 100.             quantum circuits. This behavior is also accurately repro-
+In QRC, repeated re-initialization of the time series re-       duced by the FakeKawasaki noise model.
+sults in a computational cost that scales quadratically            Table II summarizes the average NMSE values corre-
+                                                                                                                           5
+
+
+TABLE II. Average NMSE of TD-QELM and QRC under different environments with varying input lengths. Each value
+represents the mean over 10 trials. The smallest NMSE value for each timestep is highlighted in bold.
+                                           TD-QELM                                        QRC
+          Input length M
+                           Aer(Noiseless) FakeKawasaki ibm kawasaki Aer(Noiseless) FakeKawasaki ibm kawasaki
+                 100         2.56 · 10−3    1.19 · 10−3   8.61 · 10−4   3.05 · 10−3    3.57 · 10−3    3.53 · 10−3
+                 300         2.46 · 10−3    1.30 · 10−3   1.08 · 10−3   4.23 · 10−3    4.37 · 10−3    4.35 · 10−3
+                 500         3.05 · 10−3    1.71 · 10−3   1.58 · 10−3   4.51 · 10−3         –         8.61 · 10−3
+                1000         1.72 · 10−3    1.05 · 10−3   8.81 · 10−4   3.32 · 10−3         –              –
+
+
+sponding to Fig. 3 (see Appendix B for the standard devi-       We first considered a transverse-field Ising model with
+ations). The lowest NMSE for all input lengths and envi-        all-to-all connectivity and implemented the reservoir evo-
+ronments is obtained when TD-QELM is implemented on             lution using a single-step Trotterization, resulting in shal-
+the real device. Here, FakeKawasaki and ibm kawasaki            low circuits suitable for noisy intermediate-scale quantum
+exhibit comparable behavior, with ibm kawasaki out-             (NISQ) devices. Simulations, showed that TD-QELM
+performing both the noisy simulation and the noiseless          consistently outperforms conventional QRC in task per-
+TD-QELM case. This noise-enhanced performance has               formance on the NARMA10 task, which is due to the rich
+been observed in several QRC studies, where intrinsic           non-linear features exhibited by restricted memory, also
+hardware noise can positively impact prediction accu-           observed in [30].
+racy [10, 24, 26, 28]. In the case of TD-QELM, this             To validate these findings under realistic conditions,
+implies that natural quantum noise present on NISQ de-          we conducted simulations with FakeKawasaki and per-
+vices can play a constructive role in improving predic-         formed experiments on the ibm kawasaki quantum pro-
+tive accuracy, underscoring the potential of noise-assisted     cessor. The hardware topology required Hamiltoni-
+quantum machine learning. To illustrate the qualitative         ans tailored to the native qubit connectivity, enabling
+prediction behavior, Figure 4 shows a segment of the pre-       the design of hardware-constrained quantum reservoirs.
+dicted NARMA10 waveform for a given input sequence.             Across noiseless simulations, noisy simulations, and hard-
+Comparison with the NARMA10 target sequence (black)             ware execution, TD-QELM outperforms QRC in the
+reveals that QRC (dark green) fails to capture the task         NARMA10 task. The need to re-initialize the full time
+dynamics, whereas TD-QELM (dark orange), even with              series on current noisy quantum circuits leads to noise ac-
+a limited readout dimension, closely follows the fluctu-        cumulation, making QRC difficult to scale. TD-QELM,
+ations and temporal structure of the target. These re-          on the other hand, maintains stable performance for
+sults suggest that the repeated re-initialization of the full   longer sequences due to its shallow-circuit design, re-
+time series in QRC increases the total number of circuit        duced operation count, and linear scaling. When con-
+executions, leading to effective noise accumulation and         sidering realistic hardware, TD-QELM performs better
+making QRC challenging to implement on current NISQ             in the presence of noise than under noiseless conditions,
+hardware. In contrast, TD-QELM not only exhibits in-            consistent with previously reported noise-assisted reser-
+creased robustness to noise but also achieves improved          voir behavior [10, 24, 26, 28].
+task performance, which can be attributed to its ability           Overall, this work demonstrates TD-QELM as a scal-
+to map fewer data points onto highly nonlinear features.        able and hardware-efficient alternative to conventional
+   Conclusion. This work examined limitations of quan-          QRC. By mitigating noise accumulation, improving pre-
+tum reservoir computing (QRC), particularly noise accu-         diction accuracy, and remaining compatible with NISQ
+mulation and the quadratic scaling of computational cost        devices, TD-QELM provides a promising pathway to-
+with input sequence length. To address these issues, we         ward practical quantum time-series processing.
+introduced the time-delayed quantum extreme learning               Acknowledgements. The authors would like to express
+machine (TD-QELM), which enables parallel encoding              their sincere gratitude to Dr. Atsushi Matsuo and Mr.
+of past inputs and reduces the time complexity to linear        Toru Imai of IBM Japan for their invaluable discussions
+while improving task performance.                               and constructive suggestions.
+
+
+
+
+ [1] M. A. Nielsen, M. R. Dowling, M. Gu, and A. C. Doherty,     [3] J. Preskill, Quantum Computing in the NISQ era and
+     Quantum Computation as Geometry, Science 311, 1133              beyond, Quantum 2, 79 (2018).
+     (2006).                                                     [4] F. Arute, K. Arya, R. Babbush, D. Bacon, J. C. Bardin,
+ [2] M. AbuGhanem, IBM quantum computers: evolution,                 R. Barends, R. Biswas, S. Boixo, F. G. S. L. Brandão,
+     performance, and future directions, J. Supercomput 81,          D. A. Buell, B. Burkett, Y. Chen, Z. Chen, B. Chiaro,
+     687 (2025).                                                     R. Collins, W. Courtney, A. Dunsworth, E. Farhi,
+                                                                                                                              6
+
+     B. Foxen, A. Fowler, et al., Quantum supremacy using             tum chaos in quantum reservoir computing, Phys. Rev.
+     a programmable superconducting processor, Nature 574,            Lett. 136, 040602 (2026).
+     505 (2019).                                                 [22] S. Čindrak, K. Lüdge, and L. C. Jaurigue, From krylov
+ [5] M. Schuld, I. Sinayskiy, and F. Petruccione, An introduc-        complexity to observability: Capturing phase space di-
+     tion to quantum machine learning, Contemp. Phys. 56,             mension with applications in quantum reservoir comput-
+     172 (2015).                                                      ing, Phys. Rev. Research 7, L042039 (2025).
+ [6] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,         [23] S. Čindrak, L. C. Jaurigue, and K. Lüdge, Engineering
+     N. Wiebe, and S. Lloyd, Quantum machine learning, Na-            quantum reservoirs through krylov complexity, expres-
+     ture 549, 195 (2017).                                            sivity, and observability, Phys. Rev. Research 7, 043190
+ [7] M. Cerezo, G. Verdon, H. Huang, L. Cincio, and P. J.             (2025).
+     Coles, Challenges and opportunities in quantum machine      [24] T. Kubota, Y. Suzuki, S. Kobayashi, Q. H. Tran, N. Ya-
+     learning, Nat. Comput. Sci. 2, 567 (2022).                       mamoto, and K. Nakajima, Temporal information pro-
+ [8] K. Fujii and K. Nakajima, Harnessing disordered-                 cessing induced by quantum noise, Phys. Rev. Research
+     ensemble quantum dynamics for machine learning, Phys.            5, 023057 (2023).
+     Rev. Applied 8, 024030 (2017).                              [25] L. Domingo, G. Carlo, and F. Borondo, Taking advantage
+ [9] J. Chen, H. I. Nurdin, and N. Yamamoto, Temporal in-             of noise in quantum reservoir computing, Sci. Rep. 13,
+     formation processing on noisy quantum computers, Phys.           8790 (2023).
+     Rev. Applied 14, 024065 (2020).                             [26] A. Sannia, R. Martı́nez-Peña, M. C. Soriano, G. L.
+[10] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yasuoka, and N. Ya-          Giorgi, and R. Zambrini, Dissipation as a resource
+     mamoto, Natural quantum reservoir computing for tem-             for Quantum Reservoir Computing, Quantum 8, 1291
+     poral information processing, Sci. Rep. 12, 1353 (2022).         (2024).
+[11] K. Nakajima, K. Fujii, M. Negoro, K. Mitarai, and           [27] F. Monzani, E. Ricci, L. Nigro, and E. Prati, Non-
+     M. Kitagawa, Boosting computational power through                unital noise in a superconducting quantum computer
+     spatial multiplexing in quantum reservoir computing,             as a computational resource for reservoir computing,
+     Phys. Rev. Applied 11, 034021 (2019).                            arXiv:2409.07886 (2025).
+[12] J. Garcia-Beni, G. L. Giorgi, M. C. Soriano, and R. Zam-    [28] G. Franceschetto, M. Plodzień, M. Lewenstein, A. Acı́n,
+     brini, Scalable photonic platform for real-time quan-            and P. Mujal, Harnessing quantum back-action for time-
+     tum reservoir computing, Phys. Rev. Applied 20, 014051           series processing, arXiv:2411.03979 (2024).
+     (2023).                                                     [29] D. Fry, A. Deshmukh, S. Y. Chen, V. Rastunkov, and
+[13] P. Mujal, R. Martinez-Pena, J. Nokkala, J. Garcia-Beni,          V. Markov, Optimizing quantum noise-induced reservoir
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-             computing for nonlinear and chaotic time series predic-
+     tunities in quantum reservoir computing and extreme              tion, Sci. Rep. 13, 19326 (2023).
+     learning machines, Adv. Quantum Technol. 4, 2100027         [30] S. Čindrak, B. Donvil, K. Lüdge, and L. C. Jaurigue,
+     (2021).                                                          Enhancing the performance of quantum reservoir com-
+[14] A. H. Abbas, H. Abdel-Ghani, and I. S. Maksymov, Clas-           puting and solving the time-complexity problem by arti-
+     sical and quantum physical reservoir computing for on-           ficial memory restriction, Phys. Rev. Research 6, 013051
+     board artificial intelligence systems: a perspective, Dy-        (2024).
+     namics 4, 643 (2024).                                       [31] T. Yasuda, Y. Suzuki, T. Kubota, K. Nakajima, Q. Gao,
+[15] K. Fujii and K. Nakajima, Quantum reservoir comput-              W. Zhang, S. Shimono, H. I. Nurdin, and N. Yamamoto,
+     ing: a reservoir approach toward quantum machine learn-          Quantum reservoir computing with repeated measure-
+     ing on near-term quantum devices, in Reservoir Com-              ments on superconducting devices, arXiv:2310.06706
+     puting: Theory, Physical Implementations, and Applica-           (2023).
+     tions, edited by K. Nakajima and I. Fischer (Springer       [32] F. Hu, S. A. Khan, N. T. Bronn, G. Angelatos, G. E.
+     Singapore, Singapore, 2021) pp. 423–450.                         Rowlands, G. J. Ribeill, and H. E. Türeci, Overcoming
+[16] K. Nakajima, Physical reservoir computing—an intro-              the coherence time barrier in quantum machine learning
+     ductory perspective, Jpn. J. Appl. Phys. 59, 060501              on temporal data, Nat. Commun. 15, 7491 (2024).
+     (2020).                                                     [33] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano,
+[17] P. Pfeffer, F. Heyder, and J. Schumacher, Reduced-order          and R. Zambrini, Time-series quantum reservoir comput-
+     modeling of two-dimensional turbulent rayleigh-bénard           ing with weak and projective measurements, npj Quan-
+     flow by hybrid quantum-classical reservoir computing,            tum Inf. 9, 16 (2023).
+     Phys. Rev. Research 5, 043242 (2023).                       [34] K. Kobayashi, K. Fujii, and N. Yamamoto, Feedback-
+[18] N. Götting, S. Wilksen, A. Steinhoff, F. Lohof, and             driven quantum reservoir computing for time-series anal-
+     C. Gies, Connection between memory performance and               ysis, PRX Quantum 5, 040325 (2024).
+     optical absorption in quantum reservoir computing,          [35] P. Pfeffer, F. Heyder, and J. Schumacher, Hybrid
+     Phys. Rev. Lett. 135, 240403 (2025).                             quantum-classical reservoir computing of thermal con-
+[19] M. Vetrano, G. Lo Monaco, L. Innocenti, S. Lorenzo,              vection flow, Phys. Rev. Research 4, 033176 (2022).
+     and G. M. Palma, State estimation with quantum ex-          [36] J. B. Butcher, D. Verstraeten, B. Schrauwen, C. R. Day,
+     treme learning machines beyond the scrambling time, npj          and P. W. Haycock, Reservoir computing and extreme
+     Quantum Inf 11, 1 (2025).                                        learning machines for non-linear time-series data analy-
+[20] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. So-          sis, Neural Netw. 38, 76 (2013).
+     riano, and R. Zambrini, Dynamical phase transitions         [37] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Pa-
+     in quantum reservoir computing, Phys. Rev. Lett. 127,            ternostro, and G. M. Palma, Potential and limitations of
+     100502 (2021).                                                   quantum extreme learning machines, Commun. Phys. 6,
+[21] K. Kobayashi and Y. Motome, Edge of many-body quan-              1 (2023).
+                                                                                                                                           7
+
+[38] A. De Lorenzis, M. P. Casado, M. P. Estarellas,                 To relate the denominators, we use the identity
+     N. Lo Gullo, T. Lux, F. Plastina, A. Riera, and J. Settino,
+     Harnessing quantum extreme learning machines for im-
+     age classification, Phys. Rev. Applied 23, 044024 (2025).        T                          T                    T
+                                                                      X                 2       X                    X
+[39] W. Xiong, G. Facelli, M. Sahebi, O. Agnel, T. Chotibut,                yt − E[y]        =         yt2 − 2 E[y]         yt + T E[y]2
+     S. Thanasilp, and Z. Holmes, On fundamental aspects of           t=1                        t=1                  t=1
+     quantum extreme learning machines, arXiv:2312.15124                                         T
+                                                                                                 X
+     (2023).                                                                                 =         yt2 − 2T E[y]2 + T E[y]2
+[40] IBM,       IBM       Quantum      Platform,       https://                                  t=1
+     quantum-computing.ibm.com/.                                                                 T
+[41] T. Kubota, H. Takahashi, and K. Nakajima, Unifying                                          X
+     framework for information processing in stochastically
+                                                                                             =         yt2 − T E[y]2 ,                 (A3)
+     driven dynamical systems, Phys. Rev. Research 3, 043135                                     t=1
+     (2021).
+[42] J. Dambre, D. Verstraeten, B. Schrauwen, and S. Massar,       which can be rearranged as
+     Information processing capacity of dynamical systems,
+     Sci. Rep. 2, 514 (2012).
+[43] J. Lin, F. L. Chung, and S. Wang, A fast parametric and                  T              T
+     structural transfer leaky integrator echo state network
+                                                                              X              X                 2
+                                                                                     yt2 =         yt − E[y]        + T E[y]2 .        (A4)
+     for reservoir computing, IEEE Trans. Syst. Man Cybern.                    t=1           t=1
+     Syst. 54, 3257 (2024).
+[44] E. Picco, L. C. Jaurigue, K. Lüdge, and S. Massar, Effi-
+     cient optimisation of physical reservoir computers using
+     only a delayed input, Commun. Eng. 4, 3 (2025).                 Substituting this expression back yields
+[45] D. Owen-Newns, L. C. Jaurigue, J. Robertson, A. Adair,
+     J. A. Jaurigue, K. Lüdge, and A. Hurtado, Photonic spik-                                     PT2
+     ing neural network built with a single vcsel for high-speed                           yt − E[y] + T E[y]2
+                                                                                                       t=1
+                                                                       NMSEvar = NMSE                     2
+     time series prediction, Commun. Phys. 8, 110 (2025).                                PT
+                                                                                            t=1 yt − E[y]
+[46] A. Kandala, A. Mezzacapo, K. Temme, M. Takita,                                                             !
+     M. Brink, J. M. Chow, and J. M. Gambetta, Hardware-                                          E[y]2
+     efficient variational quantum eigensolver for small                       = NMSE 1 + PT                 2
+                                                                                           1
+     molecules and quantum magnets, Nature 549, 242                                       T    t=1 yt − E[y]
+     (2017).                                                                              E[y]2
+                                                                                                
+[47] M. N. Ivaki, A. Lazarides, and T. Ala-Nissila, Quantum                    = NMSE 1 +          .             (A5)
+                                                                                          var[y]
+     reservoir computing on random regular graphs, Phys.
+     Rev. A 112, 012622 (2025).
+
+
+Appendix A: Relationship between error definitions
+                                                                     Appendix B: Standard deviation of NMSE over
+                                                                                    repeated trials
+  In this appendix, we derive the relationship be-
+tween the signal-energy normalized NMSE commonly
+used in quantum reservoir computing and the variance-                In this appendix, we quantify the variability of the
+normalized NMSE frequently employed in machine learn-              NMSE values reported in Table II by evaluating the stan-
+ing. The derivation makes explicit how the two error               dard deviation over independent trials. The standard
+measures differ due to the contribution of the mean (DC            deviation of the NMSE is calculated as
+component) of the target signal.
+                                                                                v
+                            PT        target 2
+                                                                                u             N
+                        t=1 (yt − yt        )                                   u        1 X                 2
+              NMSE = P                                                 σNMSE   =t                NMSEi − NMSE ,                        (B1)
+                           T       target 2                                            N − 1 i=1
+                           t=1 (yt       )
+                        PT
+                              (ŷt − yt )2
+             NMSEvar = PT t=1             2 ,            (A1)
+                        t=1 yt − E[y]
+                                                                   where NMSEi denotes the NMSE obtained in the ith in-
+                                                                   dependent trials, NMSE is the mean NMSE over N trial,
+ We start from the variance-normalized definition and
+multiply by unity:                                                 and N = 10. Table III summarizes the standard devia-
+                          PT                                       tion of the NMSE values evaluated over independent tri-
+                                 y2                                als. In particular, for the experimental results obtained
+       NMSEvar = NMSEvar PTt=1 t
+                                  2                                on quantum hardware, TD-QELM exhibits smaller stan-
+                             t=1 yt
+                            PT                                     dard deviations than QRC, indicating more stable and
+                                    2
+                               t=1 yt                              invariant prediction performance with respect to varia-
+                = NMSE PT               2 .     (A2)
+                                                                   tions in the initial conditions.
+                          t=1 yt − E[y]
+                                                                                                                             8
+
+
+TABLE III. Standard deviation of NMSE of TD-QELM and QRC under different environments with varying input length.
+Each value represents the standard deviation over 10 independent trials. Boldface indicates the smallest standard deviation for
+each input length.
+                                           TD-QELM                                         QRC
+          Input length M
+                           Aer(Noiseless) FakeKawasaki ibm kawasaki Aer(Noiseless) FakeKawasaki ibm kawasaki
+                 100         1.48 · 10−3    2.86 · 10−4   2.85 · 10−4    3.68 · 10−4     7.74 · 10−4    6.30 · 10−4
+                 300         7.30 · 10−4    3.33 · 10−4   2.18 · 10−4    1.25 · 10−4     2.78 · 10−4    3.32 · 10−4
+                 500         8.46 · 10−4    2.41 · 10−4   2.79 · 10−4    7.67 · 10−5          –         3.36 · 10−3
+                1000         5.55 · 10−4    2.11 · 10−4   1.39 · 10−4    1.21 · 10−5          –              –
+

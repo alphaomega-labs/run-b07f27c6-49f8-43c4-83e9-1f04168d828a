@@ -1,0 +1,4 @@
+claim_id,issue,unsupported
+hm-cf-1,CI-overlap or non-positive lower bound in non-easy tiers,False
+hm-cf-2,Treatment effect overlaps zero in multiple strata,False
+hm-cf-3,Undefined rho bins and non-crossing eta_c,False

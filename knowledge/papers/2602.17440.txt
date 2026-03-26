@@ -1,0 +1,601 @@
+                                                    A Programmable Linear Optical Quantum Reservoir with
+                                                        Measurement Feedback for Time Series Analysis
+                                                                                               Çağın Ekici
+
+                                                                                           February 20, 2026
+arXiv:2602.17440v1 [quant-ph] 19 Feb 2026
+
+
+
+
+                                                                                                 Abstract
+                                                      Feedback-driven quantum reservoir computing has so far been studied primarily in gate-based ar-
+                                                  chitectures, motivating alternative scalable, hardware-friendly physical platforms. Here we investigate
+                                                  a linear-optical quantum reservoir architecture for time-series processing based on multiphoton inter-
+                                                  ference in a reconfigurable interferometer network equipped with threshold detectors and measurement-
+                                                  conditioned feedback. The reservoir state is constructed from coarse-grained coincidence features, and the
+                                                  feedback updates only a structured, budgeted subset of programmable phases, enabling recurrence with-
+                                                  out training internal weights. By sweeping the feedback strength, we identify three dynamical regimes
+                                                  and find that memory performance peaks near the stability boundary. We quantify temporal processing
+                                                  via linear memory capacity and validate nonlinear forecasting on benchmarks, namely Mackey–Glass
+                                                  series, NARMA−n and non-integrable Ising dynamics. The proposed architecture is compatible with
+                                                  current photonic technology and lowers the experimental barrier to feedback-driven QRC for time-series
+                                                  analysis with competitive accuracy.
+
+
+                                            Introduction
+                                            Reservoir computing (RC) is a neuro-inspired machine learning (ML) framework that exploits the high-
+                                            dimensional state space of nonlinear dynamical systems while training only a lightweight readout, which
+                                            makes the learning quick and stable [1, 2, 3]. For a reservoir to perform temporal computation, it should
+                                            exhibit two key properties, namely input separability and fading memory. Input separability is typically
+                                            obtained by a nonlinear mapping of low dimensional inputs to a high dimensional feature space. Fading
+                                            memory is the ability to retain information about past inputs while ensuring that their influence on the
+                                            internal state decays smoothly over time, preventing sensitive dependence on initial conditions. Reservoirs
+                                            with these properties can be implemented as artificial recurrent neural networks or as physical dynamical
+                                            systems.
+                                                 Within the class of physical dynamical systems, quantum systems draw attention due to their inherent
+                                            nonlinearity and high dimensionality, giving rise to the framework of quantum reservoir computing (QRC)
+                                            [4, 5]. Because QRC uses the natural evolution of quantum systems for information processing, it is well
+                                            suited to noisy intermediate-scale quantum (NISQ) devices, in contrast to many quantum ML approaches
+                                            that depend on fault-tolerant computation [6]. A key obstacle for temporal processing in QRC is measurement
+                                            back-action. However, these measurements unavoidably disturb or destroy the reservoir state and lead to
+                                            significant information loss. A promising route to mitigate this problem is feedback-based control [7], which
+                                            is similar in spirit to variational quantum algorithms [8] but avoids variational optimization. In such schemes,
+                                            classical feedback that is a function of recent measurement results is used to steer programmable elements
+                                            of the device and hence sustain tunable memory. While such schemes have been proposed for gate-based
+                                            architectures [7, 9, 10], their practical realization can be demanding, prompting interest in alternative physical
+                                            platforms. One promising alternative platform where this approach can be implemented is found in photonics
+                                            models of quantum interference in reconfigurable linear optical platforms, where photons coherently evolve
+                                            through networks of beamsplitters and phase shifters. Such models have been of central importance, fuelling
+                                            fundamental advances in photonic quantum technologies and being proposed for fault-tolerant photonic
+                                            quantum computing [11, 12] as well as a pathway to quantum advantage for specialized algorithms [13].
+
+
+                                                                                                      1
+Beyond these foundational directions, the same framework has been mapped to application specific tasks
+such as molecular dynamics [14, 15], and graph problems [16], and has also been used to enhance classical
+algorithms [17]. Recently, ML applications have emerged in which the model acts as a static physical feature
+generator, for example in image classification tasks [18, 19, 20, 21], suggesting its suitability as a substrate
+for reservoir-style temporal processing through a feedback control.
+    In this work, we investigate a reconfigurable linear-optical QRC platform that is explicitly designed to
+(i) use experimentally accessible measurements and (ii) offer a controllable fading-memory profile via struc-
+tured, budgeted feedback actuation. The reservoir consists of an M -mode interferometer mesh driven by a
+scalar input sequence, implemented as a Galton-board–like wedge of Mach–Zehnder interferometers (MZIs)
+embedded in a larger static random mixing network. At each discrete time step k, the current sample is en-
+coded by modulating only a shallow input block. The photonic state then propagates through a mesh whose
+programmable subset has already been updated from the most recent measurement cycle, rendering the
+evolution explicitly history dependent. Crucially, we take the reservoir state to be a vector of coarse-grained
+coincidence features obtained with threshold (on–off) detectors, which removes the need for photon-number-
+resolving detection while retaining a high-dimensional nonlinear feature map. A fixed random linear map
+transforms the most recent coincidence vector into phase updates applied only to the MZIs inside the Galton
+wedge, while all remaining MZIs remain static. This partial reconfiguration implements a physically realis-
+tic feedback mechanism that injects recurrence without requiring training of internal weights and without
+demanding full-mesh reprogramming at every step. We characterize both dynamics and computation by
+systematically sweeping the feedback gain. This reveals three qualitative regimes:an input-responsive stable
+phase, and an unstable phase and a feedback-dominated phase. Consistent with the edge-of-chaos hypothe-
+sis, memory performance peaks near the stability boundary [22, 23]. We then quantify temporal processing
+via linear memory capacity and validate forecasting performance on Mackey–Glass (MG), NARMA−n, and
+non-integrable 1-D Ising chain dynamics benchmarks. Finally, we discuss experimentally relevant effects,
+including loss and finite measurement sampling, to connect the idealized model with near-term photonic
+implementations.
+
+
+Photonic Platform
+We briefly review general case of linear optical quantum processor, composed of single photons as inputs, a
+linear optical network, and detectors. Let us consider N indistinguishable, non-interacting photons evolving
+through an M -mode linear optical network described by a unitary V ∈ U (M ). Let |S⟩ = |s1 s2 . . . sM ⟩ be
+                           PM                                                                dpnr
+the input Fock state with j=1 sj = N . The output Fock basis is enumerated as {|Qℓ ⟩}ℓ=1          , where each
+                         E
+         (ℓ) (ℓ)     (ℓ)           PM (ℓ)                      M +N −1
+                                                                       
+|Qℓ ⟩ = q1 q2 . . . qM satisfying j=1 qj = N and dpnr =           N      . The transition probability is
+                                                                               2
+                                           (V)                      per VQℓ ,S
+                                       p         (|S⟩ → |Qℓ ⟩) = QM        QM (ℓ) ,                         (1)
+                                                                  i=1 si !  j=1 qj !
+                  P       QN
+where per(A) = σ∈SN i=1 Ai,σ(i) is the matrix permanent (it appears because amplitudes over all in-
+put–output assignments add with the same sign for bosons). The submatrix VQℓ ,S is obtained by repeating
+                                                                       (ℓ)
+the i-th column of V exactly si times and the j-th row exactly qj times. In practice, resolving full output
+distributions typically requires photon-number-resolving (PNR) detectors due to collision, i.e. two or more
+photons in the same mode. However, threshold detectors that only distinguish “vacuum” from “one or more
+photons” may provide informative statistics even in the presence of collisions. In this case, the measurement
+outcome is a binary click pattern ⃗r = (r1 , . . . , rM ) ∈ {0, 1}M , where rj = 1 denotes a click in mode j and
+rj = 0 denotes no click. The probability of observing a particular threshold pattern ⃗r can be obtained by
+coarse-graining the PNR distribution over all Fock states. Explicitly,
+                                      dpnr                        M h
+                                      X                           Y     (ℓ)   i rj h    (ℓ)  i1−rj
+                  p(V) (⃗r | |S⟩) =          p(V) (|S⟩ → |Qℓ ⟩)      1 qj > 0         1 qj = 0       ,      (2)
+                                      ℓ=1                         j=1
+
+where 1[·] denotes the indicator function, equal to 1 if its argument is true and 0 otherwise. The same
+quantity can also be expressed in closed form in terms of the Bristolian function [24]. The number of distinct
+
+
+                                                                  2
+                                      PN
+threshold binary pattern is dthr = w=1 M
+                                              
+                                             w corresponding to all binary strings ⃗r with Hamming weight w.
+    This threshold features can further be compressed into coincidence features for the sake of experimental
+simplicity, while still capturing a large amount of structure. Using multichannel time tagging, at each
+                                                                                                     discrete
+time step k one can obtain a vector of cross-mode coincidences in lexicographic order, Ck = Cij,k 1≤i<j≤M ∈
+  c
+Rdthr , with dcthr = M
+                          
+                        2   (number of pairwise coincidence features), where Cij,k is the coincidence between
+channels i and j, and it is given by
+                                                           (V)
+                                             X
+                                  Cij,k =           ri rj pk (⃗r | |S⟩),  i < j,                           (3)
+                                           r ∈{0,1}M
+                                           ⃗
+
+       (V)
+where pk (⃗r | |S⟩) corresponds to threshold distribution at the time step k.
+    Hence, each Cij,k is obtained by coarse-graining the number-resolved statistics over all Fock states that
+simply produce simultaneous clicks in modes i and j. When data are encoded into the interferometer (for
+example, by modulating beamsplitter angles), a linear optical reservoir with detectors projects nonlinearly
+input data onto the high-dimensional feature space. With a linear readout on these output features, the
+system can be used as an extreme learning machine, i.e., a memoryless reservoir. In what follows, we use
+threshold detection, which removes the necessity of using PNR detection, together with coincidence-based
+classical features for both readout and feedback.
+
+Model Architecture
+In this section, we introduce a representative linear-optical QRC architecture, modeled as an N -input M -
+output-mode reconfigurable mesh that is driven by a scalar input sequence {xk } and a classical feedback
+loop, see Fig. 1. The mesh contains a series of reconfigurable MZIs of the form
+                                                   iφ               
+                                                   e cos θ − sin θ
+                                       R(θ, φ) = iφ                    ,                               (4)
+                                                   e sin θ     cos θ
+
+controlled by two parameters (θ, φ) per MZI. We divide the mesh into three parts: two “input” MZIs in
+the first layer that mix a central four-mode block, a central Galton-style fan-out wedge of “feedback” MZIs,
+and the post Galton MZIs, which are held at fixed random settings and provide static mixing, i.e. the
+reservoir part of the architecture. For our chosen input block, the upper-left and lower-left corners of the
+mesh are never illuminated and could in principle be removed (or replaced by straight waveguides) without
+affecting the dynamics, see Fig. 1. The interferometer architecture is a so-called fully connected rectangular
+interferometer [25], all input ports are connected to all output ports. This interferometer can be realized
+by reducing the number of input modes to the number of input photons N , while maintaining M output
+modes with full connectivity. In practice, a rectangular interferometer can be embedded inside a Clements
+interferometer [26], with unused MZIs. While we focus on Galton-style layout with a central four-mode input
+block, the same scheme can be implemented on other reconfigurable linear optical meshes (e.g., different mode
+numbers, depths, or connectivity patterns).
+    The input encoder is shallow and depends only on the current sample xk through an input strength αin .
+We use two input MZIs in the first layer that mix the central block of modes, and modulate their mixing
+angles in a push–pull fashion around the balanced point θ = π/4. Denoting the two input MZIs internal
+             (I)      (I)
+phases by θ1,k and θ2,k at a discrete time k, we set
+
+                                   (I)     π                   (I)     π
+                                  θ1,k =     + αin xk ,       θ2,k =     − αin xk ,                        (5)
+                                           4                           4
+while their external phases are kept fixed.
+    The feedback block depends on a recent-history vector via a linear map G and a feedback strength αfb ,
+and reprograms only the MZIs inside the Galton wedge, leaving all remaining MZIs at their static random
+                                                                                                c
+settings. We map the most recent cross-mode coincidence vector Ck−1 through a linear map G : Rdthr → R2Rfb ,
+where Rfb is the number of MZIs in the Galton wedge. We first multiply Ck−1 by a fixed random matrix
+               c                   i.i.d.
+Vfb ∈ R2Rfb ×dthr with entries Vij ∼ N 0, 1/d to obtain hk = Vfb Ck−1 . We then convert hk into mesh-
+                                                 
+                                                               (θ) (φ) ⊤
+control amplitudes via ak = π4 1 + αfb hk , split this as ak = ak , ak     , and map to physical parameters
+
+
+                                                          3
+      (θ)              (φ)
+θk = ak and φk = 4 ak , with αfb setting the feedback strength. These are assigned to the Galton wedge,
+while the remaining ones stay at their static random settings, so G(Ck−1 ) specifies only the programmable
+subset. While we use a fixed untrained V in this work, the architecture naturally supports budgeted sparse
+actuation in which only a subset of Mach–Zehnder interferometers within the Galton wedge is dynamically
+controlled and the remaining elements are kept static.
+    In the training phase, for a lenght-T run, the output layer is trained using Ridge regression with a
+regularization parameter of β = 10−11 using the standardized features Ck′ . At test phase, we reuse the same
+training statistics and produce predictions ŷk = W⊤ Ck′ + b, where W represents the output weights and b is
+the bias term. The perfomance is evaluated through the normalized mean-squared error (NMSE), expressed
+as follows
+                                                      P                  2
+                                               1          k   ŷk − yk
+                                        NMSE =                                ,                            (6)
+                                               Le               σy2
+where σy is the standard deviation of yk over the evaluation window Le . Lower NMSE indicate closer
+agreement between ŷk and the ground-truth target yk .
+
+
+
+
+Figure 1: Feedback-driven linear optical reservoir for temporal processing. Schematic at cycle k: the input
+sample xk is encoded in a small input block of MZIs (green), cross-mode coincidence statistics from the
+most recent coincidence measurement in lexicographic order (C12,k−1 , C13,k−1 , . . . , C(M −1)M,k−1 ) program
+the Galton wedge of MZIs (orange) through the feedback. The downstream static layers (black) provide
+fixed output mixing and can be considered as the reservoir part of the architecture. MZIs in the upper-left
+and lower-left corners that remain unilluminated for this input configuration are shown in gray. Crossings
+denote MZIs with yellow triangles representing phase shifters.
+
+    In summary, at each discrete time step k > 0, the input sample xk is first encoded by the shallow block
+acting on the fixed input state |S⟩ by modulating only the two input MZIs around the balanced point.
+The resulting state then propagates through the feedback-programmed Galton wedge, whose configuration
+depends on the previous coincidence vector Ck−1 . Finally, the state is mixed by the static block, which
+completes the interferometer, determines the output distribution and thereby produces a new coincidence
+vector Ck . A single time step realizes the effective state update that depends on the current input xk and on
+the past, through the history implicit in the coincidence vectors. The interplay of multiphoton interference,
+coarse-grained coincidence measurements, and measurement-conditioned reprogramming of a Galton wedge
+thus induces a high-dimensional, nonlinear state update with a tunable fading-memory profile, precisely the
+
+
+                                                      4
+ingredients that make physical reservoirs effective. Although we study this mechanism in a specific Galton-
+style mesh, the same design principles apply broadly to reconfigurable linear optical interferometers with
+different sizes, connectivities, and detection layouts, providing a general template for linear optical quantum
+reservoir computing for temporal processing.
+
+Experimental feasibility of the design
+We now assess the viability of implementing our proposal with current photonic technology. We first fo-
+cus on an experimentally realistic scalable scheme. Although the model itself does not impose a formal
+scaling limit in either M or N , practical challenges emerge as systems grow, since interconnect complexity
+increases, optical loss accumulates, and phase stability becomes harder to maintain across the entire mesh.
+Integrated photonics helps mitigate these issues by offering low propagation loss, intrinsic phase stability and
+dense, programmable control over MZIs, for example through thermo-optic or electro-optic phase shifters
+implemented directly on chip [27, 28]. It is noteworthy to point out that, in principle, the framework could
+equivalently be implemented with any suitable linear optical reservoirs.
+    We next consider two aspects that most strongly affect experimental performance: (i) photon loss and
+photon distinguishability, and (ii) the fidelity of input encoding and feedback control, since the mesh relies
+on accurate and reconfigurable phase shifters.
+    Photon loss and distinguishability: Assuming uniform loss for all input–output configuration, we absorb
+it into a single efficiency parameter [29]. With per mode efficiency ηeff , the threshold click probability
+                                                                                             q(ℓ)
+conditioned on an output Fock state |Qℓ ⟩ is Pr ci = 1 | |Qℓ ⟩ = 1 − 1 − ηeff i . This expression
+                                                                                                    Pdpnr (V)
+replaces the indicator function in Eq. 2 to incorporate losses, explicitly p(V,ηeff ) (⃗r | |S⟩) = ℓ=1   p    |S⟩ →
+       QM                     rj                       1−rj
+|Qℓ ⟩    j=1 Pr(cj = 1 | |Qℓ ⟩)      1 − Pr(cj = 1 | |Qℓ ⟩)      . In the few-photon regime we consider, uniform
+loss acts to a good approximation as an overall linear reduction of the coincidence feature, so its effect
+can largely be absorbed into an appropriate choice of the feedback gain αfb . In addition, we also assume
+indistinguishable photons, consistent with reported indistinguishability at the level of about 99% [30, 31].
+However, when partial distinguishability is not negligible, the more general models such as multipermanent
+model [32] can be used to account for it.
+    Input encoding and feedback control: The primitive elements of the mesh, MZIs, can be tuned close
+to ideal behavior with > 60 dB extinction [33]. At the level of full meshes, 100 Haar unitaries have been
+implemented with an average fidelity of 0.999 ± 0.001 [34], while 10000 arbitrary linear transformations on
+a silicon photonic have recently been realized with record-high fidelity of 0.99997 ± 0.0002 limited mainly
+by the measurement equipment [35]. These results support our assumption that an input encoding and a
+feedback mesh can be realized on near term reprogrammable photonic platforms with near-unity accuracy.
+
+
+Performance Evaluation
+We quantify linear memory capacity of the system and evaluate the predictive capability of our photonic
+QRC on MG series benchmarks, NARMA-n and under the assumption of infinite measurements Nm → ∞.
+Under this assumption, statistical uncertainty in measurements vanishes, and performance is governed solely
+by the system’s intrinsic dynamics. All the simulation of the system have been carried out using the Python
+programming language. Each dataset comprises 2200 time steps with a 200-step washout, followed by 1000
+training steps and 1000 test steps. We choose system size of (M, N ) = (16, 4) to have a balance between
+expressivity and current experimental capabilities.
+
+Memory Capacity
+We quantify the reservoir’s temporal processing using the linear memory capacity (MC), which measures how
+well a linear readout can reconstruct past inputs under i.i.d. driving. Unless stated otherwise, we evaluate
+delays 1 ≤ τ ≤ 25 and average results over 30 independent realizations (reporting mean values only).
+   To estimate linear memory, we draw a scalar drive {sk }Tk=1
+                                                            tot
+                                                                i.i.d. from [0, 1]. For each delay τ ∈ {1, . . . , 25},
+we define the linear target yk,τ = sk−τ . A linear readout is trained to produce predictions ybk,τ . The linear
+
+
+
+                                                          5
+memory capacity at delay τ is computed as
+
+                                        MC(τ ) = 1 − NMSE(b
+                                                          y:,τ , y:,τ ) .                                    (7)
+
+Finally, we define the total linear memory capacity as
+                                                        T
+                                                        X
+                                              MCtot =          MC(τ )                                        (8)
+                                                        τ =1
+
+   First, we investigate the effectiveness of feedback connections. With the input gain fixed at αin = 0.001,
+we examine how linear memory, MC1 (τ ), depends on the feedback strength αfb , see Fig. 6 a. For αfb = 2.2,
+MC1 (τ ) remains close to unity up to τ ≈ 12 before decaying, showing that input histories are effectively
+accumulated in the coincidence outcomes and carried forward by the feedback. Increasing the feedback to
+αfb = 2.4 slightly suppresses short-delay memory, reflecting stronger recurrent influence relative to fresh
+input. For αfb = 3.2, the memory curve becomes noticeably flatter and reduced, and for αfb = 4.6 the
+capacity is almost zero at all delays, indicating that the coincidence patterns are largely insensitive to the
+input history.
+
+
+
+
+Figure 2: Linear memory performance of the feedback-driven reconfigurable linear optics as a function of
+delay for different feedback strengths for a fixed device size (M, N ) = (16, 4) and fixed input strength αin . a
+                                                                                                              tot
+αfb = 1.5 (blue), αfb = 1.8 (orange), αfb = 2.25 (green) and αfb = 2.75 (red) b Total linear capacity, MC1 ,
+as a function of feedback strength αfb .
+
+    In Fig. 6 b, we plot the total linear memory capacity MCtot1 versus αfb , which reveals three qualitatively
+distinct regimes. For weak to moderate feedback (0 < αfb ≲ 2.4), the capacity generally increases with
+αfb , where the reservoir gains useful recurrence while remaining well behaved and input-responsive. For
+intermediate feedback 2.4 ≲ αfb ≲ 4.7, the capacity decreases as the feedback term increasingly dominates
+the influence of the input. Beyond this range (αfb ≳ 4.7) the system resides in a strongly feedback-dominated
+
+
+                                                        6
+phase in which the coincidences quickly lose any linearly decodable dependence on past inputs and MCtot 1
+is nearly zero. The optimal operating point lies just below the onset of this unstable behaviour, in close
+proximity to the boundary between the input-responsive and unstable phases, corresponds to the EoC for
+this quantum reservoir.
+
+Predictive Performance
+Having demonstrated the linear memory performance facilitated by the feedback connections, we now turn
+to the predictive performance of our QRC protocol on three standard benchmarks.
+
+Mackey–Glass. We first consider the Mackey–Glass (MG) delay-differential equation [36], widely used in
+reservoir computing:
+                                            Q(t − τ )
+                               Q̇(t) = α                − γ Q(t),                                  (9)
+                                         1 + Q(t − τ )β
+with (α, β, γ) = (0.2, 10, 0.1) and τ = 17, for which the dynamics exhibits a chaotic attractor (for τ ≳ 16.8).
+We discretize time with step ∆t = 1, so that one MG update Q(t) → Q(t + ∆t) corresponds to one reservoir
+cycle k → k + 1. The resulting scalar stream is obtained by normalizing the samples of Q(t) to xk ∈ [0, 1] and
+encoding xk into the processor. For a prediction horizon τf , the readout is trained to reproduce the target
+yk = xk+τf .
+
+
+
+
+Figure 3: Mackey–Glass prediction performance. Mean normalized mean-square error (NMSE, log scale) as
+a function of the prediction horizon τf . Each curve corresponds to a different feedback gain αfb and reports
+the mean over 30 different realizations.
+
+    Figure 5 shows that the prediction error increases with the horizon τf , reflecting the progressive loss
+of predictability in the interacting quantum dynamics. The feedback gain αfb again plays a central role:
+intermediate values αfb ≈ 2.2–2.4 minimize NMSE across horizons, while overly strong feedback degrades
+performance and drives the readout toward a high-error regime.
+    Figure 3 shows that the prediction error increases with the forecast horizon τf , as expected for MG
+dynamics. The feedback gain αfb strongly controls performance: intermediate gains around αfb ≈ 2.2–2.4
+yield the lowest NMSE across horizons, whereas larger gains degrade performance and rapidly approach
+a large-error regime, consistent with feedback-driven instability. Smaller gains remain stable but provide
+slightly reduced short-horizon accuracy compared with the optimal intermediate regime.
+
+
+                                                      7
+NARMA−n. As a second benchmark, we study the NARMA−n task, a standard test of combined memory
+and nonlinearity in reservoir computing. Given a scalar input stream {xk } and output {yk }, the target obeys
+                                                     n−1
+                                                     X
+                                yk+1 = α yk + β yk         yk−j + γ xk xk−n+1 + δ,                          (10)
+                                                     j=0
+
+with (α, β, γ, δ) = (0.3, 0.05, 1.5, 0.1). The input samples xk are drawn i.i.d. from a uniform distri-
+bution on [0, 0.5]. We fix the input strength to αin = 0.001 and sweep the feedback strength αfb ∈
+{1.5, 2.2, 2.4, 3.2, 4.6}. For each αfb , we run the protocol for NARMA-7 and NARMA-10 and average
+the test NMSE over 20 random instances.
+
+
+
+
+Figure 4: NMSE for NARMA-7 (circles) and NARMA-10 (squares) as a function of feedback strength αfb .
+The input strength is fixed to αin = 0.001.
+
+    The results are summarized in Fig. 4. For NARMA-7, the best performance is obtained around αfb ≈ 2.2,
+where the NMSE reaches NMSE7 ≈ 4.9×10−3 , while both weak feedback (αfb = 1.5) and strongly overdriven
+feedback (αfb ≥ 4.6) degrade the predictive accuracy. For the more demanding NARMA-10 task, the error
+reaches NMSE10 ≈ 7.6 × 10−2 in the optimal regime, again near αfb ≈ 2.2. At large feedback strengths the
+NMSE increases by almost an order of magnitude, indicating that the reservoir is pushed into a regime that
+is no longer well matched to the statistics of the NARMA input.
+
+1-D quantum Ising chain forecasting. Finally, we forecast a quantum time series generated by a
+one-dimensional Ising chain governed by
+                                        X               X          X
+                               H = −J     σiz σi+1
+                                               z
+                                                   + hx   σix + hz   σiz .                (11)
+                                            i                  i           i
+
+Here σix and σiz are the Pauli x and z matrices at site i, hx and hz denote the transverse and longitudinal
+fields, and J is the nearest-neighbour coupling. We simulate a chain of size N = 5 with J = 1, hx = 1.05,
+and hz = −0.5 (a non-integrable setting with spectral statistics consistent with quantum chaos [37]). From
+the resulting dynamics we record the central-spin observable m(t) = ⟨σ3z (t)⟩, sampled at times tk = k ∆t
+with ∆t = 0.05, which serves as the target time series for forecasting. One update tk → tk+∆t corresponds
+to one reservoir cycle k → k + 1. The sampled signal mk is mapped to xk ∈ [0, 1] before being encoded into
+the processor.
+    Figure 5 shows a clear transition from accurate to ineffective forecasting as the horizon increases. Near
+EoC feedback stregnth (αfb ≈ 2.2) achieves the lowest errors and remains stable across horizons, whereas
+stronger and feedback pushes the reservoir into an overdriven regime: at αfb = 4.6 the NMSE is close to
+unity for essentially all τf , indicating that the readout performs little better than a variance-level baseline.
+
+
+                                                           8
+Figure 5: Non-integrable quantum Ising forecasting. Mean NMSE (log scale) versus prediction horizon τf
+for the central-spin signal ⟨σ3z (t)⟩ (mapped to xk ∈ [0, 1]). Each curve corresponds to a feedback gain αfb
+and shows the mean over 30 realizations.
+
+
+    These benchmarks show that the reservoir attains competitive predictive performance on both classical
+(MG and NARMA-n) and quantum (Ising) time-series tasks. Across tasks, the feedback strength αfb acts
+as an effective control knob that tunes the trade-off between stability and rich nonlinear dynamics, with an
+intermediate regime (near the EoC, αfb ≈ 2.2) yielding the best overall predictive accuracy.
+
+Finite measurement ensemble
+In this section we consider a more realistic setting in which cross-mode coincidences are estimated from a
+finite number of measurement ensembles Nm . In practice, the expectation values are estimated by averaging
+over a large ensemble of measured values, which inherently introduces statistical uncertainty. In this system,
+these statistical fluctuations in measurements is crucial, since they do not only influence the calculation of
+the final output ŷk but also perturb the dynamics of the system itself, as
+                                                                         √ the statistical noise is concurrently
+fed back inside the Ck−1 . The statistical uncertainty scales as O(1/ Nm ), constraining the accuracy of
+the feedback based quantum reservoirs. In addition to that, when Nm is insufficiently large, statistical
+fluctuations dominate over the impacts of the input operation, leading to inadequate information encoding.
+However, this issue can be addressed either by increasing the number of measurements Nm or by amplifying
+the input weight αin preventing the dominance of statistical fluctuations.
+    Figure 6 plots the total capacity, MCtot , as a function of the number of measurements Nm and the
+feedback strength αfb , for three different input weights αin . As a reference, the noise-free performance
+(corresponding to Nm → ∞) is also shown. A key observation is that the sensitivity to Nm depends
+strongly on the input weight αin . When αin is small, MCtot stays close to zero for essentially all αfb up
+to Nm = 108 . Only for substantially larger Nm does MCtot gradually become nonzero, at which point the
+three feedback-strength regimes re-emerge. Increasing the input weight to αin = 0.01 shifts the onset of
+nonzero MCtot to smaller Nm . For an even larger input strength, αin = 0.1, the total capacity approaches
+the ideal (expectation-value) result rapidly, reaching near-convergence already around Nm ≈ 1010 . Overall,
+while statistical fluctuations can perturb QRC dynamics, their effect can be reduced by appropriately tuning
+the input strength αin .
+
+
+
+
+                                                       9
+Figure 6: Linear memory performance of the feedback-driven reconfigurable linear optics as a function of the
+number of measurements Nm and feedback strength αfb . The ideal capacities for Nm → ∞ are also shown
+for reference. The input strength is set to a αin = 0.001 b αin = 0.01 and c αin = 0.1.
+
+
+
+
+                                                    10
+Conclusion
+We analyzed a feedback-driven photonic quantum reservoir computing platform for time-series processing
+based on multiphoton interference in a reconfigurable interferometer, coarse-grained coincidence readout
+with threshold detectors, and measurement-conditioned phase updates. The key architectural feature is a
+structured, budgeted feedback loop that reprograms only a targeted subset of interferometer phases (the
+Galton wedge), thereby inducing recurrence and tunable fading memory without training internal weights or
+requiring full-mesh reconfiguration at every step. By sweeping the feedback gain, we identified three dynam-
+ical regimes—an input-responsive stable regime, an unstable transition regime, and a feedback-dominated
+regime in which the readout becomes largely insensitive to the input history. Across these regimes, linear
+memory capacity peaks near the stability boundary, consistent with the edge-of-chaos picture. Beyond lin-
+ear memory, we validated temporal processing performance on standard nonlinear forecasting benchmarks
+(Mackey–Glass and NARMA−n) as well as forecasting of non-integrable quantum Ising dynamics, finding
+that the same intermediate-feedback region that maximizes memory also minimizes prediction error across
+horizons. We further examined finite measurement ensembles, where shot noise perturbs not only the read-
+out but also the closed-loop dynamics through the feedback channel. Our results show that this degradation
+can be compensated in a hardware-relevant way by adjusting the input gain, enabling recovery of near-ideal
+performance at feasible measurement budgets. These findings position reconfigurable photonic interferome-
+ters with threshold detection and feedback actuation as a practical, scalable route to feedback-driven QRC
+for temporal learning.
+
+
+Acknowledgments
+The author declares no competing financial interest. During the completion of this work, we became aware
+of related work [38].
+
+
+References
+ [1] Matteo Cucchi, Steven Abreu, Giuseppe Ciccone, Daniel Brunner, and Hans Kleemann. Hands-on reser-
+     voir computing: a tutorial for practical implementation. Neuromorphic Computing and Engineering, 2
+     (3):032002, 2022.
+ [2] Daniel J Gauthier, Erik Bollt, Aaron Griffith, and Wendson AS Barbosa. Next generation reservoir
+     computing. Nature communications, 12(1):5564, 2021.
+ [3] Herbert Jaeger. The “echo state” approach to analysing and training recurrent neural networks-with
+     an erratum note. Bonn, Germany: German national research center for information technology gmd
+     technical report, 148(34):13, 2001.
+ [4] Keisuke Fujii and Kohei Nakajima. Harnessing disordered-ensemble quantum dynamics for machine
+     learning. Physical Review Applied, 8(2):024030, 2017.
+ [5] Suman Ghosh, Aleksandra Opala, Michal Matuszewski, Tomasz Paterek, and David Tan. Quantum
+     reservoir processing. npj Quantum Information, 5(1):35, 2019.
+ [6] Yunfei Wang and Junyu Liu. A comprehensive review of quantum machine learning: from nisq to fault
+     tolerance. Reports on Progress in Physics, 2024.
+ [7] Kaito Kobayashi, Keisuke Fujii, and Naoki Yamamoto. Feedback-driven quantum reservoir computing
+     for time-series analysis. PRX quantum, 5(4):040325, 2024.
+ [8] Marco Cerezo, Andrew Arrasmith, Ryan Babbush, Simon C Benjamin, Suguru Endo, Keisuke Fujii,
+     Jarrod R McClean, Kosuke Mitarai, Xiao Yuan, Lukasz Cincio, et al. Variational quantum algorithms.
+     Nature Reviews Physics, 3(9):625–644, 2021.
+
+
+
+
+                                                    11
+ [9] Tomoya Monomi, Wataru Setoyama, and Yoshihiko Hasegawa. Feedback-enhanced quantum reservoir
+     computing with weak measurements. arXiv preprint arXiv:2503.17939, 2025.
+[10] Filip Wudarski, Daniel OConnor, Shaun Geaney, Ata Akbari Asanjan, Max Wilson, Elena Strbac,
+     P Aaron Lott, and Davide Venturelli. Hybrid quantum-classical reservoir computing for simulating
+     chaotic systems. arXiv preprint arXiv:2311.14105, 2023.
+
+[11] Emanuel Knill, Raymond Laflamme, and Gerald J Milburn. A scheme for efficient quantum computation
+     with linear optics. Nature, 409(6816):46–52, 2001.
+[12] Sara Bartolucci, Patrick Birchall, Hector Bombin, Hugo Cable, Chris Dawson, Mercedes Gimeno-
+     Segovia, Eric Johnston, Konrad Kieling, Naomi Nickerson, Mihir Pant, et al. Fusion-based quantum
+     computation. Nature Communications, 14(1):912, 2023.
+[13] Scott Aaronson and Alex Arkhipov. The computational complexity of linear optics. In Proceedings of
+     the 43rd annual ACM symposium on Theory of computing, pages 333–342. ACM, 2011.
+[14] Chris Sparrow, Enrique Martı́n-López, Nicola Maraviglia, Alex Neville, Christopher Harrold, Jacques
+     Carolan, Yogesh N Joglekar, Toshikazu Hashimoto, Nobuyuki Matsuda, Jeremy L O’Brien, et al. Sim-
+     ulating the vibrational quantum dynamics of molecules using photonics. Nature, 557(7707):660–667,
+     2018.
+[15] Joonsuk Huh, Gian Giacomo Guerreschi, Borja Peropadre, Jarrod R McClean, and Alán Aspuru-Guzik.
+     Boson sampling for molecular vibronic spectra. Nature Photonics, 9(9):615–620, 2015.
+
+[16] Yu-Hao Deng, Si-Qiu Gong, Yi-Chao Gu, Zhi-Jiong Zhang, Hua-Liang Liu, Hao Su, Hao-Yang Tang,
+     Jia-Min Xu, Meng-Hao Jia, Ming-Cheng Chen, et al. Solving graph problems using gaussian boson
+     sampling. Physical Review Letters, 130(19):190601, 2023.
+[17] Juan Miguel Arrazola and Thomas R Bromley. Using gaussian boson sampling to find dense subgraphs.
+     Physical review letters, 121(3):030503, 2018.
+
+[18] Valeria Cimini, Mandar M Sohoni, Federico Presutti, Benjamin K Malia, Shi-Yuan Ma, Ryotatsu Yanag-
+     imoto, Tianyu Wang, Tatsuhiro Onodera, Logan G Wright, and Peter L McMahon. Large-scale quantum
+     reservoir computing using a gaussian boson sampler. arXiv preprint arXiv:2505.13695, 2025.
+[19] Si-Qiu Gong, Ming-Cheng Chen, Hua-Liang Liu, Hao Su, Yi-Chao Gu, Hao-Yang Tang, Meng-Hao Jia,
+     Yu-Hao Deng, Qian Wei, Hui Wang, et al. Enhanced image recognition using gaussian boson sampling.
+     arXiv preprint arXiv:2506.19707, 2025.
+[20] Akitada Sakurai, Aoi Hayashi, William John Munro, and Kae Nemoto. Quantum optical reservoir
+     computing powered by boson sampling. Optica Quantum, 3(3):238–245, 2025.
+[21] Sam Nerenberg, Oliver D Neill, Giulia Marcucci, and Daniele Faccio. Photon number-resolving quantum
+     reservoir computing. Optica Quantum, 3(2):201–210, 2025.
+[22] Chris G Langton. Computation at the edge of chaos: Phase transitions and emergent computation.
+     Physica D: nonlinear phenomena, 42(1-3):12–37, 1990.
+[23] Daiki Nishioka, Takashi Tsuchiya, Wataru Namiki, Makoto Takayanagi, Masataka Imura, Yasuo Koide,
+     Tohru Higuchi, and Kazuya Terabe. Edge-of-chaos learning achieved by ion-electron–coupled dynamics
+     in an ion-gating reservoir. Science Advances, 8(50):eade1156, 2022.
+[24] Jacob FF Bulmer, Stefano Paesani, Rachel S Chadwick, and Nicolás Quesada. Threshold detection
+     statistics of bosonic states. Physical Review A, 106(4):043712, 2022.
+[25] Patrik I Sund, Ravitej Uppu, Stefano Paesani, and Peter Lodahl. Hardware requirements for realizing a
+     quantum advantage with deterministic single-photon sources. Physical Review A, 109(4):042613, 2024.
+
+
+
+
+                                                   12
+[26] William R Clements, Peter C Humphreys, Benjamin J Metcalf, W Steven Kolthammer, and Ian A
+     Walmsley. Optimal design for universal multiport interferometers. Optica, 3(12):1460–1465, 2016.
+[27] Nicolas Maring, Andreas Fyrillas, Mathias Pont, Edouard Ivanov, Petr Stepanov, Nico Margaria,
+     William Hease, Anton Pishchagin, Aristide Lemaı̂tre, Isabelle Sagnes, et al. A versatile single-photon-
+     based quantum computing platform. Nature Photonics, 18(6):603–609, 2024.
+
+[28] Juan M Arrazola, Ville Bergholm, Kamil Brádler, Thomas R Bromley, Matt J Collins, Ish Dhand,
+     Alberto Fumagalli, Thomas Gerrits, Andrey Goussev, Lukas G Helt, et al. Quantum circuits with many
+     photons on a programmable nanophotonic chip. Nature, 591(7848):54–60, 2021.
+[29] Michal Oszmaniec and Daniel J Brod. Classical simulation of photonic linear optics with lost particles.
+     New Journal of Physics, 20(9):092002, 2018.
+[30] Stefano Paesani, Massimo Borghi, Stefano Signorini, Alexandre Maı̈nos, Lorenzo Pavesi, and Anthony
+     Laing. Near-ideal spontaneous photon sources in silicon quantum photonics. Nature communications,
+     11(1):2505, 2020.
+[31] Niccolo Somaschi, Valerian Giesz, Lorenzo De Santis, JC Loredo, Marcelo P Almeida, Gaston Hornecker,
+     S Luca Portalupi, Thomas Grange, Carlos Anton, Justin Demory, et al. Near-optimal single-photon
+     sources in the solid state. Nature Photonics, 10(5):340–345, 2016.
+[32] Malte C Tichy. Sampling of partially distinguishable bosons and the relation to the multidimensional
+     permanent. Physical Review A, 91(2):022316, 2015.
+
+[33] Callum M Wilkes, Xiaogang Qiang, Jianwei Wang, Raffaele Santagati, Stefano Paesani, Xiaoqi Zhou,
+     David AB Miller, Graham D Marshall, Mark G Thompson, and Jeremy L O’Brien. 60 db high-extinction
+     auto-configured mach–zehnder interferometer. Optics letters, 41(22):5318–5321, 2016.
+[34] Jacques Carolan, Christopher Harrold, Chris Sparrow, Enrique Martı́n-López, Nicholas J Russell,
+     Joshua W Silverstone, Peter J Shadbolt, Nobuyuki Matsuda, Manabu Oguma, Mikitaka Itoh, et al.
+     Universal linear optics. Science, 349(6249):711–716, 2015.
+[35] Miltiadis Moralis-Pegios, George Giamougiannis, Apostolos Tsakyridis, David Lazovsky, and Nikos
+     Pleros. Perfect linear optics using silicon photonics. Nature Communications, 15(1):5468, 2024.
+[36] Michael C Mackey and Leon Glass. Oscillation and chaos in physiological control systems. Science, 197
+     (4300):287–289, 1977.
+
+[37] Mari Carmen Bañuls, J Ignacio Cirac, and Matthew B Hastings. Strong and weak thermalization of
+     infinite nonintegrable quantum systems. Physical review letters, 106(5):050405, 2011.
+[38] Rosario Di Bartolo, Simone Piacentini, Francesco Ceccarelli, Giacomo Corrielli, Roberto Osellame,
+     Valeria Cimini, and Fabio Sciarrino. Time-series forecasting with multiphoton quantum states and
+     integrated photonics. arXiv preprint arXiv:2512.02928, 2025.
+
+
+
+
+                                                    13
+

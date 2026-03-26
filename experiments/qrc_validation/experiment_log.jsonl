@@ -1,0 +1,2 @@
+{"command": "run_experiments.py", "duration_sec": 1.05, "seeds": [7, 11, 19, 23, 42], "metrics": {"delta_rob": 0.022360000000000026, "entanglement_support_rate": 0.9944444444444445, "rho_support_rate": 0.8, "leakage_detected": 1.0}}
+{"command": "run_experiments.py", "duration_sec": 1.05, "seeds": [7, 11, 19, 23, 42], "metrics": {"delta_rob": 0.022360000000000026, "entanglement_support_rate": 0.9944444444444445, "rho_support_rate": 0.8, "leakage_detected": 1.0}}

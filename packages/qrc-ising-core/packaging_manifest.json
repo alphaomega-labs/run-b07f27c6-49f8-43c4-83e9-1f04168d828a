@@ -1,0 +1,136 @@
+{
+  "handle": "qrc-ising-core",
+  "version": "0.1.0",
+  "package_type": "library",
+  "distribution_name": "omegaxiv-qrc-ising-core",
+  "import_name": "qrc_ising_core",
+  "install_target": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
+  "install_command": "pip install omegaxiv && ox install qrc-ising-core==0.1.0",
+  "source_project": "omegaXiv quantum reservoir validation deliverable",
+  "core_exports": [
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
+      "source_symbol": "SimCell",
+      "exported_module": "qrc_ising_core.core",
+      "exported_symbol": "QRCScenario",
+      "rationale": "Preserves structured simulation scenario object from project contribution."
+    },
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
+      "source_symbol": "simulate_accuracy",
+      "exported_module": "qrc_ising_core.core",
+      "exported_symbol": "simulate_accuracy",
+      "rationale": "Primary implementation symbol that computes QRC-Ising proxy accuracy under noise/shot constraints."
+    },
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
+      "source_symbol": "make_row",
+      "exported_module": "qrc_ising_core.core",
+      "exported_symbol": "simulate_metrics",
+      "rationale": "Promotes reusable metrics output while preserving derived fields from the original simulator."
+    },
+    {
+      "source_path": "experiments/qrc_validation/src/qrc_validation/symbolic_checks.py",
+      "source_symbol": "run_symbolic_checks",
+      "exported_module": "qrc_ising_core.symbolic",
+      "exported_symbol": "run_symbolic_checks",
+      "rationale": "Exports theorem/claim symbolic consistency checks used by the contribution."
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "numpy",
+      "spec": ">=1.26,<3",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "qrc_ising_core.core"
+      ]
+    },
+    {
+      "name": "sympy",
+      "spec": ">=1.12,<2",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "qrc_ising_core.symbolic"
+      ]
+    },
+    {
+      "name": "mpmath",
+      "spec": ">=1.3,<2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "sympy"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "packages/qrc-ising-core/README.md",
+      "size_bytes": 2293,
+      "sha256": "4cc2cab50b8bd768491a45fd912360f6ecb8ecff741b980ccf54a6dc48055c3a"
+    },
+    {
+      "path": "packages/qrc-ising-core/pyproject.toml",
+      "size_bytes": 619,
+      "sha256": "a73a62a0b7b465fcf75055a4a0a36349feebbf2cf710a3d6a10759d7d8f78fab"
+    },
+    {
+      "path": "packages/qrc-ising-core/requirements.txt",
+      "size_bytes": 30,
+      "sha256": "4b349f36eafe2c377ad8559ff284376b83d52808f3ee9ad8b9510b9ef13ebb9e"
+    },
+    {
+      "path": "packages/qrc-ising-core/dependency_graph.json",
+      "size_bytes": 732,
+      "sha256": "f584f4e1b2d80d837b8cb20a06f1363fc17e6e68e792cce0a164ec2b358617cd"
+    },
+    {
+      "path": "packages/qrc-ising-core/extraction_plan.json",
+      "size_bytes": 1177,
+      "sha256": "03fbad974e8d27e6ba842308b4eddda8e2b77b24f06cb61522355f60c687ed36"
+    },
+    {
+      "path": "packages/qrc-ising-core/src/qrc_ising_core/__init__.py",
+      "size_bytes": 484,
+      "sha256": "f6318d81a95f668e805f114cb209a613ad4a6d3361c6e65c5527867cba176b71"
+    },
+    {
+      "path": "packages/qrc-ising-core/src/qrc_ising_core/core.py",
+      "size_bytes": 6536,
+      "sha256": "8668696ad75873761f6e12c37dba1a31a28a98ee655bb6a7d6c59a521bed293e"
+    },
+    {
+      "path": "packages/qrc-ising-core/src/qrc_ising_core/symbolic.py",
+      "size_bytes": 3063,
+      "sha256": "b8903a36a763530e1f36547093456b7f46cfaee7abed130aac4fa9ed651c989a"
+    },
+    {
+      "path": "packages/qrc-ising-core/tests/test_core.py",
+      "size_bytes": 1596,
+      "sha256": "ff4e206f023ffd6de63cae113c1efd54df915445377a28f1f6e9400eb5886c6d"
+    },
+    {
+      "path": "packages/qrc-ising-core/tests/test_symbolic.py",
+      "size_bytes": 672,
+      "sha256": "288601df4ca8dd5c54fe95ed0ba38cdb1839f09d29704ec7dde78248aa061981"
+    },
+    {
+      "path": "packages/qrc-ising-core/examples/basic_usage.py",
+      "size_bytes": 586,
+      "sha256": "d464c51ec8dfcf4a63dc0e01caecfe47e8b9a4c9b4a97058f1ae3823160b84b1"
+    },
+    {
+      "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
+      "size_bytes": 6194,
+      "sha256": "53feffefb3ff9993ae47f6906af8ee5ca2e640d10093e832a975feeff0e6fc6b"
+    },
+    {
+      "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz",
+      "size_bytes": 6207,
+      "sha256": "eb1c5947849009cf740f961de0d5abee8c65d3fd58e803695809d5026127f4c8"
+    }
+  ]
+}

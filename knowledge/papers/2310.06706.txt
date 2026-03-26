@@ -1,0 +1,809 @@
+                                                                 Quantum reservoir computing with repeated measurements
+                                                                               on superconducting devices
+                                                            Toshiki Yasuda,1 Yudai Suzuki,2 Tomoyuki Kubota,3 Kohei Nakajima,3 Qi Gao,4, 5
+                                                             Wenlong Zhang,6 Satoshi Shimono,7 Hendra I. Nurdin,8 and Naoki Yamamoto1, 5
+                                                                             1
+                                                                                Department of Applied Physics and Physico-Informatics,
+                                                                        Keio University, 3-14-1 Hiyoshi, Kohoku, Yokohama, 223-8522, Japan
+                                                                               2
+                                                                                 Department of Mechanical engineering, Keio University,
+                                                                                 3-14-1 Hiyoshi, Kohoku, Yokohama, 223-8522, Japan
+                                                                3
+                                                                  Gradurate School of Information Science and Technology, The University of Tokyo,
+                                                                                   7-3-1 Hongo, Bunkyo-ku, Tokyo, 113-8556, Japan
+                                                                          4
+                                                                            Mitsubishi Chemical Corporation, Science & Innovation Center,
+                                                                             1000, Kamoshida-cho, Aoba-ku, Yokohama 227-8502, Japan
+                                                       5
+                                                         Quantum Computing Center, Keio University, Hiyoshi 3-14-1, Kohoku, Yokohama 223-8522, Japan
+arXiv:2310.06706v1 [quant-ph] 10 Oct 2023
+
+
+
+
+                                                                                   6
+                                                                                     School of Manufacturing Systems and Networks,
+                                                                                   Arizona State University, Mesa, AZ 85212, USA
+                                                                  7
+                                                                    The Global KAITEKI Center, Arizona State University, Tempe, AZ 85281, USA
+                                                          8
+                                                            School of Electrical Engineering and Telecommunications, The University of New South Wales,
+                                                                                       Sydney, New South Wales 2052, Australia
+                                                            Reservoir computing is a machine learning framework that uses artificial or physical dissipative
+                                                         dynamics to predict time-series data using nonlinearity and memory properties of dynamical sys-
+                                                         tems. Quantum systems are considered as promising reservoirs, but the conventional quantum
+                                                         reservoir computing (QRC) models have problems in the execution time. In this paper, we develop
+                                                         a quantum reservoir (QR) system that exploits repeated measurement to generate a time-series,
+                                                         which can effectively reduce the execution time. We experimentally implement the proposed QRC
+                                                         on the IBM’s quantum superconducting device and show that it achieves higher accuracy as well as
+                                                         shorter execution time than the conventional QRC method. Furthermore, we study the temporal
+                                                         information processing capacity to quantify the computational capability of the proposed QRC; in
+                                                         particular, we use this quantity to identify the measurement strength that best tradeoffs the amount
+                                                         of available information and the strength of dissipation. An experimental demonstration with soft
+                                                         robot is also provided, where the repeated measurement over 1000 timesteps was effectively applied.
+                                                         Finally, a preliminary result with 120 qubits device is discussed.
+
+
+                                                            I.    INTRODUCTION                               Fig. 1(a). Here the fixed internal dynamics is called the
+                                                                                                             reservoir, which should have sufficient computational ca-
+                                                                                                             pability for approximating a hidden dynamics producing
+                                               Quantum computing is a next-generation computing              the target time series. Thus the choice of reservoir is crit-
+                                            technology that will bring about possible game-changing          ical as a resource of computation. In particular, in the
+                                            computing capability in various field. Because currently         physical RC framework, an actual physical system is cho-
+                                            noisy and medium-scale devices are only available, quan-         sen as a reservoir, such as soft-matter robots [7], spintron-
+                                            tum computing algorithms that would work even on such            ics [8], and electronic devices [9]. In this direction, quan-
+                                            devices have been actively investigated. In particular,          tum systems are promising physical reservoirs thanks to
+                                            there are many proposals of machine learning applica-            their intrinsic many-body properties as well as high non-
+                                            tions, mainly based on variational quantum algorithms            linearity [10], as demonstrated in numerical simulations
+                                            (VQA) [1], where parametrized quantum circuits are               [11, 12] and experiments on superconducting devices [13]
+                                            trained as analogous to the case of neural networks. How-        and related experiments on nuclear magnetic resonance
+                                            ever, parametrized quantum circuits are in general diffi-        [14] to demonstrate the learning of static maps mapping
+                                            cult to train [2], while several circumventing techniques        vectors to vectors (rather than maps from sequences to
+                                            of this issue have also been developed, e.g., [3].               sequences). Physical reservoir computing has been ad-
+                                               With such motivation, the quantum reservoir comput-           vancing in its applications, particularly in QRC, where
+                                            ing (QRC) have been investigated, as a feasible route to         tasks such as fluid analysis [15], image recognition [16],
+                                            realize quantum machine learning. Generally speaking,            and position estimation of mobile wireless device users
+                                            reservoir computing (RC) [4] is a machine learning frame-        [17] have been conducted. Furthermore, in the analysis
+                                            work that can be implemented with much smaller compu-            of superiority over classical reservoir schemes, there are
+                                            tational complexity compared to (deep) neural-network-           results indicating that quantum reservoir schemes might
+                                            based machine learning scheme, particularly for the tasks        be intrinsically superior to classical reservoir schemes, es-
+                                            of time-series data processing [5]. This is because the ac-      pecially from perspectives such as quantum noise [18] and
+                                            tual learning is done by a simple linear regression on the       the presence or absence of entanglement [19].
+                                            network outputs while the internal dynamics is fixed; see           The above-mentioned existing QRC schemes have the
+                                                                                                                                                                               2
+
+ (a) Diagram of a typical RC                                  (b) Conventional QRC architecture                              (c) Qubit structure of the Falcon device
+
+                                                                         ψ     U(u1)
+                                                                      System
+                                                                                           M
+
+   ut                                                 yt                 ψ
+                                                                      System
+
+                                                                               U(u1)       U(u2)   M
+
+                                                                         ⋮
+                                                    Output
+  Input
+
+
+                                                                         ψ     U(u1)       U(u2)            U(ut)
+                                                                      System
+
+                                                                                                                         M
+
+                                                                         ⋮
+(d)
+ (d)Subsystem
+    SubsystemStructure
+              Structure(Repeated
+                        (RepeatedMeasurement
+                                  MeasurementScheme)
+                                               Scheme)
+                                                                                                         Parametrized
+                                                                                                       Parametrized   Quantum
+                                                                                                                    Quantum    Circuit
+                                                                                                                            Circuit
+
+
+          Input   timetime
+              Input        series  series                                                                  RX(sut) ut)
+                                                                                                            RX(s                RX(sut) ut)
+                                                                                                                                  RX(s
+        {u1,{u
+             u2,,.u. .,u.n.,.. u. . ,u.L.}. u }
+                 1    2         n          L
+
+                                                                                                                                RZ(sut) u )
+                                                                                                                                  RZ(s   t
+
+
+
+
+                                                                                                                                                             U(uLt))
+                                             1) )                                                       U(ut))U(ut)
+   System
+     ψψ                                                              )                                        U(u )                                          U(u
+                                                                2) 2                                                                          U(uLt))
+        System
+                                         U(uU(u                U(u
+                                                             U(u                                        U(u                                   U(u
+                                                1
+
+                                                             Qubit Reset                                      Qubit Reset                                Qubit Reset
+                                                              Qubit Reset
+   Anc | 0⟩ | 0⟩⊗2        ⊗2                           M         | 0⟩⊗2⊗2              M                         | 0⟩⊗n⊗2             M                      | 0⟩⊗2        M
+     Anc                                                          | 0⟩                                        | 0⟩
+                                                                                                                | 0⟩⊗2                            | 0⟩
+                                                                                                                                                    | 0⟩⊗2
+                                                                                                                                                        ⊗n
+
+
+                                                      M                                MM                                           M
+                                                                                                                                    M                                      M
+                                                             M                                                                                                         M
+
+
+
+
+FIG. 1. (a) Typical reservoir system. The input passes through the intermediate (artificial or physical) layer and is linearly
+regressed at the output. The weights of the intermediate layer are fixed and are not used for learning. (b) Conventional QRC
+model. To obtain the output signal at time t, the circuit with repetition t is prepared and measurements are made at the
+end of each circuit to obtain the expected value. (c) Arrangement of qubits in ibmq_toronto. The 4 qubits indicated by the
+dotted blue boxes represent a component of the QR composed of 2 qubit system and 2 qubit ancilla, respectively. (d) Detail
+of the 4-qubit component of the proposed QRC model. The system (2 qubits) encodes the inputs time series, and the ancilla
+(2 qubits) is measured to produce the outputs. Each system unitary U (ut ), indicated by the gray dashed line, consists of RX,
+RZ, and CNOT gates and encodes the input time series into the rotation angle. The system-ancilla interaction is made by two
+CNOT gates. The ancilla state is reset to |0⟩⊗2 after each measurement.
+
+
+following practical issue. That is, they produce the out-                                          the physical parameters within the reservoir system may
+put time series by averaging the measurement result on                                             be suppressed. This, in turn, may improve reproducibil-
+every qubits at each time, meaning that we have to re-                                             ity of the dynamics and accordingly enable the QRC to
+peatedly re-prepare and run the system from the start                                              achieve higher performance than existing methods. We
+for each timestep to obtain the entire time series; see                                            note that after [20] there is a related QRC scheme based
+Fig. 1(b). Clearly, this needs a long execution time. In-                                          on the use of weak measurements reported in [21] but
+spired by a proposal in [20, §V and Appendix C], this                                              which is based on continuous-valued ancillas rather than
+paper resolves this issue by developing a QRC scheme                                               qubit ancillas and has not been demonstrated yet.
+illustrated in Fig. 1(d), that exploits the repeated quan-                                            Many of the leading architectures for quantum com-
+tum non-demolition (QND) measurements. That is, by                                                 puting anticipate the use of millions of qubits, for exam-
+repeatedly measuring added ancilla while conditionally                                             ple with the use of quantum error correction based on
+keeping the coherence of the system dynamics, we ob-                                               the surface code [22]. Our QRC scheme can take advan-
+tain one stochastic time series through a single running                                           tage of a quantum computer with such a large number of
+of the entire system; we repeat this operation to obtain                                           qubits to potentially enable real-time execution of QRC.
+a set of stochastic time series, which are finally averaged                                        For example, suppose that 10,000 identical copies of a 100
+to produce one deterministic time series with some finite                                          qubit system can be realized. If 100 independent circuit
+sampling errors that depend on the number of samples                                               runs with repeated QND measurements can be executed
+used in the averaging. As a result, the execution time                                             on each copy in the order of 10−5 seconds then averag-
+of QRC may be reduced. Moreover, thanks to the re-                                                 ing over the measurements would in principle allow for a
+duction of execution time, the degree of fluctuation in                                            100 qubit QRC with a high accuracy estimation of qubit
+                                                                                                                                           3
+
+quantum expectation values comparable to a 8 bit AD                                                 II.    METHOD
+converter running at sampling rate of 100 kHz. With
+more copies available even higher accuracy estimation                              A.      QRC with repeated measurement
+could be aimed for. However, continuous running of the
+QRC in the setting requires the convergence property as                      Our QRC model consists of n-qubits system and n-
+in the QRC architecture in [20] so that it asymptotically                  qubits ancilla. The system dynamics is governed by the
+forgets its initial state. This allows QND measurements                    input-dependent unitary operator together with the re-
+to be run only over a moving window of finite length as                    peated projective measurement on the ancilla, as follows;
+discussed in [20, §V and Appendix D]. Also it should be
+emphasised that although we develop our approach on                         (m )      1       h
+                                                                                                             (m    )
+                                                                                                                                        i
+superconducting quantum computers, it can be adapted                       ρt t =          Tra Mmt Û (ut )(ρt−1t−1 ⊗σa )Û † (ut )Mm
+                                                                                                                                    †
+                                                                                                                                          ,
+                                                                                   p(mt )                                             t
+
+to other platforms that can support a large number of                                                                                (1)
+qubits, like silicon.                                                      where σa = (|0⟩a ⟨0|)⊗n and
+                                                                                                            n
+                                                                                                            O
+   In this paper, we provide an experimental demonstra-                                      Mmt = Is ⊗            |mi,t ⟩a ⟨mi,t |.      (2)
+tion of the proposed QRC scheme on the IBM super-                                                            i=1
+conducting quantum processor (ibmq_toronto shown in
+                                                                                   (m )
+Fig. 1(c)), which enables implementing the repeated mea-                   Here, ρt t is the system density-matrix at timestep t.
+surement in their "dynamic-circuit" framework [23]. We                     Û (ut ) is the unitary operator dependent on the input
+study the problems of emulating the Nonlinear Auto-                        ut . The mid-circuit measurement is expressed by the
+Regressive Moving Average dynamics (NARMA) and the                         computational-basis projective measurement on the an-
+time series data obtained from the experiment for the                      cilla, given in Eq. (2), where mi,t ∈ {0, 1} represents the
+soft robotics, where nonlinear information processing and                  binary measurement result on the i-th ancilla qubit and
+memory are required. These experimental studies will                       the bit-string mt = m1,t · · · mn,t is the measurement re-
+actually show that the proposed QRC scheme has the                         sult. Also,
+above-mentioned advantages in the execution time and
+the regression performance over the conventional QRC                                                           (m      )
+                                                                              p(mt ) = Tr(Mmt Û (ut )(ρt−1t−1 ⊗ σa )Û † (ut )Mm
+                                                                                                                                †
+                                                                                                                                  t
+                                                                                                                                    )
+scheme [13] which does not use repeated measurement.
+Moreover, we calculate the temporal information process-                   is the probability of obtaining mt . That is, our QR sys-
+ing capacity (TIPC) [26, 27] to analyze the computa-                       tem is stochastically evolved depending on the measure-
+tional capability of the proposed quantum reservoir in the                 ment result on the ancilla system. Figure 1(d) represents
+memory and nonlinearity. The result is that the proposed                   an example of the circuit representation of our model
+QRC scheme has more time-invariant capacities than the                     realized on IBM superconducting quantum processor.
+conventional one, which supports the above-mentioned                          The measurement results are used to construct the out-
+two advantages (note that TIPC does not depend on a                        put of the QR system. That is, the reservoir output state
+specific signal processing task but is intrinsic to the reser-             vector at time t is composed of the expectation values of
+voir). Also, we calculate the TIPC as a function of the                    the Pauli Z-matrices on the ancilla system;
+interaction strength between the system and the ancilla,
+showing that the time-invariant capacity has a highest                                  h(ρt ) = [⟨Z1,a ⟩, ⟨Z2,a ⟩, . . . , ⟨Zn,a ⟩]T ,   (3)
+value at an intermediate point of the strength; this is the
+best trade-off point between the amount of available in-                   where Zi,a is Pauli Z-matrix of the i-th qubit of the an-
+formation and the strength of dissipation. This is clearly                 cilla system, i.e., Zi,a = I ⊗ · · · ⊗ Z ⊗ · · · ⊗ I. We ap-
+the advantageous point of the proposed QRC scheme in                       proximately obtain the output h(ρt ) by repeating the
+that it enables tuning such important trade-off parame-                    experiment Ns times and averaging the Ns bit-strings
+                                                                                     (1)   (2)       (N )
+ter, which is not available in the existing QRC schemes.                   Bt = {mt , mt , . . . mt s } as follows;
+
+
+
+
+                                          X                                         (m′ )
+                                                      p(m′t−1 ) × Tr Zi,a Û (ut )(ρt−1t−1 ⊗ σa )Û † (ut )
+                                                                                                          
+                          ⟨Zi,a ⟩ =
+                                      m′t−1 ∈{0,1}n
+                                                                                                                
+                                                                X                    (m′ )
+                                 = Tr Zi,a Û (ut )                      p(m′t−1 )ρt−1t−1 ⊗ σa  Û † (ut )                            (4)
+                                                           m′t−1 ∈{0,1}n
+
+                                      1 X
+                                                   1Bi,0 [mk ] −              1Bi,1 [mk ],
+                                                                     X
+                                 =
+                                      Ns
+                                          mk ∈Bt                   mk′ ∈Bt
+                                                                                                                                  4
+
+   where 1A [·] is the indicator function and Bi,l =               scheme on the system qubits, following the proposal in
+{m|m ∈ Bt , mi = l}. In our demonstration, the num-                [20]. After the application of a unitary operation on the
+ber of repetition to approximate the output values is              n system qubits, the n ancilla qubits are reset to the |0⟩
+fixed to Ns = 8, 192. Note that, while the dynamics (1)            state and are then each coupled to a unique system qubit
+is stochastic, the output (4) with infinite measurement            (of the n system qubits) via a CNOT gate, after which
+shots is deterministic because it is calculated by aver-                                                                   (i)
+                                                                   the ancilla qubits are measured (see Fig. 1(d)). Let Or,j
+aging over quantum states that resulted from all pos-              be an observable of system qubit i (when r = s) or an-
+sible measurement results. This also means that the                cilla qubit i (when r = a) for any j. This represents the
+quantum dynamics of the model can be represented as                observable of system or ancilla qubit i that will be mea-
+the linear map from the perspective of calculating the                                                             (i)
+                                                                   sured at the j-th measurement. In our case, Or,j can be
+output; we can obtain Eq. (4) by following the dynam-                (i)            (i)
+ics ρens
+           P
+         = m′ M m      ′
+                         Û (ut )ρens    †      ′†         ′       Or,j = Z or Or,j = I. Let Tuj be the ordered product
+     t                             t−1 Û (ut )Mm with Mm =
+                t−1
+                                                                   Tuj = CNOTa,s U (uj ) · · · CNOTa,s U (u2 )CNOTa,s U (u1 ),
+(Is ⊗ { i X (1mt,i =1 [mt−1 ]) }a )Mm .
+       Nn
+                                                                   where CNOTa,s denotes the tensor product of CNOT
+   The regression model is constructed in terms of the             gates applied to each pair of system qubit and its cor-
+matrix X = [h(ρtf ), . . . , h(ρtl ), 1]T containing the collec-   responding ancilla qubit. As shown in [20, Appendix
+tion of the reservoir output vectors at different timestep                                      (i)
+                                                                   C], if Za (j) = Tu†j (⊗ni=1 Oa,j )Tuj then [Za (j), Za (k)] = 0
+and all-1 vector denoted by 1. Note that tf and tl rep-
+resent the first and last timestep of the training phase,          for all j, k. Thus {Za (j); j = 1, 2, . . .} is a sequence of
+respectively. With the weight of the output layer, wout ,          commuting observables in the Heisenberg picture and are
+we use                                                             therefore QND observables. Because of this, the repeated
+                                                                                                                                 (i)
+                                                                   measurement of the (multi-ancilla) observable ⊗ni=1 Oa,j
+                        ypred = Xwout                              at the different times j = 1, 2, . . . yields a sequence of ran-
+                                                                   dom variables that have a joint probability distribution
+to predict the target signal ytarget . The optimal wout            and form a discrete-time classical stochastic process (this
+that minimizes ∥ytarget −ypred ∥ can be obtained by using          is not the case if they are non-commuting at different
+the pseudo-inverse matrix, (X T X)−1 X T , and thus the            times). Averaging these random variables at each mea-
+prediction model is rewritten as                                   surement time labelled by j over many independent runs
+              ypred = X(X T X)−1 X T ytarget .                     of the repeated QND measurements gives an estimate of
+                                                                                                           (i)
+                                                                   the quantum expectation ⟨⊗ni=1 Os,j ⟩ of the system ob-
+   Here we provide a detail of the unitary operator Û (ut ),                        (i)
+                                                                   servable ⊗ni=1 Os,j in the Schrödinger picture. We also
+in which the input time-series ut is encoded. In this work,        note that the CNOT gates can be replaced with other
+we consider the following special type of the unitary:             gates between the ancilla and system qubits, as long as
+                            5
+                            O                                      the ancillas are reset and prepared to the same state be-
+               Û (ut ) =         Ū4i,4i+1,4i+2,4i+3 ,            fore the gate is applied (for example in Section III B).
+                            i=0
+
+where Ū is a 4-qubits unitary matrix acting on the 2-
+qubits system with indices (4i, 4i + 1) and the 2-qubits
+ancilla with indices (4i + 2, 4i + 3); that is, our QR is
+                                                                      B.   Temporal Information Processing Capacity
+a product of 4-qubits components. The detail of Ū is
+illustrated in Fig. 1(d);
+                              
+  Ūj,k,l,m = CXk,m ⊗ CXj,l Uj,k (ut ),                               To evaluate the memory and nonlinearity of our QR
+                                                                  system as well as the reproducibility of input processing,
+ Uj,k (ut ) = CXj,k RXj (sut ) ⊗ RZk (sut ) CXj,k RXj (sut ),      we employ the temporal information processing capacity
+                                                                   (TIPC) [26, 27], which can comprehensively find infor-
+where sut = aut with a ∈ R is the scale-changed input
+                                                                   mation processing mechanism performed in the QR sys-
+and CXj,k is the CNOT gate acting on the pair of jth and
+                                                                   tem. The QR system processes the current input ut by
+kth qubits. RXj (sut ) = exp (−isut X/2) and RZj (sut ) =
+                                                                   delaying (e.g., ut−1 ) and/or nonlinearly transforming it
+exp (−isut Z/2) are the rotation gate applied on the jth
+                                                                   (e.g., u2t ). These processing are reproducible against in-
+qubit. We employ this circuit structure for the purpose
+                                                                   put series while irreproducible processing includes other
+of comparing our scheme to the natural noise one [13];
+                                                                   elements such as time and noise and can be expressed
+actually the circuit structure of these two schemes are
+                                                                   by a product of such input term and a past state (e.g.,
+essentially the same, although the latter does not contain
+                                                                   ut x1,t−1 ). In the framework of TIPC, the processed input
+the ancilla qubits for readout. The actual device used in                                              (i)
+this work is ibmq_toronto; the arrangement of physical             terms are represented by bases zt (i = 1, 2, . . .) which
+qubits is shown in Fig. 1(c).                                      are orthogonalized from each other to avoid overlapping
+   In our QRC circuit we use ancilla qubits and mid-               the amount of processed inputs. The capacity C(X, z (i) )
+                                                                                                                   (i)
+circuit reset to implement a repeated QND measurement              represents the amount of processed inputs zt via the
+                                                                                                                             5
+
+
+
+   (a)
+         Input sequence                                            Target sequence for NARMA5
+
+
+
+
+         Target sequence for NARMA2                                Target sequence for NARMA10
+
+
+
+
+  (b) Natural Noise Scheme                                       (c) Repeated Measurement Scheme
+         NARMA2                                                    NARMA2
+
+
+
+
+         NARMA5                                                    NARMA5
+
+
+
+
+         NARMA10                                                   NARMA10
+
+
+
+
+FIG. 2. The benchmark scores of the natural noise scheme and the repeated measurement scheme. (a) Time-series data used
+for the experiment (input, target sequence of NARMA2, NARMA5, and NARMA10). (b) and (c) are Learning and prediction
+results of the NARMA tasks with each scheme. The blue line represents the target trajectory, the green dots are the training
+trajectories, and the red crosses are the prediction trajectories. The orange-colored area in the panel represents the range of
+the experimental trajectories in the 2σ range. The experiments are averages of 10 trials for each task.
+
+
+system state xt and is formulated as follows:                     lated from a distribution of capacity error. The statisti-
+                                                                  cal significance level was set at p = 5%, meaning that, in
+                                   PT     (i)     ⊤ 2
+               (i)          minw    t=1 (zt − w xt )
+                                                                  the case where the time-series length is 200 (1100), TIPC
+      C(X, z         )=1−          PT       (i) 2
+                                                      ,   (5)     values greater than a threshold of 0.14 (0.021) were se-
+                                     t=1 (zt )                    lected (See Appendix A).
+where w ∈ RN is the weighting vector, xt =                           We also evaluated types of input processing by the
+[x1,t , · · · , xN,t ]⊤ ∈ RN is the state vector of the reser-    number of capacities with polynomials composed of only
+                                                                                (i)
+                 (i)                                              input (e.g., zt = ut , ut−1 ). We term this measure “rich-
+voir; and zt ∈ R is a polynomial function composed
+                                                                  ness,” which provides the variety of reproducible infor-
+of the input history {ut , ut−1 , . . .} and past state time-
+                                                                  mation processing in the quantum device.
+series {xt−1 , xt−2 , . . .} such as an orthogonalized term
+of ut , ut−1 , ut x1,t−1 , x2,t . The polynomials composed of
+only inputs (e.g., ut , ut−1 ) are reproducible for an identi-
+cal input sequence, while those including the state vari-                     C.   Benchmark task: NARMA
+able (e.g., ut x1,t−1 , x2,t ) are irreproducible processing
+unit (See Appendix A).                                              NARMA is a dynamics that takes an input time series
+  The capacities were detected with a threshold calcu-            {ut } and produces an output time-series {yt }. We cons-
+                                                                                                                                           6
+
+dier the following three types of NARMA.                        crosses from 80 to 100 timesteps are used for prediction
+NARMA2:                                                         for test trajectories. The orange-colored area represents
+                                                                the 2σ range with standard deviation σ of the trajecto-
+         yt+1 = 0.4yt + 0.4yt yt−1 + 0.6u3t + 0.1               ries. While the conventional method has large deviation
+                                                                over the entire timesteps and clearly fails in prediction
+NARMA5 and NARMA10:                                             in the NARMA10 case, the proposed method is able to
+                             n−1
+                             X
+                                      !                         predict the target trajectory well. Table I compares the
+      yt+1 = αyt + βyt             yt−i +γut−n+1 ut + δ,        NMSE and DTW values of each method, showing that, in
+                             i=0                                most cases, the proposed method significantly improves
+                                                                the accuracy.
+where (α, β, γ, δ) = (0.3, 0.05, 1.5, 0.1) are hyperparame-
+ters and n represents the strength of nonlinearity; n = 5                 Natural Noise model         Our method
+and n = 10 for NARMA5 and NARMA10, respectively.                         NARMA2
+In this work, we take the following input time-series:
+                                                                           MSE         DTW         MSE         DTW
+                                                                        2.66 × 10−5 1.27 × 10−2 8.36 × 10−6 5.78 × 10−3
+                                                         
+                   2π ᾱt       2π β̄t       2πγ̄t 
+   ut = 0.1 sin             sin            sin           +1 ,
+                    T              T              T                      NARMA5
+                                                                           MSE         DTW         MSE         DTW
+where (ᾱ, β̄, γ̄, T ) = (2.11, 3.73, 4.11, 100).                       1.24 × 10−3 7.66 × 10−2 2.07 × 10−2 3.53 × 10−2
+   Our goal is to construct the QRC so that its output                   NARMA10
+time series {ŷt } well approximates {yt }. To evaluate the
+                                                                           MSE         DTW         MSE         DTW
+performance of the QRC for the NARMA task, we use
+the following Normalized Mean Square Error (NMSE)                       2.99 × 10−3 1.41 × 10−1 1.98 × 10−3 6.35 × 10−2
+and Dynamic Time Warping (DTW). NMSE is expressed
+                                                                TABLE I. List of NMSEs and DTWs for NARMA2,
+as                                                              NARMA5, and NARMA10.
+                               Meval
+                          1 X
+             NMSE =                  (yt − ŷt )2 ,
+                         Meval t=1
+                                                                (a) Repeated Measurement Scheme
+where Meval is the number of test data for prediction; we              Run
+take Meval = 20 in the experiment.                                     Job
+  In addition to NMSE, we use the dynamic time warp-                                     Execution time (min)
+ing (DTW) to measure of similarity between two time-              0          4
+series; for the time series S = {si }M                N
+                                     i=1 and T = {tj }j=1 ,
+DTW is defined as                                               (b) Natural Noise Scheme
+                                                                      Run                   Run                 Run            Run
+                  DTW(S, T ) = f (M, N ),                          Job1                    Job2                 Job3           Job4
+                                                                                Queue             Queue               Queue
+                                    f (i, j − 1)
+        f (i, j) = |si − tj | + min f (i − 1, j)                  0                                                                  57
+                                    f (i − 1, j − 1)                                                                   Execution time (min)
+
+            f (0, 0) = 0, f (i, 0) = f (0, j) = ∞.
+                                                                FIG. 3. Total execution time (i.e., running time plus queue
+                                                                time) in IBM Quantum. (a) The repeated measurement
+                      III.    RESULT                            scheme. (b) The natural noise scheme.
+
+A.    Comparison of two QRC schemes for NARMA                      Next, we discuss the computational time needed for
+                       tasks                                    executing the proposed QRC scheme, which is expected
+                                                                to be smaller than that of the conventional natural noise
+   Figure 2(a) shows the input and output time-series           scheme, as their implementation nature. First, the to-
+used in the NARMA tasks. Figure 2(b,c) show the results         tal execution time of the jobs including the queue time is
+of the time series regression of the two types of QRCs,         shown in Fig. 3. While the repeated measurement scheme
+i.e., the natural noise scheme [13] (the conventional QRC       allows for obtaining aggregated outputs in a single job,
+without the repeated measurement on the ancilla qubits)         the natural noise scheme requires splitting the job into
+and the proposed repeated measurement scheme. The               multiple ones, resulting in a total execution time for the
+blue line shows the entire target trajectory. The tra-          job that is over tenfold. Next, we focus on the running
+jectories with green dots and red crosses are generated         time, i.e., the time spent only for operating the quan-
+from the trained QRC; the green dots from 10 to 80              tum device, which thus does not include the queue time.
+timesteps correspond to the training process and the red        The result was that our method performed the regres-
+                                                                                                                               7
+
+
+      (a) Repeated Measurement Scheme. ut ∈ [0,1]                   (b) Natural Noise Scheme. ut ∈ [0,1]
+
+
+
+
+       (c) Repeated Measurement Scheme. ut ∈ [−1,1]                (d) Natural Noise Scheme. ut ∈ [−1,1]
+
+
+
+
+FIG. 4. TIPC scores of the repeated measurement scheme and the natural noise scheme. The label from 0 to 4 shows the order
+of input. The hatched bars represent the time-variant components in TIPC, while the other parts represent the time-invariant
+components. The line graph in the lower left of each of the four panels is the first-order capacity of the input, and the heatmap
+in the lower right is the second-order capacity of the input. s1 , s2 represents time delay. (a) TIPC score of the repeated
+measurement scheme with asymmetric input ut ∈ [0, 1]. (b) TIPC score of the natural noise scheme with asymmetric input
+ut ∈ [0, 1]. (c) TIPC score of the repeated measurement scheme with symmetric input ut ∈ [−1, 1]. (d) TIPC score of the
+natural noise scheme with symmetric input ut ∈ [−1, 1].
+
+
+sions four times faster than the conventional model; that         shows that the proposed repeated measurement scheme
+is, the conventional model took 981 s to run the QRC              has more time-invariant capacities indicated by non-
+system of 24 qubits for processing the time series of the         hatched bars (coefficients of terms involving only input
+length L = 200, while our method took 223 s. The re-              history ut ) in the TIPC, compared to the conventional
+duction of execution time may explain why the proposed            natural noise scheme, for both symmetric (ut ∈ [−1, 1])
+QRC performs better. As shown in Fig. 3, the conven-              and asymmetric inputs (ut ∈ [0, 1]) cases. This means
+tional method needs 57 min for the execution time, which          that the proposed method possesses higher computa-
+is deemed to be long enough to allow for the fluctuation          tional power than the conventional one for both sym-
+of physical parameters within the quantum reservoir sys-          metric and asymmetric inputs. Moreover, according to
+tem. In contrast, our method is robust to such fluctua-           [27], when asymmetric inputs are fed into the QRC sys-
+tion, thanks to much shorter execution time.                      tem with amplitude damping, both even and odd-order
+                                                                  capacities are generated, whereas symmetric inputs gen-
+  Lastly to quantitatively discuss the computational ca-          erate only even capacities, which is consistent with the
+pability of the proposed method, we calculate the TIPC            results in Fig. 4(a) and (c). Also, the variation of values
+values; the result is summarized in Fig. 4. This figure
+                                                                                                                                       8
+
+
+     (a) NARMA2, θ = λ = 0                                          (d)
+
+                                                                                                              U(ut)        U(ut+1)
+                                                                          System
+                                                                           ψ                   Anc
+
+                                                                                                                      U       | 0⟩⊗n
+     (b) NARMA2, θ = λ = π /5
+                                                                               Weak Entanglement
+
+                                                                                                                          M
+
+
+
+
+                                                                    (e)
+                                                                      1.0e−5
+
+
+
+     (c) NARMA2, θ = λ = π
+
+
+
+
+                                                                                       θ =λ                               θ =λ
+
+
+           (f) ut ∈ [0,1]                                           (g) ut ∈ [−1,1]
+
+
+
+
+                            strength                                                               strength
+
+
+
+FIG. 5. The performance of our repeated measurement scheme with respect to the interaction strength. (a)-(c) Learning and
+prediction results for the NARMA2 task, showing the experimental results when different Control-U gate parameters are applied
+to the system. The blue line represents the target trajectory, the green dots are the training trajectories, and the red crosses
+are the prediction trajectories. The orange-colored area in each panel represents the deviations of the experimental trajectories
+in the 2σ range. (d) Diagram of changing the system-ancilla interaction, using Controlled-U gates to control the amount of
+system’s information read out by measurement. (e) Parameter dependence of MSE and DTW in the NARMA2 experiment.
+Error bars represent the 1σ range. (f),(g) The TIPC score averaged over 10 trials with (f) the asymmetric input and (g) the
+symmetric input. The red line is the richness averaged over 10 trials. The horizontal axis represents the measurement strength,
+where the tunable parameters θ and λ are related to the strength via θ = λ = strength × (π/10).
+
+
+from trial to trial is small, indicating that our reservoir       ric inputs, our reservoir system includes many first and
+system has high reproducibility. In each panel (a-d), the         second-order components of the inputs in Ctot . Further-
+line graph in the lower left figure represents the first-         more, it is observed that the asymmetric inputs have
+order capacity (the time-invariant component of TIPC              more first-order components, while the symmetric inputs
+depicted with non-hatched bars) of the input, and the             have more second-order components. In particular, it
+heatmap in the lower right does the second-order capac-           can be confirmed from the lower right figure of Fig. 4(b)
+ity of the input, where s1 , s2 denote the time delays.           that the natural noise scheme for the symmetric inputs
+This figure confirms that, especially for the asymmet-            hardly contains any second-order capacity. This is also
+                                                                                                                                               9
+
+(a) Soft robot driven by air pressure    (b) case1                                          (c) case2
+                                                      Input sequence(air pressure)                       Input sequence(air pressure)
+
+
+
+
+                                                 Output / Target sequence (bending angle)           Output / Target sequence (bending angle)
+
+
+
+
+FIG. 6. (a) The soft robot used in this experiment. This robot is driven by air pressure (input), which changes the robot’s
+bending angle (output). (b,c) Input sequence (upper) and the target/output sequences (lower). The two cases have been
+examined depending on the two different input sequences. The blue line represents the target sequence and the orange line
+represents the output of the learned QR system. In the orange line, the left side of the red vertical line was used for training
+and the right side was used for evaluating the prediction.
+
+
+consistent with the results when each type of input is in-                A more detailed analysis on the choice of measurement
+troduced into the QR system with amplitude damping,                    strength can be conducted by calculating TIPC. Figures
+as reported in [27].                                                   5(f,g) show the TIPC values as a function of the inter-
+                                                                       action strength (which is related to the parameter values
+                                                                       as θ = λ = strength × (π/10)), for both symmetric and
+        B.    Change of measurement strength                           asymmetric inputs cases. The value of Ctot roughly in-
+                                                                       creases as the interaction strength is increased; yet it has
+                                                                       a peak an intermediate point Intensity = 6, correspond-
+  Here we consider changing the coupling strength be-
+                                                                       ing to θ = λ = 6π/10. This means that our QRC has
+tween the system and the ancilla, corresponding to the
+                                                                       the best trade-off between the amount of available infor-
+change of measurement strength, similar to [21]. For this
+                                                                       mation and the strength of dissipation. Note that such
+purpose, the CNOT gate shown in Fig. 1(d) is replaced
+                                                                       flexibility in controlling the information gain is a notable
+by the following tunable controlled-U gate, as shown in
+                                                                       advantage of the proposed QRC scheme.
+Fig. 5(d)
+
+ U (θ, ϕ, λ, γ)
+                                                                                          C.   Soft robot data
+         1            0           0          0
+                 iγ
+      0        e cos (θ/2)       0 −ei(γ+λ) sin (θ/2) 
+                                                        
+   =                                                    ,               We here demonstrate regression via the proposed QRC
+      0              0           1          0                        scheme for the real time-series data obtained from a soft
+               i(γ+ϕ)                 i(γ+ϕ+λ)
+         0 e          sin (θ/2)   0 e          cos (θ/2)               robot. Figure 6(a) shows the soft robot used in this ex-
+                                                                       periment. This fabric device is driven by air pressure,
+where eiγ is the global phase, and γ, ϕ, λ, θ are tunable              and the entire robot is bent by an air-filled pillow. The
+parameters. When γ = ϕ = λ = θ = 0, U is the identity                  input is the air pressure and the output is the bending
+matrix, and when γ = ϕ = 0, λ = θ = π, U is the                        angle of the robot [33]. Figures 6(b,c) show the experi-
+CNOT gate. In this experiment, we set γ = ϕ = 0 and                    mental results, where each case corresponds to different
+change θ = λ ∈ [0, π] to see how the resultant accuracy of             input time series. Our reservoir system was trained on
+the NARMA task depends on the measurement strength.                    the 400 or 800 timesteps of data (indicated by the red
+Figures 5(a-c) are the experimental results for the case               dashed line in each figure), whereas the initial 100 steps
+of NARMA2, showing that the accuracy of predicting                     of data are used for washout. We then performed linear
+the target trajectory improves as the values of θ = λ                  regression, which produced the prediction time series in
+becomes closer to π. (We observed the same trend in                    the 800-1000 timesteps. The execution takes about 20
+the cases of NARMA5 and NARMA10.) Also, Fig. 5(e)                      min to compile the circuit on ibmq_toronto followed by
+shows that the values of NMSEs and DTWs decrease as                    generating 1000 steps of data from the quantum circuit,
+θ = λ increases.                                                       plus about 10 min for the classical processing. In all
+                                                                                                                        10
+
+  (a) Circuit structure (system qubit)                          might not be possible to simulate via classical computa-
+                                                                tion (including classical reservoir computers).
+
+
+                                                      ⋯                          IV.   CONCLUSION
+
+
+                               ⋮                                   This paper proposes a new QRC scheme based on
+                                                                the repeated measurement. This can produce the out-
+  (b) NARMA2                                                    put time series faster than the existing QRC schemes.
+                       output / target sequence
+                                                                A clear merit of shortening the execution time is that
+                                                                the possible fluctuation of the system parameters be-
+                                                                comes small, which as a result enables the proposed QRC
+                                                                to perform better than the existing QRCs. We experi-
+                                                                mentally demonstrated these advantages using the IBM
+   (c) NARMA5                                                   superconducting devices, for the benchmark NARMA
+                       output / target sequence
+                                                                task and the soft-robot application. We also calculated
+                                                                TIPC to analyze the computational capability of the pro-
+                                                                posed QRC, to evaluate its memory and expressivity. We
+                                                                demonstrated that our QRC takes the maximum TIPC
+                                                                at the intermediate point of the measurement strength,
+                                                                which corresponds to the best trade-off point between
+                                                                the amount of available information and the magnitude
+FIG. 7. (a) Circuit structure of the 120 qubit QRC composed     of dissipation; the tunability of the device for the mea-
+of 90 qubit system and 30 qubit ancilla. (b,c) Output and       surement strength is thus particularly emphasized.
+target sequences for NARMA2 and NARMA5 tasks.                      There are many remaining works to be examined, in-
+                                                                cluding how to more effectively utilize the repeated mea-
+                                                                surement for speeding up the computation time as well
+cases, our QR obtains the characteristics of the hidden         as for enhancing the resulting performance, toward real-
+dynamics to some extent. Also, it is notable that the           izing practical applications. Actually, while we succeeded
+dynamic circuit on IBM superconducting devices can re-          in speeding up the processing several times from the con-
+alize over 1000 mid-measurements, meaning that it can           ventional method, considering the cost of circuit prepa-
+handle a time series over 1000 time steps. These fact           ration, it should be possible to increase the speed even
+suggest the possibility of using our QRC for real applica-      more. The reason why the execution speed was only a
+tion, although much improvement in the execution time           few times faster than the conventional one is mainly that
+is necessary.                                                   the repeated measurement itself is costly to implement on
+                                                                current actual quantum devices, and the execution time
+                                                                is not ideal in terms of computational cost. To apply
+     D.   Test study with over 100 qubits device                QRC to some applications which need real-time opera-
+                                                                tion, therefore, substantial improvement in time for pro-
+   Lastly we show a test study with a larger system,            cessing the repeated measurement is important. These
+composed of 90 qubits system and 30 qubits ancilla on           investigations will be hopefully connected to some guar-
+ibm_washington device. The circuit structure is illus-          antee of provable advantage of QRC over other reservoir
+trated in Fig. 7(a); this form is repeated to both qubit        computing schemes.
+and depth directions; the number of gates in the depth
+direction is 40, implying that many of 90 qubits are en-
+tangled. Figure 7(b,c) shows the result of NARMA tasks,
+where in both cases the time series from 10 to 80 steps are                    ACKNOWLEDGEMENT
+used for training, and the time series from 80 to 100 steps
+are used for evaluating the prediction performance. The            This work was supported by MEXT Quantum Leap
+prediction does not work at all, probably due to overfit-       Program JPMXS0118067394, JPMXS0118067285, JP-
+ting to the training data. Still, it is notable that over 100   MXS0120319794, and JST CREST JPMJCR2014. The
+qubits device works for a specific machine learning task.       results presented in this paper were obtained in part us-
+Because we have not thoroughly investigated the synthe-         ing an IBM Quantum quantum computing system as part
+sis of the QRC in this case, there are plenty of rooms to       of the IBM Quantum Network. The views expressed are
+improve the performance particularly for prediction. We         those of the authors and do not reflect the official policy
+also should emphasize that this size of quantum device          or position of IBM or the IBM Quantum team.
+                                                                                                                                  11
+
+
+
+
+ [1] M. Cerezo, A. Arrasmith, R. Babbush, et al., Variational       [21] P. Mujal, R. Martínez-Peña, G. L. Giorgi, et al, Time-
+     quantum algorithms, Nat. Rev. Phys. 3, 625–644 (2021).              series quantum reservoir computing with weak and pro-
+ [2] J. R. McClean, S. Boixo, V. N. Smelyanskiy, et al., Bar-            jective measurements, npj Quantum Information 9, 16
+     ren plateaus in quantum neural network training land-               (2023).
+     scapes, Nature Communications 9, 4812 (2018).                  [22] A. G. Fowler, M. Mariantoni, J. M. Martinis, A. N. Cle-
+ [3] M. Cerezo, A. Sone, T. Volkoff, L. Cincio, and P. J.                land, Surface codes: Towards practical large-scale quan-
+     Coles, Cost function dependent barren plateaus in shal-             tum computation, Phys. Rev. A 86, 032324 (2012)
+     low parametrized quantum circuits, Nature Communica-           [23] Mid-circuit measurements tutorial, https://quantum-
+     tions 12, 1–12 (2021).                                              computing.ibm.com/lab/docs/iql/manage/systems/mid-
+ [4] K. Fujii and K. Nakajima, Harnessing disordered-                    circuit-measurement/ (Accessed: 2022-06-09).
+     ensemble quantum dynamics for machine learning, Phys.          [24] V. B. Braginsky, Y. I. Vorontzov, K. S. Thorne, Quan-
+     Rev. Appl. 8, 024030 (2017).                                        tum nondemolition measurements, Science 209, 547-557
+ [5] K. Nakajima and I. Fischer, Reservoir Computing —                   (1980).
+     Theory, Physical Implementations, and Applications             [25] J. Dambre, D. Verstraeten, B. Schrauwen, S. Massar, In-
+     (Springer Singapore, 2021).                                         formation processing capacity of dynamical systems, Sci.
+ [6] K. Nakajima, Physical reservoir computing — An in-                  Rep. 2, 514 (2012).
+     troductory perspective, Jpn. J. Appl. Phys. 59, 060501         [26] T. Kubota, H. Takahashi, K. Nakajima, Unifying frame-
+     (2020).                                                             work for information processing in stochastically driven
+ [7] K. Nakajima, H. Hauser, T. Li, et al., Information pro-             dynamical systems, Phys. Rev. Research 3, 043135
+     cessing via physical soft body, Sci. Rep. 5, 10487 (2015).          (2021).
+ [8] J. Torrejon, et al., Neuromorphic computing with               [27] T. Kubota, Y. Suzuki, S. Kobayashi, Q. H. Tran, N. Ya-
+     nanoscale spintronic oscillators, Nature 547, 428 (2017).           mamoto, K. Nakajima, Temporal information processing
+ [9] W. D. Lu, Reservoir computing using dynamic memris-                 induced by quantum noise, Phys. Rev. Research, 5(2),
+     tors for temporal information processing, Nature Com-               023057 (2023).
+     munications 8, 2204 (2017).                                    [28] J. Kim, Y. Oz, D. Rosa, Quantum chaos and circuit pa-
+[10] J. Chen and H. I. Nurdin, Learning nonlinear input– out-            rameter optimization, arXiv:2201.01452
+     put maps with dissipative quantum systems, Quantum             [29] D. Herman, R. Shaydulin, Y. Sun, S. Chakrabarti, S. Hu,
+     Information Processing 18, 198 (2019).                              Portfolio optimization via quantum zeno dynamics on a
+[11] L. Govia, G. Ribeill, G. Rowlands, H. Krovi, T. Ohki,               quantum processor, arXiv:2209.15024
+     Quantum reservoir computing with a single nonlinear os-        [30] D. K. Burgarth, P. Facchi, V. Giovannetti, H. Nakazato,
+     cillator, Phys. Rev. Research 3, 013077 (2021).                     S. Pascazio, K. Yuasa, Exponential rise of dynamical
+[12] R. Martínez-Peña, J. Nokkala, G. L. Giorgi, R. Zam-                 complexity in quantum computing through projections,
+     brini, M. C. Soriano, Information processing capacity of            Nature Communications 5, 5173 (2014).
+     spin-based quantum reservoir computing systems, Cog-           [31] L. Botelho, A. Glos, A. Kundu, J. A. Miszczak, O. Salehi,
+     nit. Comput. 1–12 (2020).                                           Z. Zimboras, Error mitigation for variational quantum al-
+[13] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yasuoka, N. Ya-                 gorithms through mid-circuit measurements, Phys. Rev.
+     mamoto, Natural quantum reservoir computing for tem-                A 105, 022441 (2022).
+     poral information processing, Sci. Rep. 12, 1353 (2022).       [32] Y. Q. Chen, S. X. Zhang, C. Y. Hsieh, S. Zhang, A non-
+[14] M. Negoro, K. Mitarai, K. Fujii, K. Nakajima, M.                    hermitian ground state searching algorithm enhanced by
+     Kitagawa, Machine learning with controllable quan-                  variational toolbox, arXiv:2210.09007
+     tum dynamics of a nuclear spin ensemble in a solid.            [33] Z. Qiao, P. H. Nguyen, W. Zhang, Model-based contact
+     arXiv:1806.10910                                                    detection and position control of a fabric soft robot in un-
+[15] P. Pfeffer, F. Heyder, J. Schumacher, Reduced-order                 known environments, Front Robot AI 9: 997366 (2022).
+     modeling of two-dimensional turbulent rayleigh-benard          [34] M. J. Korenberg, Identifying nonlinear difference equa-
+     flow by hybrid quantum-classical reservoir computing,               tion and functional expansion representations: The fast
+     arXiv:2307.03053                                                    orthogonal algorithm, Annals of biomedical engineering
+[16] A. Burgess, M. Florescu, Quantum reservoir comput-                  16 (1988).
+     ing implementations for classical and quantum problems,
+     arXiv:2211.08567
+[17] Z. Mlika, et al., User trajectory prediction in mobile wire-
+     less networks using quantum reservoir computing, IET              APPENDIX A. TEMPORAL INFORMATION
+     Quant. Comm. 1–11 (2023).                                               PROCESSING CAPACITY
+[18] L. Domingo, G. Carlo, F. Borondo, Taking advantage of
+     noise in quantum reservoir computing. Sci. Rep. 13, 8790
+     (2023).                                                          To compute the temporal information pro-
+[19] N. Götting, F. Lohof, and C. Gies, Exploring quan-             cessing capacity (TIPC) [26, 27], we adopt the
+     tum mechanical advantage for reservoir computing,              Volterra–Wiener–Korenberg series [34] as the orthonor-
+     arXiv:2302.03595                                               mal polynomial expansion composed of input history
+[20] J. Chen, H. I. Nurdin, N. Yamamoto, Temporal informa-          and the reservoir’s state history. Let the N -dimensional
+     tion processing on noisy quantum computers, Phys. Rev.         state and input be xt = [x1,t , · · · , xN,t ]⊤ ∈ RN and
+     Appl. 14, 024065 (2020).                                       ut ∈ R, respectively, and the state is a function of past
+                                                                                                                                                  12
+
+                                                                                    (i)
+state time-series and input history, meaning that xt =                       bases ξt     as
+f (ut , ut−1 , . . . , x1,t−1 , x1,t−2 , . . . , xN,t−1 , xN,t−2 , . . .).
+                                                                                                  ∞
+We consider the states matrix X = [x0 , . . . , xT −1 ]⊤ ∈                                        X        (i)
+RT ×N with r (1 ≤ r ≤ min{T, N }) is the matrix                                           x̂t =         γi ξt , C(X, z (i) ) = ||γi ||2 ,
+rank of X ⊤ X. We obtain the normalized, linearly                                                 i=1
+
+independent state x̂t ∈ Rr via the compact SVD of X                                                 (i)          (i)                 (i)    (i)
+as X = P ΣQ⊤ (P ∈ RT ×r , Σ ∈ Rr×r , Q ∈ RN ×r ),                            where z (i) = [z1 , · · · , zT ]⊤ , ξ (i) = [ξ1 , · · · , ξT ]⊤
+where P = [x̂0 , · · · , x̂T −1 ]⊤ . Here, P and Q are real                  (||ξ (i) || = 1), and there is a one-to-one correspondence
+                                                                                          (i)      (i)
+orthogonal matrices, and Σ is the square diagonal matrix                     between zt and ξt .
+with non-negative real entries. The state x̂t is expanded                       We explain that the numerical error Cerror (X, z (i) ) of
+as                                                                           TIPC caused by time length follows the χ2 distribution
+                                                                             with r degrees of freedom [25, 27],
+            ∞
+                        (i)
+            X
+   x̂t =            ci zt ,                                                                                            1 2
+             i=1                                                                               Cerror (X, ξ (i) ) ∼      χ (r).
+                                                      (i)    (i)
+                                                                                                                       T
+                  (i)       (i)       (i)   (i)
+   (i)        n         n      1,1m    1,2  m     m N,1
+                                                            m
+                                                            N,2
+  zt     = ut 1 ut−1
+                  2
+                     · · · x̂1,t−1 x̂1,t−2 · · · x̂N,t−1 x̂N,t−2 ··· ,         We choose the top p% value Cth of the distribution.
+                                                                             We adopt p = 5 × 10−2 for the QRs implemented in
+                                                                   (i)
+where ci ∈ Rr is the coefficient vector, and zt de-                          real quantum machines. Using the threshold Cth , we
+                                               P (j)
+notes the ith basis in Eq. (5). Here, Nj = t nt and                          truncated the capacity C as follows:
+       Pr P (j)
+Mj = k=1 t mk,t are the orders of inputs and reser-                                                 (
+                                                                                                     C (if C ≥ Cth )
+voir internal states in this representation, respectively.                              Ctruncate =                  .         (6)
+  Using the Gram–Schmidt orthogonalization, we can                                                   0 (otherwise)
+obtain the coefficient vectors γi ∈ Rr of orthonormalized
+

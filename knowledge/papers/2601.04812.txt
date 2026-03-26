@@ -1,0 +1,1793 @@
+                                                            Quantum Wiener architecture for quantum reservoir computing
+
+                                                                                                  Alessio Benavoli∗
+                                                                                     School of Computer Science and Statistics,
+                                                                                               Trinity College Dublin.
+                                                                                        Trinity Quantum Alliance, Unit 16,
+                                                                                     Trinity Technology and Enterprise Centre,
+                                                                                         Pearse Street, Dublin 2, Ireland
+
+                                                                                                    Felix Binder†
+                                                                                     School of Physics, Trinity College Dublin.
+                                                                                        Trinity Quantum Alliance, Unit 16,
+                                                                                     Trinity Technology and Enterprise Centre,
+                                                                                         Pearse Street, Dublin 2, Ireland
+                                                                                              (Dated: January 9, 2026)
+arXiv:2601.04812v1 [quant-ph] 8 Jan 2026
+
+
+
+
+                                                            This work focuses on quantum reservoir computing and, in particular, on quantum Wiener ar-
+                                                         chitectures (qWiener), consisting of quantum linear dynamic networks with weak continuous mea-
+                                                         surements and classical nonlinear static readouts. We provide the first rigorous proof that qWiener
+                                                         systems retain the fading-memory property and universality of classical Wiener architectures, despite
+                                                         quantum constraints on linear dynamics and measurement back-action. Furthermore, we develop
+                                                         a kernel-theoretic interpretation showing that qWiener reservoirs naturally induce deep kernels,
+                                                         providing a principled framework for analysing their expressiveness. We further characterise the
+                                                         simplest qWiener instantiation, consisting of concatenated quantum harmonic oscillators, and show
+                                                         the difference with respect to the classical case. Finally, we empirically evaluate the architecture on
+                                                         standard reservoir computing benchmarks, demonstrating systematic performance gains over prior
+                                                         classical and quantum reservoir computing models.
+
+
+                                                              I.   INTRODUCTION                               the (classical) Wiener architecture [21], depicted in Fig-
+                                                                                                              ure 1. By suitably combining the outputs of finitely many
+                                              Reservoir computing (RC) [1, 2] is a computational              quantum linear networks with a polynomial readout, [7]
+                                           framework in which temporal information is processed               claimed that universality can be attained by this QRC
+                                           by driving a dynamical system with input signals while             architecture. In this paper, we refer to it as the quantum
+                                           training only the output layer. Despite this strong re-            Wiener architecture (qWiener). This claim is particu-
+                                           striction, RC architectures such as liquid state machines          larly interesting, as continuous-variable quantum opti-
+                                           [1] and echo-state networks [2] are provably universal for         cal systems provide efficient platforms for its realization
+                                           approximating fading-memory systems, i.e., dynamical               [7, 22, 23]. Moreover, by employing weak measurements,
+                                           systems depending only on a finite past history of inputs.         this architecture mitigates the loss of past input memory
+                                              Recent efforts have extended RC into the quantum                [7, 24, 25] that typically results from the measurement
+                                           regime [3–12], motivated both by the high dimensional-             process.
+                                           ity of quantum systems and by the prospect of exploiting              However, there are fundamental differences between a
+                                           near-term noisy intermediate-scale quantum platforms.              classical and a quantum architecture:
+                                           Quantum reservoir computing (QRC) aims to process                      • Unlike classical LTI systems, quantum linear net-
+                                           temporal data streams through quantum dynamics, and                      works must preserve the canonical commutation re-
+                                           extract classical information through suitable measure-                  lations, which impose stringent constraints (e.g.,
+                                           ments. QRC have achieved promising results in address-                   unitarity) on their parameters and their dynamics.
+                                           ing temporal and classification tasks [13–19].
+                                                                                                                  • Weak measurements also perturb the quantum sys-
+                                              In [7], it was shown that even linear quantum networks
+                                                                                                                    tem, introducing back-action that may compromise
+                                           restricted to Gaussian states can, in principle, provide
+                                                                                                                    both fading-memory and universality properties.
+                                           universality for RC. This argument relies on the classical
+                                           result [20] that any continuous fading-memory dynami-              These important aspects were not explicitly addressed in
+                                           cal system can be represented by a single-input, multi-            [7]. In this work, our contributions are as follows:
+                                           output linear time-invariant (LTI) system followed by a                • We rigorously prove the universality of the qWiener
+                                           polynomial nonlinearity. This architecture is known as                   architecture: a system of quantum linear networks
+                                                                                                                    with weak continuous measurements, whose out-
+                                                                                                                    comes are processed through classical polynomial
+                                                                                                                    readouts. We prove that, despite quantum con-
+                                           ∗ alessio.benavoli@tcd.ie
+                                                                                                                    straints in their dynamics and measurement back-
+                                           † felix.binder@tcd.ie
+                                                                                                                    action, qWiener systems retain the fading-memory
+                                                                                                                       2
+
+  property and universal approximation capabilities                                        y1 (t)
+  of classical Wiener architectures.                                               h1
+
+• We develop a kernel-theoretic perspective on clas-                                       y2 (t)
+  sical Wiener architectures for RC, linking their ex-                             h2                         o(t)
+  pressive power to kernel methods and Gaussian                                                       f
+                                                               u(t)                ..
+  processes. We show that the reservoir naturally                                   .
+  induces kernel functions capturing correlations be-
+  tween input sequences. This leads to a deep-kernel                                       yd (t)
+                                                                                   hd
+  interpretation of classical Wiener architectures.
+  Similarly, we show that, with some important dif-
+  ferences (due to the need of preserving the canoni-     FIG. 1. Wiener architecture: connection of d parallel linear
+  cal commutation relations), just as randomised LTI      SISO dynamical systems (hi ) with a memoryless nonlinear
+  dynamical systems with nonlinear readouts yield         function f . u(t), o(t) are the input and output signal respec-
+  deep kernels in classical RC, qWiener architectures     tively.
+  combining randomised quantum linear networks
+  with classical nonlinear readouts also generate deep
+  kernels. This allows us to bridge QRC with mod-                     II.   BACKGROUND AND NOVEL
+  ern kernel methods in machine learning, providing                            PRELIMINARIES
+  a novel approach to assess their expressiveness in-
+  stead, for instance, of using information processing       In this section, we introduce the notation and present
+  capacity [7, 26].                                       both established and novel background results that form
+                                                          the foundation of our main contributions. While exten-
+• Leveraging this kernel-based viewpoint, we analyse
+                                                          sive, this material is essential, as these results will be
+  the expressive power of the simplest qWiener in-
+                                                          directly employed in developing our core findings in the
+  stantiation, where the quantum linear block is the
+                                                          subsequent sections.
+  concatenation of nc quantum harmonic oscillators,
+  each linearly coupled to an external field. This al-
+  lows us to highlight the difference between the clas-   A.    Classical Wiener architecture and connection to
+  sical and quantum case. We further show that the                            kernel methods
+  resulting system is completely passive and, there-
+  fore, implementable using only passive optical com-
+  ponents. Moreover, we prove that the weak mea-             A classical Wiener architecture consists of multiple
+  surement does not disturb its dynamics but merely       parallel classical Single Input Single Output (SISO) LTI
+  adds classical Wiener noise to the output. This re-     systems whose outputs are fed into a static nonlinear-
+  sult exploits the quantum nature of the proposed        ity. When this architecture is used in RC, only the final
+  QRC architecture, in particular the fact that an ob-    (readout) layer is trained. Consequently, the parameters
+  served quantum linear network evolves according to      of the parallel SISO LTI systems must be selected be-
+  the quantum Kalman filter equations.                    forehand. There are two main approaches for choosing
+                                                          these parameters: (1) random generation from specific
+• We evaluate the simplest qWiener architecture           probability distributions; (2) deliberate design to achieve
+  against the model proposed in [7], as well as a clas-   a desired dynamic behavior of the LTI system [27]. In
+  sical echo-state network (used as a baseline), on       the first approach, the main challenge is to select dis-
+  three benchmark reservoir computing tasks: parity-      tributions that yield a system with sufficient expressive-
+  check, NARMA10, and delay. Our results demon-           ness. This expressiveness can be assessed by examining
+  strate that the proposed approach consistently out-     the statistical properties of the nonlinear basis functions
+  performs the method in [7]. In particular, we           obtained through combinations of randomly generated
+  show empirically (consistently with our theoretical     LTI systems. In this paper, we concentrate on this ap-
+  derivation of the corresponding deep kernel) that       proach, although we will provide an example of the sec-
+  the performance of our model systematically im-         ond approach in the numerical experiments section.
+  proves as the number of harmonic oscillators in the        A unifying perspective for analysing the first approach
+  linear network increases – a property that does not     is offered by kernel theory and its Bayesian counterpart,
+  hold for [7].                                           Gaussian processes [28]. We recall that:
+• Finally, we exploit our universality result for the     Definition 1 (Gaussian Process). A GP is a collec-
+  qWiener architecture to show that it can be de-         tion of random variables, any finite number of which
+  signed to have a prescribed long-term memory ca-        have a joint Gaussian distribution. Formally, a real-
+  pacity, and a computational basis related to the        valued function f (x) with x ∈ Rn is said to be GP dis-
+  Legendre polynomials, using a result derived in [27]    tributed, denoted as f ∼ GP(µ, k), if for any finite set
+  for classical reservoir computing.                      of inputs x1 , . . . , xn , the corresponding function values
+                                                                                                                                    3
+
+f (x1 ), . . . , f (xn ) follow a multivariate normal distribu-          Then, given the parameters {αi , ωi }ni=1
+                                                                                                                c
+                                                                                                                   , the impulse re-
+tion:                                                                    sponse h(t) is GP distributed with zero-mean function
+                                                                 and covariance function
+                     µθ (x1 )     Kθ (x1 , x1 ) · · · Kθ (x1 , xn )
+f (x) ∼ N  ...  ,                  ..                  ..
+                                                ..                                             nc
+                                                                     ,                   1 X
+                                                                
+                                        .           .       .                E[h(t)h(s)] =        e−αi (t+s) cos(ωi (t − s)),    (5)
+                     µθ (xn )     Kθ (xn , x1 ) · · · Kθ (xn , xn )                        nc i=1
+
+where µθ (x) = E[f (x)] is the mean function and                     for all time instants t, s. Then, in the limit as nc → ∞,
+Kθ (x, x′ ) = E[(f (x) − µ(x))(f (x′ ) − µ(x′ ))] is the co-         E[h(t)h(s)] tends to:
+variance function (or kernel) for any x, x′ ∈ Rn . The                           Z ∞Z ∞
+mean and covariance functions fully define a GP. They
+                                                                     Kθ (t, s) =           ϕθ (α, ω)e−α(t+s) cos(ω(t − s))dαdω.
+usually depend on a vector of hyparparameters θ ∈ Rnp .                           0       −∞
+                                                                                                                                   (6)
+  Generally, the mean function µθ of a GP is assumed to              Moreover, at the limit, h(t) ∼ GP(0, Kθ (t, s)).
+be zero, so its covariance function entirely characterises
+the properties and behavior of the process.                             Note that, ϕθ (α, ω) is a generalised power spectral den-
+  Now consider a deterministic SISO LTI model:                       sity (that is, a nonnegative function satisfying ϕθ (α, ω) =
+                                                                     ϕθ (α, −ω)), which has been normalised to integrate to
+                   dx(t) = Ax(t)dt + Bu(t)dt,                 (1)    one. We can then interpret it as a PDF and, there-
+                    y(t) = Cx(t) + Du(t),                     (2)    fore, the limit in (6) follows by the strong law of large
+                                                                     numbers.[32]
+where t ≥ 0 is time, u(t) ∈ R is the input signal, y(t) ∈ R
+is the output signal and x(t) ∈ Rnx is the state. The                Proposition 1 ([31]). Assume that the impulse response
+matrices are A ∈ Rnx ×nx , B ∈ Rnx ×1 , C ∈ R1×nx , D ∈              h(t) is GP distributed with zero mean function and co-
+R. We assume the system is stable, that is the eigenvalues           variance function (6). Depending on the choice of the
+of A have strictly negative real parts. The output of a              probability density function ϕθ (α, ω), from (6) we can
+SISO LTI system can be written as                                    derive that
+                       Z t                                              1. if ϕθ (α, ω) = δ(α)N (ω; ω0 , ℓ12 ) then
+                y(t) =     h(t − τ )u(τ )dτ,             (3)
+                             0                                                                         (t−s)2
+                                                                                  (SE)
+                                                                                Kθ       (t, s) = e− 2ℓ2 cos(ω0 (t − s));          (7)
+where h is the impulse response (we have assumed that
+u(t) = 0 for t < 0).[29] The impulse response of the                    2. if ϕθ (α, ω) = π(ωα            αm αM
+                                                                                             2 +α) Unif(α; 2 , 2 ) then the ker-
+above system depends on the matrix parameters as fol-
+                                                                           nel is
+lows: h(t) = CeAt B + Dδ(t), where eM denotes the ma-
+trix exponential of M and δ(t) is the Dirac’s delta. It is                    (T C)              e−αm max(t,s) − e−αM max(t,s)
+well known that the term CeAt B can be written as the                      Kθ         (t, s) =                                 ;   (8)
+                                                                                                    2 max(t, s)(aM − am )
+linear combination of decaying sinusoidal functions:[30]
+           nc
+           X                                                         where δ(α) is the Dirac’s delta. The vector θ includes
+  h(t) =         e−αi t (βi cos(ωi t) − γi sin(ωi t)) + Dδ(t), (4)   the hyperparameters, such as, for instance, ℓ > 0 (length-
+           i=1                                                       scale), ω0 ∈ [0, 2π] and 0 < αm < αM .
+where αi > 0, ωi ∈ R are the decaying rate, and, respec-               Observe that, for ω0 = 0, the first kernel function co-
+tively, the angular frequency of the i-th damped oscilla-            incides with the Squared-Exponential kernel, which is a
+tion, and βi , γi ∈ R are scaling parameters. The number             standard kernel in machine learning due to its univer-
+of components is nc = nx /2, where we have assumed that              sal function approximation property [28]. For ω0 ̸= 0,
+nx ≥ 2 is an even number. For simplicity, in this section            one obtains one component of a spectral mixture kernel
+we assume that D = 0.                                                [33], which is also universal. The second kernel is known
+   We now consider the case where the parameters                     as the integrated tuned-correlated kernel [34, 35], whose
+αi , ωi , βi , γi are randomly generated from some specific          universality holds for representing the impulse response
+probability distributions. We report results in dynamic              of a linear dynamical system. Therefore, in the sequel,
+system identification [31], which allow us to define dis-            we will focus on this kernel.
+tributions over these parameters that generate universal
+kernel functions.                                                    Remark 1. Proposition 1 shows that, for suitable
+                                                                     choices of the distributions of the random parameters αi
+Lemma 1 ([31]). For i = 1, . . . , nc , assume that the              and ωi , a reservoir composed of nc SISO LTI systems
+parameters αi , ωi of the impulse response (4) are jointly           gives rise to a Gaussian joint distribution for its output
+sampled from a PDF ϕθ (α, ω) (depending on some hyper-               signal, whose covariance coincides with standard kernels
+                                     √
+parameters θ), and βi , γi ∼ N (0, 1/ nc ) independently.            commonly used in machine learning. In particular, by
+                                                                                                                                                              4
+
+appropriately selecting the distribution of the parameters,                          memoryless function f , as shown in Figure 1. The out-
+one can recover well-known kernels such as the squared                               put is o(t) = f (y1 (t), . . . , yd (t)) at each time instant t.
+exponential or the integrated tuned-correlated kernel (and                           Since we do not know f we put a GP prior on it, that
+many others), thereby providing a principled interpreta-                             is f ∼ GP(0, Kϑo (y(t), y(t′ ))). Note that, contrary to the
+tion of reservoir features in terms of reproducing kernel                            previous case, the kernel has the vector y(t) as input and
+Hilbert spaces [36].                                                                 it is memoryless, because the input only depends on the
+                                                                                     value of y(t) at time t.
+   The GP prior on h induces a GP prior on y(t) =
+                                                                                     Proposition 3. Assume f ∼ GP(0, Kϑo (y(t), y(t′ )))
+Rt
+ 0
+   h(t − τ )u(τ )dτ (because the integral is a linear op-
+erator and preserves gaussianity). In particular, we have                            with either a polynomial kernel [28, Sec.4.2]:
+                  Z Z ′           t       t
+                                                     !                                            Kϑo (y(t), y(t′ )) = σf2 (y(t)⊤ y(t′ ) + c)deg ,       (12)
+                                                           ′
+ y(t) ∼ GP               0,                   Kθ (t − τ1 , t − τ2 )u(τ1 )u(τ2 ) .
+                              0       0                                              with ϑ = (σf , c) denoting the scale and off-set hyper-
+                                                         (9)                         parameter and deg the degree, or a squared-exponential
+While in the previous proposition we considered the lim-                             kernel [28, Sec.4.2]:
+iting case nc → ∞, in the context of reservoir computing                                                                              
+we focus on the finite case, where nc is finite.[37] In this                                                         1
+                                                                                      Kϑo (y(t), y(t′ )) = σf2 exp − 2 ∥y(t) − y(t′ )∥2 , (13)
+regime, the impulse response can be physically realised                                                             2ℓ
+by a state-space model (i.e., by a physical system), since
+                                                                                     with ϑ = (σf , ℓ) denoting the scale and lengthscale hy-
+                  nc
+                  X                                                                  perparameter. Then, for a large d and nc , we have that,
+     h(t) =             e−αi t (βi cos(ωi t) − γi sin(ωi t)) = CeAt B,               for the polynomial kernel
+                  i=1                                                                                           
+                                                                                       Kϑo (y(t), y(t′ )) ≈ σf2
+where the matrices A, B, C include the parameters
+                                                                                       Z t Z t′
+{αi , βi , γi , ωi }ni=1
+                      c
+                         .                                                                                                                       deg
+                                                                                                Kθ,nc (t − τ1 , t′ − τ2 )u(τ1 )u(τ2 )dτ1 dτ1 + c      ,
+Proposition 2. Assume the parameters (αi , ωi )ni=1
+                                                 c
+                                                    are                                 0     0
+sampled from ϕθ (α, β). Define                                                                                                                           (14)
+                                                                                     or, for the squared-exponential kernel,
+                  nc                                      
+                                 (j)            (j)
+                  X
+     hj (t) =            e−αi t βi cos(ωi t) − γi sin(ωi t) ,                 (10)
+                                                                                      Kϑo (y(t), y(t′ )) ≈ σf2 exp
+                   i=1
+
+             (j) (j)                √                                                        1
+                                                                                                  Z tZ t
+where βi , γi ∼ N (0, 1/ nc ) independently for i =                                   −                    Kθ,nc (t − τ1 , t − τ2 )u(τ1 )u(τ2 )dτ1 dτ1
+                                                                                            2ℓ2
+                                                          Rt
+1, . . . , nc and j = 1, . . . , d. Denote with yj (t) = 0 hj (t −                                 0   0
+                                                                                                  Z t′ Z t′
+τ )u(τ )dτ . Define y(t) = √1d (y1 (t), . . . , yd (t))⊤ , then we                      1
+                                                                                      − 2                     Kθ,nc (t′ − τ1 , t′ − τ2 )u(τ1 )u(τ2 )dτ1 dτ1
+have that for a large d and nc ,                                                       2ℓ          0    0
+                                                                                                  Z t Z t′                                                !
+                        Z t Z t′                                                             2
+ ⊤            ′                                                                       +                      Kθ,nc (t − τ1 , t′ − τ2 )u(τ1 )u(τ2 )dτ1 dτ1 .
+y (t)y(t ) ≈                          Kθ,nc (t−τ1 , t′ −τ2 )u(τ1 )u(τ2 )dτ1 dτ1 ,           2ℓ2    0   0
+                         0    0
+                                                                              (11)                                                                       (15)
+where Kθ,nc (·, ·) is the covariance defined in (6).
+                                                                                        The proof provided in Appendix C specialises the con-
+  The proof of this proposition is provided in Appendix                              struction given in [38] to a Wiener architecture.
+C, which also contains the proofs of all results stated                              Remark 3. Proposition 3 shows that an input signal
+without explicit references. Proposition 2, which follows                            u(t), when passed through d stable, SISO LTI state-
+directly from Lemma 1 combined with (9), shows how                                   space models – each differing only in their sampled pa-
+we can use d parallel LTI systems to produce a vector                                                (j) (j)                 √
+y(t), whose squared euclidean norm approximates the                                  rameters βi , γi           ∼ N (0, 1/ nc ), independently for
+covariance function of the GP in (9).                                                i = 1, . . . , nx and j = 1, . . . , d – produces a feature vector
+                                                                                     y(t) = √1d (y1 (t), . . . , yd (t))⊤ . When this feature vector is
+Remark 2. The rate of convergence of √    the left hand                              used within either a polynomial or a squared-exponential
+side of (11) to the right hand side is 1/ r with r =                                 kernel, the resulting covariance function converges to a
+min(d, nc ), which follows by the properties of Monte                                deep kernel in the limit as d → ∞, thereby providing a
+Carlo integration.                                                                   principled interpretation of reservoir features in terms of
+                                                                                     reproducing kernel Hilbert spaces.
+   Now we are ready to define the last component of the
+classical Wiener architecture, that is a memoryless non-                               Note that the polynomial kernel is relevant here be-
+linearity. Assume we use the vector y(t) as input for the                            cause, in Wiener’s original proof of universality, the final
+                                                                                                                                                                    5
+
+layer involves a polynomial nonlinearity. However, the                       where the superscript r denotes the real quadrature
+polynomial kernel can also be replaced with other non-                       form. We can then rewrite the commutation relations
+                                                                                   (r) (r)        (r)
+linear kernels that exhibit better extrapolation properties                  as [ži , žj ] = ι(Jn )ij , where the 2n × 2n is
+(such as the squared-exponential one), that is, kernels                                                                         
+whose induced function spaces generalise more reliably                                                                  0n×n In
+outside the range of the training data, rather than being                                                Jn(r) =                   .                            (18)
+                                                                                                                        −In 0n×n
+dominated by rapidly growing polynomial terms.
+   In summary, because the classical Wiener architecture                     Note that, in quantum mechanics, any linear transfor-
+                                                                                                                         ′
+induces a deep kernel, the model can be trained on a given                   mation of the vector ž (r) , that is ž (r) = S ž (r) , must
+dataset by applying standard GP regression to the final                      preserve the commutation relations. This means that:
+                                                                                 (r)         (r)
+GP layer. The computations involved in GP regression                         SJn S ⊤ = Jn , which implies that the matrix S must
+are analogous to those in linear regression with nonlinear                   be sympletic. Finally, observe that (ž (r) ž (r)⊤ )ij =
+basis functions. This effectively implements a classical                     1    (r) (r)      ι  (r)              (r) (r)        (r) (r)
+RC architecture, where only the last layer is trained. In                    2 {ži , žj } + 2 (Jn )ij , where {ži , žj } = ži žj    +
+                                                                              (r) (r)
+particular, the training dataset is:                                         žj ži is the anti-commutator.                    We recall that the
+                                                                             expectation value of any observable ǒ with respect to a
+              Dm = {u(k∆), y(k∆), o(k∆)}m
+                                        k=1 ,
+                                                                             density operator ρ̌ is defined as E(ǒ) = T r(ρ̌ǒ). We can
+                                                                             then define the expectation of the vector of observables
+where y(k∆) ∈ Rd is a feature vector obtained by pass-                       ž (r) as E(ž (r) ) = T r(ρ̌ž (r) ), applied element-wise to the
+ing the input signal u(t) through d SISO LTI state-space                     elements of ž (r) . Similarly, the covariance matrix is de-
+models. The output o(t) is modelled as                                       fined element-wise as E(ž (r) −E(ž (r) ))(ž (r) −E(ž (r) ))⊤ =
+                                                                              1                                                                (r)
+                                                                              2 T r(ρ̌{ž
+                                                                                          (r)
+                                                                                               − E(ž (r) ), ž (r) − E(ž (r) )}) + 2ι T r(ρ̌Jn ) =
+     o(ti ) = f (y(ti )) + εi ,     εi ∼ N (0, σ 2 ),      ti = i∆,                        (r)
+                                                                             Q(r) + 2ι Jn . Therefore, this implies that a real symmet-
+where ∆ is the sampling interval and σ 2 is the variance                     ric positive-definite 2n × 2n matrix Q(r) is a bona fide
+of the measurement noise. Analytical derivations for the                     (quantum) covariance matrix if and only if the Hermi-
+computation of the Gaussian posterior of f and the GP                                                      (r)
+                                                                             tian matrix Q(r) + 2ι Jn is positive semidefinite [39]. For
+predictions are provided in Appendix A.                                      instance, for n = 1, we have that
+Remark 4. By mapping a classical Wiener architecture                                    
+                                                                                                     E(q̌1 − E(q̌1 ))2            1
+                                                                                                                                                                        
+                                                                             Q
+                                                                              (r)
+                                                                                    =                                             2 E({q̌1 − E(q̌1 ), p̌1 − E(p̌1 )})       .
+to a deep kernel, we can characterise its input–output                                      1
+                                                                                            2 E({q̌1 − E(q̌1 ), p̌1 − E(p̌1 )})           E(p̌1 − E(p̌1 ))2
+behavior within a probabilistic framework, linking deep
+                                                                                                                          (r)
+dynamical systems to compositional kernel models. This                       Then the matrix Q(r) + 2ι Jn is positive semidefinite if
+will allow us, in the next section, to understand the dif-
+ferences in expressivity between the classical and quantum                              det(Q(r) + 2ι Jn(r) )
+case.
+                                                                                        = E(q̌1 − E(q̌1 ))2 E(p̌1 − E(p̌1 ))2
+                                                                                        − ( 12 E({q̌1 − E(q̌1 ), p̌1 − E(p̌1 )}))2 − 14 ≥ 0,
+                     B.     Quantum systems
+                                                                              which corresponds to the uncertainty principle. This is
+    In the quantum Wiener architecture we propose, clas-                     a first key difference between classical and quantum sys-
+                                                                                                                    (r)
+sical SISO LTI systems are replaced with quantum linear                      tems: the Hermitian matrix Q(r) + 2ι Jn must be positive
+dynamical systems. Before introducing these systems in                       semidefinite; the positive semidefiniteness of Q(r) alone
+the next section, we first establish some preliminary no-                    is not sufficient.
+tation. Consider an n-mode quantum system with anni-
+hilation and creation operators ǎj , ǎ∗j for j = 1, 2, . . . , n,
+obeying the boson commutation relations [ǎj , ǎ∗k ] = δjk ,                                  1.    Linear quantum dynamical systems
+[ǎj , ǎk ] = [ǎ∗j , ǎ∗k ] = 0, where [a, b] = ab−ba and δjk is the
+Kronecker delta. The operators ǎj , ǎ∗j can equivalently                     Now we will focus on linear quantum dynamical sys-
+be described in terms of the real quadrature components                      tems. The Hamiltonian of a quantum linear system is at
+(e.g., position q̌j and momentum p̌j ):                                      most quadratic in terms:
+                         q̌j + ιp̌j         q̌j − ιp̌j                                                  
+                 ǎj =       √      , ǎ∗j = √         ,              (16)             1
+                                                                                   H = ž (c)†
+                                                                                                 M1 M2             1
+                                                                                                           ž (c) = ž (c)† M ž (c) ,
+                               2                 2                                     2         M2∗ M1∗           2
+where ι is the complex-unit, with equivalent commuta-                                                                             ⊤
+tion relations: [q̌j , p̌k ] = ιδjk , [q̌j , q̌k ] = [p̌j , p̌k ] = 0. We    where ž (c) = ǎ1 ǎ2 · · · ǎn ǎ∗1 ǎ∗2 · · · ǎ∗n , which
+introduce the vector                                                         specifies the dynamics of the harmonic oscillators, with
+                                                             ⊤              M1 , M2 ∈ Cn×n and M = M † . We assume that the
+         ž (r) = q̌1 q̌2 · · · q̌n p̌1 p̌2 · · · p̌n ,               (17)   harmonic oscillators are coupled to s distinct external
+                                                                                                                                                    6
+
+quantum boson fields. The coupling between the har-                             Remark 6. In (19)–(20), we could alternatively include
+monic oscillators and the input bosonic                     quantum fields is   the input u(t) as a classical signal, for example a pho-
+linear, taking the form N1 N2 ž (c) , N1 , N2 ∈ Cs×n .
+                                               
+                                                                                tocurrent. However, we do not do so here because we
+Prior to interacting with the quantum system, the input                         want to consider the more general case in which the in-
+fields may be processed by static devices, such as beam-                        put is quantum, for instance, the amplitude of an input
+splitters or phase shifters. This is modeled by a unitary                       laser. This ensures that the quantum linear network is
+scattering matrix S ∈ Cs×s . In the Heisenberg picture,                         fully quantum, while only the readout layer will be clas-
+the joint dynamics of the harmonic oscillators and the                          sical in our qWiener architecture.
+quantum fields are described by a system of Quantum
+Stochastic Differential Equations (QSDEs) [40]. These                             Finally, we recall that:
+can be equivalently represented as a Quantum State-                             Definition 2. [40, 41] A QSS is said to be completely
+Space (QSS) model, expressed in the real-quadrature co-                         passive if M2 = 0, N2 = 0, ℜ(M1 ) = ℜ(M1 )⊤ , ℑ(M1 ) =
+ordinates ž (r) = (q̌1 , . . . , q̌n , p̌1 , . . . , p̌n )⊤ as [41]:           −ℑ(M1 )⊤ .
+
+  dž (r) (t) = A(r) ž (r) (t)dt + L(r) (u(t)dt + dw̌(r) (t)) (19)                In quantum reservoir computing, understanding the re-
+                                                                                alisability of quantum linear systems is crucial. A com-
+  dy̌ (r) (t) = C (r) ž (r) (t)dt + D(r) (u(t)dt + dw̌(r) (t)) (20)            pletely passive system has a quadratic Hamiltonian and
+                                                                                linear couplings, generating no energy and requiring no
+where                                                                           active elements and can be implemented using only pas-
+                 
+                  ℜ(S) −ℑ(S)
+                                                                               sive optical components.
+         D(r) =                 ,                                      (21)
+                  ℑ(S) ℜ(S)
+                                         
+                  ℜ(N1 + N2 ) ℑ(−N1 + N2 )                                                       2.   Quantum Kalman filter
+         C (r) =                            ,                          (22)
+                  ℑ(N1 + N2 ) ℜ(N1 − N2 )
+         L(r) = −C (r)♯ D(r) ,                                         (23)        The temporal evolution of an open quantum system
+                                                                              under continuous (weak) measurement is described by
+                  ℑ(M1 + M2 )   ℜ(M1 − M2 )
+         A(r) =                                                                 the quantum Kalman filter. By denoting the density op-
+                  −ℜ(M1 + M2 ) −ℑ(−M1 + M2 )
+                                                                                erator of the measured system with ρ̌m (t) and redefining
+                1 (r)♯ (r)                                                      πt (ž (r) ) = T r(ρ̌m (t)ž (r) ). Note that, before measure-
+              − C C ,                                                  (24)
+                2                                                               ment, ρ̌(0) = ρ̌m (0). We consider a homodyne detection
+where ℜ denotes the real-part, ℑ is the imaginary part,                         of the first quadrature. We can rewrite the stochastic
+the ♯-adjoint of a matrix X ∈ R2s×2n is defined as X ♯ =                        evolution of the observed system (19)–(20) as the quan-
+    (r)      (r)       (r)                                                      tum Kalman filtering equation [41]:
+−Jn X † Js with Jn defined in (18), and u(t)dt +
+dw̌(r) (t) is the vector of the s external input fields with
+w̌(r) (t) being a quantum Wiener process satisfying the                           dπt (ž (r) ) = A(r) πt (ž (r) )dt + L(r) u(t)dt + Gt dνq (t),
+                                                      (r)
+Itō relationship: dw̌(r) (t)dw̌(r)⊤ (t) = Q(r) + 2ι Js . It                                                                                   (28)
+can be proved that the system matrices A(r) , L(r) , C (r)                          dyqm (t) = Cq(r) πt (ž (r) )dt + Dq(r) u(t)dt
+satisfy the following physical realisability conditions:                                                   
+                                                                                              + Dq(r) Dq(r)⊤ dνq (t),                          (29)
+       A(r) Jn(r) + Jn(r) A(r)⊤ + L(r) Js(r) L(r)⊤ = 0,                (25)
+                                                                                                                                ⊤
+                       Jn(r) L(r) + C (r)⊤ Js(r) D(r) = 0,                                (r)                    (r)
+                                                                                                       
+                                                                       (26)     where Cq = Is 0s C (r) , Dq = D(r) Is 0s , Gt =
+                                                                                    (r)⊤               (r)⊤
+                            D(r) Js(r) D(r)⊤ − Js(r) = 0.              (27)     Vt Cq     + L(r) Q(r) Dq     and the covariance matrix Vt
+                                                                                satisfies the Riccati differential equation:
+Contrarily, we can also prove that for any system ma-
+trices A(r) , L(r) , C (r) , D(r) satisfying the physical realis-                          V̇t = A(r) Vt + Vt A(r)⊤ + L(r) Q(r) L(r)⊤
+                                                                                                                 −1
+ability conditions, originates into a valid QSDE, that is
+                                                                                                   
+                                                                                               − Gt Dq(r) Dq(r)⊤     G⊤
+                                                                                                                      t ,                      (30)
+the QSS can be physically realised by a genuine quantum-
+mechanical system. This also ensures that the fundamen-                         and
+tal commutation relations are preserved during temporal                                                 −1 
+evolution.                                                                         νq (t) = Dq(r) Dq(r)⊤
+Remark 5. This is a key difference between classical                                                  Z t                                      
+linear dynamical systems and quantum ones. In the lat-                                     yqm (t) −      (Cq(r) πτ (ž (r) ) + Dq(r) u(τ ))dτ
+                                                                                                         0
+ter, the system matrices A(r) , L(r) , C (r) , D(r) cannot be
+chosen arbitrarily, which consequently imposes a limit on                       is the so-called innovation process of the quantum
+universality and must be taken into account when design-                        Kalman filter. Note that νq (t) is a classical standard
+ing QRC.                                                                        Wiener process, E[νq (t)νq (t′ )⊤ ] = min{t, t′ }I2s .
+                                                                                                                               7
+
+   We recall the following definitions. For the system (1)-         First, we consider a network of d one-dimensional
+(2), the matrix pair (A, B) is said to be stabilizable if         quantum harmonic oscillators connected together via
+there exists some matrix R such that A − BR has all               concatenation product [43]. This will allow us to under-
+eigenvalues with strictly negative real-parts. The matrix         stand the difference between classical and quantum linear
+pair (A, C) is said to be detectable if there exists some ma-     dynamcial systems in terms of impulse response.
+trix R such that A − RC has all eigenvalues with strictly           Second, we will show that we can build a quantum lin-
+negative real-parts.                                              ear dynamical system with any pre-defined impulse re-
+                                            (r)                   sponse, proving their universality.
+   Given (28)–(29), if the pair (A(r) , Cq ) is detectable
+and (A(r) , L(r) Q1/2(r) ) is stabilizable, the quantum
+Kalman filter converges to a unique steady-state [42, Sec.
+8.5], whose covariance V∞ is given by the solution of              A.   One-dimensional quantum harmonic oscillator
+
+          0 = A(r) V∞ + V∞ A(r)⊤ + L(r) Q̃(r) L(r)⊤                  Consider the generic QSS model in (19)–(20). Assume
+                              −1
+                                                                  that n = 1, i.e., a single degree of freedom, so that the
+                  
+            − G∞ Dq(r) Dq(r)⊤     G⊤
+                                   ∞.                     (31)
+                                                                  state reduces to ž (r) = (q̌1 , p̌1 )⊤ . We can then prove the
+Remark 7.                                                         following result.
+                                                                  Lemma 2. The state space matrices of a n = 1 degree-
+    • It is important to notice that, in (28)-(29), the im-
+                                                                  of-freedom linear passive QSS with s inputs are
+      pulse response between the input u(t) and the out-
+      put yqm is simply the restriction to the first quadra-
+                                                                                             
+                                                                      (r)       −λ    ℜ(M1 )
+      ture of the impulse response of the system (19)–             A =                           ,                    (32)
+                                                                             −ℜ(M1 ) −λ
+      (20). Therefore, by filtering out the contribution of                                 
+                                                                             ℜ(N1 ) −ℑ(N1 )
+      the noise νq into yqm (induced by the continuous             C (r) =                     ,                      (33)
+      weak measurement), we reduce to the deterministic                      ℑ(N1 ) ℜ(N1 )
+                                                                                ℜ(N1 )⊤ ℑ(N1 )⊤
+                                                                                                               
+      part of the system (19)–(20).                                                                   ℜ(S) −ℑ(S)
+                                                                    L(r) = −                                        , (34)
+                                                                               −ℑ(N1 )⊤ ℜ(N1 )⊤       ℑ(S) ℜ(S)
+    • It is important to notice the particular form of                                   
+                                   (r)⊤               (r)⊤
+                                        + L(r) Q(r) Dq ,                     ℜ(S) −ℑ(S)
+      the Kalman gain G∞ = V∞ Cq                                   D(r) =                   ,                         (35)
+      where the second term is due to the common noise                       ℑ(S) ℜ(S)
+      in the two equations in (19)–(20) (see for instance         where λ = 12 (ℜ(N1 )⊤ ℜ(N1 )+ℑ(N1 )⊤ ℑ(N1 )) and the im-
+      [42, Sec. 8.4]). This means that the Kalman gain            pulse response is
+                                              (r)⊤
+      can be zero even when the term V∞ Cq          is not                                                  
+                                                                                         − cos(ωt) − sin(ωt)
+                                                                                
+      zero.                                                             h(t) = e−λt                             ⊗Λ    (36)
+                                                                                          sin(ωt) − cos(ωt)
+  We illustrate the second remark above by proving an                                                    
+important case in which G∞ = 0.                                                                ℜ(S) −ℑ(S)
+                                                                                  + I2s δ(t)                  ,       (37)
+                                                                                               ℑ(S) ℜ(S)
+Theorem 1. Assume Q(r) = 12 I2s , which is the covari-
+ance of the vacuum, D(r) = I2s , n = s, the matrix A(r)           with Λ = ℜ(N1 )ℜ(N1 )⊤ + ℑ(N1 )ℑ(N1 )⊤ , ω = ℜ(M1 )
+has eigenvalues with strictly negative real-parts, the pair       and ℜ(S)2 + ℑ(S)2 = 1.
+         (r)
+(A(r) , Cq ) is detectable and (A(r) , L(r) Q1/2(r) ) is stabi-     The impulse response is a matrix h(t) ∈ R2s×2s as
+lizable and assume that the QSS (19)–(20) is completely           the dimension of the input and output is 2s. We then
+passive. Then the asymptotic Kalman gain G∞ = 0.                  specialise the result to the case where the dimension of
+                                                                  the input quantum field is s = 1.
+   This case is important because it implies that, for large
+t, there is no noise in the dynamic equation (28), since          Corollary 1. Assume that the dimension s = 1,
+Gt ≈ G∞ = 0. In other words, the weak measurement                 ℜ(M1 ) = −ω, ℜ(N1 ) = α, ℑ(N1 ) = β and S = s1 + ιs2 ,
+does not disturb the dynamics of the QSS. We will exploit         with s21 + s22 = 1, where α, β, ω, s1 , s2 ∈ R, then
+this result in the qWiener architecture in the next section.                                 2   2
+                                                                                                               !
+                                                                                  (r)     − α +β
+                                                                                               2       −ω
+                                                                                 A =                     2   2    ,    (38)
+                                                                                             ω       − α +β2
+                 III.   MAIN RESULTS
+                                                                                          −α β         s1 −s2
+                                                                                                             
+                                                                                 L(r) =                            ,   (39)
+                                                                                          −β −α        s2 s1
+   We derive our QRC framework based on a quantum
+                                                                                          α −β
+                                                                                                
+Wiener architecture. This consists of a layer of d QSS                            (r)
+                                                                                 C =               ,                   (40)
+models, each continuously monitored via homodyne de-                                      β α
+tection. The d measured outputs are then fed into a
+                                                                                          s1 −s2
+                                                                                                 
+classical GP model that constitutes the final memoryless                         D(r) =              ,                 (41)
+nonlinear layer of the Wiener architecture.                                               s2 s1
+                                                                                                                                                           8
+
+and                                                                                                       1.     Limit Kernel
+                                                                       
+                                                 − cos(ωt) sin(ωt)
+                        1 2 2
+h(t) =         α2 + β 2 e− 2 t(α +β )                                            The results in Section II A exploit the Gaussianity
+                                                 − sin(ωt) − cos(ωt)
+                        s −s                                              and independence of the coefficients {βi , γi }ni=1   c
+                                                                                                                                      (given
+                           1     2                                                     nc
+              + I2 δ(t)             .                                (42)    {αi , ωi }i=1 ) to show that h̃(t) is GP distributed.
+                          s2 s1
+                                                                                 However, note that, due to the unit-norm constraint
+   This is an impulse response for a system with a two-                      s2i1 + s2i2 = 1, the coefficients {si1 , si2 }ni=1
+                                                                                                                             c
+                                                                                                                                in (43) can-
+dimensional input u(t) and output y(t). Note that, with-                     not be Gaussian distributed. For instance, if we assume
+out loss of generality, we can choose β = 0.                                 that si1 , si2 are independently Gaussian distributed, then
+   To realise our quantum Wiener architecture, com-                          conditioned on s2i1 + s2i2= 1, their distribution
+                                                                                                                                    is Von-
+posed of nc one-dimensional harmonic oscillators, we con-                    Mises (si1 , si2 )⊤ ∼ VM √  12
+                                                                                                            , (1/κ)I2 (see Appendix B
+struct the system by concatenating the harmonic os-                                                       2
+
+cillators with state matrices defined in (38)–(41), us-                      for details about the Von-Mises distribution).
+ing the concatenation product [43].                The concate-                We will now consider another way to derive results
+nation product simply assembles the different compo-                         similar to those in in Section II A. By exploiting the cen-
+nents together, without making any connections between                       tral limit theorem (similarly to what was done in [44, 45]
+them. Consider nc harmonic oscillators with parame-                          for neural networks), we will show that the correspond-
+ters {αi , ωi , si1 , si2 }ni=1
+                             c
+                                , their concatenation product is             ing stochastic process converges to a GP in the limit as
+obtained by setting M1 = diag(ω1 , . . . , ωnc ), N1 =                       nc → ∞.
+diag(α1 , . . . , αnc ) and                                                  Theorem 2. For i = 1, . . . , nc , consider the impulse
+S = diag (s11 + ιs12 , . . . , snc 1 + ιsnc 2 ).                             response (43) andassume that αi2 , ωi ∼ ϕθ (α2 , ω) and
+Proposition 4. Consider the QSS obtained by the con-                         (si1 , si2 )⊤ ∼ VM √     12
+                                                                                                          , (1/κ)I2 independently for i =
+                                                                                                        2
+catenation product of nc harmonic oscillators with pa-
+                                                                             1, . . . , nc . Then, as nc tends to infinity, we have that
+rameters {αi , ωi , si1 , si2 }ni=1
+                                 c
+                                    . Assume that we measure
+the first quadratures q̌1 , . . . , q̌nc of the state, and then                        √                  
+                                                                                                               d
+sum the measured outputs. Denote this sum by ỹqm (t).                                   nc h̃(t) − µh (t) −→ GP (0, Kθ (t, t′ )) ,    (45)
+Moreover, assume that the 2nc -dimensional input u(t) =
+           ⊤                                                                where
+  1nc 0nc u(t) for some scalar input u(t), then the                                         Z ∞Z ∞
+SISO input-output impulse response (between u(t) and                                  r1                              α2 t
+
+ỹqm (t)) is                                                                 µh (t) = √                        α2 e− 2 cos(ωt)ϕθ (α2 , ω)dα2 dω,
+                                                                                        2   −∞      0
+          nc
+          X              α2 t
+                                                                                                                                                    (46)
+                        − 2i
+h̃(t) =         αi2 e           (−si1 cos(ωi t) + si2 sin(ωi t))+si1 δ(t).           ′
+                                                                             Kθ (t, t )
+          i=1
+                                                                                1 ∞ ∞ 4 − α2 (t+t′ )
+                                                                                  Z     Z
+                                                                     (43)    =            α e 2      cos(ω(t − t′ ))ϕθ (α2 , ω)dα2 dω
+Remark 8. By comparing (43) with (4), we can notice                             2 −∞ 0
+two major differences in the quantum case: (i) the multi-                    − µh (t)µh (t′ ),                                                      (47)
+plying scalar αi2 ; (ii) the variables si1 , si2 are constrained
+to have unit-norm. These differences follows from the                        and r1 = I1 (κ)/I0 (κ) with In (κ) being the modified
+physical realisability constraints (25)–(27). These con-                     Bessel function of the first kind of order n. Assum-
+                                                                                                                 α2
+straints limit the expressivity of quantum linear networks
+                                                                             ing that ϕθ (α2 , ω) =              2
+                                                                                                                 α4
+                                                                                                                             Unif(α2 ; αm , αM ), then we
+for reservoir computing, as their parameters cannot be                                                    π(ω 2 + 4 )
+freely chosen.                                                               have
+   The quantum system in Proposition 4 is completely                                        r1 (1 + am t)e−am t − e−aM t (1 + aM t)
+passive and, therefore, it can be realised using only pas-                    µh (t) = − √                                          , (48)
+sive optical components like phase shifters, beam splitters                                  2            t2 (aM − am )
+and mirrors. Since it is completely passive, from Theo-                                                                               (49)
+rem 1 it follows that the dynamics of the measured sys-                       Kθ (t, t′ ) =
+tem is deterministic and the noise only affects the mea-                                         a2 τ 2                                          a2M τ 2
+surement equation (29), which implies that:                                    1 (1 + am τ + m2 )e−am τ − e−aM τ (1 + aM τ +                        2 )
+             Z t                                                               2                  2τ 3 (aM − am )
+  ỹqm (t) =     h̃(t − τ )u(τ )dτ + 1⊤
+                                      nc D
+                                           (r) (r)⊤
+                                              D     1nc ν(t),                               ′
+                                                                               − µh (t)µh (t ),                                                     (50)
+                  0
+                                                    (44)
+                                                                             where τ = max(t, t′ ).
+where h̃(t) is defined (43). This is important because it
+implies that the weak measurement does not disturb the                       Remark 9. Theorem 2 extends Proposition 1 to the
+dynamics of the QSS. Filtering out the static noise in                       quantum case. It is important to emphasize the differ-
+(44) is quite straightforward.                                               ence between the kernel in (50) for the quantum case
+                                                                                                                               9
+
+and the standard integrated tuned-correlated kernel in            example, between q̌i and q̌j . Therefore, in the following,
+(8). The former includes the fractional polynomial terms          we will show that one way to realise any desired impulse
+             a2 τ 2                                               response is to embed its realisation in the subsystem as-
+(1 + am τ + m2 )/τ 3 , (similarly for aM ), while the latter
+only contains the term 1/τ . Again this difference fol-           sociated with the components of the state q̌1 , . . . , q̌n (or
+lows from the physical realisability constraints (25)–(27),       p̌1 , . . . , p̌n ).
+which introduce the term α2 in (43) and, consequently, α4
+                                                                  Lemma 3. Consider the quantum linear system:
+in (47). For large values of τ , the two kernels converge.
+                                                a2 τ 2
+For small τ , the polynomial term 1 + am τ + m2 behaves
+                                                                                                  
+                                                                                 (r)      A 0n×n
+similarly to the polynomial term that appears in the im-                       A =                                          (53)
+                                                                                        0n×n Z
+pulse response of a system in Jordan form (specifically,                                           !
+                                                                                          (r)
+in the case of a LTI system with a complex-conjugate pair                        (r)     C1 01×n
+                                                                               C =             (r)                          (54)
+of eigenvalues of multiplicity three). Therefore, paradox-                              01×n C2
+ically, the physical realisability constraints (25)–(27) can
+increase the expressivity of the RC when the distribution                            L(r) = Jn(r) C (r)⊤ Js(r)              (55)
+of randomised parameters is suitably chosen.                                             (r)
+                                                                                     D         = I2s                        (56)
+   The difference between the kernel (8) and (50) is the                             (r)⊤       (r)
+main difference between the classical and the quantum             If Z = −A⊤ − C1 C2 , then the system is physically
+Wiener architectures. Indeed, as we perform a weak mea-           realisable, that is, it satisfies (25)–(27), and the impulse
+surement on the first quadrature component of each one            response is
+of the one-dimensional harmonic oscillators, we obtain                                                           !
+                                                                                  (r)      (r)⊤
+the signal:                                                                    −C1 eAt C2                0
+                                                                     h(t) =                          (r)    (r)⊤   + I2s δ(t).
+             Z t                                                                      0           −C2 eZt C1
+  ỹqm (t) =     h̃(t − τ )u(τ )dτ + 1⊤
+                                      nc D
+                                           (r) (r)⊤
+                                              D     1nc ν(t).
+              0                                                      From the above lemma, it can be noticed that, by
+                                                          (51)                (r)               (r)
+We can filter   out  the  noise  to recover   the deterministic   setting C1 = −C and C2 = B ⊤ , the restriction of
+             Rt                                                   the impulse response to the first component of the input
+component 0 h̃(t − τ )u(τ )dτ . After the weak measure-
+ment, the qWiener architecture becomes classical and,             and output leads to the impulse response CeAt B + δ(t).
+therefore, we can apply the same results from Propo-              Therefore, we have shown that any SISO transfer func-
+sitions 2–3 to derive the architecture (shown in Fig-             tion can be realised. As noted earlier, in RC the
+ure III A 1) and the corresponding deep kernel for the            feedthrough term δ(t) can be disregarded, since the input
+qWiener model. The deep kernel has the same structure             u(t) can always be fed into or removed from the input of
+as in Proposition 3, but Kθ,nc (t − τ1 , t′ − τ2 ) corresponds    the readout layer.
+to the kernel in (50) instead of that in (8).                        Observe that, in RC, the matrix A is assumed to have
+   In Figure III A 1, √the normalisation layer performs the       all eigenvalues with strictly negative real parts. However,
+                        n
+operation y i (t) = √dc (yi (t) − µ̂y (t)), where the mean        since the matrix Z = −A⊤ + C ⊤ B ⊤ includes the term
+            Pd                                                    −A⊤ , the matrix Z is not, in general, guaranteed to have
+µ̂y (t) = d1 i=1 yi (t) is approximatively equal to               eigenvalues with strictly negative real parts. This implies
+                          Z t                                     that the resulting QSS could be unstable in general. This
+                µy (t) =      µh (t − τ )u(τ )dτ.         (52)    is problematic, as the corresponding QRC could then
+                          0                                       require an unbounded amount of energy. In what fol-
+                                                                  lows, we show that, by suitably choosing the matrices
+                                                                    (r)   (r)
+                                                                  C1 , C2 , we can ensure that this does not occur.
+ B.   Universality of quantum Wiener architectures
+                                                                                             (r)              ⊤ (r)
+                                                                  Theorem 3. Assume that C1 = R⊤ −C ⊤ , C2 =
+   To prove that qWiener architectures can realise gen-                   ⊤
+eral SISO LTI blocks, we need to show that a QSS                   B 0n×1    then Z = −A⊤ − R⊤ B ⊤ = (−A − BR)⊤ ,
+can implement any impulse response of the form h(t) =             where R ∈ R1×n . The impulse response is:
+CeAt B + Dδ(t), for arbitrary matrices A, B, C, D. Note                                                      
+that, without loss of generality, we can assume D = 0                     −ReAt B 0        0           0
+since, in an RC architecture, we can always provide u(t)                  CeAt B 0        0           0      
+                                                                  h(t) =                                      + I4 δ(t).
+as an input in the last layer.                                               0     0 −B ⊤ eZt R⊤ B ⊤ eZt C ⊤ 
+   It is important to observe that we cannot directly set                     0     0      0           0
+A(r) = A, L(r) = B, and C (r) = C, because physical
+                                                                  Assuming that the matrix B, AB, A2 B, . . . , An−1 B has
+                                                                                                                      
+realisability constraints (25)–(26) do not allow arbitrary
+choices of the matrices A(r) , L(r) , C (r) . However, these      rank n, then we can always find R such that Z has eigen-
+constraints only impose conditions on the matrix ele-             values with strictly negative real-part, so that the QSS
+ments relative to the state variables q̌i , p̌i , and not, for    (53)–(56) is stable.
+                                                                                                                                                                                                10
+ n              o                                  
+      (j) (j)                          12
+     si1 , s12 i=1,...,nc ∼ VM √        2
+                                          , (1/κ)I2
+       n          j=1,...,d
+                       o
+            2(j)   (j)
+         αi , ωi         i=1,...,nc
+                                    ∼ ϕθ (α2 , ω)
+                       j=1,...,d
+
+
+
+                                                nc               (α
+                                                                      (1) 2
+                                                                      i
+                                                                          ) t                                        y1 (t)                      y 1 (t)
+                                                        (1)                           (1)    (1)     (1)     (1)
+                                                     (αi )2 e−
+                                                P
+                                                                        2            si2 sin(ωi t) − si1 cos(ωi t)
+                                                i=1
+
+
+
+
+                                                                                                                                   Normalisation
+                                                nc               (α
+                                                                      (2) 2
+                                                                      i
+                                                                          ) t                                        y2 (t)                      y 2 (t)                               o(t)
+                                                        (2)
+                                                     (αi )2 e−
+                                                                                      (2)    (2)     (2)     (2)                                                     o
+                                                                                                                                                                       (y(t), y(t′ )))
+                                                P
+                                                                        2            si2 sin(ωi t) − si1 cos(ωi t)                                           GP (0, Kϑ
+                         u(t)                   i=1
+                                                                                ..
+                                                                                 .
+                                                nc               (α
+                                                                      (d) 2
+                                                                      i
+                                                                          ) t                                     yd (t)                         y m (t)
+                                                        (d)                           (d)     (d)     (d)     (d)
+                                                     (αi )2 e−
+                                                P
+                                                                        2            si2 sin(ωi t) − si1 cos(ωi t)
+                                                i=1
+
+
+
+                    FIG. 2. Quantum Wiener architecture obtained by concatenating d quantum harmonic oscillators.
+
+
+   The restriction of the impulse response to the second                                             (1 − δij )gij , where δij is the Kronecker delta. The result-
+component of the output and the first component of the                                               ing Hamiltonian is
+input is CeAt B +δ(t). In summary, we have shown that a
+QSS can realise any transfer function. The rank assump-                                                                         q̌ ⊤ (Gω + V )q̌ p̌⊤ p̌
+                                                                                                                                                +       ,
+tion in Theorem 3 is standard in control theory. The                                                                                    2          2
+matrix R can for instance be determined by solving a
+Linear-Quadratic Gaussian control (LQG) [46] problem                                                 where p̌ = (p̌1 , . . . , p̌n )⊤ , q̌ = (q̌1 , . . . , q̌n )⊤ and Gω =
+with arbitrary weighting matrices.                                                                   diag(ω1 , . . . , ωn ) with ωi > 0. This leads to the differen-
+   It is important to note the following:                                                            tial equations
+Corollary 2. The QSS described by (53)–(56) is not                                                                               dq̌
+completely passive.                                                                                                                  = p̌,                                                  (57)
+                                                                                                                                 dt
+   This means that this system requires an external driv-                                                                        dp̌
+                                                                                                                                     = −(Gω + V )q̌.                                        (58)
+ing (e.g., an external pump beam) to implement. Since                                                                            dt
+the QSS is active, when a weak measurement is per-
+formed on it, the system evolves according to (28)–(29).                                             In [7], the input is injected into the network by resetting
+In this case, the measurement back-action introduces                                                 at each timestep the state of one of the oscillators. In-
+process noise into its dynamics, which needs to be prop-                                             stead of modelling the input by ancilla resets as in [7],
+erly accounted for.                                                                                  we use an equivalent linear QSS representation where the
+   To deal with the noise in the measured system (28)–                                               input couples through an external field as discussed in
+(29), we can employ variational inference in conjunc-                                                II B 1. Assume without loss of generality, we use the first
+tion with stochastic optimization for the readout layer.                                             harmonic oscillator q̌1 , p̌1 to inject the input. By defining
+At each optimisation iteration, the input u(t) is propa-                                             the matrices M1 , M2 , N1 as follows,
+gated through the quantum linear networks under weak
+                                                                                                                                    1
+measurements, generating noisy inputs for the readout                                                                          M1 =   (Gω + In + V ),                                       (59)
+layer. The objective function optimised in the variational                                                                          2
+approximation (known as the Evidence Lower Bound                                                                                    1
+                                                                                                                               M2 = (Gω − In + V ),                                         (60)
+(ELBO)), is estimated from noisy samples, but this esti-                                                                            2
+mate remains unbiased with respect to the true ELBO.                                                                           N1 = (a1 , 0, . . . , 0) ,                                   (61)
+Consequently, a stochastic optimizer such as Adam [47]
+will converge to the true ELBO (or to a local minimum                                                and N2 = 0, we obtain the QSS matrices:
+of it due to the nonlinearity of the optimisation).
+                                                                                                                                                   a2
+                                                                                                                                                                               !
+                                                                                                                         (r)      − 21 e1 e⊤
+                                                                                                                                           1      In
+                                                                                                                       A =                      a2
+                                                                                                                                                                                            (62)
+                                                                                                                                  −Gω − V − 21 e1 e⊤ 1
+     IV.      CONNECTION TO PREVIOUS WORK                                                                                                   ⊤
+                                                                                                                                      e1 0n
+                                                                                                                       C (r) = a1                                                           (63)
+   The work [7] proposes a network of interacting quan-                                                                              0n e1
+tum harmonic oscillators acting as the reservoir for RC,
+                                                                                                                                              
+                                                                                                                                  s1 e1 −s2 e1
+with spring-like interaction strengths gij . The Hamilto-                                                              D(r) =                                                               (64)
+                                                                                                                                  s2 e1 s1 e1
+nian of such a system is described in terms of the
+                                                 P Lapla-
+cian matrix V = V ⊤ having elements Vij = δij k gik −                                                                  L(r) = C (r)♯ D(r)                                                   (65)
+                                                                                                                         11
+
+where e1 is the first element of the canonical basis of Rn     clude a classical echo-state network (ESN ) [1] consisting
+and s21 + s22 = 1. Note that, for a1 = 0 (no input), the       of 200 neurons (spectral radius 0.95), that is a classical
+matrix A(r) coincides with the state matrix defined by         RC based on a recurrent neural network. As benchmark
+(57)–(58). It is interesting to note that, this proposed       problems, we consider the following three dynamical sys-
+quantum linear system has a very particular structure          tems [48].
+for its dynamics and we do not know if this structure             Parity check: The parity check task is a nonlinear tem-
+can represent any linear dynamics, which is necessary          poral benchmark used to assess a model’s ability to re-
+for universality of the corresponding qWiener architec-        tain and combine past input symbols in a nonlinear way.
+ture. Conversely, our approach achieves universality as        Given a binary input sequence ut ∈ {0, 1}, the target
+proven for the system in Section III B. Additionally, in       output is
+the numerical experiments, [7] sets ω = 0.25 and selects                                                 !
+                                                                                               τ
+random interaction strengths g uniformly distributed in                                       X
+the interval [0.01, 0.19] and argues that this breaks sym-                    yt = mod           ut−l , 2 ,
+metries and favours a spectral radius ρ(A) < 1. [7] does                                        l=0
+
+not provide an analysis of the statistical properties of       that is, the parity (even or odd) of the last τ input
+the resulting reservoir to justify the choice of the uni-      bits. As input, we use a pseudo-random binary sequences
+form distribution. In the present work, we go beyond           (PRBS) (with probability p = 0.5). Note that, the parity
+such a heuristic for the case of the qWiener model, e.g.       task was also considered in [7].
+by explicitly expressing the limit kernel in Section III A 1     NARMA10: The nonlinear autoregressive moving av-
+and, therefore, justifying the choice of the distribution      erage task is widely used to test nonlinear dynamical
+                  2            4
+ϕθ (α2 , ω) = ( α2 /(π(ω 2 + α4 ))Unif(α2 ; αm , αM ).         modeling and the balance between memory and nonlin-
+   Finally, the work [7] discusses additional nonlinear ca-    earity. For NARMA10, the target output is:
+pabilities obtained by varying the input encoding of the
+coherent ancillary state, from amplitude to phase. This                                  9
+                                                                                         X
+type of model – comprising a nonlinear transformation          yt = 0.3yt−1 + 0.05yt−1         yt−1−i + 1.5ut−10 ut−1 + 0.1,
+of the input, a bank of SISO LTI systems, and a static                                   i=0
+nonlinearity in the readout layer – is known as a Ham-
+merstein–Wiener model. In the following numerical ex-          where ut is drawn from a uniform distribution in [0, 0.5].
+periment, we assume that the amplitude of the ancillary        The task requires both long memory and nonlinear inter-
+state is equal to the input itself, that is, no nonlinear      actions between past inputs and outputs.
+transformation is applied at this stage. Note that, non-          Delay: The delay task quantifies how much informa-
+linear transformations of the input can be incorporated        tion about past inputs a model can retain. Given an
+both in the model of [7] and in our proposed models.           input ut , the target output is a delayed version of it:
+However, for the same choice of nonlinearities at the in-
+                                                                                       yt = ut−τ .
+put and readout layers, only our architecture in Section
+III B is proven to be universal.                               As input, we use a PRRBS sequence (with probability
+                                                               p = 0.5).
+                                                                  In all experiments, we selected a sampling step ∆ =
+        V.    NUMERICAL EXPERIMENTS                            0.01. Furthermore, we fixed Q(r) = 12 I2s , which is the
+                                                               covariance of the vacuum, and, therefore, to maintain a
+   In this section, we compare the Laplacian-based ar-         high signal-to-noise ratio, we amplified the input signal
+chitecture proposed by [7] and illustrated in Section IV,      by a factor of 500.
+which we refer to as LqW, with the qWiener architecture           Table I reports the median of the average Root Mean
+obtained by concatenating harmonic oscillators, as pre-        Square Error (RMSE) computed over 10 Monte Carlo
+sented in Section III A, which we refer to as HqW. Differ-     repetitions. In each Monte Carlo repetition, a time se-
+ently from [7], for both LqW and HqW we use a squared-         ries of length 1000 is generated for the benchmarks de-
+exponential kernel in the readout layer (instead of a poly-    scribed above, using different realisations of the random
+nomial nonlinearity). This choice eliminates the need to       input sequence ut . The first 800 points are used for train-
+select the order of the polynomial and also provides bet-      ing, while the remaining 200 points are used to compute
+ter extrapolation properties ( the results obtained using a    the average RMSE. The table shows the median RMSE
+polynomial nonlinearity in the readout layer are reported      across the 10 repetitions for three models: (i) the clas-
+in Appendix D for comparison). For LqW, in all the             sical RC ESN; (ii) the QRC LqW; (iii) our QRC HqW.
+experiments, we select the parameters of the quantum           In the top-row, the number between brackets after the
+linear network as ω = 0.25, gij ∼ Unif(0.01, 0.19) and         name of the model is relative to the number of harmonic
+a1 = 5. We tried different combination of the param-           oscillators in the quantum linear network.
+eters but the performance did not change significantly.           It can be seen that our method, HqW, outperforms
+For HqW, in all experiments, we selected am = 0.01 and         LqW across all benchmarks when using the same number
+aM = 20. For comparison, as a baseline, we also in-            of harmonic oscillators. Moreover, the RMSE of HqW
+                                                                                                                         12
+
+
+                     0.6
+                     0.5
+
+
+
+
+                 y
+                     0.4
+                     0.3
+                           80.0    82.5      85.0     87.5      90.0     92.5        95.0        97.5      100.0
+                                                                time
+
+                     0.6
+                     0.5
+                 y
+
+
+
+
+                     0.4
+                     0.3
+                           80.0    82.5      85.0     87.5      90.0     92.5        95.0        97.5      100.0
+                                                                time
+
+                     0.6
+                     0.5
+                 y
+
+
+
+
+                     0.4
+                     0.3
+                           80.0    82.5      85.0     87.5      90.0     92.5        95.0        97.5      100.0
+                                                                time
+                     0.6
+                     0.5
+                     0.4
+                 y
+
+
+
+
+                     0.3
+                     0.2
+                           80.0    82.5      85.0     87.5      90.0     92.5        95.0        97.5      100.0
+                                                                time
+
+FIG. 3. Prediction on a test set for the NARMA10 benchmark: true-signal in gray; HqW(24) in orange; LqW(24) in green;
+PadeqW(14) in red; ESN(200) in blue.
+
+
+is typically half that of LqW, or even lower. Contrary                          A.     Exploiting universality
+to what one would expect from a RC architecture, the
+performance of LqW does not generally improve as the                In this section, we demonstrate how to exploit the
+number of harmonic oscillators increases; in fact, it often      universality of the qWiener architecture (proven in Sec-
+deteriorates, because the additional oscillators alter the       tion III B) to implement a QRC with long-term memory.
+system dynamics in a way that degrades performance. In           In RC, a key determinant of performance is the mem-
+contrast, a key advantage of our method is that we have          ory capacity, that is, the ability of the system to retain
+proven that its performance improves as the number of            information about past inputs. Consider the delay task
+oscillators increases, since the covariance converges more
+closely to the limiting kernel, thus increasing expressivity.                               y(t) = u(t − τ ),
+Our method also generally outperforms the ESN (with
+200 neurons). This is not surprising, as a standard ESN          which requires perfect recall of the input τ time units in
+cannot reliably solve tasks that require large values of τ       the past. This can be written in convolution form as
+and, in particular, struggles with the parity task [49].                            Z ∞
+                                                                             y(t) =       δ(t − s − τ ) u(s) ds,
+                                                                                            −∞
+
+                                                                 where the impulse response of an ideal delay is the shifted
+   Figure 3 shows the prediction on one of the test sets         Dirac delta h(t) = δ(t − τ ).
+of the Monte Carlo simulation for the NARMA10 bench-               The Laplace transform of this impulse response is
+mark: the true-signal is in grayc HqW(24) in orange,             H(s) = e−sτ . Its transfer function e−sτ is not a rational
+LqW(24) in green, and ESN(200) in blue.                          function. Thus, an ideal delay is an infinite-dimensional
+                                                                                                                      13
+
+                       RMSE        ESN LqW (8) HqW (8) LqW (16) HqW (16) LqW (24) HqW (24)
+                     parity(τ = 2) 0.49 0.005 0.0031     0.011   0.0027    0.013   0.0020
+                     parity(τ = 4) 0.49 0.033   0.014    0.083   0.013      0.33    0.012
+                      NARMA10 0.041 0.105       0.069    0.113   0.062     0.117    0.052
+                     delay(τ = 2) 0.026 0.013 0.0055     0.013   0.0038    0.014   0.0038
+                     delay(τ = 4) 0.095  0.49   0.016     0.49   0.014      0.49    0.012
+
+TABLE I. Average RMSE for (i) the classical RC ESN; (ii) the QRC LqW; (iii) our QRC HqW. The number between brackets
+after the name of the model is relative to the number of harmonic oscillators in the quantum linear network.
+
+
+                    0.6
+                    0.5
+                    0.4
+                y
+
+
+
+
+                    0.3
+                    0.2
+                          80.0       82.5   85.0    87.5     90.0     92.5      95.0     97.5    100.0
+                                                             time
+
+FIG. 4. Prediction on a test set for the NARMA10 benchmark for HqW(24): the mean is the orange line and the orange-shaded
+region is the 95% credible interval.
+
+
+system, and cannot be realised by any finite-dimensional      the parity (τ = 4) and delay (τ = 4) tasks, as expected
+LTI dynamical system. The solution proposed in [27] is        since its memory is τ = 14. It also attains a very low
+to employ a Padé approximation to find a rational ap-        RMSE on the NARMA10 task. Figure 4 shows the pre-
+proximation of the delay operator by replacing                diction on the same test set of Figure 4 for PadeqW(14),
+                                 Pm (s)                       showing the improved performance.
+                      e−sτ ≈            ,
+                                 Qn (s)
+where Pm and Qn are polynomials of degrees m and n,                             B.     Implementation
+respectively (with m ≤ n). This rational approximation
+can be implemented exactly by an LTI system. More-              The source code to run the experiments in the
+over, as a RC, this design realises a computational basis     manuscript was implemented in Python and is available
+corresponding to orthogonal Legendre polynomials [27].        at https://github.com/benavoli/qWiener.
+This is important because using orthogonal basis func-
+tions provides a principled alternative for constructing
+RCs, compared to the traditional approach of using ran-                        VI.     CONCLUSIONS
+domised basis functions (which we used for our HqW).
+   In this section, we fix n = 8 and m = 7, and use the          In this work, we have derived a quantum version of the
+controllable canonical form to derive the matrices A, B,      Wiener architecture (qWiener) for Reservoir Computing
+and C of a classical LTI system. We then apply Lemma          (RC). This architecture consists of a quantum linear net-
+3 and Theorem 3 to derive the QSS that implements the         work followed by a weak measurement and a classical
+impulse response Padé approximation of the delay.            static nonlinear readout layer. We have proved that, al-
+   We repeat these steps for different delays τ = k∆ with     though the quantum dynamics impose constraints on the
+k = 1, 2, . . . , 14. This allows us to obtain a qWiener      parameters of the quantum linear network, the univer-
+architecture with 14 linear networks, which we denote         sality of the architecture can still be guaranteed. Ad-
+as PadeqW(14). The performance of this QRC are re-            ditionally, we have shown that the qWiener architecture
+ported in the below table together with the performance       can be obtained by concatenating simple harmonic oscil-
+of HqW(24) from the previous table for comparison: This       lators and using only passive optical components such as
+            RMSE       HqW (24) PadeqW (14)
+                                                              phase shifters, beam splitters, and mirrors. To prove uni-
+          parity(τ = 4) 0.012     0.0078                      versality of the architecture, however, we use an alterna-
+           NARMA10      0.052      0.044                      tive structure which requires active optical components.
+          delay(τ = 4)  0.012     0.0025                      Finally, through numerical experiments, we have verified
+                                                              that our quantum-RC achieves very high performance on
+TABLE II. Average RMSE for our QRC HqW(24) versus our         standard benchmarks for RC.
+QRC PadeqW(14).                                                  Future work – In this paper, we have established the
+                                                              universality of the qWiener architecture. However, it re-
+shows that the system achieves practically zero error on      mains an open question what advantages it might of-
+                                                                                                                                      14
+
+fer (beyond the inherent high dimensionality of quantum                Predictive posterior: For a new input y(tr ), the pre-
+systems) over the classical Wiener architecture, which               dictive distribution is also Gaussian:
+is also universal. One possible research direction is to
+explore quantum-RC architectures consisting of addi-                  p(f (y(tr )) | Dm , ϑ) = N (µp (y(tr )), Kp (y(tr ), y(t′r ))),
+tional layers (deep), but where the weak measurement                 with
+occurs only before the readout layer. This would allow a                                                                     −1
+deeper exploitation of the quantum features of the sys-                µp (y(tr )) = Kϑo (y(tr ), Y ) Kϑo (Y, Y ) + σ 2 Im         o,
+tem and extend the classical deep Wiener architectures                                                                              (A5)
+proposed in [50] to the quantum case. Finally, we have                 Kp (y(tr ), y(tr )) = Kϑo (y(tr ), y(tr ))
+not explicitly emphasised that our proposed architecture                                                        −1 o
+is Bayesian, due to the Gaussian Processes used in the                 − Kϑo (y(tr ), Y ) Kϑo (Y, Y ) + σ 2 Im     Kϑ (Y, y(tr )).
+final readout layer. This provides, at no additional im-                                                                       (A6)
+plementation cost, a principled quantification of uncer-
+tainty, as shown in Figure 4. We believe this aspect is                 Hyperparameter selection: The hyperparameters of the
+particularly important for reservoir computing architec-             kernel ϑ and noise variance σ 2 are the only unknowns.
+tures, which can often exhibit larger prediction errors due          They are typically estimated by maximising the marginal
+to their random initialisation. As future work, we plan              likelihood:
+to compare our uncertainty quantification with that ob-                      p(Dm | ϑ, σ 2 ) = N (o; 0, Kϑo (Y, Y ) + σ 2 Im ).
+tained from fully trained classical networks, such as those
+considered in [51, 52].
+                                                                            Appendix B: Von Mises–Fisher distribution
+
+Appendix A: Computation of the Gaussian Process                        Assume s1 , s2 ∼ N (m, 1/κI2 ),                  2
+                 posterior                                                                              p with m ∈ R and
+                                                                     ||m|| = 1. Then, conditioned on s21 + s22 = 1, the vec-
+                                                                     tor s = (s1 , s2 )⊤ is von Mises-Fisher distributed with
+   Assuming the observation noises εi are independent,               probability density function
+the likelihood of the observed data given the latent func-
+                                                                                 f (s; m, κ) = C2 (κ) exp κm⊤ s ,
+                                                                                                                
+tion values is:                                                                                                           (B1)
+                                                                     where
+            p(Dm | f (Y )) = N (o; f (Y ), σ 2 Im ),         (A1)
+                                                                                                          1
+                                              ⊤                                             C2 (κ) =            ,                   (B2)
+where         o        =        [o(t1 ), . . . , o(tm )] , Y =                                         2πI0 (κ)
+[y⊤ (t1 ), . . . , y⊤ (tm )]⊤ , ti = i∆ and Im is the iden-
+tity matrix of size m.                                               with In (κ) being the modified Bessel function of the first
+                                                                     kind of order n. It then holds
+   Prior: We place a Gaussian process prior on the func-
+tion f ∼ GP(0, Kϑo ), where Kϑo is a kernel function de-                         E(s) = r1 m,                                       (B3)
+fined over the feature vectors y(t). This implies:                                       1 − r2
+                                                                               E(ss⊤ ) =        I2 + r2 mm⊤ ,                       (B4)
+          p(f (Y ) | ϑ) = N (f (Y ); 0, Kϑo (Y, Y )),        (A2)                          2
+                                                                                         1 − r2
+                                                                                                I2 + r2 − r12 mm⊤ ,
+                                                                                                             
+                                                                               Cov(s) =                                             (B5)
+where (Kϑo (Y, Y ))ij = Kϑo (y(ti ), y(tj )).                                              2
+  Posterior: Combining the likelihood (A1) with the                  where rn = In (κ)/I0 (κ).
+prior (A2), the posterior distribution over the function
+values is:
+                                                                                           Appendix C: Proofs
+     p(f (Y ) | Dm , θ) = N (f (Y ); µp (Y ), Kp (Y, Y )),
+                                                                       This section presents the proofs of the main results of
+with posterior mean and covariance given by:                         the paper, along with the intermediate lemmas required
+                                                 −1                 for their derivation.
+    µp (Y ) = Kϑo (Y, Y ) Kϑo (Y, Y ) + σ 2 Im         o,    (A3)      a. Proof of Proposition 2 The output of one LTI
+ Kp (Y, Y ) = Kϑo (Y, Y )                                            block is
+                                                −1                                  Z t
+           − Kϑo (Y, Y ) Kϑo (Y, Y ) + σ 2 IT         Kϑo (Y, Y ).          yj (t) =     hj (t − τ )u(τ )dτ
+                                                              (A4)                     0
+                                                                                          nc
+                                                                                       Z tX
+                                                                                                            (j)
+This operation is equivalent to linear regression (with                            =           e−αi (t−τ ) βi cos(ωi (t − τ ))
+                                                                                       0 i=1
+nonlinear basis functions), but performed in the dual
+                                                                                              (j)               
+space of the kernel [28, Chap2̇].                                                          − γi sin(ωi (t − τ )) u(τ )dτ,
+                                                                                                                                                                                                                 15
+
+and, therefore,                                                                                             where the last equality follows by the physical realisabil-
+                                                                                                            ity constraint (26). Note in fact that, under the assump-
+                                  d       Z t Z t′
+ ⊤
+y (t)y(t ) =
+                 ′       1 X                                                                                tion s = n, we have that
+                         d j=1                0       0
+
+ nc
+X
+         e
+             −αi (t−τ )
+                              βi
+                                  (j)
+                                              cos(ωi (t − τ )) − γi
+                                                                       (j)                   
+                                                                             sin(ωi (t − τ )) u(τ )dτ
+                                                                                                           Jn(r) L(r) + C (r)⊤ Js(r) = Jn(r) (Jn(r) C (r)⊤ Jn(r) ) + C (r)⊤ Js(r)
+ i=1
+ nc
+                                                                                                                                                     = −C (r)⊤ Jn(r) + C (r)⊤ Js(r) = 0.
+             −αi (t′ −τ ′ )
+X                                                                                    
+                                   (j)        ′   ′      (j)        ′   ′     ′    ′
+         e                        βi cos(ωi (t − τ )) − γi sin(ωi (t − τ )) u(τ )dτ
+ i=1
+                                                                                                            It remains to show that for V∞ = 12 I2s the following
+                       (j) (j)               √                                                              equality holds 0 = A(r) V∞ + V∞ A(r)⊤ + L(r) Q̃(r) L(r)⊤ .
+ We recall that βi , γi ∼ N (0, 1/ nc ) independently
+                                                                                                            This results follows by
+for i = 1, . . . , nc and j = 1, . . . , d. Therefore, for large d
+and nc , we have that
+                                                  Z t Z t′
+                                                                                                            Lemma 4 ([53]). Assume Q(r) = 21 I2s , that is, Q(r) is
+                                              d
+                 1X                                                                                         the covariance of the vacuum. If a completely passive
+  y⊤ (t)y(t′ ) ≈
+                 d j=1                                0   0                                                 QSS is strictly stable, then it must evolve into a vacuum
+   nc
+  X                                                  ′   ′
+                                                                                                            state, that is V∞ = 21 In .
+                                                              2(j)
+                 e−αi (t−τ )−αi (t −τ ) βi                           cos(ωi (t − τ )) cos(ωi (t′ − τ ′ ))
+      i=1
+                                                                              
+             2(j)
+                     sin(ωi (t − τ )) sin(ωi (t′ − τ ′ )) u(τ )u(τ ′ )dτ dτ ′
+                                                         
+     + γi                                                                                                     d.       Useful lemma
+                  nc Z t Z t′
+         1        X
+     ≈                                                                                                      Lemma 5. Consider the matrix
+         nc i=1           0           0
+                                          ′       ′
+  
+     e−αi (t−τ )−αi (t −τ ) cos(ωi (t − τ )) cos(ωi (t′ − τ ′ ))                                                                                         2     2
+                                                                                                                                                                                      !
+                                                                                                                                                     − α +β
+                                                                                                                                                         2               −ω
+                                                                                                                                      A=                                    2     2       ,
+                                                                                                                                                                       − α +β
+                                                                
+     + sin(ωi (t − τ )) sin(ωi (t′ − τ ′ )) u(τ )u(τ ′ )dτ dτ ′                                                                                         ω
+                                           
+                                                                                                                                                                           2
+              c      n   Z t Z t′
+         1 X
+     ≈                                                                                                      its matrix exponential is
+         nc i=1           0           0
+                                          ′       ′
+  
+   e−αi (t−τ )−αi (t −τ ) cos(ωi (t − τ − (t′ − τ ′ )))
+                                                                                                                                                                        
+                                                                                                                           At       −(α2 +β 2 )t       cos(ωt) − sin(ωt)
+                                                                                                                       e        =e                                         .                                   (C1)
+  u(τ )u(τ ′ )dτ dτ ′
+                                                                                                                                                       sin(ωt) sin(ωt)
+         Z t Z t′ Z ∞ Z ∞
+     ≈                                                                                                      Proof. Rewrite
+             0       0     0                  −∞
+                              ′           ′
+  
+   e−α(t−τ −(t −τ )) cos(ω(t − τ − (t′ − τ ′ )))                                                                   2        2
+                                                                                                                                                 !                 2    2
+                                                                                                                                                                                                  !
+                                                                                                              − α +β                                         − α +β
+                                                                                                                                                                                                                    
+                                                                                                                  2                 −ω                           2                    0                       0 −ω
+                                                                                                                                      2      2       =                                2       2       +
+                                                                                                                                 − α +β                                         − α +β                        ω 0
+                                   
+  ϕθ (α, ω)dαdωu(τ )u(τ ′ )dτ dτ ′                                                                               ω                   2                          0                   2
+         Z t Z t′                                                                                          =X +Y
+     =                   Kθ,nc (t − τ, t′ − τ ′ )u(τ )u(τ ′ )dτ dτ ′ .
+             0       0
+
+                                                                                                              Since the two matrices are such that XY = Y X (they
+  b. Proof of Proposition 3 The result is derived from                                                      commute), from the properties of the matrix exponential,
+Proposition 2. For the polynomial kernel, we take ad-                                                       we have that e(X+Y )t = eXt eY t , where
+vantage of the fact that, for large d and nc , the term
+                                                                                                                                α2 +β 2
+y(t)⊤ y(t′ ) is approximately equal to (11). For the                                                         eXt = e−        I2    2    t
+square-exponential kernel, note that ∥y(t) − y(t′ )∥2 =                                                                 ιωt        
+y⊤ (t)y(t) − 2y⊤ (t)y(t′ ) + y⊤ (t′ )y(t′ ) and the rest follows                                              Yt    † e         0
+                                                                                                             e = Ω2                   Ω2
+similarly to the derivation for the polynomial kernel.                                                                   0 e−ιωt
+  c. Proof of Theorem 1 Note that Q(r) = 12 I2s and
+                                                                                                                                                              
+                                                                                                                    † cos(ωt) + ι sin(ωt)           0
+                                                                                                                 = Ω2                                            Ω2
+assume that V∞ = Q(r) , then                                                                                                      0         cos(ωt) − ι sin(ωt)
+                                                                                                                                       
+                                                                                                                    cos(ωt) − sin(ωt)
+         G∞ = V∞ Cq(r)⊤ + L(r) Q(r) Dq(r)⊤                                                                       =
+                                                                                                                     sin(ωt) sin(ωt)
+                                                                                                                                          ,
+              1
+            = (Cq(r)⊤ + L(r) Dq(r)⊤ )
+              2                                                                                             where
+              1                                    ⊤
+                Is 0s (C (r)⊤ + L(r) D(r)⊤ ) Is 0s
+                       
+            =                                                                                                                                                           
+              2                                                                                                                                   1              In ιIn
+              1                                                                                                                             Ωn = √                         ,                                   (C2)
+                                             ⊤                                                                                                    2             In −ιIn
+                Is 0s (C (r)⊤ + L(r) ) Is 0s
+                       
+            =
+              2
+            =0
+                                                                                                                                                                              16
+
+   e. Proof of Lemma 2 Since n = 1, and the system                                Finally, we have that
+is completely passive then M2 = 0, N2 = 0, ℜ(M1 ) =                                                                                                                 
+                                                                                      (r) A(r) t                                       cos(ωt) sin(ωt)         ℜ(S) −ℑ(S)
+ℜ(M1 )⊤ , ℑ(M1 ) = −ℑ(M1 )⊤ = 0. Furthermore, since                               C      e             L
+                                                                                                         (r)
+                                                                                                                    = −e
+                                                                                                                           −λt
+                                                                                                                                      − sin(ωt) cos(ωt)
+                                                                                                                                                         ⊗Λ
+                                                                                                                                                               ℑ(S) ℜ(S)
+n = 1, we have that M1 , S ∈ C and N1 ∈ C1×s . There-
+fore, from (24), we can derive that                                                where Λ = (ℜ(N1 )ℜ(N1 )⊤ + ℑ(N1 )ℑ(N1 )⊤ ).
+
+    ℑ(M1 + M2 )   ℜ(M1 − M2 )
+                                                       
+                                                          0     ℜ(M1 )
+                                                                                    f. Proof of Corollary 1 The result follows from
+                                                    =                             Lemma 2 by direct substitution of the parameters.
+    −ℜ(M1 + M2 ) −ℑ(−M1 + M2 )                          −ℜ(M1 )   0
+                                                                                     g. Proof of Proposition 4 W.l.o.g. we can prove the
+and                                                                               results for nc = 2 due to the symmetries in the concate-
+− C
+   1 (r)♯ (r)
+          C    =
+                                                                                  nation product.
+   2
+              ℜ(N1 )⊤ ℑ(N1 )⊤                                                                                                α1 0 0 0
+                                                                                                                                    
+1    0 1                              (r)   ℜ(N1 ) −ℑ(N1 )
+                     ⊤          ⊤    Js                                                                             
+2 −1 0       −ℑ(N1 )      ℜ(N1 )            ℑ(N1 ) ℜ(N1 )                                   ℜ(N1 + N2 ) ℑ(−N1 + N2 )       0 α2 0 0 
+                 ℜ(N1 )⊤ ℑ(N1 )⊤
+                                                                                  C (r) =                               =
+                                                                                            ℑ(N1 + N2 ) ℜ(N1 − N2 )          0 0 α1 0 
+                                                             
+   1   0 1                                 0   Is    ℜ(N1 ) −ℑ(N1 )
+=                        ⊤          ⊤
+   2   −1  0    −ℑ(N    )   ℜ(N    )      −I   0     ℑ(N  )  ℜ(N  )
+                      1          1           s          1       1
+                                                                                                                             0 0 0 α2
+                 ℜ(N1 )⊤ ℑ(N1 )⊤
+                                                    
+   1   0 1                                 ℑ(N1 ) ℜ(N1 )
+=                        ⊤          ⊤
+   2 −1 0       −ℑ(N1 )     ℜ(N1 )        −ℜ(N1 ) ℑ(N1 )                          and, therefore,
+            
+     −λ 0
+=                                                                                      (r)♯       (r)
+      0 −λ                                                                        C           C
+                                                                                                                 α1 0     0 0           α1 0  0  0
+                                                                                                                                                 
+where λ = 21 ℑ(N1 )⊤ ℑ(N1 )+ 12 ℜ(N1 )⊤ ℜ(N1 ). Therefore,
+                                                                                                                               
+                                                                                                  02 I2         0 α2 0     0  02 I2  0 α2 0    0
+                                                                                      =−
+we have                                                                                           −I2 02       0    0 α1 0  −I2 02  0     0 α1 0 
+                                                                                                                 0   0    0 α2             0 0 0 α2
+                                       
+                        −λ       ℜ(M1 )                                                    0
+                                                                                              
+                                                                                                             0   α1 0
+                                                                                                                        
+                                                                                                                            0     0  α1 0
+                                                                                                                                          
+             A(r) =                                                                       0                 0    0 α2   0      0  0 α2 
+                      −ℜ(M1 ) −λ                                                      = −
+                                                                                          −α1                0    0  0  −α1     0  0  0
+                                                                                           0                −α2 0    0      0    −α2 0  0
+The matrices C (r) , L(r) are                                                            
+                                                                                          −α21               0     0   0
+                                                                                                                          
+                                                                                        0                −α22   0   0
+            ℜ(N1 ) −ℑ(N1 )                                                            = −
+                                                                                                                 −α21 0 
+                                                                                                                                                 (C3)
+   C (r) =                                                                                0                 0
+            ℑ(N1 ) ℜ(N1 )                                                                  0                 0     0    2
+                                                                                                                       α2
+
+            −ℜ(N1 )⊤ −ℑ(N1 )⊤
+                                          
+                                  ℜ(S) −ℑ(S)                                      The matrix A(r) is
+    L(r) =
+             ℑ(N1 )⊤ −ℜ(N1 )⊤     ℑ(S) ℜ(S)                                                                                                            
+                                                                                                 (r)       ℑ(M1 + M2 )      ℜ(M1 − M2 )                         1 (r)♯ (r)
+                                                                                             A          =                                                   −     C   C ,
+Therefore, by exploiting (C1), the impulse response is                                                    −ℜ(M1 + M2 ) −ℑ(−M1 + M2 )                            2
+                                                                                                            α2
+                                                                                                                                 
+    (r) A(r) t
+                                                                                                           − 1   0     −ω1     0
+C      e L
+                 (r)                                                                                      2       2              
+                                                                                                                 α
+                                                                                                          0   − 22     0     −ω2 
+                                                                                                                                 
+     −λt
+         
+           ℜ(N1 ) −ℑ(N1 )
+                           
+                               cos(ωt) sin(ωt)
+                                                                                                       =              α12       
+= −e                                                                                                      ω
+                                                                                                          1     0    − 2      0 
+           ℑ(N1 ) ℜ(N1 )      − sin(ωt) cos(ωt)                                                                                   
+                                                                                                      α2
+                                                                                      0     ω2     0 − 22
+  ℜ(N1 )⊤ ℑ(N1 )⊤
+                                    
+                         ℜ(S) −ℑ(S)
+  −ℑ(N1 )⊤ ℜ(N1 )⊤       ℑ(S) ℜ(S)
+                                                                           and
+     −λt   ℜ(N1 ) cos(ωt) + ℑ(N1 ) sin(ωt) ℜ(N1 ) sin(ωt) − ℑ(N1 ) cos(ωt)
+= −e
+           ℑ(N1 ) cos(ωt) − ℜ(N1 ) sin(ωt) ℜ(N1 ) cos(ωt) + ℑ(N1 ) sin(ωt)                           
+                                                                                                       α1                                          0 0 0
+                                                                                                                                                          
+  ℜ(N1 )⊤ ℑ(N1 )⊤
+                                    
+                         ℜ(S) −ℑ(S)                                               (r)   (r)♯   (r)      0                                         α2 0 0  (r)
+                                                                                 L = −C D = −                                                              D ,
+                                                                                                     
+  −ℑ(N1 )⊤ ℜ(N1 )⊤       ℑ(S) ℜ(S)
+                                                                                                    0                                          0 α1 0 
+     −λt   f1 f2     ℜ(S) −ℑ(S)                                                                         0                                          0 0 α2
+= −e
+           f3 f4     ℑ(S) ℜ(S)
+                                                                                                     s11 0 −s12 0
+                                                                                                                                                 
+where ω = ℜ(M1 ) and                                                                                  0 s21 0 −s22 
+                                                                                             D(r) =                 .
+                                                                                                    
+            f1 = ℜ(N1 )ℜ(N1 )
+                                  ⊤
+                                      cos(ωt) + ℑ(N1 )ℜ(N1 )
+                                                                ⊤
+                                                                    sin(ωt)                          s12 0 s11   0 
+                 − ℜ(N1 )ℑ(N1 )
+                                  ⊤
+                                      sin(ωt) + ℑ(N1 )ℑ(N1 )
+                                                                ⊤
+                                                                    cos(ωt)
+                                                                                                      0 s22 0   s21
+                                  ⊤                     ⊤
+                 = (ℜ(N1 )ℜ(N1 )       + ℑ(N1 )ℑ(N1 ) ) cos(ωt)                   Therefore, by using a derivation similar to the one in
+            f2 = ℜ(N1 )ℑ(N1 )
+                                  ⊤
+                                      cos(ωt) + ℑ(N1 )ℑ(N1 )
+                                                                ⊤
+                                                                    sin(ωt)       Lemma 5, we have that
+                                  ⊤                             ⊤
+                 + ℜ(N1 )ℜ(N1 )       sin(ωt) − ℑ(N1 )ℜ(N1 )        cos(ωt)       A(r) t
+                                                                                  e          +
+                                  ⊤                     ⊤
+                 = (ℜ(N1 )ℜ(N1 )       + ℑ(N1 )ℑ(N1 ) ) sin(ωt)
+                                                                                        − 1 α2 t                                              − 1 α2
+                                                                                                                                                                                 
+                                                                                                                                                     t
+                                  ⊤                             ⊤                      e 2 1 cos(ω1 t)                       0  1        −e     2 1 sin(ω t)           0
+            f3 = ℑ(N1 )ℜ(N1 )         cos(ωt) − ℜ(N1 )ℜ(N1 )        sin(ωt)                         − 1 α2 t                         − 1 α2 t
+                                                                                                                                                    
+                                                                                           0       e 2 2 cos(ω2 t)       0         −e 2 2 sin(tω2) 
+                                                                                                                                                    .
+                                  ⊤                             ⊤
+                                                                                  
+                 − ℜ(N1 )ℑ(N1 )       cos(ωt) − ℑ(N1 )ℑ(N1 )        sin(ωt)        − 1 α2 t                          1 2
+                                                                                                                     − α t                          
+                                                                                   e 2 1 sin(ω1 t)          0      e 2 1 cos(ω1 t)         0       
+                 = −(ℜ(N1 )ℜ(N1 )
+                                      ⊤                     ⊤
+                                          + ℑ(N1 )ℑ(N1 ) ) sin(ωt)                                                   − 1 α2 t                                    − 1 α2 t
+                                                                                                   0                e 2 2 sin(ω2 t)                0            e 2 2 cos(ω2 t)
+                                  ⊤                             ⊤
+            f4 = ℑ(N1 )ℑ(N1 )         cos(ωt) − ℜ(N1 )ℑ(N1 )        sin(ωt)
+                                  ⊤                             ⊤
+                                                                                   The concatenation product simply assembles the differ-
+                 + ℜ(N1 )ℜ(N1 )       cos(ωt) + ℑ(N1 )ℜ(N1 )        sin(ωt)       ent components together, without making any connec-
+                 = (ℜ(N1 )ℜ(N1 )
+                                  ⊤                     ⊤
+                                       + ℑ(N1 )ℑ(N1 ) ) cos(ωt)                   tions between them. Therefore, if we observe the first
+                                                                                                                                                                                                                   17
+
+quadrature for each component, and assume the input                                                                               where we have exploited that ϕθ (α, ω) = ϕθ (α, −ω) and
+                ⊤
+u(t) = 1 1 0 0 u(t), then the impulse response be-                                                                               sin(x) = − sin(−x). For the covariance function, we have
+comes:                                                                                                                           that
+h(t)
+                                                                                                                                                                α2 (t+t′ ) 1
+                                                                                                                                                 Z
+                                  
+                                     α1 0       0     0
+                                                                                                                                        ′           4 −                               ′                             ′
+                                                                                                                             Kθ (t, t ) =        α e            2        cos(ω(t − t ))ϕθ (α, ω)dαdω − µh (t)µh (t )
+        α1 0 0 0            A(r) t  0    α2 0        0       1 0 0 0                                                                                                     2
+= −                      e                                +                  δ(t)
+                                                                                 
+         0 α2 0 0                  0      0 α1 0             0 1 0 0
+                                     0     0    0 α2
+                                                                                                                                                                  α2
+     s11 0 −s12            0        1                                                                                                                                  2
+                                                                                                                                                                          Unif(α2 ; αm , αM )
+                               
+                                                                                                                                  Assuming that ϕθ (α , ω) =       2
+    0 s21        0      −s22  1                                                                                                                                  α2 4
+   s                                                                         (C4)                                                                           π(ω 2 + 4 )
+      12   0     s11       0  0
+      0 s22       0       s21       0                                                                                            and exploiting the result:
+                                     α1 0        0    0
+                                                       
+                       
+         α1 0 0 0           A(r) t  0    α2 0        0                                                                                             Z
+= −                       e                                                                                                                                                1    β
+         0 α2 0 0                                                                                                                                                                     dω = e−β|τ |
+                                   0      0 α1 0                                                                                                             cos(ωτ )                                         (C9)
+                                      0    0     0 α2                                                                                                                      π ω2 + β 2
+                          ! s11
+                                   
+                 
+       1 0 0 0                s 
+                      δ(t)  21 
+   +
+       0 1 0 0                  s12
+                                                                              (C5)
+                                                                                                                                 then, for β = α2 /2,
+                                s22
+             − 1 α2
+                                   !
+                    t
+         α2    2 1                                                                                                                                                α2        α2
+                                                                                                                                               Z
+= −       1e                0           cos(ω1 t)     0    − sin(ω1 t)      0
+
+                    0
+                             1 2
+                                    α2
+                                     2e
+                                            0
+                                       − α2 t
+                                        2
+                                                  cos(ω t)      0      − sin(ω t)  2                              2                   µh (t) =        α2 e− 2 t e− 2 |t| Unif(α2 ; αm , αM )dα2
+                                               
+                                                s11
+                                                    
+                                                                                                                                                                                                              (C10)
+                                                                                                                                                (1 + am t)e−am t − e−aM t (1 + aM t)
+                                         !
+            1 0 0 0                            s21 
+    +
+            0 1 0 0
+                                    δ(t)       s                                                                                            =
+                                                    12
+                                                   s22
+                                                                                                                                                           t2 (aM − am )
+                        1       2                                      1    2                  !
+       −s11 α21 e− 2 α1 t cos(ω1 t) + s12 α21 e− 2 α1 t sin(ω1 t)
+                                                                                                                
+                                                                                                           s11
+=                  1 2                           1 2                                               +                  δ(t)       and
+       −s21 α22 e− 2 α2 t cos(ω2 t) + s22 α22 e− 2 α2 t sin(ω2 t)                                          s21
+
+ By summing the components, we obtain (43).                                      Z
+                                                                                            α2         α2
+                                                                                       4 − 2 (t+s) − 2 |t−s|
+   h. Proof of Theorem 2 Consider h̃(t) in (43), then,                               α  e           e          Unif(α2 ; αm , αM )dα2
+from (B3), we have that
+                                                                                     (1 + am τ + 12 a2m τ 2 )e−am τ − e−aM τ (1 + aM τ + 12 a2M τ 2 )
+                        α2 t
+                                                                                =
+µh (t) = −E α2 e− 2 (s1 cos(ωt) − s2 sin(ωt))                                                                 2τ 3 (aM − am )
+                  Z                                                                                                                       (C11)
+              r1              α2 t
+       = −√           α2 e− 2 (cos(ωt) − sin(ωt)) ϕθ (α, ω)dαdω, where τ = max(s, t).
+               2                                                                    i. Proof of Lemma 3 We need to compute
+                  Z
+              r1               2
+                        2 − α2 t                                                   (r) A(r) t (r)
+       = −√           α e          cos(ωt)ϕθ (α, ω)dαdω,            (C6)        C     e       L . Note that
+               2
+                                                                                                   At       
+where we have exploited that ϕθ (α, ω) = ϕθ (α, −ω) and                                  A(r) t     e     0
+                                                                                       e        =
+sin(x) = − sin(−x). For the second moments, we first                                                 0 eZt
+                                                         ⊤
+compute the expectation w.r.t. s = (s1 , s2 ) :
+                                                                                         L(r) = Jn(r) C (r)⊤ Js(r)
+         2                                     2 ′                             
+     2 −α t                                  2 −α t             ′             ′                                              !⊤ 
+E α e     2 (s1 cos(ωt) − s2 sin(ωt))       α e   2    s1 cos(ωt ) − s2 sin(ωt )                                  (r)                  
+                                                                                                      0 In         C1 01×n          0 Is
+         2     ′                                                                                =                         (r)
+    4 −
+ =α e
+        α (t+t )
+            2
+                    
+                       ⊤      ⊤
+                 E s cωt cωt′ s ,
+                                   
+                                                                                                    −In 0         01×n C2          −Is 0
+         2     ′
+                                                                                                                        !
+        α (t+t )                                                                                        (r)⊤
+                                                                                                    −C2
+                                       
+    4 −
+ =α e       2
+                            ⊤        ⊤
+                 T r cωt cωt′ E(ss ) ,                                                                          0n×1
+                                                                                                =                  (r)⊤
+    4 −
+         2     ′
+        α (t+t )
+                     
+                             ⊤
+                                 
+                                   1 − r2      r2     ⊤
+                                                                                                    0n×1 −C1
+=α e            2       Tr           cωt cωt′                        I2 +          12 12
+                                                             2                 2
+      α2 (t+t′ ) 
+  4 −
+=α e      2
+                   1−r2
+                     2
+                                      ′                  ′ 
+                        cos(ωt) cos(ωt ) + sin(ωt) sin(ωt )                                                                      Therefore, we have that
+                                              
+  r                             ′         ′ 
++ 22 (cos(ωt) − sin(ωt)) cos(ωt ) − sin(ωt )                                                                     (C7)                                (r)
+
+            α2 (t+t′ ) 
+                                                                                                                                         C (r) eA  L(r) =  t
+    4 −                         1−r2                        r    ′                             ′                             ′   
+=α e            2
+                                  2        cos(ω(t − t )) + 22                  cos(ω(t − t )) − sin(ω(t − t ))                              (r)
+                                                                                                                                                       !                (r)⊤
+                                                                                                                                                                                        !
+                                                                                                                                            C1 01×n       eAt 0       −C2        0n×1
+            α2 (t+t′ ) 1
+    4 −                                                  ′                             ′                                                           (r)      0 eZt                  (r)⊤
+                                                                                           
+=α e            2
+                            2
+                                    cos(ω(t − t )) − r2 sin(ω(t − t ))                                                                     01×n C2                      0n×1 −C1
+                                                                                                                                                                               !
+                                                                           ⊤                                                                     (r)     (r)⊤
+ where cωt = (cos(ωt), − sin(ωt)) . By computing the                                                                                          −C1 eAt C2              0
+expectation w.r.t.                                                                                                                        =                       (r)     (r)⊤
+                                                                                                                                                     0        −C2 eZt C1
+        α2 (t+t′ ) 1
+Z
+  α4 e−                cos(ω(t − t′ )) − r2 sin(ω(t − t′ )) ϕθ (α, ω)dαdω
+                                                           
+            2
+                   2
+  Z
+            α2 (t+t′ ) 1                                                                                                         It remains to prove that the QSS is physically realisable.
+=    α4 e−      2        cos(ω(t − t′ ))ϕθ (α, ω)dαdω                (C8)
+                       2                                                                                                         The physical realisability conditions is:
+                                                                                                                              18
+
+                                                                      square-exponential kernel (which we instead used in the
+                                                                      experiments in the last two columns of Table I). It can
+   0 = A(r) Jn(r) + Jn(r) A(r)⊤ + L(r) Js(r) L(r)⊤
+                         
+        A 0        0 In                                                             RMSE        LqW (24) HqW (24)
+    =                                                                             parity(τ = 2)   0.065   0.0017
+        0 Z       −In 0
+                 ⊤                                                            parity(τ = 4)    0.49    0.15
+         0 In        A      0                                                      NARMA10        0.087    0.065
+   +
+        −In 0          0 Z⊤                                                       delay(τ = 2)     0.33    0.04
+           
+               0 I2
+                                                                                 delay(τ = 4)     0.49    0.13
+   + L(r)               L(r)⊤
+             −I2 0
+                                                                      TABLE III. Average RMSE for (i) the QRC LqW; (ii) our
+                     A + Z⊤
+                             
+             0                                                        QRC HqW; using a polynomial nonlinearity (with degree 3)
+    =
+        −Z − A⊤           0                                           in the readout layer. The number between brackets after the
+                          !                       !⊤                  name of the model is relative to the number of harmonic os-
+                    (r)⊤         (r)⊤                                 cillators in the quantum linear network.
+          0     −C2           −C2           0
+   +     (r)⊤                                (r)⊤
+        C1         0             0     −C1
+                                                                  !   be noticed that HqW (24) outperforms LqW (24) also in
+                                                    (r)⊤    (r)
+                0           A + Z ⊤ + C2                   C1         this case. The performance with the polynomial nonlin-
+   =               (r)⊤ (r)
+        −Z − A⊤ − C1 C2              0                                earity is generally worse than the one obtained with the
+                                                                      squared-exponential kernel in Table I.
+                                       (r)⊤   (r)
+which implies that Z = −A⊤ − C1 C2 .
+                  (r)             (r)
+  The condition Jn L(r) + C (r)⊤ Js D(r) = 0 is satisfied
+    (r)            (r)   (r) (r)⊤ (r)
+as D = I4 and L = Jn C            Js and so
+Jn(r) L(r) + C (r)⊤ Js(r) D(r) = −C (r)⊤ Js(r) + C (r)⊤ Js(r) = 0.
+Finally, the following condition is satisfied as well:
+      (r)         (r)
+D(r) Js D(r)⊤ − Js = 0.
+
+   j. Proof of Theorem 3 The first part of the proof
+follows directly from Lemma 3. About the second
+part, it follows from a standard result in control the-
+ory for LTI systems, which      states that if the matrix
+ B, AB, A2 B, . . . , An−1 B has rank n, there exists a ma-
+                            
+trix R such that the closed-loop matrix A − BR is stable
+[54, Ch.5]. A similar result holds for −A − BR, since
+ B, −AB, (−A)2 B, . . . , (−A)n−1 B has also rank n.
+   k. Proof of Corollary 2 We note that the C (r) ma-
+trix is
+                               R 01×n
+                                      
+                             −C 01×n 
+                    C (r) = 
+                             01×n B ⊤ 
+                             01×n 01×n
+We aim to write it as
+                                          
+          (r)     ℜ(N1 + N2 ) ℑ(−N1 + N2 )
+        C =
+                  ℑ(N1 + N2 ) ℜ(N1 − N2 )
+
+with N1 , N2 ∈ C2×n . It can easily be seen that this
+requires that ℜ(N2 ) ̸= 02×n . Therefore, from Definition
+2, it follows that the QSS described by (53)–(56) is not
+completely passive.
+
+
+   Appendix D: Additional numerical experiments
+
+   The following table reports the comparison between
+LqW (24) and HqW (24) using a polynomial nonlinear-
+ity (with degree 3) in the readout layer instead of the
+                                                                                                                                19
+
+
+
+
+ [1] H. Jaeger, The “echo state” approach to analysing and              lizing scale-free networks, Physical Review Applied 17,
+     training recurrent neural networks-with an erratum note,           064044 (2022).
+     Bonn, Germany: German national research center for            [17] J. Nokkala, Online quantum time series processing with
+     information technology gmd technical report 148, 13                random oscillator networks, Scientific Reports 13, 7694
+     (2001).                                                            (2023).
+ [2] W. Maass, T. Natschläger, and H. Markram, Real-time          [18] J. Dudas, B. Carles, E. Plouet, F. A. Mizrahi, J. Grol-
+     computing without stable states: A new framework for               lier, and D. Marković, Quantum reservoir computing im-
+     neural computation based on perturbations, Neural com-             plementation on coherently coupled quantum oscillators,
+     putation 14, 2531 (2002).                                          npj Quantum Information 9, 64 (2023).
+ [3] K. Fujii and K. Nakajima, Harnessing disordered-              [19] A. Hayashi, A. Sakurai, S. Nishio, W. J. Munro, and
+     ensemble quantum dynamics for machine learning, Phys.              K. Nemoto, Impact of the form of weighted networks
+     Rev. Appl. 8, 024030 (2017).                                       on the quantum extreme reservoir computation, Physi-
+ [4] K. Nakajima, K. Fujii, M. Negoro, K. Mitarai, and                  cal Review A 108, 042609 (2023).
+     M. Kitagawa, Boosting computational power through             [20] S. Boyd and L. Chua, Fading memory and the problem
+     spatial multiplexing in quantum reservoir computing,               of approximating nonlinear operators with volterra se-
+     Phys. Rev. Appl. 11, 034021 (2019).                                ries, IEEE Transactions on circuits and systems 32, 1150
+ [5] A. Kutvonen, K. Fujii, and T. Sagawa, Optimizing a                 (2003).
+     quantum reservoir computer for time series prediction,        [21] N. Wiener, Nonlinear problems in random theory (MIT
+     Scientific reports 10, 14687 (2020).                               Press Cambridge, MA, 1958).
+ [6] J. Chen, H. I. Nurdin, and N. Yamamoto, Temporal infor-       [22] J. Garcı́a-Beni, G. L. Giorgi, M. C. Soriano, and R. Zam-
+     mation processing on noisy quantum computers, Physical             brini, Scalable photonic platform for real-time quantum
+     Review Applied 14, 024065 (2020).                                  reservoir computing, Physical Review Applied 20, 014051
+ [7] J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, V. Pa-               (2023).
+     rigi, M. C. Soriano, and R. Zambrini, Gaussian states         [23] J. Nokkala, G. L. Giorgi, and R. Zambrini, Retriev-
+     of continuous-variable quantum systems provide univer-             ing past quantum features with deep hybrid classical-
+     sal and versatile reservoir computing, Communications              quantum reservoir computing, Machine Learning: Sci-
+     Physics 4, 53 (2021).                                              ence and Technology 5, 035022 (2024).
+ [8] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni,    [24] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano,
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-               and R. Zambrini, Time-series quantum reservoir comput-
+     tunities in quantum reservoir computing and extreme                ing with weak and projective measurements, npj Quan-
+     learning machines, Advanced Quantum Technologies 4,                tum Information 9, 16 (2023).
+     2100027 (2021).                                               [25] T. Yasuda, Y. Suzuki, T. Kubota, K. Nakajima,
+ [9] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini,         Q. Gao, W. Zhang, S. Shimono, H. I. Nurdin, and
+     and M. C. Soriano, Information processing capacity of              N. Yamamoto, Quantum reservoir computing with re-
+     spin-based quantum reservoir computing systems, Cog-               peated measurements on superconducting devices, arXiv
+     nitive Computation 15, 1440 (2023).                                preprint arXiv:2310.06706 (2023).
+[10] F. Hu, S. A. Khan, N. T. Bronn, G. Angelatos, G. E.           [26] J. Dambre, D. Verstraeten, B. Schrauwen, and S. Massar,
+     Rowlands, G. J. Ribeill, and H. E. Türeci, Overcoming             Information processing capacity of dynamical systems,
+     the coherence time barrier in quantum machine learn-               Scientific reports 2, 514 (2012).
+     ing on temporal data, Nature communications 15, 7491          [27] A. Voelker, I. Kajić, and C. Eliasmith, Legendre memory
+     (2024).                                                            units: Continuous-time representation in recurrent neu-
+[11] I. Paparelle, J. Henaff, J. Garcia-Beni, E. Gillet, D. Mon-        ral networks, Advances in neural information processing
+     tesinos, G. L. Giorgi, M. C. Soriano, R. Zambrini,                 systems 32 (2019).
+     and V. Parigi, Experimental memory control in continu-        [28] C. E. Rasmussen and H. Nickisch, Gaussian processes
+     ous variable optical quantum reservoir computing, arXiv            for machine learning (gpml) toolbox, The Journal of Ma-
+     preprint arXiv:2506.07279 (2025).                                  chine Learning Research 11, 3011 (2010).
+[12] M. Selimović, I. Agresti, M. Siemaszko, J. Morris,           [29] Here, we considered a deterministic, classical, stable
+     B. Dakić, R. Albiero, A. Crespi, F. Ceccarelli, R. Osel-          SISO LTI system. For a stochastic LTI system with clas-
+     lame, M. Stobińska, et al., Experimental neuromorphic             sical Wiener noise, the output R t y(t) becomes stochastic.
+     computing based on quantum memristor, arXiv preprint               In this case, the convolution 0 h(t − τ )u(τ )dτ coincides
+     arXiv:2504.18694 (2025).                                           with the mean of y(t).
+[13] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and           [30] We do not consider here the case where A has eigenvalues
+     T. C. Liew, Quantum reservoir processing, npj Quantum              with multiplicity greater than one.
+     Information 5, 35 (2019).                                     [31] M. Zorzi and A. Chiuso, The harmonic analysis of kernel
+[14] D. Marković and J. Grollier, Quantum neuromorphic                 functions, Automatica 94, 125 (2018).
+     computing, Applied physics letters 117 (2020).                [32] Lemma 1 relies on a different convergence result than
+[15] R. A. Bravo, K. Najafi, X. Gao, and S. F. Yelin, Quantum           that originally used in [31]. Specifically, we employ the
+     reservoir computing using arrays of rydberg atoms, PRX             strong law of large numbers of Monte Carlo integration,
+     Quantum 3, 030325 (2022).                                          whereas [31] relies on the convergence of Riemann sums.
+[16] A. Sakurai, M. P. Estarellas, W. J. Munro, and                [33] A. Wilson and R. Adams, Gaussian process kernels for
+     K. Nemoto, Quantum extreme reservoir computation uti-              pattern discovery and extrapolation, in International
+                                                                                                                                 20
+
+     conference on machine learning (PMLR, 2013) pp. 1067–         [46] M. Green and D. J. Limebeer, Linear robust control
+     1075.                                                              (Courier Corporation, 2012).
+[34] T. Chen, H. Ohlsson, and L. Ljung, On the estimation          [47] D. P. Kingma and J. Ba, Adam: A method for stochas-
+     of transfer functions, regularizations and gaussian pro-           tic optimization, in Proceedings of the 3rd International
+     cesses—revisited, Automatica 48, 1525 (2012).                      Conference on Learning Representations (ICLR) (2015).
+[35] G. Pillonetto, T. Chen, A. Chiuso, G. De Nicolao, and         [48] C. Wringe, M. Trefzer, and S. Stepney, Reservoir com-
+     L. Ljung, Regularized linear system identification using           puting benchmarks: a tutorial review and critique, Inter-
+     atomic, nuclear and kernel-based norms: The role of the            national Journal of Parallel, Emergent and Distributed
+     stability constraint, Automatica 69, 137 (2016).                   Systems , 1 (2025).
+[36] V. I. Paulsen and M. Raghupathi, An introduction to           [49] W. A. Barbosa, A. Griffith, G. E. Rowlands, L. C. Govia,
+     the theory of reproducing kernel Hilbert spaces, Vol. 152          G. J. Ribeill, M.-H. Nguyen, T. A. Ohki, and D. J. Gau-
+     (Cambridge university press, 2016).                                thier, Symmetry-aware reservoir computing, Physical Re-
+[37] The finite case is also of interest in machine learning as         view E 104, 045307 (2021).
+     technique in kernel approximation for scalability of kernel   [50] M. Forgione and D. Piga, dynonet: A neural network ar-
+     methods [55].                                                      chitecture for learning dynamical systems, International
+[38] Y. Cho and L. Saul, Kernel methods for deep learning,              Journal of Adaptive Control and Signal Processing 35,
+     Advances in neural information processing systems 22               612 (2021).
+     (2009).                                                       [51] R. de Oliveira Teloli, L. G. Villani, S. da Silva, and M. D.
+[39] R. Simon, N. Mukunda, and B. Dutta, Quantum-noise                  Todd, On the use of the gp-narx model for predicting
+     matrix for multimode systems: U (n) invariance, squeez-            hysteresis effects of bolted joint structures, Mechanical
+     ing, and normal forms, Physical Review A 49, 1567                  Systems and Signal Processing 159, 107751 (2021).
+     (1994).                                                       [52] A. Benavoli, D. Piga, M. Forgione, and M. Zaffalon,
+[40] H. I. Nurdin and N. Yamamoto, Linear dynamical quan-               dynogp: Deep gaussian processes for dynamic system
+     tum systems, Analysis, Synthesis, and Control (2017).              identification, arXiv preprint arXiv:2502.05620 (2025).
+[41] G. Zhang and Z. Dong, Linear quantum systems: a tu-           [53] K. Koga and N. Yamamoto, Dissipation-induced pure
+     torial, Annual Reviews in Control 54, 274 (2022).                  gaussian state, Physical Review A—Atomic, Molecular,
+[42] D. Simon, Optimal state estimation: Kalman, H infinity,            and Optical Physics 85, 022103 (2012).
+     and nonlinear approaches (John Wiley & Sons, 2006).           [54] K. J. Åström and R. M. Murray, Analysis and Design of
+[43] J. Gough and M. R. James, The series product and its               Feedback Systems (Princeton University Press, Prince-
+     application to quantum feedforward and feedback net-               ton, NJ, 2004).
+     works, IEEE Transactions on Automatic Control 54,             [55] A. Rahimi and B. Recht, Random features for large-scale
+     2530 (2009).                                                       kernel machines, Advances in neural information process-
+[44] C. K. Williams, Computation with infinite neural net-              ing systems 20 (2007).
+     works, Neural Computation 10, 1203 (1998).
+[45] R. M. Neal, Bayesian learning for neural networks, Vol.
+     118 (Springer Science & Business Media, 2012).
+

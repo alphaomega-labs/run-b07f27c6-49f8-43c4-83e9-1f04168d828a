@@ -1,0 +1,1183 @@
+                                                                      Entanglement and Classical Simulability
+                                                                     in Quantum Extreme Learning Machines
+                                                                                 A. De Lorenzis1,2,∗ ,          M. P. Casado1,3 ,
+                                                                   N. Lo Gullo 4,5 ,         T. Lux1 ,       F. Plastina4,5 and A. Riera2
+                                                     1
+                                                         Institut de Fı́sica d’Altes Energies (IFAE) - The Barcelona Institute of Science and Technology (BIST),
+                                                                                      Campus UAB, 08193 Bellaterra (Barcelona), Spain
+                                                                   2
+                                                                     Qilimanjaro Quantum Tech S.L., Carrer de Veneçuela, 74, 08019 Barcelona, Spain
+                                                                                3
+                                                                                  Departament de Fı́sica, Universitat Autònoma de Barcelona
+                                                               4
+                                                                 Dipartimento di Fisica, Università della Calabria, 87036 Arcavacata di Rende (CS), Italy
+arXiv:2509.06873v2 [quant-ph] 24 Oct 2025
+
+
+
+
+                                                                        5
+                                                                          INFN, gruppo collegato di Cosenza, 87036 Arcavacata di Rende (CS), Italy
+                                                                                                * E-mail: adelorenzis@ifae.es
+
+
+
+
+                                                                                                      Abstract
+                                                    Quantum Machine Learning (QML) has emerged as a promising framework to exploit quantum
+                                                mechanics for computational advantage. Here we investigate Quantum Extreme Learning Machines
+                                                (QELMs), a quantum analogue of classical Extreme Learning Machines in which training is restricted
+                                                to the output layer. Our architecture combines dimensionality reduction (via PCA or Autoencoders),
+                                                quantum state encoding, evolution under an XX Hamiltonian, and projective measurement to produce
+                                                features for a classical single-layer classifier. By analyzing the classification accuracy as a function of
+                                                evolution time, we identify a sharp transition between low- and high-accuracy regimes, followed by
+                                                saturation. Remarkably, the saturation value coincides with that obtained using random unitaries that
+                                                generate maximally complex dynamics, even though the XX model is integrable and local. We show that
+                                                this performance enhancement correlates with the onset of entanglement, which improves the embedding
+                                                of classical data in Hilbert space and leads to more separable clusters in measurement probability space.
+                                                Thus, entanglement contributes positively to the structure of the data embedding, improving learnability
+                                                without necessarily implying computational advantage. For the image classification tasks studied in
+                                                this work—namely MNIST, Fashion-MNIST, and CIFAR-10—the required evolution time corresponds
+                                                to information exchange among nearest neighbors and is independent of the system size. This implies
+                                                that QELMs rely on limited entanglement and remain classically simulable for a broad class of learning
+                                                problems. Our results clarify how moderate quantum correlations bridge the gap between quantum
+                                                dynamics and classical feature learning.
+
+
+
+
+                                            1   Introduction                                                  systems, QML aims to tackle problems that are
+                                                                                                              intractable or computationally inefficient for classi-
+                                            Over the past two decades, quantum computing has                  cal methods. [14–20].
+                                            evolved from a theoretical concept into a promis-                 Within this framework, we focus on the Quan-
+                                            ing technological frontier, with potential applica-               tum Extreme Learning Machine (QELM) [20–30], a
+                                            tions that span fields such as chemistry, cryptog-                quantum adaptation of the classical Extreme Learn-
+                                            raphy, finance, and artificial intelligence [1–4]. Re-            ing Machine (ELM) [31–35]. The ELM paradigm
+                                            cent advances in hardware and algorithm develop-                  simplifies learning by confining optimization to
+                                            ment [5–8] have significantly accelerated progress,               the output layer, and this core idea is preserved
+                                            fostering renewed interest in practical quantum-                  in QELMs through the use of a static quantum
+                                            enhanced solutions.                                               reservoir, a quantum system with fixed internal
+                                            A particularly active area of research is Quantum                 dynamics. Input data are encoded into quantum
+                                            Machine Learning (QML) [9–13], which seeks to                     states, evolved through the reservoir, and then pro-
+                                            take advantage of quantum mechanical principles                   jected into a high-dimensional feature space, where
+                                            to augment or outperform classical machine learn-                 only the final output weights are trained.
+                                            ing methods.                                                      QELMs stand out for their computational effi-
+                                            Exploiting the computational richness of quantum                  ciency: they do not require the iterative parameter
+updates typical of conventional deep learning mod-             as much of the original information as possible
+els, leading to faster training and reduced resource           while adapting the data to the constraints of
+demands. Additionally, thanks to the exponential               the quantum reservoir. To this end, we com-
+expressivity of quantum Hilbert spaces, QELMs                  press the input data into a compact latent rep-
+can uncover complex patterns and non-linear rela-              resentation before feeding it into the quantum
+tionships within data, making them powerful tools              model. This reduction is achieved through
+for classification and regression tasks [36, 37].              two distinct approaches: Principal Compo-
+QELMs fall within the broader framework of Quan-               nent Analysis (PCA) and Autoencoders (AEs)
+tum Reservoir Computing (QRC) [29, 38–40], but                 [60–63].
+distinguish themselves for their memoryless nature,            PCA is a linear statistical method that
+where the reservoir’s dynamics reduce to a static,             projects the original features onto a set of
+high-dimensional input transformation.                         orthogonal components, ranked by their vari-
+Within the broader QRC framework, explored                     ance, thereby preserving the most informative
+across diverse physical platforms such as spin chains          directions in the data. In contrast, Autoen-
+[41–51], fermionic and bosonic systems [52–54] ,               coders are nonlinear neural networks trained to
+and Rydberg atoms [55–59], QELMs emerge as a                   reproduce the input at the output by passing it
+streamlined and efficient approach.                            through a bottleneck structure. The encoding
+Throughout this paper, in order to better under-               process maps the data into a lower-dimensional
+stand the capabilities of Quantum Extreme Learn-               latent space, which is then reconstructed by
+ing Machines, we investigate how their performance             the decoder.
+depends on the duration of the quantum evolution.
+We studied the evolution time under a given Hamil-           2. Quantum Encoding of Classical Data: Before
+tonian and across a wide range of problem settings,             quantum processing can take place, classical
+we observe a general and robust behavior:                       data must be encoded into quantum states
+                                                                that can be handled by the quantum system.
+    1. Performance exhibits a relatively sudden tran-           In our approach, this is done by initializing
+       sition as a function of the evolution time.              each qubit in a pure state derived from the
+    2. Beyond the transition point, accuracy satu-              input features.
+       rates, no further improvement is observed with           A single qubit’s pure state can be visualized
+       longer evolutions.                                       as a point on the Bloch sphere:
+
+With the aim to analyzing this behavior, we orga-                                 θ                θ
+                                                                        |ψ⟩ = cos( ) |0⟩ + eiϕ sin( ) |1⟩             (1)
+nize the paper as follows: Section 2 describes the                                2                2
+modelling framework, Sections 3 and 4 deal the
+                                                               where θ ∈ [0, π] and ϕ ∈ [0, 2π]. This geo-
+performance as a function of evolution time and the
+                                                               metric representation enables the encoding of
+accuracy plateau. Sections 5 and 6, instead, cover             real-valued data by mapping feature values to
+the critical transition time and its implications and          these two angles.
+finally, Section 7 presents our conclusions.                   We adopt a dense angle encoding strategy,
+                                                               where each qubit is initialized using two clas-
+2     Structure and Design of the Adopted                      sical features: one mapped to the polar angle
+      Quantum Extreme Learning Machines                        θ and the other to the azimuthal angle ϕ.
+                                                               The complete initial quantum state of the sys-
+In this work, we investigate a Quantum Extreme                 tem, composed of N = ⌈M/2⌉ qubits for a
+Learning Machine (QELM) architecture that inte-                feature vector ⃗x = [x1 , ..., xM ]T ∈ RM is given
+                                                               by:
+grates a classical Extreme Learning Machine (where
+only the output layer is subject to training) with a                   ⌈M/2⌉ 
+                                                                       O             x2i−1                    x2i−1       
+quantum reservoir. A schematic overview [26] of                |⃗
+                                                                x⟩ =          cos(         ) |0⟩ + eix2i sin(       ) |1⟩
+                                                                                       2                        2
+the proposed model is provided in Fig.1. The key                        i=1
+
+steps of this approach are:                                                                                            (2)
+
+    1. Feature reduction: One of the main challenges           Here, each pair of features (x2i−1 , x2i ) is used
+       in applying quantum machine learning lies in            to set the state of the i-th qubit, effectively al-
+       the limited number of qubits currently avail-           lowing each qubit to encode two features. All
+       able in quantum hardware. Since many real-              input features are normalized to the interval
+       world datasets exhibit high-dimensional fea-            [0, π] to ensure valid quantum states. This en-
+       ture spaces, it becomes essential to employ di-         coding efficiently maps high-dimensional clas-
+       mensionality reduction techniques that retain           sical inputs into a quantum state suitable for
+
+                                                         2
+             Image
+
+
+
+
+                                          M
+
+
+
+
+Figure 1: Schematic representation of the QELM architecture. The workflow consists of the following steps:
+dimensionality reduction using either PCA or an Autoencoder (AE); encoding of the classical data into an initial
+quantum state; time evolution through the quantum layer; measurement of the evolved quantum state; and final
+classification via a classical single-layer neural network. Image for illustrative purposes only.
+
+
+    further processing, while respecting the qubit           2.1    Datasets
+    limitations of current hardware.
+                                                             In this section, we describe the benchmark
+ 3. Quantum layer and time evolution: Once the               datasets used to train and evaluate our QELM
+    classical data has been encoded into a quan-             model: MNIST [64], Fashion-MNIST [65] and
+    tum state, the system undergoes time evo-                CIFAR-10 [66]. Figure 2 provides a visual overview
+    lution governed by a Hamiltonian operator.               of these datasets, with one representative image
+    This evolution, carried out within the quan-             per class.
+    tum layer, transforms the initial state through
+    unitary dynamics. In our implementation, the
+    system evolves under the action of the follow-               • MNIST: The MNIST (Modified National Insti-
+    ing Hamiltonian XX model featuring nearest                     tute of Standards and Technology) dataset is a
+    neighbours coupling and assuming periodic                      classical benchmark for handwritten digit clas-
+    boundary conditions:                                           sification. It contains 70,000 grayscale images
+                                                                   of 28×28 pixels, split into 60,000 training and
+                     N
+                1 X (i) (i+1)                                      10,000 test samples. Each image represents a
+          H=         (σ σ     + σy(i) σy(i+1) ).   (3)
+                2 i=1 x x                                          digit from 0 to 9.
+
+ 4. Measurement and Classification: After the                    • Fashion-MNIST: Fashion-MNIST is a drop-in
+    quantum evolution governed by the selected                     replacement for MNIST, designed to provide
+    Hamiltonian, the final state is measured in the                a more challenging classification task. It con-
+    computational basis. This process yields clas-                 sists of 70,000 grayscale images of clothing
+    sical information corresponding to the prob-                   items, also sized 28×28 pixels, divided into
+    ability distribution over basis states, i.e., the              10 categories such as shirts, shoes, and coats.
+    population of the wave function.                               Like MNIST, it provides 60,000 training and
+    In a real quantum experiment, such informa-                    10,000 test images.
+    tion is typically obtained by repeatedly mea-
+                                                                 • CIFAR-10: CIFAR-10 is a dataset of 60,000
+    suring identically prepared quantum states,
+                                                                   color images (RGB) at 32×32 pixel resolution,
+    due to the probabilistic nature of quantum
+                                                                   distributed equally among 10 classes, includ-
+    measurements. In our work, we simulate this
+                                                                   ing objects such as airplanes, cats, and trucks.
+    process and extract a classical feature vector
+                                                                   It is split into 50,000 training and 10,000 test
+    of 2N real values per input, where N is the
+                                                                   images. Due to the diversity and visual com-
+    number of qubits. These features are then fed
+                                                                   plexity of the images, CIFAR-10 serves as a
+    into a classical simple One-layer Neural Net-
+                                                                   standard benchmark for evaluating image clas-
+    work (ONN) with softmax activation, which
+                                                                   sification algorithms in more realistic settings.
+    performs the final classification. The architec-
+    ture of the classifier is defined by the number of
+    quantum measurement outputs and the num-                 3     Performance as a Function of Evolution
+    ber of target classes, and is trained using the                Time
+    Adam optimizer with categorical cross-entropy
+    loss. For the numerical implementation, we               After reducing the dataset images to 2N features
+    used the Keras framework.                                and encoding them using dense angle encoding,
+
+                                                         3
+we evolved the system and performed the mea-               on local quantities, such as magnetization or corre-
+surements. These outcomes were then fed into a             lation functions, scrambling is related to the ther-
+single-layer neural network, which provided us with        malization of subsystems, which erases correlations
+the resulting classification accuracies.                   between the encoded input data and the measured
+We performed the classification and calculated the         outcomes. As the size of the subsystem increases,
+accuracies for different evolution times and studied       the effect of scrambling diminishes. In the limit
+the performance in terms of achieved accuracy as           where the subsystem approaches the size of the
+a function of evolution time.                              entire system, it becomes possible to recover a
+In Fig. 3, 4 and 5 we can see these plots respec-          mapping between the input and the output by mea-
+tively for the MNIST, Fashion-MNIST and CIFAR-             suring global observables. In our framework, these
+10 datasets, with the training results shown on            global observables correspond to the probabilities
+the left and the test results on the right. The col-       of finding the system in specific bit-string states
+ors of the curves represent the different number of        (computational basis states). The recovery of the
+qubits employed in the algorithm. For the simpler          input–output mapping, despite local scrambling,
+datasets, such as MNIST and Fashion-MNIST, we              arises because the dynamics of global observables
+employed between 6 and 10 qubits, whereas for              remain unitary. Thus, although a Hamiltonian
+the more complex dataset CIFAR-10, results were            that induces system-wide information spreading
+plotted for 6 to 11 qubits. Simulating quantum             leads to information loss when viewed locally, it
+computers with many qubits requires substantial            can actually enhance input distinguishability when
+computational resources, so our study was limited          measured globally. To test this idea, we consider
+to systems of manageable size.                             random unitary matrices, which can serve as mod-
+The figures show that each curve remains nearly            els of system dynamics. Such random unitaries are,
+constant at first. After a certain time interval,          in fact, well-suited to maximize the spreading of
+the accuracy increases sharply and eventually con-         information from the initial state across the entire
+verges to a plateau. There is thus a relatively            system.
+narrow transitional time window during which the           In Figs. 3, 4, and 5 (horizontal dashed lines), we
+performance rises until it stabilizes. We observe          show the performances of the QELM using a ran-
+that, regardless of the system size or the dataset         dom unitary matrix. Since different random uni-
+used, the performance reaches a steady state at            taries can lead to different accuracies, the dashed
+time t∗ , which occurs around 1.                           lines correspond to the average over 10 indepen-
+The curves are shifted upward as N increases, which        dent samples (taken from the Haar measure). The
+is expected since the number of features used in           associated standard deviation is indicated by the
+the algorithm grows as 2N .                                shaded area. The different system sizes are rep-
+    In sum, we observe that there is a transition          resented by different colours, consistent with the
+time t∗ at which the accuracy exhibits a sudden            colour code used for the Hamiltonian evolution.
+jump, and a saturation accuracy A∗ that the sys-           We find that the saturation performance A∗ ob-
+tem reaches after the transition time t∗ .                 tained for every system size coincides with the per-
+In the following sections, we aim to explain the           formance achieved by a random unitary, in agree-
+reason behind these values of saturation accuracy          ment with the intuition that classification benefits
+A∗ and transition time t∗ .                                from information spreading.
+                                                           This observation is particularly remarkable, given
+                                                           that the XX Hamiltonian employed in the QELM
+4   Information Propagation and the Accu-
+                                                           is:
+    racy Plateau
+                                                             • Highly specific and the evolution operator it
+Recently, Ref. [20] proposed a connection between              generates is far from random,
+the performance of QELM and the phenomenon of
+information scrambling. In quantum information,              • Translational invariant,
+scrambling refers to the irreversible spreading of
+information throughout a system. Broadly speak-              • Integrable, as it can be diagonalized through
+ing, scrambling is detrimental to processes such as            a Jordan–Wigner transformation followed by
+QELM, where the input and output of the compu-                 a Fourier transform.
+tation must remain correlated. If the information
+becomes fully scrambled, the input is effectively          The explanation lies in the structure of the en-
+lost, and no link to the output remains. However,          coding scheme. In this setup, the initial state
+the impact of scrambling depends strongly on the           significantly overlaps with nearly all many-body
+observables under consideration. When focusing             eigenstates of the XX model. As a result, the dy-
+
+                                                       4
+Figure 2: Sample images from three widely used benchmark datasets in this study. The top row displays
+handwritten digits from MNIST (digits 0–9), the middle row shows clothing items from Fashion-MNIST (10
+clothing categories), and the bottom row presents natural object categories from CIFAR-10. Each column
+corresponds to one class, labeled above each image.
+
+
+
+
+                                      Accuracy vs t (MNIST dataset)                                                       Accuracy vs t (MNIST dataset)
+                      1.00                                                                                1.00
+
+                      0.95                                                                                0.95
+   Accuracy (Train)
+
+
+
+
+                                                                                        Accuracy (Test)
+
+
+
+
+                      0.90                                                                                0.90
+                                                               N=6                                                                                 N=6
+                                                               N=7                                                                                 N=7
+                      0.85                                     N=8                                        0.85                                     N=8
+                                                               N=9                                                                                 N=9
+                                                               N=10                                                                                N=10
+                                                               Random Matrix N=6                                                                   Random Matrix N=6
+                      0.80                                     Random Matrix N=7                          0.80                                     Random Matrix N=7
+                                                               Random Matrix N=8                                                                   Random Matrix N=8
+                                                               Random Matrix N=9                                                                   Random Matrix N=9
+                      0.75                                     Random Matrix N=10                         0.75                                     Random Matrix N=10
+                             10 3   10 2     10 1        100     101        102                                  10 3   10 2     10 1        100     101        102
+                                                     t                                                                                   t
+
+                                               (a)                                                                                 (b)
+
+
+Figure 3: Training (left panel) and testing (right panel) accuracy as a function of evolution time using the
+MNIST dataset. The time evolution and the encoding have been performed with the Hamiltonian XX model
+and the dense angle, respectively. The horizontal dashed lines indicate the performance obtained using a random
+unitary matrix, specifically by performing 10 measurements and computing the mean and standard deviation.
+
+
+
+
+                                                                                    5
+                                    Accuracy vs t (Fashion-MNIST dataset)                                                      Accuracy vs t (Fashion-MNIST dataset)
+                      0.90                                                                                       0.90
+
+
+                      0.85                                                                                       0.85
+   Accuracy (Train)
+
+
+
+
+                                                                                               Accuracy (Test)
+                      0.80                                         N=6                                           0.80                                         N=6
+                                                                   N=7                                                                                        N=7
+                                                                   N=8                                                                                        N=8
+                      0.75                                         N=9                                           0.75                                         N=9
+                                                                   N=10                                                                                       N=10
+                                                                   Random Matrix N=6                                                                          Random Matrix N=6
+                      0.70                                         Random Matrix N=7                             0.70                                         Random Matrix N=7
+                                                                   Random Matrix N=8                                                                          Random Matrix N=8
+                                                                   Random Matrix N=9                                                                          Random Matrix N=9
+                                                                   Random Matrix N=10                                                                         Random Matrix N=10
+                      0.65                                                                                       0.65
+                             10 3    10 2     10 1          100      101          102                                   10 3    10 2     10 1          100      101          102
+                                                        t                                                                                          t
+
+                                                (a)                                                                                        (b)
+
+
+Figure 4: Training (left panel) and testing (right panel) accuracy as a function of evolution time using the
+Fashion-MNIST dataset. The time evolution and the encoding have been performed with the Hamiltonian XX
+model and the dense angle, respectively. The horizontal dashed lines indicate the performance obtained using
+a random unitary matrix, specifically by performing 10 measurements and computing the mean and standard
+deviation.
+
+
+
+
+                                      Accuracy vs t (CIFAR10 dataset)                                                            Accuracy vs t (CIFAR10 dataset)
+                      0.50                                                                                       0.50
+
+                      0.45                                                                                       0.45
+   Accuracy (Train)
+
+
+
+
+                                                                                               Accuracy (Test)
+
+
+
+
+                      0.40                                                                                       0.40
+
+                      0.35                                                                                       0.35
+
+                      0.30                                                                                       0.30
+                                      N=6      N=10                   Random Matrix N=8                                          N=6      N=10                   Random Matrix N=8
+                                      N=7      N=11                   Random Matrix N=9                                          N=7      N=11                   Random Matrix N=9
+                      0.25            N=8      Random Matrix N=6      Random Matrix N=10                         0.25            N=8      Random Matrix N=6      Random Matrix N=10
+                                      N=9      Random Matrix N=7      Random Matrix N=11                                         N=9      Random Matrix N=7      Random Matrix N=11
+                             10 3    10 2     10 1          100      101          102                                   10 3    10 2     10 1          100      101          102
+                                                        t                                                                                          t
+
+                                                (a)                                                                                        (b)
+
+
+Figure 5: Training (left panel) and testing (right panel) accuracy as a function of evolution time using the
+CIFAR-10 dataset. The time evolution and the encoding have been performed with the Hamiltonian XX model
+and the dense angle, respectively. The horizontal dashed lines indicate the performance obtained using a random
+unitary matrix, specifically by performing 10 measurements and computing the mean and standard deviation.
+
+
+
+
+                                                                                           6
+namics is not confined to integrable sectors but            until it saturates. The growth rate is identical for
+effectively explores the entire Hilbert space.              all system sizes, indicating that the speed of infor-
+                                                            mation propagation is independent of system size,
+5    Critical Transition Time and Locality                  while the saturation value scales proportionally to
+                                                            the block size (N/2). These results on the entangle-
+Once we have understood the saturation value A∗             ment dynamics of spin chains are well established
+of the accuracy, let us now address the question of         in the literature [67, 68] and are explained by the
+the transition time t∗ .                                    ballistic propagation of quasiparticle excitations,
+A natural first guess, consistent with the intuition        which travel in opposite directions in entangled
+of information spreading across the system, is that         pairs.
+the transition time corresponds to the characteristic       It is also interesting to note that the curves of half-
+timescale required for initially localized informa-         chain entropy presented in Fig. 6(a) obey a scaling
+tion on individual qubits to spread throughout the          law of the form
+system.
+                                                                             SN (t) = N f Nt ,
+                                                                                            
+To substantiate this intuition, it is useful to in-                                                            (4)
+troduce the notion of an effective speed of infor-
+mation propagation. Although in non-relativistic            where SN (t) denotes the half-chain entropy for a
+quantum mechanics space and time are treated on             system of N sites at time t. One could expect
+different footings, and super-luminal influences of         this relation to hold for large N ; but, in fact, it
+local perturbations are, in principle, possible, the        approximately holds even for not so large numbers
+Lieb–Robinson bounds demonstrate that for local             of sites. Indeed, the scaling function f is shown in
+Hamiltonians—such as our XX model—there ex-                 Fig. 6(b), where the normalized entropy SN /(N/2)
+ists an effective causal structure. In practice, this       is plotted as a function of t/N for the system sizes
+establishes a maximum velocity at which quantum             N = 6, 8, and 10.
+dynamics can propagate information.                         Several features of f are worth highlighting:
+In Appendix A we determine the Lieb–Robinson
+velocity for the XX model defined in Eq. (3) and
+                                                              • The entropy grows linearly until it saturates
+show that it is equal to 1. Combining this result
+                                                                at t = N/2.
+with the plots presented in the previous section,
+two conclusions follow:
+                                                              • For t > N/2, the entropy exhibits oscillations
+    • From a qualitative perspective, the absence               with characteristic periodicities T ≃ 0.5 and
+      of a linear dependence between the transition             T ≃ 1.
+      time and the system size rules out the hypoth-
+      esis that the information must spread across
+                                                            These properties of the scaling function f confirm
+      the entire system.
+                                                            the intuition of ballistic information propagation.
+    • Quantitatively, up to the transition time t∗ ,        The linear growth for t < N/2 arises from pairs of
+      the information remains confined to the qubit         entangled quasiparticles located on opposite sides
+      of origin and its nearest neighbors.                  of the bipartition: the longer the time, the more
+                                                            quasiparticles cross its boundary and contribute
+To better visualize how information spreads across          to the entropy [67]. Once the block is filled with
+the system and to confirm the above insights, in            quasiparticles, the entropy saturates, since quasi-
+Fig. 6(a) we plot the von Neumann entropy of half           particles are simultaneously entering and leaving.
+the chain together with the single-qubit von Neu-           The oscillations observed for t > N/2 are a conse-
+mann entropy as functions of the evolution time.            quence of all quasiparticles propagating with sim-
+These quantities provide complementary perspec-             ilar velocities but carrying different amounts of
+tives: the half-chain entropy captures the build-up         entanglement.
+of bipartite entanglement across the system, while          The confirmation of the ballistic information prop-
+the single-qubit entropy measures the delocaliza-           agation model, together with the observation of
+tion of local information.                                  a transition time t∗ at which the information has
+The evolution of the single-qubit entropy shows             only spread across a local region of a few neigh-
+that each qubit, where information initially en-            bors, suggests that our naive real-space picture of
+coded, becomes entangled with its environment               information spreading is not the key feature for
+after an evolution time of order 1, irrespective of         explaining the information processing capacity of
+the total system size. In contrast, the entanglement        the QELM. This indicates that the analysis should
+entropy of half the chain grows linearly with time          instead be carried out in a different space.
+
+                                                        7
+                                       Entanglement vs t (HXX)                                                                             Entanglement vs t (HXX)
+                         3.0
+                                                                                                                         0.6
+                         2.5
+                                                                                                                         0.5
+
+                         2.0                                                                                             0.4
+
+
+
+
+                                                                                                    Entanglement (bit)
+    Entanglement (bit)
+
+
+
+
+                         1.5                                                                                             0.3
+
+                         1.0                                                                                             0.2
+
+                         0.5                                                                                             0.1
+                                         6 q0                8 q0               10 q0
+                         0.0             6 half-chain        8 half-chain       10 half-chain                            0.0                 6 half-chain      8 half-chain     10 half-chain
+                               0   2          4              6              8            10                                    0.0   0.5   1.0       1.5       2.0        2.5    3.0
+                                                        t                                                                                              t/(N/2)
+
+                                                (a)                                                                                                (b)
+
+
+Figure 6: a) Von Neumann entropy as function of the evolution time of half-chain (solid lines) and of the single
+qubit (dash-dotted lines). The colors denote the different sizes N (N = 6, 8, 10) of the entire system. b) Normalized
+(with N/2) von Neumann entropy as function of the evolution time (divided by N/2) of half-chain.
+
+
+6     The Probability Polytope                                                                          and relationships within the feature space.
+                                                                                                        The K-means algorithm minimizes the within-
+A natural framework for analyzing the dynamics                                                          cluster sum of squared distances between samples
+of the Quantum Extreme Learning Machine is the                                                          and their corresponding centroids. It proceeds iter-
+probability polytope, defined by the set of all possible                                                atively by assigning each data point to the nearest
+probability distributions over the computational                                                        centroid (assignment step) and updating the cen-
+basis states. More precisely, we consider vectors                                                       troid positions as the mean of their assigned mem-
+                           N
+of real numbers p⃗ ∈ R2 whose 2N components                                                             bers (update step). The process continues until
+satisfy                                                                                                 convergence, defined as the point at which cluster
+                                    X                                                                   assignments stabilize or the change in the objective
+  p(s) ≥ 0 ∀s ∈ {0, 1}N ,                  p(s) = 1,                                                    function falls below a predefined threshold.
+                                                            s∈{0,1}N                                    Figure 7 shows the evolution of the iner-
+                                                                                                        tia—defined as the within-cluster sum of squared
+where each component is indexed by a bit string                                                         distances—which quantifies cluster compactness.
+of length N , s = (s1 , s2 , . . . , sN ). The probability                                              As the evolution time increases, the inertia ex-
+vector p⃗ associated with a quantum state |ψ⟩ is                                                        hibits a consistent decrease, indicating that the
+given by                                                                                                feature vectors become more tightly clustered and
+                                       2
+                  p(s) = |⟨s| ψ⟩| ,                    (5)                                              better separated. This trend parallels the increase
+                                                                                                        in classification accuracy observed in the output
+where |s⟩ denotes the computational basis element
+                                                                                                        neural network (ONN): as the inertia decreases,
+corresponding to the bit string s.
+                                                                                                        the ONN accuracy rises, revealing an inverse corre-
+The motivation for introducing the probability
+                                                                                                        lation between these two quantities.
+space is that it directly corresponds to the fea-
+                                                                                                        To substantiate our previous discussion about local
+ture space on which the classical neural network
+                                                                                                        information scrambling, we also computed both
+operates. Consequently, it provides the most nat-
+                                                                                                        accuracy and inertia using local information only.
+ural setting in which to study how the quantum
+                                                                                                        Namely, we consider the expectation values of the
+evolution reshapes the data representation accessi-
+                                                                                                        N spin Pauli operators, obtaining the plot shown
+ble to the classical classifier.
+                                                                                                        in Fig. 8 (a). We observe that, differently from the
+Because the probability polytope has exponentially
+                                                                                                        previous analysis based on the string probabilities,
+many dimensions, analyzing the temporal evolu-
+                                                                                                        the ONN accuracy and the inertia follow a similar
+tion of data points within it is far from trivial. To
+                                                                                                        trend and decrease over time. Notice, in particular,
+gain qualitative insight into the structure and dis-
+                                                                                                        that the decrease occurs on a time of the order
+tribution of the emerging features, we applied the
+                                                                                                        of t∗ . This accuracy drop implies that local in-
+K-means clustering algorithm. This unsupervised
+                                                                                                        formation is lost by this time and that, in fact, a
+learning method reveals natural groupings among
+                                                                                                        scrambling of the encoded information is occurring.
+the data points, thereby exposing latent structure
+
+                                                                                                8
+Furthermore, the plot shows that, in this case, the        increases, correlations propagate across larger
+inertia is not a good tracker of the performance of        regions of the system following a well-defined
+the algorithm: the data are, in fact, clustering in        light-cone structure.
+this locally extracted latent space; but, evidently,       We applied this algorithm to the MNIST and
+they are not clustering in the right way. To gain          CIFAR-10 datasets and evaluated the classification
+deeper insight, we further evaluated the Adjusted          accuracy as a function of the number of layers
+Rand Index (ARI). The ARI measures the similar-            (see Fig. 10 and Fig. 11). In all cases, maximum
+ity between the predicted clustering obtained from         accuracy was achieved without requiring informa-
+the K-means algorithm and the actual class labels.         tion to spread throughout the entire system. For
+As shown in Fig. 8 (b), the ARI decreases over             the MNIST dataset, four layers were sufficient to
+time consistently with the accuracy. This behavior         reach the accuracy plateau, regardless of system
+confirms that the ability of the ONN to predict            size. A similar trend was observed for CIFAR-10
+the correct class deteriorates as the data becomes         at smaller N , while for larger systems the plateau
+increasingly misclustered.                                 was reached after the fifth or sixth layer. This
+As a summary of this discussion: while the data            mild dependence on system size suggests that
+                                 N
+cluster correctly in the full R2 space, with the           the classical simulability of QELMs—and the
+accuracy increasing and the inertia decreasing af-         depth of entanglement required—may be problem-
+ter t∗ , when considering only the 3N −dimensonal          dependent.
+space of the averages of the local Pauli operators,
+the clustering goes wrong; showing that, locally, no
+                                                           8   Conclusions and Outlook
+information can be extracted any longer.
+                                                           In this work, we investigated several aspects of the
+7   Implications for Classical Simulability                Quantum Extreme Learning Machines (QELMs)
+                                                           for classification tasks, beginning with an analysis
+We have seen that, contrary to initial expectations,       of their performance as a function of evolution
+optimal accuracy does not require information              time and subsequently examining their internal
+from a single site to spread across the entire             dynamics in greater detail.
+system. Instead, the propagation of information to         We first reduced the dataset images (via PCA or
+the nearest neighbors already suffices to extract          AE) into vectors of 2N features, encoded them
+the relevant features needed for learning.                 using the Dense Angle encoding in the quantum
+The observation that the maximum accuracy                  layer, and then performed the temporal evolution
+is reached at a time independent of the system             of the quantum state under the Hamiltonian HXX .
+size has profound implications for the classical           After the evolution, we measured the output state
+simulability of QELMs. In particular, it indicates         in the computational basis, obtaining 2N real
+that the effective depth of the quantum evolution is       values for each image, which were then fed into a
+shallow, and that the relevant correlations remain         classical single-layer neural network classifier.
+short-ranged. Such shallow circuits, characterized         Plotting the performance as a function of the
+by limited entanglement growth, can be efficiently         evolution time, we observed a relatively sudden
+simulated using classical tensor-network techniques        transition from a low-accuracy to a high-accuracy
+such as Matrix Product States (MPS). From this             regime, followed by saturation. The saturation
+perspective, the learning process in QELMs does            value closely matches that obtained using random
+not necessarily demand computational resources             unitaries, whose dynamics maximally scramble
+that exceed classical capabilities.                        information across the Hilbert space.
+To further substantiate these ideas, we imple-             Remarkably, this equivalence is achieved at
+mented an alternative, explicitly digital version of       relatively short evolution times, when the XX
+the model (see Fig. 9). Using the same reduced             Hamiltonian has generated only local entanglement
+features employed as input for the QELM and                between neighboring qubits. Despite its simplicity
+maintaining the same dense-angle encoding of the           and integrability, the XX model is thus able to
+initial states, we applied a sequence of two-qubit         reproduce the same classification accuracy as a
+random unitaries G acting on contiguous qubit              fully random unitary evolution, which induces
+pairs. At each successive layer, the unitary is            maximal scrambling across the Hilbert space. This
+shifted by one qubit, as illustrated schematically         finding underscores that complex global dynamics
+in Fig. 9.                                                 are not necessary to obtain rich and expressive
+This construction ensures that, at each layer,             feature maps: even structured, physically realistic
+information carried by each qubit is mixed only            interactions can provide sufficient diversity in the
+with that of its immediate neighbor. As the depth          quantum embeddings for effective learning.
+
+                                                       9
+                                                             Accuracy and Inertia vs t (Fashion-MNIST, N=10q)
+                                                    0.89                                                                                        250
+
+                                                    0.88                                                                                        225
+                                                                                                                                                200
+                                                    0.87
+                                                                                                                                                175
+
+
+
+                                         Accuracy
+
+
+
+
+                                                                                                                                                     Inertia
+                                                    0.86                                                                                        150
+                                                                                                                                                125
+                                                    0.85
+                                                                                                                                                100
+
+                                                    0.84                                                                                        75
+                                                                10 2          10 1               100                     101           102
+                                                                                                 t
+
+Figure 7: Accuracy (in magenta color) and Inertia (in light blue color) as a function of evolution time using the
+Fashion-MNIST dataset and N = 10.
+
+
+       Accuracy and Inertia vs t (Fashion-MNIST, N=10q with Six , Siy , Siz )                                   Accuracy and ARI vs t (Fashion-MNIST, N=10q with Six , Siy , Siz )
+                                                                                                                                                                                      0.450
+
+              83.0                                                             80000                            83.0                                                                  0.425
+
+              82.5                                                                                              82.5                                                                  0.400
+                                                                               60000
+              82.0                                                                                              82.0                                                                  0.375
+                                                                                                     Accuracy
+   Accuracy
+
+
+
+
+                                                                                     Inertia
+
+
+
+
+                                                                                                                                                                                          ARI
+              81.5                                                                                              81.5                                                                  0.350
+                                                                               40000
+              81.0                                                                                              81.0                                                                  0.325
+
+              80.5                                                             20000                            80.5                                                                  0.300
+
+              80.0                                                                                              80.0                                                                  0.275
+                     10 2      10 1            100           101        102                                                    10 2      10 1                  100       101    102
+                                           t                                                                                                              t
+
+                                        (a)                                                                                                          (b)
+
+
+Figure 8: a) Accuracy (in magenta color) and Inertia (in light blue color) as a function of evolution time using
+the Fashion-MNIST dataset and N = 10. b) Accuracy (in magenta color) and ARI (in light green color) as a
+function of evolution time using the Fashion-MNIST dataset, for N = 10, obtained from the local expectation
+values only.
+                                                                        New implementation (for odd qubits)
+
+                                           |0→               ω 1 , ω2
+                                                                              G                                    G
+                                           |0→               ω 3 , ω4
+                                                                                               G                                 G                                   I used :
+                                                                                                                                                                     •Dense Angle Encoding
+                                           |0→               ω 5 , ω6                                                                                                •The same G (unitary random)
+                                                                              G                                    G
+                                           |0→               ω 7 , ω8
+                                                                                               G                                 G
+                                           |0→              ω9 , ω10
+
+                                                           encoding                  time evolution
+                                                                          1°L                  2°L                 3°L           4°L
+
+
+Figure 9: A schematic representation of an algorithm with 5 qubits, in which a unitary random matrix is applied
+for pairs of qubits contiguous.
+
+
+
+                                                                                               10
+                         Accuracy vs N° Layers (Train - MNIST)                                            Accuracy vs N° Layers (Test - MNIST)
+              1.00                                                                             1.00
+
+
+              0.95                                                                             0.95
+
+
+              0.90                                                                             0.90
+   Accuracy
+
+
+
+
+                                                                                    Accuracy
+              0.85                                                                             0.85
+
+                                                   Random Matrix N=6    N=6                                                       Random Matrix N=6    N=6
+              0.80                                 Random Matrix N=7    N=7                    0.80                               Random Matrix N=7    N=7
+                                                   Random Matrix N=8    N=8                                                       Random Matrix N=8    N=8
+                                                   Random Matrix N=9    N=9                                                       Random Matrix N=9    N=9
+                                                   Random Matrix N=10   N=10                                                      Random Matrix N=10   N=10
+              0.75                                                                             0.75
+                     1      2           3               4         5       6                           1     2          3               4         5       6
+                                            N° Layers                                                                      N° Layers
+
+                                        (a)                                                                            (b)
+
+
+Figure 10: Training (left panel) and testing (right panel) accuracy as a function of the number of layers using
+the MNIST dataset.
+
+
+
+
+                         Accuracy vs N° Layers (Train - CIFAR10)                                          Accuracy vs N° Layers (Test - CIFAR10)
+              0.50                                                                             0.50
+
+
+              0.45                                                                             0.45
+
+
+              0.40                                                                             0.40
+   Accuracy
+
+
+
+
+                                                                                    Accuracy
+
+
+
+
+              0.35                                                                             0.35
+                                                                                                                            Random Matrix N=6          N=6
+                                                                                                                            Random Matrix N=7          N=7
+                                                                                                                            Random Matrix N=8          N=8
+              0.30        Random Matrix N=6        Random Matrix N=10   N=8                    0.30                         Random Matrix N=9          N=9
+                          Random Matrix N=7        Random Matrix N=11   N=9
+                          Random Matrix N=8        N=6                  N=10                                                Random Matrix N=10         N=10
+                          Random Matrix N=9        N=7                  N=11                                                Random Matrix N=11         N=11
+              0.25                                                                             0.25
+                     1      2           3               4         5       6                           1     2          3               4         5       6
+                                            N° Layers                                                                      N° Layers
+
+                                        (a)                                                                            (b)
+
+
+Figure 11: Training (left panel) and testing (right panel) accuracy as a function of the number of layers using
+the CIFAR-10 dataset.
+
+
+
+
+                                                                               11
+Our analysis further shows that the improvement            ceived funds from the program Plan de Doctorados
+in accuracy coincides with the onset of entan-             Industriales of the Research and Universities De-
+glement, indicating that quantum correlations              partment of the Catalan Government (2022 DI 011).
+enhance the embedding of classical data into the           This work was partially funded by the Generalitat
+Hilbert space. As entanglement “kicks in,” the             de Catalunya, AGAUR 2021-SGR-01506 and par-
+encoded samples become more separable and                  tially supported by the PNRR MUR Project No.
+better clustered in probability space, leading to          PE0000023-NQSTI through the secondary projects
+improved classification performance. In this sense,        QuCADD and ThAnQ. We acknowledge the use
+entanglement acts as a resource for more efficient         of the Finnish CSC facilities under the project
+data encoding, providing a positive interpretation         2010295 ”Quantum Reservoir Computing”. We
+of the transition dynamics observed in QELMs.              gratefully acknowledge the use of RES resources
+Interestingly,      the      critical    transition        provided by the Barcelona Supercomputing Center
+time—associated with the onset of entangle-                through project FI-2025-1-0043 on MareNostrum
+ment—is sufficient for information to reach only           5.
+nearest neighbors and is independent of the system
+size. This observation implies that QELMs rely
+primarily on local quantum correlations to achieve
+high accuracy. Consequently, while quantum                 A     Appendix: Lieb-Robinson Bounds: Gen-
+resources clearly enhance feature extraction, the                eral Statement
+limited depth and moderate entanglement of
+these circuits suggest that they can be efficiently        Consider a quantum spin system defined on a lat-
+simulated on classical hardware for a broad class          tice Λ, with local Hilbert space Hi at each site
+of learning tasks, though not necessarily in all           i ∈ Λ, and a Hamiltonian of the form:
+possible settings.
+Beyond these observations, our analysis of data                                     X
+evolution within the probability polytope pro-                                H=         Φ(X),                (6)
+                                                                                   X⊂Λ
+vides a geometric interpretation of the accuracy
+transition. As the quantum dynamics unfold,
+the measurement probability vectors exhibit                where Φ(X) are local interaction terms supported
+increasingly structured and class-distinguishable          on finite subsets X ⊂ Λ.
+patterns, which enhance the discriminative power           We assume that:
+of the classical classifier. Thus, the gain in
+performance arises not from global information                 • The local interaction terms Φ(X) are uni-
+spreading, but from the emergence of organized                   formly bounded: ∥Φ(X)∥ ≤ J for some con-
+and class-separable manifolds in Hilbert space—a                 stant J > 0.
+process through which moderate quantum corre-
+lations bridge quantum dynamics and classical
+feature learning.                                              • The interactions are of finite range r0 or decay
+Overall, QELMs provide a compelling frame-                       exponentially with distance.
+work where quantum resources enhance data
+embeddings without demanding deeply entan-
+gled or computationally expensive evolutions,              Under these assumptions, the Lieb-Robinson bound
+positioning them as both a testbed for hybrid              asserts that for any two observables A and B sup-
+quantum–classical learning and a tool to probe the         ported on disjoint regions X, Y ⊂ Λ, the following
+subtle boundary between classical simulability and         holds:
+genuine quantum advantage.
+                                                                   ∥A(t), B∥ ≤ c∥A∥∥B∥e−µ(d(X,Y )−v|t|) ,     (7)
+Acknowledgments
+                                                           where c, µ and v are positive constants. The
+We would like to thank Marcin Plodzien for helpful         Lieb-Robinson velocity v depends linearly on the
+discussions. The research leading to these results         bound J of the interaction terms and scales as
+has received funding from the Spanish Ministry             v ∝ J.
+of Science and Innovation PID2022-136297NB-I00             This captures the idea that stronger local interac-
+/AEI/10.13039/501100011033/ FEDER, UE. IFAE                tions permit faster information propagation across
+is partially funded by the CERCA program of the            the system.
+Generalitat de Catalunya. The results have re-
+
+                                                      12
+                                                                                x
+A.1   Application to the XX Model                                                                                 x=vLRt
+
+                                                                                            Causal region
+The one-dimensional XX model describes nearest-
+neighbor spin interactions:
+                    N −1                                                                                               t
+                    X
+         H=J               (σjx σj+1
+                                 x
+                                     + σjy σj+1
+                                            y
+                                                )=
+                    j=1
+                                                      (8)
+                     N
+                     X −1                                                                                         x=-vLRt
+                            (σj+ σj+1
+                                  −
+                                      + σj− σj+1
+                                             +
+                                                 )
+                      j=1                                        Figure 12: Lieb-Robinson light cone with velocity
+                                                                 vLR = 2J. Outside this region, commutators of local
+where σj± = (σjx ± iσjy )/2.                                     observables are exponentially suppressed.
+Using the Jordan-Wigner transformation , this
+model maps to free fermions:
+                                                                 A.3    Information Propagation from a Localized
+                     N −1
+                                                                        Excitation
+                            (c†j cj+1 + c†j+1 cj )
+                     X
+            H=                                        (9)
+                     j=1                                         Consider a localized excitation created at t=0:
+.
+Since the Hamiltonian is quadratic, the Heisenberg                                    |ψ(0)⟩ = c†j |0⟩.                         (17)
+evolution cj (t) remains linear:                                 Its time evolution:
+            X
+                ujk (t)ck , ujk (t) = ij−k Jj−k (2Jt),            |ψ(t)⟩ = c†j (t)|0⟩, c†j (t)|0⟩ =             ik−j Jk−j (2Jt)c†k ,
+                                                                                                            X
+   cj (t) =
+            k                                                                                               k
+                                                (10)                                                        (18)
+where Jn is the Bessel function of the first kind.           shows that the amplitude on site k is |Jk−j (2Jt)|,
+Therefore, the commutator between distant                    which is peacked around |k − j| ≈ 2Jt, and decays
+fermionic operator is:                                       exponentially outside.
+           †                                  −µ(|j−k|−2Jt) This illustrates a ballistic propagation of the exci-
+∥[cj (t), ck ]∥ = ujk (t) = |Jj−k (2Jt)| ≤ Ce              ,
+                                                             tation with a velocity v = 2J and confirms that
+                                                    (11)
+                                                             information spreads within a light cone determined
+which explicitly realizes the Lieb-Robinson bound
+                                                             by the Lieb-Robinson bound(see Fig.12 and [69]).
+with velocity:
+                         vLR = 2J.                  (12)
+                                                                 A.4    Accuracy saturation, Lieb-Robinson ve-
+                                                                        locity and quantum advantage
+A.2   Group Velocity and its Connection to
+      Lieb-Robinson Bounds                                       In Figures 3, 4 and 5 we show how the accuracy of
+                                                                 a QELM depends on the total quantum evolution
+The free-fermion Hamiltonian can be diagonalized
+                                                                 time for different system sizes and problems. As
+with Fourier modes:
+                     √ X ikj                                     expected, the accuracy increases with time until it
+              cj = 1/ N     e ak ,          (13)                 saturates at a value that depends on the size of the
+                                   k                             quantum reservoir:larger systems achieve higher
+                                                                 saturation accuracy.
+with k = 2πm/N with m ∈ ZN . The Hamiltonian
+                                                                 Two complementary observations can be drawn
+becomes:
+                                                                 from this plot.
+              ϵ(k)a†k ak , ϵ(k) = 2J cos(k).
+           X
+       H=                                    (14)                First, from a qualitative perspective, the saturation
+                k                                                time, the point at which the accuracy plateaus,
+                                                                 appears to be largely indipendent of the system
+where ϵ(k) is the dispersion relation.                           size. Second, from a quantitative standpoint, we
+The group velocity is then given by:                             can relate this behavior to how far information
+                       dϵ(k)                                     spreads within the system. Notably, all system sizes
+           vg (k) =          = −2Jsin(k).            (15)        reach their maximum accuracy at approximately
+                        dk
+                                                                 time t=1. According to the Lieb-Robinson bound
+Its maximum over k ∈ [−π, π] reads                               derived in the previous section, this corresponds to
+         vmax = max |vg (k)| = 2J = vLR .            (16)        quantum information propagating over a distance
+                      k                                          of about one lattice site,
+Thus, the Lieb-Robinson velocity coincides with the                                                              1
+maximal group velocity of the system’s excitations.                       d = vLR · t = (2J)t = 2 ·                · 1 = 1.     (19)
+                                                                                                                 2
+
+                                                            13
+B     Appendix: The choice of Measurement                            B.3     Identical Hamiltonian and Measurement
+      Basis                                                                  Bases
+
+                                                                     If the measurement basis |sk ⟩ coincides with the
+In addition to allowing the QELM sufficient time
+                                                                     Hamiltonian eigenbasis |Ek ⟩, then all cross terms
+to evolve, it is also crucial to consider the choice
+                                                                     n m in pk (t) vanish due to the orthogonality. Con-
+of the measurement basis. In particular, the
+                                                                     sequently, the probabilities pk (t) become time-
+measurement basis should be sufficiently distinct
+                                                                     indipendent:
+from the eigenbasis of the Hamiltonian governing
+the evolution. This distinction plays a significant
+                                                                               pk (t) = |ck |2 (constant in time).     (24)
+role in the expressiveness and information content
+of the output features extracted via measurement.                    In this case, no interference occurs, and the feature
+                                                                     map is static, rendering the QELM ineffective in
+                                                                     capturing temporal dynamics.
+B.1    Quantum Evolution and Basis Represen-
+       tations                                                       B.3.1     Mutually Unbiased Based
+Assume the quantum system underlying the QELM                        When the Hamiltonian and measurement bases are
+evolves under a time-independent Hamiltonian H,                      mutually unbiased, that is,
+with spectral decomposition:
+                                                                                                1
+                          X                                                    |⟨sk |En ⟩|2 =     ∀n, k ⇔ ⟨sk |En ⟩,   (25)
+                    H=              Ek |Ek ⟩⟨Ek |,       (20)                                   d
+                            k
+                                                                     where d is the dimension of the Hilbert space. In
+where |Ek ⟩ are the eigenstates and Ek the corre-                    this scenario, the probability amplitudes are evenly
+sponding eigenvalues.                                                distributed, and the evolution induces maximal
+The features of each input data sample are encoded                   interference among eigenstate components. As
+into an initial quantum state |ψ(0)⟩, which can be                   a result, the measurement probabilities pk (t)
+expanded in the Hamiltonian eigenbasis as:                           exhibit rich time-dependent patterns, enhancing
+                                                                     the nonlinear feature encoding capabilities of the
+                                                                     QELM.
+                                    X
+                    |ψ(0)⟩ =              cn |En ⟩.      (21)
+                                      n
+
+After an evolution time t, the system evolves into:                  References
+                            X
+                |ψ(0)⟩ =             cn e−iEn t |En ⟩.   (22)         [1] R. P. Feynman, “Simulating physics with com-
+                                n                                         puters,” International journal of theoretical
+                                                                          physics, vol. 21, no. 6/7, pp. 467–488, 1982.
+Let the measurement be performed in a basis |sk ⟩,
+which may or may not coincide with the eigenbasis                     [2] A. Montanaro, “Quantum algorithms: an
+of H. The probability of measuring the system in                          overview,” npj Quantum Information, vol. 2,
+state |sk ⟩ at time t is given by:                                        Jan. 2016.
+
+                           pk (t) = |⟨sk |ψ(t)⟩|2 =                   [3] M. A. Nielsen and I. L. Chuang, Quantum
+      X
+                                                         (23)             Computation and Quantum Information: 10th
+            ⟨sk |En ⟩⟨sk |Em ⟩∗ e−i(En −Em )t cn c∗m .
+                                                                          Anniversary Edition. Cambridge University
+      n,m
+                                                                          Press, 2010.
+
+B.2    Relevance of Basis Misalignment                                [4] P. W. Shor, “Polynomial-time algorithms for
+                                                                          prime factorization and discrete logarithms
+This expression illustrates that the time-dependent                       on a quantum computer,” SIAM Journal on
+measurement statistics pk (t) are sensitive to the                        Computing, vol. 26, no. 5, pp. 1484–1509, 1997.
+overlap between the Hamiltonian eigenstates and
+the measurement basis vectors. If the two bases                       [5] F. Arute, K. Arya, R. Babbush, D. Bacon,
+coincide, time evolution does not generate any non-                       J. Bardin, R. Barends, R. Biswas, S. Boixo,
+trivial interference terms, and the dynamcis may                          F. Brandao, D. Buell, B. Burkett, Y. Chen,
+lack the richness needed for expressive feature ex-                       J. Chen, B. Chiaro, R. Collins, W. Court-
+traction. The following scenarios clarify this rela-                      ney, A. Dunsworth, E. Farhi, B. Foxen,
+tionship.                                                                 A. Fowler, C. M. Gidney, M. Giustina,
+
+                                                                14
+    R. Graff, K. Guerin, S. Habegger, M. Har-                  J. M. Gambetta, “Supervised learning with
+    rigan, M. Hartmann, A. Ho, M. R. Hoff-                     quantum-enhanced feature spaces,” Nature,
+    mann, T. Huang, T. Humble, S. Isakov,                      vol. 567, pp. 209–212, 2019.
+    E. Jeffrey, Z. Jiang, D. Kafri, K. Kechedzhi,
+    J. Kelly, P. Klimov, S. Knysh, A. Korotkov,            [16] S. Lloyd, M. Mohseni, and P. Rebentrost,
+    F. Kostritsa, D. Landhuis, M. Lindmark,                     “Quantum algorithms for supervised and unsu-
+    E. Lucero, D. Lyakh, S. Mandrà, J. R. Mc-                   pervised machine learning,” 7 2013.
+    Clean, M. McEwen, A. Megrant, X. Mi,                   [17] C. Mastroianni, F. Plastina, L. Scarcello,
+    K. Michielsen, M. Mohseni, J. Mutus, O. Naa-                J. Settino, and A. Vinci, “Assessing quan-
+    man, M. Neeley, C. Neill, M. Y. Niu, E. Os-                 tum computing performance for energy opti-
+    tby, A. Petukhov, J. Platt, C. Quintana,                    mization in a prosumer community,” IEEE
+    E. G. Rieffel, P. Roushan, N. Rubin, D. Sank,               Transactions on Smart Grid, vol. 15, no. 1,
+    K. J. Satzinger, V. Smelyanskiy, K. J. Sung,                pp. 444–456, 2023.
+    M. Trevithick, A. Vainsencher, B. Villa-
+    longa, T. White, Z. J. Yao, P. Yeh, A. Zal-            [18] C. Mastroianni, F. Plastina, J. Settino, and
+    cman, H. Neven, and J. Martinis, “Quan-                     A. Vinci, “Variational quantum algorithms for
+    tum supremacy using a programmable su-                      the allocation of resources in a cloud/edge ar-
+    perconducting processor,” Nature, vol. 574,                 chitecture,” IEEE Transactions on Quantum
+    p. 505–510, 2019.                                           Engineering, vol. 5, pp. 1–18, 2024.
+
+ [6] H.-S. Zhong et al., “Quantum computational            [19] M. Consiglio, J. Settino, A. Giordano, C. Mas-
+     advantage using photons,” Science, vol. 370,               troianni, F. Plastina, S. Lorenzo, S. Manis-
+     no. 6523, pp. 1460–1463, 2020.                             calco, J. Goold, and T. J. Apollaro, “Vari-
+                                                                ational gibbs state preparation on noisy
+ [7] H.-Y. Huang et al., “Quantum advantage in                  intermediate-scale quantum devices,” Phys-
+     learning from experiments,” Science, vol. 376,             ical Review A, vol. 110, no. 1, p. 012445, 2024.
+     no. 6598, p. abn7293, 2022.
+                                                           [20] M. Vetrano, G. Lo Monaco, L. Innocenti,
+ [8] J. Preskill, “Quantum Computing in the NISQ                S. Lorenzo, and G. M. Palma, “State estima-
+     era and beyond,” Quantum, vol. 2, p. 79, 2018.             tion with quantum extreme learning machines
+ [9] J. Biamonte, P. Wittek, N. Pancotti, P. Reben-             beyond the scrambling time,” 9 2024.
+     trost, N. Wiebe, and S. Lloyd, “Quantum ma-           [21] P. Mujal, R. Martı́nez-Peña, J. Nokkala,
+     chine learning,” Nature, vol. 549, no. 7671,               J. Garcı́a-Beni, G. Giorgi, M. Soriano, and
+     pp. 195–202, 2017.                                         R. Zambrini, “Opportunities in quantum
+[10] M. Schuld and F. Petruccione, Machine Learn-               reservoir computing and extreme learning
+     ing with Quantum Computers. Springer, 01                   machines,” Advanced Quantum Technologies,
+     2021.                                                      vol. 4, 06 2021.
+
+[11] M. Schuld and F. Petruccione, Supervised              [22] L. Innocenti, S. Lorenzo, I. Palmisano, A. Fer-
+     Learning with Quantum Computers. Quan-                     raro, M. Paternostro, and G. M. Palma, “Po-
+     tum Science and Technology, Springer, 2018.                tential and limitations of quantum extreme
+                                                                learning machines,” Communications Physics,
+[12] I. Cong, S. Choi, and M. Lukin, “Quan-                     vol. 6, p. 118, May 2023.
+     tum convolutional neural networks,” Nature
+     Physics, vol. 15, pp. 1–6, 12 2019.                   [23] W. Xiong, G. Facelli, M. Sahebi, O. Agnel,
+                                                                T. Chotibut, S. Thanasilp, and Z. Holmes,
+[13] Z. Liu, P.-X. Shen, W. Li, L. M. Duan, and D.-             “On fundamental aspects of quantum extreme
+     L. Deng, “Quantum capsule networks,” Quan-                  learning machines,” 12 2023.
+     tum Sci. Technol., vol. 8, no. 1, p. 015016,
+     2023.                                                 [24] A. Sakurai, M. P. Estarellas, W. J. Munro,
+                                                                and K. Nemoto, “Quantum Extreme Reservoir
+[14] M. Schuld, I. Sinayskiy, and F. Petruccione,               Computation Utilizing Scale-Free Networks,”
+    “The quest for a quantum neural network,”                   Phys. Rev. Applied, vol. 17, no. 6, p. 064044,
+     Quantum Information Processing, vol. 13, 08                2022.
+     2014.
+                                                           [25] A. Hayashi, A. Sakurai, W. J. Munro, and
+[15] V. Havlicek, A. D. Córcoles, K. Temme,                    K. Nemoto, “Effective quantum feature maps
+     A. W. Harrow, A. Kandala, J. M. Chow, and                  in quantum extreme reservoir computation
+
+                                                      15
+    from the XY model,” Phys. Rev. A, vol. 111,              [36] A. Sakurai, A. Hayashi, W. J. Munro, and
+    no. 2, p. 022431, 2025.                                       K. Nemoto, “Simple hamiltonian dynamics as
+                                                                  a powerful resource for image classification,”
+[26] A. De Lorenzis, M. P. Casado, M. P. Estarel-                 Phys. Rev. A, vol. 111, p. 052432, May 2025.
+     las, N. L. Gullo, T. Lux, F. Plastina, A. Ri-
+     era, and J. Settino, “Harnessing quantum                [37] A. Hayashi, A. Sakurai, S. Nishio, W. J.
+     extreme learning machines for image classi-                  Munro, and K. Nemoto, “Impact of the form
+     fication,” Phys. Rev. Applied, vol. 23, no. 4,               of weighted networks on the quantum extreme
+     p. 044024, 2025.                                             reservoir computation,” Phys. Rev. A, vol. 108,
+                                                                  no. 4, p. 042609, 2023.
+[27] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo,
+     V. Cimini, T. Giordani, I. Palmisano,                   [38] K. Fujii and K. Nakajima, “Harnessing
+     E. Polino, N. Spagnolo, F. Sciarrino, G. M.                  disordered-ensemble quantum dynamics for
+     Palma, A. Ferraro, and M. Paternostro, “Ex-                  machine learning,” Physical Review Applied,
+     perimental property reconstruction in a pho-                 vol. 8, p. 024030, 8 2017.
+     tonic quantum extreme learning machine,”
+                                                             [39] G. Angelatos, S. A. Khan, and H. E. Türeci,
+     Phys. Rev. Lett., vol. 132, p. 160802, Apr 2024.
+                                                                  “Reservoir computing approach to quantum
+[28] M. Kornjača et al., “Large-scale quantum                    state measurement,” Phys. Rev. X, vol. 11,
+     reservoir learning with an analog quantum                    p. 041062, Dec 2021.
+     computer,” 7 2024.
+                                                             [40] P. Mujal, J. Nokkala, R. Martı́nez-Peña, G. L.
+[29] J. Chen, H. I. Nurdin, and N. Yamamoto,                      Giorgi, M. C. Soriano, and R. Zambrini, “An-
+    “Temporal information processing on noisy                     alytical evidence of nonlinearity in qubits
+     quantum computers,” Phys. Rev. Appl.,                        and continuous-variable quantum reservoir
+     vol. 14, p. 024065, Aug 2020.                                computing,” Journal of Physics: Complexity,
+                                                                  vol. 2, p. 045008, nov 2021.
+[30] P. D. Solanki and A. Pham, “Harnessing Quan-
+                                                             [41] W. Xia, J. Zou, X. Qiu, F. Chen, B. Zhu,
+     tum Dynamics for Robust and Scalable Quan-
+                                                                  C. Li, D.-L. Deng, and X. Li, “Configured
+     tum Extreme Learning Machines,” 3 2025.
+                                                                  quantum reservoir computing for multi-task
+[31] G.-B. Huang, Q.-Y. Zhu, and C.-K. Siew,                      machine learning,” Science Bulletin, vol. 68,
+    “Extreme learning machine: a new learning                     pp. 2321–2329, 10 2023.
+     scheme of feedforward neural networks,” in              [42] A. Sannia, R. Martı́nez-Peña, M. C. Soriano,
+     2004 IEEE International Joint Conference on                  G. L. Giorgi, and R. Zambrini, “Dissipation as
+     Neural Networks (IEEE Cat. No.04CH37541),                    a resource for quantum reservoir computing,”
+     vol. 2, pp. 985–990 vol.2, 2004.                             Quantum, vol. 8, p. 1291, 3 2024.
+[32] G. Huang, G.-B. Huang, S. Song, and K. You,             [43] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala,
+    “Trends in extreme learning machines: A re-                   M. C. Soriano, and R. Zambrini, “Dynam-
+     view,” Neural Networks, vol. 61, pp. 32–48,                  ical phase transitions in quantum reservoir
+     2015.                                                        computing,” Physical Review Letters, vol. 127,
+                                                                  p. 100502, 9 2021.
+[33] S. Ding, H. Zhao, Y. Zhang, X. Xu, and R. Nie,
+    “Extreme learning machine: algorithm, theory             [44] N. Götting, F. Lohof, and C. Gies, “Exploring
+     and applications,” Artif. Intell. Rev., vol. 44,             quantum mechanical advantage for reservoir
+     p. 103–115, June 2015.                                       computing,” Physical Review A, vol. 108, 2
+                                                                  2023.
+[34] J. Wang, S. Lu, S.-H. Wang, and Y.-D. Zhang,
+    “A review on extreme learning machine,” Mul-             [45] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi,
+     timedia Tools and Applications, vol. 81, no. 29,             R. Zambrini, and M. C. Soriano, “Informa-
+     pp. 41611–41660, 2022.                                       tion processing capacity of spin-based quan-
+                                                                  tum reservoir computing systems,” Cognitive
+[35] G.-B. Huang, D. Wang, and Y. Lan, “Extreme                   Computation, vol. 15, pp. 1440–1451, 9 2023.
+     learning machines: a survey. int j mach learn
+     cybern,” International Journal of Machine               [46] P. Mujal, “Quantum reservoir computing for
+     Learning and Cybernetics, vol. 2, pp. 107–122,               speckle disorder potentials,” Condensed Mat-
+     06 2011.                                                     ter, vol. 7, p. 17, 1 2022.
+
+                                                        16
+[47] J. Chen and H. I. Nurdin, “Learning nonlinear          [56] R. A. Bravo, K. Najafi, X. Gao, and S. F. Yelin,
+     input–output maps with dissipative quantum                  “Quantum reservoir computing using arrays
+     systems,” Quantum Information Processing,                   of rydberg atoms,” PRX Quantum, vol. 3,
+     vol. 18, no. 7, p. 198, 2019.                               p. 030325, 8 2022.
+
+[48] K. Nakajima, K. Fujii, M. Negoro, K. Mitarai,          [57] L. Henriet, L. Beguin, A. Signoles, T. La-
+     and M. Kitagawa, “Boosting computational                    haye, A. Browaeys, G.-O. Reymond, and
+     power through spatial multiplexing in quan-                 C. Jurczak, “Quantum computing with neu-
+     tum reservoir computing,” Physical Review                   tral atoms,” Quantum, vol. 4, p. 327, 9 2020.
+     Applied, vol. 11, no. 3, p. 034021, 2019.
+                                                            [58] F. Perciavalle, F. Plastina, M. Pisarra, and
+[49] Q. H. Tran and K. Nakajima, “Higher-order                   N. L. Gullo, “Predicting fermionic densities
+     quantum reservoir computing,” arXiv preprint                using a projected-quantum-kernel method,”
+     arXiv:2006.08999, 2020.                                     Phys. Rev. A, vol. 112, no. 2, p. 022620, 2025.
+
+[50] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi,          [59] F. Perciavalle, D. Rossini, J. Polo, O. Morsch,
+     R. Zambrini, and M. C. Soriano, “Informa-                   and L. Amico, “Quantum superpositions of
+     tion processing capacity of spin-based quan-                current states in rydberg-atom networks,”
+     tum reservoir computing systems,” Cognitive                 Phys. Rev. Res., vol. 6, p. 043025, Oct 2024.
+     Computation, pp. 1–12, 2020.                           [60] M. Kramer, “Autoassociative neural networks,”
+                                                                 Computers & Chemical Engineering, vol. 16,
+[51] J. Settino et al., “Memory-augmented hybrid
+                                                                 no. 4, pp. 313–328, 1992. Neutral network
+     quantum reservoir computing,” Phys. Rev. Ap-
+                                                                 applications in chemical engineering.
+     plied, vol. 24, no. 2, p. 024019, 2025.
+                                                            [61] G. E. Hinton and R. S. Zemel, “Autoencoders,
+[52] S. Ghosh, A. Opala, M. Matuszewski, T. Pa-                  minimum description length and helmholtz
+     terek, and T. C. H. Liew, “Quantum reservoir                free energy,” in Neural Information Processing
+     processing,” npj Quantum Information, vol. 5,               Systems, 1993.
+     p. 35, 4 2019.
+                                                            [62] D. E. Rumelhart, G. E. Hinton, and R. J.
+[53] Q. H. Tran, S. Ghosh, and K. Nakajima,                      Williams, “Learning representations by back-
+    “Quantum-classical hybrid information process-               propagating errors,” Nature, vol. 323, pp. 533–
+     ing via a single quantum system,” Physical                  536, 1986.
+     Review Research, vol. 5, p. 43127, 2023.
+                                                            [63] G. E. Hinton and R. R. Salakhutdinov, “Re-
+[54] G. Llodrà, C. Charalambous, G. L. Giorgi, and              ducing the dimensionality of data with neural
+     R. Zambrini, “Benchmarking the role of par-                 networks,” Science, vol. 313, no. 5786, pp. 504–
+     ticle statistics in quantum reservoir comput-               507, 2006.
+     ing,” Advanced Quantum Technologies, vol. 6,
+     p. 2200100, 1 2023.                                    [64] Y. Lecun, C. Cortes, and C. J. Burges, “Mnist
+                                                                 handwritten digit database.” ATT Labs [On-
+[55] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz,                  line]. Available: http: // yann. lecun. com/
+     P. Weinberg, M. Hamdan, A. Zhdanov, S. H.                   exdb/ mnist , 2010.
+     Cantu, H. Zhou, R. A. Bravo, K. Bagnall, J. I.
+     Basham, J. Campo, A. Choukri, R. Deangelo,             [65] H. Xiao, K. Rasul, and R. Vollgraf, “Fashion-
+     P. Frederick, D. Haines, J. Hammett, N. Hsu,                MNIST: a novel image dataset for bench-
+     M.-G. Hu, F. Huber, P. N. Jepsen, N. Jia,                   marking machine learning algorithms,” 2017.
+     T. Karolyshyn, M. Kwon, J. Long, J. Lopatin,                https://arxiv.org/abs/1708.07747.
+     A. Lukin, T. M. Macr‘ı, O. M. Markovi´c, L. A.         [66] A. Krizhevsky, “Learning multiple layers of
+     Martı́nez-Martı́nez, X. Meng, E. Ostroumov,                 features from tiny images,” tech. rep., Uni-
+     D. Paquette, J. Robinson, P. S. Rodriguez,                  versity of Toronto, 2009. https://www.cs.
+     A. Singh, N. Sinha, H. Thoreen, N. Wan,                     toronto.edu/~kriz/cifar.html.
+     D. Waxman-Lenz, T. Wong, K.-H. Wu, P. L. S.
+     Lopes, Y. Boger, N. Gemelke, T. Kitagawa,              [67] P. Calabrese and J. Cardy, “Evolution of en-
+     A. Keesling, X. Gao, A. Bylinskii, S. F. Yelin,             tanglement entropy in one-dimensional sys-
+     F. Liu, and S.-T. Wang, “Large-scale quantum                tems,” Journal of Statistical Mechanics: The-
+     reservoir learning with an analog quantum                   ory and Experiment, vol. 2005, p. P04010, apr
+     computer,” 7 2024.                                          2005.
+
+                                                       17
+[68] J. I. Latorre and A. Riera, “A short review
+     on entanglement in quantum spin systems,”
+     Journal of Physics A: Mathematical and The-
+     oretical, vol. 42, p. 504002, dec 2009.
+
+[69] L. Amico, A. Osterloh, F. Plastina, R. Fazio,
+     and G. Massimo Palma, “Dynamics of en-
+     tanglement in one-dimensional spin systems,”
+     Phys. Rev. A, vol. 69, p. 022304, Feb 2004.
+
+
+
+
+                                                     18
+

@@ -1,0 +1,1638 @@
+                                            Margin-Based Generalisation Bounds for Quantum Kernel Methods
+                                                           under Local Depolarising Noise
+                                                                                        S. Govender1 and I. Sinayskiy1,2
+                                             1
+                                              Discipline of Physics, School of Agriculture and Science, University of KwaZulu-Natal, Durban
+arXiv:2601.23084v1 [quant-ph] 30 Jan 2026
+
+
+
+
+                                                                                     4001, South Africa
+                                            2
+                                              National Institute for Theoretical and Computational Sciences (NITheCS), Stellenbosch, South
+                                                                                           Africa.
+
+
+                                                                                                         Abstract
+                                                 Generalisation refers to the ability of a machine learning (ML) model to successfully apply patterns learned from training
+                                                 data to new, unseen data. Quantum devices in the current Noisy Intermediate-Scale Quantum (NISQ) era are inherently
+                                                 affected by noise, which degrades generalisation performance. In this work, we derive upper and lower margin-based
+                                                 generalisation bounds for Quantum Kernel-Assisted Support Vector Machines (QSVMs) under local depolarising noise.
+                                                 These theoretical bounds characterise noise-induced margin decay and are validated via numerical simulations across
+                                                 multiple datasets, as well as experiments on real quantum hardware. We further justify the focus on margin-based mea-
+                                                 sures by empirically establishing margins as a reliable indicator of generalisation performance for QSVMs. Additionally,
+                                                 we motivate the study of local depolarising noise by presenting empirical evidence demonstrating that the commonly
+                                                 used global depolarising noise model is overly optimistic and fails to accurately capture the degradation of generalisation
+                                                 performance observed in the NISQ era.
+
+                                            1    Introduction                                                    generalisation in CML do not translate directly to QML,
+                                                                                                                 due to quantum effects such as superposition, entan-
+                                               The field of quantum machine learning (QML) lies                  glement, and device noise present in the current Noisy
+                                            at the intersection of quantum computing and classical               Intermediate Scale Quantum (NISQ) era [12]. Con-
+                                            machine learning (CML) [1]. As such, QML has inher-                  sequently, generalisation in QML remains a relatively
+                                            ited fundamental questions from both these fields, one               under-explored field.
+                                            critical question being generalisation.                                 Recent work involving near-term QML models has re-
+                                               Generalisation is defined as the ability of a machine             vealed unexpected generalisation behaviour, which has
+                                            learning model to learn patterns from some initial train-            challenged the applicability of traditional uniform gener-
+                                            ing dataset and consequently apply those patterns to                 alisation bounds to near-term models [13, 14]. These
+                                            make accurate predictions on a related, never-before-                results suggest that a revised approach is required to
+                                            encountered dataset. Generalisation has been well-                   study the generalisation performance of current QML
+                                            studied in the field of CML and has been quantified                  models.
+                                            using several measures [2–6]. Particularly, much work                   Margin-based metrics have since become a promis-
+                                            has been put into developing a strong theory of gener-               ing alternative to studying generalisation. Empirical
+                                            alisation for classical support vector machines (SVMs)               evidence has shown that margin-based generalisation
+                                            [2, 3, 6–10], since their introduction by Cortes and Vap-            measures outperform conventional metrics as reliable
+                                            nik [11].                                                            predictors of generalisation performance for Quantum
+                                               However, some of the conventional expectations of                 Neural Networks (QNNs) [15]. However, margins have
+
+
+                                                                                                             1
+not yet been explored for Quantum-Kernel-Assisted                 idence for the study of local depolarising noise. The
+Support Vector Machines (QSVMs).                                  main results of the paper are presented in Section 6.
+   Device noise presents an additional challenge in the           Numerical experiments validating these results are pre-
+study of generalisation in the NISQ era as it limits the          sented in Section 7. Section 8 concludes the paper.
+performance of QML models. This type of noise is un-
+avoidable and can be modelled using the depolarising
+noise model. A quantum state affected by maximum                  2    Literature Review
+depolarising noise reduces to its maximally mixed state,
+losing all useful information about the state and making             Generalisation theory for classical Support Vector
+the learning task impossible. This challenge has since            Machines (SVMs) is relatively well-developed. Follow-
+led to the study of the predictive power of modern QML            ing the introduction of SVMs by Cortes and Vapnik
+models under noise [16–18].                                       [11], foundational work by Bartlett and Shawe-Taylor [7]
+   However, these studies primarily focus on the global           established generalisation guarantees for SVMs using
+depolarising model, which applies noise to all qubits in          margins. Following this, Vapnik and Chapelle [9] de-
+the system simultaneously. This model, while analyti-             rived generalisation bounds that were independent of
+cally tractable does not reflect real device noise as ac-         the feature space dimensionality but dependent on the
+curately as the local depolarising noise model, which             expected number of support vectors. These results built
+applies noise independently to each qubit [19]. The               upon the Vapnik-Chervonenkis (VC) theory, in which the
+local depolarising noise model remains relatively unex-           VC-dimension quantified the complexity of a hypothesis
+plored in terms of generalisation and QSVMs. The abil-            class and provided uniform generalisation bounds [8].
+ity to accurately understand how the generalisation per-
+                                                                     Soon after, bounds were presented by Bartlett and
+formance of QSVMs is influenced by noise will provide
+                                                                  Mendelson [20] using the Rademacher complexity mea-
+vital insight into their predictive performance in the NISQ
+                                                                  sure, which were further strengthened through PAC-
+era.
+                                                                  Bayesian margin bounds [2–4]. More recently, these
+   In this work, we derive analytical bounds to quantify
+                                                                  bounds were revisited and improved by Grønlund et al.
+the effect of local depolarising noise on quantum kernel
+                                                                  [6], who presented a near-tight upper bound and a com-
+values, and present formal upper and lower bounds on
+                                                                  plementary lower bound for the generalisation perfor-
+QSVM margins under local depolarising noise based on
+                                                                  mance of classical SVMs in terms of margins.
+SVM optimality relations. These bounds are validated
+                                                                     Several analogous measures of generalisation have
+through numerical simulations and experiments on real
+                                                                  been explored within QML. These include bounds
+quantum hardware and demonstrate the robustness of
+                                                                  based on pseudo-dimension, the quantum Fisher infor-
+QSVMs under noise. We further establish a strong cor-
+                                                                  mation metric, and other metrics from quantum informa-
+relation between margin-based metrics and QSVM gen-
+                                                                  tion theory [21–23]. Bu et al. [24] studied Rademacher
+eralisation performance in the ideal (noiseless) scenario
+                                                                  complexity in parametrised quantum circuits [24–26],
+to justify our margin-based analysis. Additionally, we
+                                                                  with [26] exploring the effects of noise in the quan-
+motivate the study of local depolarising noise by em-
+                                                                  tum circuit. A comprehensive overview of generalisa-
+pirically establishing that studying local (per-qubit) de-
+                                                                  tion measures and error bounds for QML models in the
+polarisation noise is of greater benefit to understanding
+                                                                  NISQ era can be found in [18].
+generalisation in the NISQ era than global depolarising
+                                                                     Recently, traditional claims based on uniform gener-
+noise.
+                                                                  alisation bounds have been challenged by Zhang et al.
+   The paper is structured as follows. Sections 2 and 3
+                                                                  [27], who have demonstrated the memorisation abili-
+present a literature review and provide a necessary in-
+                                                                  ties of modern deep learning models through systematic
+troduction into margin theory for classical and quantum-
+                                                                  randomisation experiments. This work was later built
+enhanced SVMs. Section 4 presents empirical evidence
+                                                                  upon by Gil-Fuster et al. [14], who performed similar ex-
+showing margins as a reliable generalisation measure
+                                                                  periments using randomly labelled data for near-term
+in the ideal scenario. Section 5 includes empirical ev-
+                                                                  QNNs. Their results ultimately exposed the limitations
+
+
+                                                              2
+of uniform generalisation bounds when applied to near-
+term models.
+   Further unexpected generalisation behaviour was ob-
+served by Caro et al. [13], who found strong general-
+isation performance in QML models trained on small
+datasets, challenging the conventional assumption that
+generalisation requires large training sets. These works
+have significantly highlighted the need to find alternative
+approaches to studying generalisation theory for QML.
+   This resulted in alternative data set-dependent mea-
+sures, such as margin-based metrics [15, 28] used to
+explore generalisation performance, becoming increas-
+ingly important for analysing learning performance.
+   Several studies have further investigated the robust-
+ness of QML models in the presence of noise [16,
+17, 29]. Thanasilp et al. [29] demonstrated that un-
+der specific conditions, quantum kernel values can be-
+come exponentially concentrated towards some fixed
+                                                                  Figure 1: Diagram depicting the optimal linear hyper-
+value, leading to trivial models and inaccurate predic-
+                                                                  plane returned by an SVM to separate two classes of
+tions. These studies are therefore vital to understanding
+                                                                  data points (green and pink circles). The support vec-
+the generalisation performance of near-term QML mod-
+                                                                  tors used to determine the hyperplane and the corre-
+els in the NISQ era.
+                                                                  sponding geometric margin are labelled. The equa-
+                                                                  tions of the separating and marginal hyperplanes are
+                                                                  depicted in blue. A hard margin is depicted here since
+3     Preliminaries                                               all samples are classified with a distance greater than
+                                                                  the geometric margin away from the separating hyper-
+3.1   SVM Theory                                                  plane.
+
+   In the simplest case, to perform binary classification
+on linearly separable data using a linear classifier, the         the hyperplane away from the origin.
+SVM algorithm attempts to find a hyperplane (a line)                 The functional (confidence) margin of a classifier f at
+that effectively separates data points belonging to two           point xi is defined as yi f (xi ) where yi ∈ {−1, +1} is the
+different classes. For separable data, infinitely many hy-        true label of the point xi [5].
+perplanes exist that could satisfy this criterion; hence,            For binary classification problems, the SVM classifier
+by solving an optimisation problem, the SVM algorithm             returns the hypothesis f −   → sign(w · x + b), such that
+locates the optimal separating hyperplane such that the           all points of one class are given a positive value and
+distance from the hyperplane to the nearest data points           are placed on one side of the hyperplane, whereas the
+from each class is maximised.                                     points belonging to the other class hold a negative value
+   This distance is termed the geometric margin, which            and fall on the other side of the hyperplane.
+is defined as the minimum Euclidean distance from all                In this way, it is clear that when yi f (xi ) > 0, the
+points to the hyperplane. The closest data points to the          sample has been correctly classified.
+hyperplane are referred to as support vectors.
+   For the linearly separable case, this hyperplane is a          For real-valued functions, f , functional margins can be
+line, with the equation w · x + b = 0. Here, w is termed          calculated using hypotheses returned as f →  − w · x + b.
+the weight vector, and is perpendicular (normal) to the           In this case, the magnitude |f (xi )| represents the con-
+hyperplane. b is the bias term (or intercept), which shifts       fidence of the prediction made by the classifier [5]. In
+
+
+                                                              3
+                                                                  hyperplanes, with equations w · x + b = ±1 are shown
+                                                                  parallel to the separating hyperplane and the support
+                                                                  vectors used to determine the margin are portrayed ac-
+                                                                  cordingly.
+                                                                     In the case where the samples corresponding to each
+                                                                  class can not be linearly separated, then the previously
+                                                                  discussed constraints may not hold.
+                                                                     This case is illustrated in Figure 2, which depicts mis-
+                                                                  classified samples and samples from each class cor-
+                                                                  rectly classified, but with a Euclidean distance that is
+                                                                  less than the maximum margin distance from the hyper-
+                                                                  plane.
+                                                                  There are two formalisms which describe the optimisa-
+                                                                  tion problem defining the SVM algorithm; namely the
+                                                                  primal and dual formalisms.
+                                                                     The primal optimisation problem for the non-
+                                                                  separable case has the form:
+                                                                                                       m
+                                                                                           1          X
+                                                                                     min     ∥w∥2 + C     ξir                      (2)
+                                                                                     w,b,ξ 2
+Figure 2: Diagram depicting the optimal linear hyper-                                                 i=1
+
+plane returned by the SVM to separate the two classes             where r = 1 for the hinge loss function, which is widely
+of data points (green and pink circles). The equations of         used for SVMs, and with the constraints
+the separating and marginal hyperplanes are depicted
+in blue. A soft margin is depicted here since some
+points are classified on the correct side of the linear hy-          yi (w · ϕ(xi ) + b) ≥ 1 − ξi and ξi ≥ 0 for i ∈ [1, m]
+perplane but with distances 1 − ξi and 1 − ξj from the            Here, ξ = (ξ1 . . . ξm )T represents the slack variable
+separating hyperplane. Misclassified points which are             where ξi is the distance by which vector xi crossed
+placed on the wrong side of the hyperplane are also la-           the specified marginal hyperplane. Vectors with positive
+belled.                                                           slack values may be considered outliers. C represents
+                                                                  the trade-off between maximising the margin and min-
+                                                                  imising the amount of slack due to outliers. Higher C
+the linearly separable case, the functional and geomet-
+                                                                  values correspond to stricter penalties for misclassifica-
+ric margins are related for the training sample xi as:
+                                                                  tions than smaller C values.
+|yi f (xi )| ≥ γgeom ∥w∥, where ∥ · ∥ represents the Eu-
+                                                                     The maximal margin obtained in this case is termed
+clidean norm and is defined in more detail at the end of
+                                                                  the soft margin, since it allows some slack due to out-
+the section.
+                                                                  liers. The margin for the linearly separable case is de-
+   Through rescaling of the real-valued classifier output,
+                                                                  noted the hard margin and does not allow for slack.
+detailed in [5], the maximum geometric margin takes the
+                                                                     A Lagrangian is defined for the dual formalism as
+form:
+                                 1                                                   m                 m
+                      γ = max                           (1)                          X              1X
+                          (w,b) ∥w∥                                   L(w, b, α) =           αi −         αi αj yi yj (xi · xj )   (3)
+                                                                                     i,j=1
+                                                                                                    2 i=1
+with yi (w · xi + b) ≥ 1 for the maximising pair (w, b).
+   Figure 1 depicts the optimal hyperplane that sepa-             with the Lagrangian variables α = (α1 , ..., αm )T ,where
+rates two distinct classes (green and pink circles), and          αi ≥ 0, i ∈ {1, · · · , m} and m is the number of con-
+in doing so, obtains the maximal margin.The marginal              straints.
+
+                                                              4
+                                                                                          Pm
+  The above Lagrangian can be used to obtain the                            as, ∥w∥2 =       i,j=1 αi αj yi yj K(xi , xj ). The inverse of
+Karush-Kuhn-Tucker (KKT) conditions for the non-                            this quantity yields the squared geometric margin.
+separable case as:
+                 m
+                 X                                                          3.2    QSVM Theory
+           w=          αi yi ϕ(xi )                               (4)
+                 i=1                                                           Notably, the kernel trick, and by extension, kernel
+                 m
+                 X                                                          methods are essential for QSVMs. QSVMs use quan-
+            0=         αi yi                                      (5)       tum circuits run on a quantum computer to obtain a ma-
+                 i=1
+                                                                            trix of kernel values [31]. These matrix elements are
+           C = αi + βi                                            (6)       computed as the squared state overlap between two
+           αi = 0 or yi (w · ϕ(xi ) + b) = 1 − ξi                 (7)       feature vectors corresponding to two data points. These
+           βi = 0 or ξi = 0                                       (8)       kernel elements take the form:
+
+The complete derivation of these conditions can be                                        K(xi , xj ) = |⟨Φ(xj )|Φ(xi )⟩|2           (10)
+found in [5].
+   It is clear from the penultimate condition that for all                  where |Φ(xi )⟩ defines a feature map, which maps the
+non-zero αi variables, the associated xi vectors lie on                     classical data point xi to a higher-dimensional Hilbert
+the marginal hyperplanes and therefore must be support                      space.
+vectors. Additionally, in this case, if ξi = 0, the condition                  The Hilbert-Schmidt inner product [19] can be used
+reduces to that of the separable case, and the support                      to calculate the kernel elements for mixed states as,
+vector xi lies on the marginal hyperplane. However, if                      K(xi , xj ) = Tr(ρ(xi )ρ(xj )).
+ξi ̸= 0, then the support vector xi is an outlier (as de-                      Notably, the computation of the matrix of the quantum
+picted in Figure 2). Furthermore, the last condition im-                    kernel values is the only process run on the quantum
+plies that βi = 0 in this case, which further implies that                  computer. The quantum kernel (Gram) matrix is then
+αi = C for the non-separable case.                                          used by the SVM algorithm in a manner identical to the
+   The dual Lagrangian function has been largely stud-                      classical formalism. In this way, the resulting QSVM al-
+ied since it can be easily modified to accommodate the                      gorithm is denoted as a hybrid quantum-classical ML
+famous kernel trick [30] by replacing the dot product of                    algorithm.
+the support vectors with the kernel element associated
+with them in the SVM algorithm. This enables the al-
+gorithm to utilise a feature map to map the data to a                       3.3    Depolarising Noise Models
+higher-dimensional space (feature space) in which a hy-                        A depolarising noise channel is a completely posi-
+perplane (higher-dimensional surface) can be found in                       tive trace-preserving (CPTP) map that maps a quan-
+order to separate the data. The kernel trick is benefi-                     tum state onto a maximally mixed state with some finite
+cial since there is no need to explicitly define the feature                probability [19].
+map, Φ(·). It is only necessary to determine the inner                         Global depolarising noise channels are applied to the
+product in this space.                                                      entire system of qubits simultaneously, whereas local
+   Modifying equation (3) to include the kernel results in                  depolarising noise channels are applied to each qubit
+the form                                                                    in a system, individually and thus capture entanglement
+                 m
+                 X              1 X
+                                   m                                        and other qubit-qubit interactions in the system.
+   L(α, K) =             αi −           αi αj yi yj K(xi , xj )   (9)          The resulting N -qubit state after the application of a
+                                2 i,j=1
+                 i,j=1                                                      global depolarising channel is given by the following ex-
+                                                                            pression:
+where K(xi , xj ) computes the kernel value for samples
+xi and xj . Additionally, we can define the squared Eu-                                                             I
+clidean norm of the weight vector in the feature space                                     EG (ρ) = (1 − pG )ρ + pG N                (11)
+                                                                                                                   2
+
+                                                                        5
+where pG refers to the probability that the global depo-             gins and generalisation performance. Similar to the em-
+larising channel maps the state ρ to a maximally-mixed               pirical results of Hur and Park [15] for QNNs, our re-
+state, and I is the identity matrix.                                 sults suggest that margins are a reliable indicator of
+   The single-qubit state after the application of a local           generalisation performance for QSVMs, thereby provid-
+depolarising channel can be expressed using the Pauli                ing a strong justification for margin-based generalisation
+matrices as [19]                                                     analyses for QSVMs.
+                                                                        Taking inspiration from the systemic randomisation
+                    3        p′                                      experiments performed in [14] and [15], we explore the
+   EL (ρ) = (1 − p′L )ρ + L (XρX + Y ρY + ZρZ) (12)                  effect of label corruption on test accuracy, which is used
+                    4         4
+                   ′                                                 here as our proxy for generalisation performance. Addi-
+Since pG and pL represent depolarising noise probabil-
+                                                                     tionally, we investigated the effect of corrupting increas-
+ities, it is clear that they must have a value in the range
+                                                                     ing fractions of the labels in the training dataset on the
+[0, 1].
+                                                                     geometric margin distribution across multiple datasets.
+    The above expression can be rewritten by defining the
+                                                                     The margin distribution was obtained by computing the
+parameter pL = 43 p′L , as
+                                                                     distance of each sample to the separating hyperplane
+                                                                     (the per-sample geometric margin).
+                            pL
+    EL (ρ) = (1 − pL )ρ +      (XρX + Y ρY + ZρZ)         (13)          This relationship was explored using four datasets,
+                             3
+                                                                     namely the High Time Resolution Universe Survey
+where pL ∈ [0, 43 ].                                                 (South) (HTRU2) astrophysical dataset [32], a syn-
+  The single-qubit depolarising channel can also be de-              thetic dataset describing a Gaussian distribution and
+scribed using the Kraus (operator-sum) representation:               the (White) Wine Quality and Heart Disease datasets.
+                                                                     These datasets are further described in Appendix A.5.
+                              3
+                                    Ki ρKi†                             Data from each of these datasets was encoded us-
+                              X
+                    E(ρ) =                                (14)
+                              i=0
+                                                                     ing IQP embedding [33]. This was implemented using a
+                                                                     quantum circuit consisting of two qubits and one appli-
+where the Kraus operators, for a single-qubit, are de-
+                                                                     cation of the unitary layer depicted in Figure 3.
+fined as:
+                                                                        The resulting density matrices were obtained from
+                          r               r               r          the circuit and used to calculate the elements of the
+       p                      p               p       p              kernel matrix using the Hilbert-Schmidt inner product
+K0 =       1 − pI, K1 =         X, K2 =         Y, K3 = Z
+                              3               3       3              (K(xi , xj ) = Tr(ρ(xi )ρ(xj )). This quantum kernel ma-
+                                                      (15)           trix was then used to train the classical SVM model from
+  For the noiseless case, the channel reduces to the                 which we retrieved the geometric margin for each sam-
+identity channel. At p = 43 , the channel becomes fully              ple.
+depolarising and applies single-qubit Pauli errors in-                  This experiment was conducted using 5-fold cross-
+dependently to each qubit. The output state can be                   validation (CV) [34] for reliability, with 250 samples for
+thought of as a mixture of the original state and the                the HTRU2 dataset, 500 samples for the Gaussian
+maximally mixed state with some probability, pL . The                dataset and 200 samples used for the Wine dataset. The
+application of a fully depolarising channel results in the           entire Heart Disease dataset consisting of 303 samples
+complete loss of information about the original state.               was also used. Each dataset was preprocessed and
+                                                                     scaled to the range [0, π] and transformed using princi-
+                                                                     pal component analysis (PCA) [35] such that the num-
+4     Linking Margins to Generalisa-                                 ber of features in the dataset matched the number of
+      tion                                                           qubits in the quantum circuit; a necessary condition for
+                                                                     IQP encoding.
+   In this section, we present empirical results demon-                 Figure 4 depicts boxplots for the various datasets
+strating a strong correlation between geometric mar-                 showing the margin distribution for increasing fractions
+
+
+                                                                 6
+Figure 3: Quantum circuit layer implementing IQP encoding with nearest-neighbour entanglement using Hadamard
+gates (in purple), Rz rotations for each input feature xi (in red) and ZZ entangling gates (in green).
+
+
+of label corruption. These plots depict the margin distri-       pict a strong correlation between the median geometric
+bution when no labels were corrupted (corruption frac-           margin and test accuracy for all four datasets. Addition-
+tion of 0), when half of the training dataset had flipped        ally, linear regression was performed for each dataset,
+labels and when all training labels were flipped (corrup-        and the Pearson correlation coefficient, r, was com-
+tion levels 0.5 and 1, respectively).                            puted. This coefficient measures the linear correlation
+   The plots become increasingly left-skewed as the              between two variables and is depicted for each dataset.
+fraction of corrupted labels increases. This can be ob-          The Pearson correlation coefficient can have values in
+served since the median position of the margin distribu-         the range [−1, 1], with 1 (−1) being perfectly correlated
+tion moves closer to more negative values as the level           variables with an increasing (decreasing) trend. A co-
+of corruption increases. For geometric margins, nega-            efficient of 0 suggests no relationship between the in-
+tive values are related to misclassifications of the QSVM        volved variables. All datasets have Pearson coefficients
+model, which directly relates to poor generalisation per-        greater than 0.9, with the HTRU2 dataset having the
+formance.                                                        highest coefficient at r = 0.9987, suggesting an almost
+   We further analyse this relationship in Figure 5, where       perfect correlation between the variables, despite clus-
+we now plot the test accuracy with the median geometric          tering at extreme corruption levels.
+margin against increasing fractions of corrupted train-
+ing labels. Here, the test accuracy was obtained from
+the average accuracy achieved using 5-fold CV, with the          5    Generalisation with Global and
+standard deviation used as the error. This plot was con-
+structed for the above four datasets, and it can be seen
+                                                                      Local Depolarising Noise Mod-
+that as corruption levels increase, the shapes of the ac-             els
+curacy and median geometric margin curves align al-
+most completely (within the error bars). This is espe-             In this section, we present numerical simulations es-
+cially noted for the HTRU2 dataset.                              tablishing that global depolarising noise results in more
+   Following this discovery, the linear relationship be-         optimistic generalisation performance for intermediate
+tween the test accuracy and the median geometric mar-            noise levels.
+gin, depicted in Figure 6, was explored. These plots de-           In order to fairly compare the effect of global and lo-
+
+
+                                                             7
+Figure 4: Box-plots depicting the geometric margin distribution calculated using datasets with increasing fractions of
+corrupted training labels for various datasets. Each dataset is labelled at the top-right corner of each plot. These
+plots were generated without the outliers to maintain the emphasis on the median geometric margin.
+
+
+cal depolarising noise on a system of N qubits, we first           Adapting the above equations for L encoding layers
+equate their survival probabilities. The survival prob-         requires the result by Du et al. [36]. This result demon-
+ability is the probability of an N -qubit state to remain       strates that a circuit with L layers of global depolarising
+unchanged after the application of a depolarising noise         channels applied after each unitary layer (depicted in
+channel.                                                        Figure (8), is equivalent to the circuit portrayed in Figure
+   The survival probabilities can be easily seen from           9 in which one noise channel is applied at the end of the
+the definitions of the depolarising noise models in Sec-        circuit with the scaling pGE = 1 − (1 − pG )L .
+tion 3.3. From expression (11), it is clear that for N             From the above result, for L unitary layers, equations
+qubits, the survival probability for global depolarising        (16) and (17) become pGS = (1 − pGE ) and pLS = (1 −
+noise, pGS , is given by                                        pL )N L , respectively.
+                                                                   Numerical simulations comparing test accuracy for in-
+                    pGS = (1 − pG )                 (16)        creasing global and local depolarising noise levels using
+                                                                these definitions were then performed across various
+From equations (13) and (14), it can be shown that for          datasets.
+N qubits, the survival probability for local depolarising          Henceforth, the terms local (global) test accuracy will
+noise, pLS , is expressed as                                    be used to describe the accuracy obtained from the
+                                                                QSVM model trained using quantum kernel values ob-
+                   pLS = (1 − pL )N                 (17)        tained from a quantum circuit with local (global) depo-
+                                                                larising noise channels. Additionally, since only depo-
+where pG (pL ) is the probability associated with global        larising noise is discussed here; local and global noise
+(local) depolarising channel over one encoding layer            will be used instead, for brevity.
+(qubit) and N is the number of qubits.                             The methodology to obtain the local test accuracy fol-
+
+
+                                                            8
+Figure 5: Plots overlaying the decreasing test accuracy and median geometric margin graphs for increasing fractions
+of corrupted training labels. The test accuracy (blue) is depicted with the error obtained from 5-fold CV, and the
+geometric margins (red) are taken from the box-plots in Figure 4 above. Each dataset is labelled at the bottom-left
+corner of each plot.
+
+
+lows similarly as described in Section 4, with the quan-          datasets. The Wine Quality dataset was analysed us-
+tum circuit described by Figure 7. This circuit depicts           ing 1000 samples, with two and three qubits, respec-
+local depolarising noise channels applied to each qubit           tively. The Heart Disease dataset was analysed using
+after each unitary layer, following the experimental setup        two qubits and 303 samples. The average accuracies
+used in [17].                                                     obtained after implementing 5-fold CV were used to con-
+   We first matched the survival probabilities of the noise       struct the plot. The shaded region in the plots repre-
+models following the above discussion. Thereafter,                sent the uncertainty. These values were calculated us-
+we obtained the resulting density matrix from the ideal           ing the standard formula to calculate
+                                                                                                p        the uncertainty of
+                                                                  the quantity A − B as σE = σA    2 + σ 2 , where σ and
+quantum circuit. The density matrix affected by global                                                    B          A
+depolarising noise was computed using equation (11).              σB are the standard deviations of the respective quanti-
+This density matrix is then used to calculate the quan-           ties. In this case, A and B represent the accuracy from
+tum kernel element, which will, in a similar manner, yield        the global and local noise setups, respectively. With this
+the global test accuracy.                                         formula, the standard deviations were used to obtain the
+   Figure 10 portrays the difference in the test accuracy         uncertainty values for the test accuracy of each noise
+obtained when using the global and local noise mod-               probability.
+els, respectively. A dual axis is displayed, with one                Figure 10 clearly shows a positive difference in test
+axis representing increasing levels of local depolaris-           accuracy for each of the plots in the intermediate lo-
+ing noise, and the other showing the equivalent global            cal depolarising noise range. This corresponds to a
+depolarising noise level as a result of their matched             larger test accuracy from the global noise simulation
+survival probabilities. This simulation was performed             compared to the local noise simulation. This clearly
+for two datasets: the Wine Quality and Heart Disease              suggests that global depolarising noise yields more op-
+
+
+                                                              9
+Figure 6: Plots depicted the linear correlation between test accuracy and median geometric margin. Linear regression
+was performed, and the Pearson correlation coefficient is depicted at the bottom-right for each dataset. The linear fit
+for each dataset is depicted by the dashed red line.
+
+
+timistic results in the form of higher test accuracy than          6     Results
+local noise. This is because global depolarising noise
+does not capture the impact of errors on individual                6.1    Kernel Bounds
+qubits but on the system as a whole. Additionally, this
+approach does not model the degradation of the QSVM                   In this section, we present bounds for the case of ker-
+model performance as accurately as the local noise sim-            nel elements affected by a single application of a lo-
+ulation in the intermediate noise range.                           cal depolarising noise channel for an N -qubit system.
+   For the Wine Quality plot with two qubits and the               Bounds considering L applications of the local depolar-
+Heart Disease plot, the increase appears noticeably                ising noise channel are presented in Appendix A.1.
+from the local noise level of 0.1 to 0.5 and 0.6, respec-             Based on the definitions in Section 3, we use the ten-
+tively. Afterwards, the noise becomes too high, and the            sor product N of the single qubit local depolarising noise
+                                                                                   N
+performance of both models degrades to the same de-                channel, (EL       = EL ⊗ EL ⊗ · · · ⊗ EL ) to express the
+gree. A sharper rise is noted from zero noise for the              resulting state after individually applying a local depo-
+wine quality plot with three qubits compared to the other          larising channel on each qubit in an N -qubit system as:
+two plots. This indicates that the local noise impact is
+more substantial due to errors introduced by the ad-                                                N
+                                                                                                                !       N
+                                                                                                                                     !
+ditional qubit, resulting in a difference in performance                                 X          O                   O
+                                                                                                                               †
+                                                                       ρ̃ = E(ρ) =                        Kmk       ρ         Km
+for relatively low local noise levels. This figure provides                                                                      k
+                                                                                     m∈{0,1,2,3}N   k=1                 k=1
+empirical motivation for the study of local depolarising
+                                                                                                                                     (18)
+noise over global noise since it is more realistic when
+capturing noise faced by current NISQ hardware.                    where m = {m1 , m2 , ...mN } is the multi-index for all
+                                                                   possible combinations of the Kraus operators defined
+
+
+                                                              10
+Figure 7: Quantum circuit used to implement local depolarising noise channels for N qubits with L unitary encoding
+layers (blue) followed by a layer of local depolarising noise channels (red).
+
+
+by the expressions in (15) with mk ∈ [0, 3] for each qubit
+k.
+   This can be written explicitly as:                                       K̃ij                  1                     X
+                                                                                 = (1 − p)2N +
+                                                                            Kij                Tr(ρi ρj )
+        3                                                                                                          m,n∈{0,1,2,3}N
+                                                                                                                     (m,n̸=0)       (20)
+        X
+                                          †              †
+ρ̃ =             (Km1 ⊗ · · · ⊗ KmN ) ρ (Km 1
+                                              ⊗ · · · ⊗ Km N
+                                                             )                                      !                        !!
+                                                                                   N                         N
+     m1 ,···mN =0                                                                  O                         O
+                                                                         Tr ρi           Kmk Knk        ρj         Knk Kmk )
+For some kernel matrix of size n × n, we first bound                               k=1                       k=1
+the ratio of the ij-th noisy kernel element with its corre-
+sponding noiseless element.                                              The first term is as a result of separating the m =
+   Using the kernel definition, we get the relative expres-           n = 0 term from the rest of the sum and substituting the
+sion:                                                                 definition of the Kraus operator, K0 .
+                                                                         From this equation, we note that the first term is the
+                      K̃ij   Tr(ρ˜i ρ˜j )                             probability of the kernel element remaining unchanged
+                           =                             (19)         after the application of the noise channel, while the sec-
+                      Kij    Tr(ρi ρj )
+                                                                      ond term is the contribution due to noise.
+where ρ˜i represents the noisy density matrix represent-                 Now, we bound the noisy contribution, defined by Ñ ,
+ing the state after the application of the noisy depolaris-           and write it in the form
+ing channel.
+   Now, we substitute the expression for the noisy den-
+sity matrix and using the linearity property of the trace                         1              X
+                                                                        Ñ =                                 Tr (ρi Qmn ρj Qnm )    (21)
+operator. Additionally, we use the cyclic properties of                        Tr(ρi ρj )
+                                                                                            m,n∈{0,1,2,3}N
+the trace operator and note that the Kraus operators de-                                      (m,n̸=0)
+fined in expression 15 are Hermitian (K = K † ), due to
+the Pauli matrices also being Hermitian to obtain:                      where, we define
+
+                                                                 11
+Figure 8: Quantum circuit used to implement global depolarising noise channels for N qubits with L unitary encoding
+layers (blue) followed by a layer of global depolarising noise channels (red).
+
+
+
+                              N
+                              O
+                    Qmn =           (Kmk Knk )            (22)                                        N
+                                                                                                                           !
+                                                                                       X              Y                           1
+                              k=1                                        Ñ =                                 (cmk nk )2
+                                                                                                                               Tr(ρi ρj )
+                                                                                m,n∈{0,1,2,3}N        k=1
+  Now, we note that for some α, β ∈ {0, 1, 2, 3},                                 (m,n̸=0)                                                     (24)
+                                                                                       N
+                                                                                                       !            N
+                                                                                                                                       !!
+                                                                                       O                            O
+                Kα Kβ = cα cβ σα σβ = cαβ σα σβ                            Tr ρi             σmk σnk          ρj          σ nk σ m k
+                                                                                       k=1                          k=1
+  We define the piecewise function for the constants
+cαβ = cα cβ using the Kraus operator coefficients as:
+                                                                      Using the trace inequalities, we can bound the trace
+                                                                      term as:
+        
+        (1
+           − p)             if α = β = 0
+          pp
+            3 (1 − p)
+  cαβ =                      if α = 0, β = i or α = i, β = 0                                          !                            !!
+        p
+                                                                                     N                            N
+                             if α and β ∈ i                                           O                            O
+            3                                                            Tr ρi              σmk σnk       ρj             σnk σmk           ≤
+                                                                                      k=1                          k=1
+where i ∈ {1, 2, 3}.                                                                                      !                            !       (25)
+                                                                                        N
+                                                                                        O                           N
+                                                                                                                    O
+From this, it is clear that we find that:                                       (ρi           σmk σnk         ρj          σ nk σ m k
+                                                                                        k=1                         k=1                    1
+                    N
+                    Y            N
+                                 O
+         Qmn =            cmk nk   (σmk σnk ) = Q†nm      (23)
+                    k=1         k=1                                   Using Hölders inequality for the Schatten norm, where
+                                                                      ∥AB∥1 ≤ ∥A∥p ∥B∥q such that p1 + 1q = 1, with p = q = 2,
+Hence, the noisy term can be rewritten as:                            we get
+
+
+                                                                 12
+Figure 9: Equivalent quantum circuit used to implement global depolarising noise channels for N qubits with L unitary
+encoding layers (blue) followed by one layer of global depolarising noise channels (red) at the end of the circuit with a
+scaled global noise value. The scaling used corresponds to pGE = 1 − (1 − pG )L , where pG is the global noise value
+used per noise layer in Figure 8.
+
+
+
+                                                                                                                               p           q
+                N
+                                      !          N
+                                                                        !                                    ∥ρi ∥2 ∥ρj ∥2 =    (Tr|ρi |2 ) (Tr|ρj |2 )
+                O                                O
+         (ρi           σmk σnk             ρj              σ nk σ m k           ≤                                               q
+                                                                                                                               = (Tr|ρi |2 )(Tr|ρj |2 )           (28)
+                k=1                                  k=1                    1
+                                           !                                !        (26)                                           q
+                     N                                 N
+                     O                                 O                                                                          = Tr(ρ2i )Tr(ρ2j )
+     ∥ρi ∥2                σmk σnk              ρj            σ nk σ m k
+                     k=1                               k=1                      2
+                                                                                                   Finally, for some density matrix, ρ, we have the relation
+
+                                                                                                                    1
+                                                                                                                      ≤ Purity = Tr(ρ2 ) ≤ 1
+                                 NN
+Now, noting that since U =         k=1 σmk σnk and V =                                                             2N
+NN
+   k=1 σnk σmk are unitary matrices, we can rewrite this
+using the unitarily invariant property of Schatten norms,                                          Using this, we bound the term as follows:
+as                                                                                                                             q
+                                                                                                             ∥ρi ∥2 ∥ρj ∥2 =       Tr(ρi )2 Tr(ρj )2 ≤ 1          (29)
+
+                                                                                                   Hence, the noisy contribution becomes
+               N
+                                  !             N
+                                                                  !
+               O                                O                                                                                                       !
+∥ρi ∥2               σ m k σ nk       ρj              σnk σmk               = ∥ρi ∥2 ∥ρj ∥2                                          N
+                                                                                                                       X             Y                       1
+               k=1                              k=1                     2                                  Ñ ≤                            (cmk nk )2             (30)
+                                                                                     (27)                                                                   Kij
+                                                                                                                  m,n∈{0,1,2,3}N     k=1
+                                                                                                                    (m,n̸=0)
+By employing the definition of the p-Schatten norm
+(∥A∥p = [Tr(|A|p )]1/p ) and the Hermitian property of uni-                                        Thus, the value of the ij-th kernel element in the kernel
+tary matrices, we can write this as                                                                matrix is bounded by
+
+                                                                                              13
+Figure 10: Plots depicting the difference in the test accuracy obtained when using the global and local depolarising
+noise models. The accuracy difference is shown for varying levels of local noise. The equivalent global noise is
+depicted for selected local noise levels using dual x-axes for readability. The shaded blue region depicts the uncer-
+tainty. The values, N and L, for the Wine dataset indicate the differing number of qubits and unitary layers used in
+the quantum circuit, respectively. The Heart Disease dataset used two qubits with one unitary layer.
+
+
+                                                                               6.2     Upper Bounds (Soft Margin)
+                                                                                  In this section, we present the upper bounds for the
+                                                 N
+                                                                   !
+                                     X           Y
+                   2N                                          2
+  K̃ij ≤ (1 − p)        Kij +                          (cmk nk )               geometric margin affected by local depolarising noise
+                                m,n∈{0,1,2,3}N   k=1                           for L = 1. These bounds can easily be modified for
+                                  (m,n̸=0)                                     L unitary layers by simply using the factor (1 − p)2LN
+                                                      (31)                     instead of (1 − p)2N , as depicted in expression (33).
+Here, it is clear to see that the first term describes the                        The following bounds are constructed using optimality
+kernel element remaining unchanged with some prob-                             relations associated with the dual objective functions.
+ability, and the second term describes some error that                         We begin by comparing two dual objective functions; the
+will alter the kernel elements due to noise with some                          first, a function of the kernel affected by noise, along
+probability. Due to the normalisation condition (where                         with the corresponding optimal noisy solution, and the
+all probabilities must sum to 1), we can simply rewrite                        second, a function of the noisy kernel but another non-
+the above as:                                                                  optimal dual solution. In particular, we choose the dual
+                                                                               solution optimised for the noiseless kernel. By optimality
+         K̃ij ≤ (1 − p)2N Kij + (1 − (1 − p)2N )                   (32)        relations, we get the following relation in this case:
+
+This upper-bounds the resulting kernel element after the                                                 L(α, K̃) ≤ L(α̃, K̃)                        (34)
+local application of a depolarising noise channel.
+The resulting kernel element after L local applications of                     m                m                       m            m
+the depolarising channel can be bound using a similar
+                                                                               X            1 X                        X         1 X
+                                                                                     αi −           αi αj yi yj K̃ij ≤     α̃i −         α̃i α̃j yi yj K̃ij
+structure. This proof is shown in Appendix A.1 as:                             i=1
+                                                                                            2 i,j=1                    i=1
+                                                                                                                                 2 i,j=1
+                                                                                                                                   (35)
+                                                                               The RHS of this inequality can be rewritten with abso-
+      K̃ij ≤ (1 − p)2LN Kij + (1 − (1 − p)2LN )                    (33)        lute values since Lagrangian variables are defined to be
+
+                                                                          14
+non-negative. We can then write this in terms of the
+L1-norm.                                                                       2             (1 − p)2N
+                                                                              γα̃ ≤                            γ2
+                                                                                                2 ) − (1 − p)2N α
+                                                                                                                       (42)
+                                                                                      2(1 − mCγα
+                   1             1
+          ∥α∥1 − ∥w̃∥2α ≤ ∥α̃∥1 − ∥w̃∥2α̃             (36)         The margin upper bounds for the separable (hard mar-
+                   2             2
+                                                                   gin) case can be derived through a similar/analogous
+Rearranging this gives the form:                                   procedure to achieve the bounds:
+            ∥w̃∥2α̃ − ∥w̃∥2α ≤ 2∥α̃∥1 − 2∥α∥1         (37)                             2         (1 − p)2N
+                                                                                      γα̃ ≤                   γ2       (43)
+We now observe the following results for the soft-margin                                      (2 − (1 − p)2N ) α
+case:                                                              We can clearly see that the soft-margin bounds reduce
+                                      m
+                                                                   to the hard-margin bounds when C = 0 as expected.
+                                                                      Additionally, considering that (1 − p)2N ≤ 2, which
+                                      X
+                ∥α̃∥1 = ∥w̃∥2α̃ + C         ξi        (38)
+                                      i=1
+                                                                   follows from 0 ≤ (1 − p)2N ≤ 1, it can be verified that
+                         m
+                                                                   the upper bound of the squared noisy margin is always
+                         X                                         non-negative, as expected.
+                     C         ξi∗ ≤ mC               (39)
+                                                                      Testing the extreme cases of this bound gives us the
+                         i=1
+                                                                   following relations. For p = 0, the bound reduces to the
+We can now combine these results, which are proven as              clean margin at zero noise and holds as an equality:
+Results 1 and 2 respectively in Appendix A.3 to bound
+the first term of the RHS as 2∥α̃∥1 ≤ 2∥w̃∥2α̃ + 2mC.                                           2
+                                                                                               γα    2
+                                                                                                  = γα̃
+   We can similarly use the inequality from Result 1 in
+Appendix A.3 (∥w∥2α ≤ ∥α∥1 ) to bound the second term              This is expected for the scenario with no noise.
+of the RHS.                                                           At maximum noise, which is 43 due to the parametrisa-
+   Using the above inequalities, the RHS of equation               tion discussed in Section 3, (p = p′L = 34 pL ) the bound
+(37) can be written as                                             simplifies to
+
+                                                                                         (0.25)2N
+                                                                                                   γ 2 ≥ γα̃
+                                                                                                          2
+                                                                                                                       (44)
+     ∥w̃∥2α̃ − ∥w̃∥2α ≤ 2∥w̃∥2α̃ + 2mC − 2∥w∥2α       (40)                             2 − (0.25)2N α
+                                                                   Additionally, to ensure the validity of the bounds, we
+Applying Results 1A and 1B (equations (88) and (90)                must impose the following constraints. Two necessary
+respectively), proven in Appendix (A.3) results in:                condition must be that the denominator must not be 0
+                                                                   and that the bound must be non-negative to be valid.
+    2∥w∥2α − 2mC ≤ (1 − p)2N ∥w∥2α̃ + ∥w∥2α
+                                                  
+                                                      (41)           Since the numerator is always non-negative, we just
+                                                                   impose that the denominator also be non-negative:
+We now re-formulate the bound in terms of the mar-
+                                                                                         2
+gins. For brevity, we will refer to the margin obtained                         2(1 − mCγα ) − (1 − p)2N > 0
+from the SVM trained on a quantum circuit with no noise            Finally, we get:
+as the clean margin, and that obtained from a quantum
+circuit with (local depolarising) noise as the noisy mar-                                2   2 − (1 − p)2N
+                                                                                      mCγα <                          (45)
+gin. Additionally, when we discuss the noisy margin, we                                            2
+exclusively refer to the geometric margin obtained from            This constraint gives us an upper bound for the accept-
+the SVM model that has been trained with a kernel ma-              able values of mCγα 2
+trix obtained from a noisy quantum circuit, but has been             Thus we can define,
+evaluated with reference to the ideal kernel matrix.
+   Finally, we arrive at the upper bound for the noisy mar-                            ′         2 − (1 − p)2N
+gin for the case of non-separable data.                                               Cmax :=           2
+                                                                                                                       (46)
+                                                                                                      2γα
+
+                                                              15
+where we defined a training sample size dependent reg-               Due to optimality, the primal objective function evalu-
+ularisation parameter C ′ = mC for simplicity.                     ated at the optimal noiseless solution must be at most
+  Now, in attempt to find a minimum C ′ value, we rear-            any other feasible solution, such as the noisy solution
+range the bound in terms of C ′ to get:                            evaluated at this primal objective function.
+                                                                     From this, it can be seen that
+           1   ((1 − p)2N )(γα̃
+                              2    2
+                                + γα )    ′
+           2
+             −           2  2          ≤ Cmin         (47)                        P (wα , b, ξ) ≤ P (wα̃ , b̃, ζ)        (51)
+          γα           2γα γα̃
+For the bound to be valid, C’ must be at least the LHS.            where ζ, ξ represents the slack variables for the noise-
+Thus, we impose the equality to get:                               less optimisation problem with noisy and noiseless dual
+                                                                   solutions, respectively.
+           2 − (1 − p)2N   (1 − p)2N    ′
+                  2
+                         −      2    = Cmin           (48)                                m                    m
+                2γα           2γα̃                                           1           X       1            X
+                                                                               ∥w∥2α + C     ξi ≤ ∥w∥2α̃ + C      ζi     (52)
+This can be rewritten as:                                                    2           i=1
+                                                                                                 2            i=1
+                                                                                                 Pm
+                                                                   Since 12 ∥w∥2α ≤ 21 ∥w∥2α + C i=1 ξi , we get
+                ′       (1 − p)2N    ′
+               Cmax −        2    = Cmin              (49)
+                           2γα̃                                                1          1          Xm
+                                                                                 ∥w∥2α ≤ ∥w∥2α̃ + C      ζi        (53)
+It is clear here that C’min ≤ C’max For the bound to be                        2          2          i=1
+valid, C’ must satisfy:                                                                  Pm
+                                                                   Applying the result C i=1 ζi = ∥w̃∥2α̃ − ∥w∥2α̃ +
+                                                                     Pm ˜
+                    ′
+                   Cmin ≤ C ′ < Cmax
+                                 ′                                 C i=1 ξi which is proven in Appendix A.4 gives:
+
+Interestingly, the expression for the minimum C’ value                                                         m
+contains the noisy margin, i.e. the quantity that we want             1        1                              X
+                                                                        ∥w∥2α ≤ ∥w∥2α̃ + ∥w̃∥2α̃ − ∥w∥2α̃ + C     ξ˜i    (54)
+to bound. We explore two avenues in which to side-step                2        2                              i=1
+this issue, since the true noisy margin value is consid-
+ered to be unknown.                                                Applying results 1A (88) and 3 (104) respectively gives
+                                                    ′
+   In the first option, we find an upper bound for Cmin by
+                           2     2
+using the trivial bound γα̃ ≤ γα to upper bound C’min .                                       Cm − 21 ∥w∥2α
+                                                                                   ∥w∥2α̃ ≤   1          2N
+                                                                                                                        (55)
+                                                                                              2 − (1 − p)
+   Here, we get:
+
+                            1 − (1 − p)2N                          Formulating this in terms of the margin gives:
+                 Cmin ′ ≤          2
+                                                      (50)
+                                 γα                                                       2
+                                                                                         γα 1 − 2(1 − p)2N
+                                                                                                           
+                                                                                   2
+                                                                                  γα̃ ≥            2 −1
+                                                                                                                         (56)
+However, we should note that this bound on C’min be-                                        2Cmγα
+comes looser as p increases.
+                                                                   Similar to the upper bound, to ensure the validity of this
+   The second option involves using a separate valida-
+                                                                   bound, we must ensure that the following conditions be
+tion set when conducting numerical experiments to es-
+                                                                   imposed.
+timate the value of the noisy margin. This option will be
+                                                                     Firstly, the denominator must be non-zero, which
+explored in greater detail in Section 7.
+                                                                   gives the constraint:
+
+                                                                                           2        1
+6.3   Lower Bounds (Soft Margin)                                                          γα Cm ̸=
+                                                                                                    2
+                                                                                                                          (57)
+
+  Here, we present lower bounds for the noisy mar-                 Secondly, we impose that the bound itself be non-
+gin derived using optimality relations for primal objective        negative to ensure that it is non-trivial, by imposing that
+functions.                                                         the numerator and denominator be the same sign. This
+
+                                                              16
+means that we have 2 cases; one where both the nu-                the above constraints simultaneously for all noise val-
+merator and denominator are positive and one in which             ues. To do this, we must use datasets with an overlap
+both are negative, i.e:                                           in the range for C ′ values that satisfy the above con-
+                                                                  straints for each noise level. Not all datasets are guar-
+             1                         1                          anteed to have this overlapping feasible range, and so
+               ≥ (1 − p)2N and γα
+                                2
+                                  Cm >               (58)
+             2                         2                          we use a dataset selection pipeline in order to find fea-
+                                                                  sible datasets for our numerical tests.
+                           or                                         In order to implement this pipeline, we first note that
+                                                                                                     2
+                                                                  the value of the clean margin γα     used to calculate the
+             1                         1                             ′           ′
+                                                                  Cmin and Cmax values depends on the initial regularisa-
+               ≤ (1 − p)2N and γα
+                                2
+                                  Cm <               (59)
+             2                         2                          tion parameter, C0 used to train the SVM model on a
+For valid, non-trivial bounds, one of the two following           Gram matrix obtained with an ideal quantum circuit.
+conditions must hold.                                                 In practice, this C0 value is chosen among a range
+                                                                  of values using 5-fold CV, keeping accuracy and model
+                              1                                   performance in mind. The selected initial parameter
+                (1 − p)2N ≤        2
+                                < γα Cm              (60)
+                              2                                   was then used to obtain the value of the clean margin.
+                                                                  This clean margin is then used to compute the minimum
+                           or                                     and maximum allowed C ′ value. A particular dataset
+                                                                  was selected if a range of acceptable C ′ values was de-
+                          1                                       tected. In the case where no overlap was found, that
+                 2
+                γα Cm <     ≤ (1 − p)2N           (61)            particular dataset was rejected.
+                          2
+                                                                      However, we stress that this is specifically for the fair
+In the case where both the numerator and denominator              comparison of the margin values at different noise lev-
+of the bound are positive, we rearranging the bound in            els. If one were to test the margin bounds at some spe-
+terms of C ′ = mC to get:                                         cific noise level, there would be no need to search for
+                                                                  overlapping ranges. The bounds would be valid for that
+                     1 − 2(1 − p)2N   1
+              C′ ≥           2      + 2              (62)         particular feasible range of C ′ values.
+                          2γα̃       2γα
+                                                                      An important caveat that should be noted about the
+where 1 − 2(1 − p)2N ≥ 0 from the above constraints.              calculation of the minimum C ′ value, as discussed in
+                            ′                                     Section 6, is that the expression includes the noisy mar-
+  Similarly, we can define Cmin using the equality and
+upper-bound this quantity using a validation set during           gin. Since this is the value that we want to bound, it
+numerical runs.                                                   is obviously assumed to be unknown. As discussed
+                                                                                         ′
+                                                                  above, the exact Cmin     value can be trivially bounded.
+                                                                  However, this results in a loose upper-bound for large
+7     Numerical Experiments                                       noise values. In our numerical experiments, a closer
+                                                                                               ′
+                                                                  estimate for the value of Cmin   is obtained by computing
+7.1   Dataset Selection                                           an estimate noisy margin on a separate, held-out val-
+                                                                                                                ′
+                                                                  idation set. This value is used in the Cmin      calculation
+   The upper and lower bounds naturally give us a re-             and consistently provides a tighter estimate of the mini-
+striction on the feasible values of the regularisation pa-        mum value. Thus, for this pipeline, the data is split into
+rameter, C. However, it should be noted that these fea-           training and validation datasets.
+sible values depend on the noise level parameter, p. In               At this stage we adopt different definitions for the reg-
+other words, the feasible range changes for different val-        ularisation parameter used to train the model and the
+ues of p.                                                         one present in the bounds. In the interest of keeping
+   In order to fairly test the upper margin bounds for in-        our SVM model consistent for fair comparison across
+creasing p, we must choose a C’ value that satisfies              noise levels, we keep the regularisation parameter used
+
+
+                                                             17
+to train the SVM as C0 .                                                 Once suitable datasets were selected, the data from
+   We then define the theoretical regularisation param-               each dataset was preprocessed and scaled as dis-
+eter used in the bounds to differ from the practical pa-              cussed in Section 4. The data is then split into training
+rameter by a scaling factor. A similar scaling strategy               and test datasets using the same split as for the training
+is discussed in [37]. In particular, these parameters are             and validation datasets when selecting feasible datasets
+related as:                                                           for consistency. The SVM model is then trained using
+                                                                      this initial C0 , and the margin is extracted. A similar
+                                 C0                                   pipeline as discussed in Section 4 is used.
+                           C=                             (63)
+                                 mβ                                      The training set is passed through a quantum circuit
+where β, is a tunable parameter used to control how                   composed of two qubits and L layers of unitary gates,
+strongly C depends on m. This parameter is introduced                 where each layer corresponds to a layer of IQP encod-
+to allow for flexibility in choosing the scaling to align with        ing gates. The number of unitary layers used in this
+the constraints of the theoretical parameter, C’ defined              quantum circuit is dataset-dependent and outlined in Ta-
+above. For our re-parametrisation, C’ = Cm, this be-                  ble 1.
+comes C’ = C0 m1−β . This value represents the theo-                     All numerical experiments are conducted using Pen-
+retical value for which our upper margin bounds are not               nylane [38]. For this experiment, the quantum cir-
+violated when tested on a model trained using regulari-               cuit, depicted in Figure 7, was again modified to incor-
+sation parameter, C0 .                                                porate local depolarising noise channels using Penny-
+   Once feasible datasets are selected, an appropriately              lane’s qml.DepolarizingChannel function. As discussed
+scaled C’ value is selected from the available feasible               in Section 4, noise channels are applied to each qubit
+range to conduct numerical experiments.                               after each unitary layer.
+                                                                         A quantum kernel is obtained for increasing levels of
+7.2    Validating the Margin Bounds                                   noise using this quantum circuit and used to train the
+                                                                      classical SVM model from which the noisy margin is ex-
+                                                                      tracted. The tunable parameter, β was set to the value
+Table 1: The number of unitary layers and samples are                 of 0 in equation (63) and used to compute the theoret-
+depicted along with the initial regularisation parameter,             ical C value for the Heart and Gaussian datasets and
+with the dataset split and the feasible C ′ range used to             was set to 1 for the remaining datasets.
+test the upper margin bounds.                                            Notably, when we discuss the noisy margin, we refer
+                                                                      to the margin obtained in the following way. We initially
+ Dataset    Layers C0        Samples Data        Feasible             train an SVM model using a kernel matrix obtained from
+                                     Split       C ′ Range            a noisy quantum circuit. This model then solves an op-
+  Heart       1       10        303     75/25     [0,21.1)            timisation problem and returns a dual solution. We then
+ Disease                                                              store this solution, resulting from the noisy kernel matrix
+                                                                      and compute the geometric margin with the ideal kernel
+ Gaussian     2      100        500     75/25   [32.4,112.6)          matrix resulting from the ideal circuit. This is computed
+ Breast       1      1000       569     80/20    [0,544.7)            using the inverse of the squared norm of the weight vec-
+ Cancer                                                               tor, as described in Section 3.
+   Wine       1      1000       350     80/20     [0,38.9)               This method is used since it adequately describes
+                                                                      how noise impacts the geometric margin value, which
+   Wine       2      1000       400     80/20    [0.6, 125)           strongly correlates with generalisation performance as
+                                                                      discussed in Section 4. This method tests how well SVM
+  We outline the pipeline followed to numerically test                models that are trained in the presence of noise can
+our bounds using the selected feasible datasets. The                  generalise. It effectively tests how much useful infor-
+specific parameters used for each dataset is detailed in              mation survives in the kernel matrix during training and
+Table 1.                                                              whether the model is still able to learn patterns from this
+
+
+                                                                 18
+Figure 11: Plots showing the theoretical upper bounds (red) computed for increasing values of local depolarising
+noise compared to the empirical geometric margin (blue) obtained for various datasets. Each dataset is labelled at
+the top-right corner of each plot. The values, N and L, for the Wine dataset indicate the differing number of qubits
+and unitary layers used in the quantum circuit, respectively. All unlabelled datasets used two qubits with one unitary
+layer.
+
+
+partially noisy matrix. This approach isolates the learn-           duced smaller values than the empirical margin for all
+ing ability and portrays how robust the model is when               five datasets.
+learning in the presence of noise.
+                                                                       In addition to this, a subset of 20 points from the
+   The noisy dual solution is tested in reference to the            Breast Cancer dataset was selected and used to com-
+clean kernel. Interestingly, if we were to obtain the mar-          pare the empirical geometric margin value from the real
+gin with the noisy kernel, we would not see this decay,             IBM device with 10000 shots, with our simulated and the-
+as the noisy dual solution, while being ineffective with            oretical values. In particular, the 20 points correspond to
+regards to the clean kernel, is optimised for the noisy             the 200th- to 220th-placed samples in the dataset. This
+kernel. As a result, this would not describe the effect             subset yielded a feasible C ′ range of [0, 16.8). This par-
+of noise on the ideal geometric margin. This would just             ticular slice was selected primarily due to its small size
+result in the artificial inflation of the noisy margin value        and feasibility with the above-mentioned constraints.
+as the solver struggles to find a suitable margin in the            The geometric margin was obtained using the software
+face of noisy data.                                                 development kit, Qiskit [39] and the ibm_fez device [40],
+   Using the setup described above, the upper bounds                which is one of the IBM Heron processors. One uni-
+presented by equation (42) were tested using five                   tary layer and two qubits were used with identical pre-
+datasets. A brief description of each dataset is pro-               processing methods as discussed in Section 4. A uni-
+vided in Appendix A.5. Clearly, the theoretical bounds              tary layer of gates corresponding to IQP encoding was
+produce an upper bound to the empirical margins com-                similarly used to maintain consistency. The empirical
+puted for these datasets. Figure 11 portrays the results            margin with the theoretical upper and lower bounds was
+of these tests.                                                     then simulated using the above conditions, for increas-
+                                                                    ing local depolarising noise similar to previous experi-
+    Thereafter, the lower bounds presented by equa-
+                                                                    ments depicted in Figures 11 and 12. The parameters
+tion (56) were tested in accordance with the above-
+                                                                    C0 = 1000, β = 3 and m = 12 were used in equation
+mentioned constraints. For these specific datasets, this
+                                                                    (63) to compute the theoretical C value. The results are
+resulted in the datasets being tested with the condition
+                                                                    presented in Figure 13.
+γα2
+    Cm < 21 ≤ (1 − p)2N . Figure 12 shows that for
+the allowed range of local noise values, the bound pro-               Since the precise level of local depolarising noise is
+
+
+                                                               19
+Figure 12: Plots showing the theoretical lower bounds (black) computed for increasing values of local depolarising
+noise compared to the empirical geometric margin (blue) obtained for various datasets. Each dataset is labelled at
+the top-right corner of each plot. The values, N and L, for the Wine dataset indicate the differing number of qubits
+and unitary layers used in the quantum circuit, respectively. All unlabelled datasets used two qubits with one unitary
+layer.
+
+
+unknown from the real IBM device, we depict the geo-             accuracy obtained for four datasets. A range of datasets
+metric margin as a horizontal green dashed line. The             with different properties was selected to ensure reliable
+upper and lower bounds are depicted as red and black             results. We show evidence that the margin distribution
+lines, with the empirical geometric margins simulated for        becomes negatively skewed with an increase in training
+various noise levels depicted by the solid blue line.            label corruption, as evidenced by the shrinking median
+   Figure 13 suggests that the upper bound is valid for          margin value. Furthermore, we show a similar decrease
+this particular dataset for all values less than the lo-         in test accuracy with increasingly corrupted labels for all
+cal depolarising noise probability of approximately 0.75.        datasets. Following this, we perform linear regression
+Similarly, the lower bounds appear to be valid for noise         to determine the relationship between test accuracy and
+values greater than 0.1, since this is where the lower           the median geometric margin and discover strong linear
+bound crosses the horizontal line representing the mar-          correlations, coupled with high Pearson correlation co-
+gin obtained using real hardware.                                efficients (r > 0.9) for all datasets. With these findings,
+   Notably, this does not suggest that the upper or lower        we conclude that the median geometric margin appears
+bounds are invalid. They are simply valid for a particu-         to be a reliable indicator of generalisation performance
+lar level of noise. Hence, these results merely suggest          for QSVMs.
+that the noise level associated with the quantum device             Additionally, we motivate the study of local over global
+(real device noise) is within the particular noise range         depolarising noise despite its analytical intractability for
+for which the bounds are not violated.                           large system sizes. This is supported by empirical re-
+                                                                 sults obtained for three datasets, showing that global
+                                                                 test accuracy is greater than local test accuracy for in-
+8    Conclusion                                                  termediate noise levels for the same survival probability.
+                                                                 This suggests that global depolarising noise is overly
+  In this work, we presented numerical evidence                  optimistic and does not realistically reflect the generali-
+demonstrating a strong correlation between margin-               sation performance degradation and errors due to noise
+based metrics and generalisation performance for                 on real device hardware.
+QSVMs. In particular, we show strong correlations be-               Motivated by this, we derive bounds for the effect of
+tween the median geometric margin value and the test
+
+
+                                                            20
+Figure 13: Plots demonstrating comparing the geometric margin obtained using the ibm_fez device (depicted by the
+green dashed line) to the simulated empirical margin (blue) and the theoretical upper and lower bounds (depicted as
+black and red dashed lines, respectively). These plots were generated using a subset of 20 samples using the Breast
+Cancer Dataset with 10000 shots.
+
+
+local depolarising noise on kernel elements. We then              Conflict of Interest
+use this kernel bound to derive upper and lower bounds
+on the degradation of the geometric margin due to local           The authors declare no conflict of interest.
+depolarising noise. This is obtained by evaluating the
+dual solution returned by the SVM trained on noisy ker-
+nel matrices with respect to the ideal kernel matrix. This        Data Availability Statement
+method determines the robustness of the QSVM when
+training in the presence of noise. We conclude by pre-            The Gaussian dataset was generated using scikit-learn.
+senting numerical results to validate our margin bounds           All other datasets used in this study were obtained from
+using five datasets with varying properties. These re-            the UCI Machine Learning Repository [41].
+sults include a subset of the Breast Cancer dataset,
+tested on the ibm_fez device, allowing for comparison
+with our theoretical and simulated margin values.
+                                                                  Code Availability
+                                                                  The code associated with this work is available at
+Acknowledgements                                                  https://github.com/saarishag/generalisation_bounds_nisq.
+
+   This research was supported by the National Re-
+search Foundation (NRF) of South Africa. The authors              References
+would like to acknowledge the National Institute for The-
+oretical and Computational Sciences (NITheCS). We                  [1] Maria Schuld, Ilya Sinayskiy, and Francesco
+thank the University of KwaZulu-Natal (UKZN) for the                   Petruccione. An introduction to quantum machine
+use of the HEP1 machine. We acknowledge the South                      learning. Contemporary Physics, 56(2):172–185,
+African Quantum Technology Initiative (SA QuTI) and                    2015.
+IBM Quantum services for this work. The views ex-
+pressed are those of the authors, and do not reflect the           [2] John Langford and John Shawe-Taylor. Pac-bayes
+official policy or position of IBM or the IBM Quantum                  & margins. Advances in neural information pro-
+team.                                                                  cessing systems, 15, 2002.
+
+
+                                                             21
+ [3] Ralf Herbrich and Thore Graepel. A pac-bayesian                   machine learning from few training data. Nature
+     margin bound for linear classifiers: Why svms                     communications, 13(1):4919, 2022.
+     work. Advances in neural information processing
+     systems, 13, 2000.                                            [14] Elies Gil-Fuster, Jens Eisert, and Carlos Bravo-
+                                                                        Prieto. Understanding quantum machine learn-
+ [4] David McAllester. Simplified pac-bayesian margin                   ing also requires rethinking generalization. Nature
+     bounds. In Learning Theory and Kernel Machines:                    Communications, 15(1):2277, 2024.
+     16th Annual Conference on Learning Theory and
+     7th Kernel Workshop, COLT/Kernel 2003, Wash-                  [15] Tak Hur and Daniel K Park. Understanding gen-
+     ington, DC, USA, August 24-27, 2003. Proceed-                      eralization in quantum machine learning with mar-
+     ings, pages 203–215. Springer, 2003.                               gins. In Forty-second International Conference on
+                                                                        Machine Learning, 2024.
+ [5] Afshin Rostamizadeh Mehryar Mohri and Ameet
+     Talwalkar. Foundations of Machine Learning, 2nd               [16] Xinbiao Wang, Yuxuan Du, Yong Luo, and
+     ed. MIT Press, 2018.                                               Dacheng Tao. Towards understanding the power
+                                                                        of quantum kernels in the nisq era. Quantum, 5:
+ [6] Allan Grønlund, Lior Kamma, and Kasper Green                       531, 2021.
+     Larsen. Near-tight margin-based generalization
+     bounds for support vector machines. In Inter-                 [17] Yabo Wang, Bo Qi, Xin Wang, Tongliang Liu, and
+     national Conference on Machine Learning, pages                     Daoyi Dong. Power characterization of noisy quan-
+     3779–3788. PMLR, 2020.                                             tum kernels. IEEE Transactions on Neural Net-
+                                                                        works and Learning Systems, 2025.
+ [7] Peter Bartlett and John Shawe-Taylor. Generaliza-
+     tion performance of support vector machines and               [18] Bikram Khanal, Pablo Rivas, Arun Sanjel, Korn
+     other pattern classifiers. Advances in Kernel meth-                Sooksatra, Ernesto Quevedo, and Alejandro Ro-
+     ods—support vector learning, pages 43–54, 1999.                    driguez. Generalization error bound for quantum
+                                                                        machine learning in nisq era—a survey. Quantum
+ [8] Vladimir Vapnik. On the uniform convergence of                     Machine Intelligence, 6(2):90, 2024.
+     relative frequencies of events to their probabilities.
+     In Doklady Akademii Nauk USSR, volume 181,                    [19] Michael A Nielsen and Isaac L Chuang. Quantum
+     pages 781–787, 1968.                                               computation and quantum information. Cambridge
+                                                                        university press, 2010.
+ [9] Vladimir Vapnik and Olivier Chapelle. Bounds
+     on error expectation for support vector machines.             [20] Peter L Bartlett and Shahar Mendelson.
+     Neural computation, 12(9):2013–2036, 2000.                         Rademacher and gaussian complexities: Risk
+                                                                        bounds and structural results. Journal of Machine
+[10] Vladimir Vapnik. Estimation of dependences based                   Learning Research, 3(Nov):463–482, 2002.
+     on empirical data. Springer Science & Business
+     Media, 2006.                                                  [21] Matthias C Caro and Ishaun Datta. Pseudo-
+                                                                        dimension of quantum circuits. Quantum Machine
+[11] Corinna Cortes and Vladimir Vapnik. Support-                       Intelligence, 2(2):14, 2020.
+     vector networks. Machine learning, 20(3):273–
+     297, 1995.                                                    [22] Leonardo Banchi, Jason Pereira, and Stefano Pi-
+                                                                        randola. Generalization in quantum machine learn-
+[12] John Preskill. Quantum computing in the nisq era                   ing: A quantum information standpoint. PRX Quan-
+     and beyond. Quantum, 2:79, 2018.                                   tum, 2(4):040321, 2021.
+[13] Matthias C Caro, Hsin-Yuan Huang, Marco Cerezo,               [23] Tobias Haug and M. S. Kim. Generalization of
+     Kunal Sharma, Andrew Sornborger, Lukasz Cincio,                    quantum machine learning models using quan-
+     and Patrick J Coles. Generalization in quantum                     tum fisher information metric. Phys. Rev. Lett.,
+
+
+                                                              22
+     133:050603, Jul 2024. doi: 10.1103/PhysRevLett.                   years of pulsar candidate selection: from simple fil-
+     133.050603. URL https://link.aps.org/doi/10.                      ters to a new principled real-time classification ap-
+     1103/PhysRevLett.133.050603.                                      proach. Monthly Notices of the Royal Astronomical
+                                                                       Society, 459(1):1104–1123, 2016.
+[24] Kaifeng Bu, Dax Enshan Koh, Lu Li, Qingxian Luo,
+     and Yaobo Zhang. Statistical complexity of quan-             [33] Vojtěch Havlíček, Antonio D Córcoles, Kristan
+     tum circuits. Physical Review A, 105(6):062431,                   Temme, Aram W Harrow, Abhinav Kandala,
+     2022.                                                             Jerry M Chow, and Jay M Gambetta. Supervised
+                                                                       learning with quantum-enhanced feature spaces.
+[25] Kaifeng Bu, Dax Enshan Koh, Lu Li, Qingxian Luo,                  Nature, 567(7747):209–212, 2019.
+     and Yaobo Zhang. Effects of quantum resources
+     and noise on the statistical complexity of quantum           [34] Daniel Berrar et al. Cross-validation., 2019.
+     circuits. Quantum Science and Technology, 8(2):              [35] Svante Wold, Kim Esbensen, and Paul Geladi.
+     025013, 2023.                                                     Principal component analysis. Chemometrics and
+                                                                       intelligent laboratory systems, 2(1-3):37–52, 1987.
+[26] Kaifeng Bu, Dax Enshan Koh, Lu Li, Qingx-
+     ian Luo, and Yaobo Zhang. Rademacher com-                    [36] Yuxuan Du, Min-Hsiu Hsieh, Tongliang Liu, Shan
+     plexity of noisy quantum circuits. arXiv preprint                 You, and Dacheng Tao. Learnability of quan-
+     arXiv:2103.03139, 2021.                                           tum neural networks. PRX quantum, 2(4):040337,
+                                                                       2021.
+[27] Chiyuan Zhang, Samy Bengio, Moritz Hardt, Ben-
+     jamin Recht, and Oriol Vinyals. Understanding                [37] Davide Anguita, Alessandro Ghio, Sandro Ridella,
+     deep learning (still) requires rethinking generaliza-             and Dario Sterpi. K-fold cross validation for error
+     tion. Communications of the ACM, 64(3):107–115,                   rate estimate in support vector machines. In DMIN,
+     2021.                                                             pages 291–297, 2009.
+
+[28] Peter L Bartlett, Dylan J Foster, and Matus J Tel-           [38] Ville Bergholm, Josh Izaac, Maria Schuld, Chris-
+     garsky. Spectrally-normalized margin bounds for                   tian Gogolin, Shahnawaz Ahmed, Vishnu Ajith,
+     neural networks. Advances in neural information                   M Sohaib Alam, Guillermo Alonso-Linaje, B Akash-
+     processing systems, 30, 2017.                                     Narayanan, Ali Asadi, et al. Pennylane: Automatic
+                                                                       differentiation of hybrid quantum-classical compu-
+[29] Supanut Thanasilp, Samson Wang, Marco Cerezo,                     tations. arXiv preprint arXiv:1811.04968, 2018.
+     and Zoë Holmes. Exponential concentration in
+     quantum kernel methods. Nature communications,               [39] Ali Javadi-Abhari, Matthew Treinish, Kevin Krsulich,
+     15(1):5200, 2024.                                                 Christopher J. Wood, Jake Lishman, Julien Gacon,
+                                                                       Simon Martiel, Paul D. Nation, Lev S. Bishop, An-
+[30] Bernhard E Boser, Isabelle M Guyon, and                           drew W. Cross, Blake R. Johnson, and Jay M.
+     Vladimir N Vapnik. A training algorithm for optimal               Gambetta. Quantum computing with Qiskit, 2024.
+     margin classifiers. In Proceedings of the fifth an-
+                                                                  [40] IBM Quantum.        https://quantum.cloud.ibm.
+     nual workshop on Computational learning theory,
+                                                                       com/, 2025.
+     pages 144–152, 1992.
+                                                                  [41] Kolby Nottingham Markelle Kelly, Rachel Longjohn.
+[31] Maria Schuld and Nathan Killoran. Quantum ma-                     The uci machine learning repository. https://
+     chine learning in feature hilbert spaces. Physical                archive.ics.uci.edu, 1987.
+     review letters, 122(4):040504, 2019.
+
+[32] Robert J Lyon, BW Stappers, Sally Cooper,
+     John Martin Brooke, and Joshua D Knowles. Fifty
+
+
+                                                             23
+A      Appendix
+                                                                                            K̃ij                   1                             X
+A.1     Kernel Bound (L Layers)                                                                  = (1 − p)2LN +                                                Tr
+                                                                                            Kij                 Tr(ρi ρj )                                 N
+                                                                                                                                          m,n∈{0,1,2,3}
+                                                                                                                                            (m,n̸=0)
+   In this section, we present bounds for the case of ker-                                                      !!                                         !!!
+                                                                                      L N                                    L N
+nel elements affected by L applications of a local depo-                              Y O
+                                                                                                   (l)
+                                                                                                                             Y O
+larising noise channel for an N -qubit system.                                   ρi               Km k
+                                                                                                       Kn(l)k         ρj                   Kn(l)k Km
+                                                                                                                                                   (l)
+                                                                                                                                                     k
+                                                                                                                                                       )
+                                                                                      l=1   k=1                              l=1   k=1
+   Before we rework our bound to include L layers, it
+                                                                                                                                                           (66)
+would be beneficial to recall that quantum circuit is
+modelled using the sequential composition of quantum
+channels as E (L) = E (L) ◦ · · · ◦ E (1) . In the Kraus repre-                 The first term is as a result of separating the m = n = 0
+sentation, this translates to the product of Kraus opera-                       term from the rest of the sum and substituting the defi-
+tors over L layers.                                                             nition of the Kraus operator, K0 .
+   For a single-qubit, the state after applying L local de-                        From this equation, we note that the first term is the
+polarising channels can be written as:                                          probability of the kernel element remaining unchanged
+                                                                                after the application of the noise channel, while the sec-
+                                                                                ond term is the contribution due to noise.
+                             L
+                                          !       L
+                                                               !†                  Now, we bound the noisy contribution, defined by Ñ ,
+                  X          Y
+                                    (l)
+                                                  Y
+                                                         (l)                    and write it in the form
+      E(ρ) =                       Km         ρ         Km          (64)
+               m∈{0,1,2,3}   l=1                  l=1
+
+                                                                                            1               X
+       (l)                                                                        Ñ =                                      Tr (ρi Qmn ρj Qnm )            (67)
+where Km represents the single-qubit Kraus operators                                     Tr(ρi ρj )                    N
+                                                                                                      m,n∈{0,1,2,3}
+defined by the expressions in 15 acting at layer l.                                                     (m,n̸=0)
+   This naturally extends to an N -qubit system by taking
+the tensor product of the single-qubit Kraus operators                          where, we define
+across the N qubits at each layer.
+   We can now begin our derivation of the kernel bounds                                                     N
+                                                                                                            O L
+                                                                                                              Y
+                                                                                                                                          !
+                                                                                                                             (l)
+for N qubits and L layers. Analogous to the single-layer                                        Qmn =                       Km k
+                                                                                                                                 Kn(l)k
+bound, we first take ratio of the ij’th noisy kernel ele-                                                   k=1       l=1
+ment with its corresponding noiseless element.
+                                                                                Now, we note that for some α, β ∈ {0, 1, 2, 3},
+                        K̃ij   Tr(ρ˜i ρ˜j )
+                             =                                      (65)                                     (l)       (l)
+                                                                                                      Kα(l) Kβ = cαβ σα(l) σβ
+                                                                                                                                   (l)
+                        Kij    Tr(ρi ρj )
+
+                                                                                                                                           (l)
+where ρ˜i represents the noisy density matrix represent-                        The piecewise function for the constants cαβ are defined
+ing the state after the application of the noisy depolaris-                     similarly as in the L = 1 case.
+ing channels.                                                                     From this, it is clear that we find that:
+   Now, we substitute the expression for the noisy den-
+sity matrix and using the linearity property of the trace                                         N Y
+                                                                                                  Y L                 N
+                                                                                                                      O
+operator. Additionally, we use the cyclic properties of                                Qmn =                c(l)
+                                                                                                             m k nk               σ ) = Q†nm
+                                                                                                                               (l) (l)
+                                                                                                                             (σm k nk
+the trace operator and note that the Kraus operators de-                                          k=1 l=1             k=1
+fined in 15 are Hermitian (K = K † ), due to the Pauli
+matrices also being Hermitian to obtain:                                        Hence, the noisy term can be rewritten as:
+
+
+                                                                           24
+                                                                                        We now use the density matrix to compute the ij-th ker-
+                            L      N
+                                                      !                                 nel element.
+                X           Y      Y                           1                           Following a similar procedure as the bound derivation,
+  Ñ =                                   (c(l)
+                                           mk nk )
+                                                  2
+                                                            Tr(ρi ρj )                  the resulting expression can be written as
+         m,n∈{0,1,2,3}N l=1        k=1
+           (m,n̸=0)                                                        (68)                                    N
+                                                                                                                              !      N
+                                                                                                                                                  !!
+                    N
+                                     !          N
+                                                                    !!                            X               O                 O
+                    O
+                           (l) (l)
+                                                O                                       K̃ij =           Tr ρi       Kmk Knk ρj         Knk Kmk
+        Tr ρi             σm  σ
+                             k nk
+                                         ρj           σn(l)k σm
+                                                              (l)
+                                                                k                                m,n∈                  k=1                    k=1
+                    k=1                         k=1                                            {0,1,2,3}N
+
+The next steps follow similarly as in the L = 1 case.                                                                                                (72)
+  Hence, the noisy contribution becomes
+                                                                                        We now use density matrix properties to rewrite it in
+                                                                                        terms of the Pauli matrices. For some density matrix,
+                                                                                        ρ:
+                                 L Y
+                                   N
+                                                            !
+                   X             Y                               1
+      Ñ ≤                                    (c(l)
+                                                m k nk )
+                                                        2
+                                                                           (69)
+                                                                Kij                                                     1
+             m,n∈{0,1,2,3}N      l=1 k=1
+                                                                                                                   ρ=     (r · σ)                    (73)
+               (m,n̸=0)                                                                                                 2
+Thus, the value of the ij-th kernel element in the kernel                               Here, σ = (σ0 , σ1 , σ2 , σ3 ) and r = (r0 , rx , ry , rz ), where
+matrix is bounded by                                                                    ri = Tr(ρ σi ) for i ∈ {1, 2, 3}. As usual, σ0 = I, σ1 = σx ,
+                                                                                        σ2 = σy and σ3 = σz .
+                                                                               !           For N -qubits, this extends to
+                                         X                  N
+                                                            Y
+                   2LN
+ K̃ij ≤ (1 − p)          Kij +                                    (c(l)
+                                                                    mk nk )
+                                                                           2
+
+                                 m,n∈{0,1,2,3}N             k=1                                     1       X
+                                   (m,n̸=0)
+                                                                                              ρ=                       r µ · (σµ1 ⊗ · · · ⊗ σµN )    (74)
+                                                                                                   2N
+                                                                                                        µ∈{0,1,2,3}N
+Similarly, by the normalisation condition, we get:
+                                                                                        where µ = {µ1 , . . . , µN } and r µ = Tr(ρ (σµ1 ⊗ · · · ⊗
+                                                                                        σµN )), where µi ∈ {0, 1, 2, 3}.
+       K̃ij ≤ (1 − p)2LN Kij + (1 − (1 − p)2LN )                           (70)            Using this definition, we rewrite the density matrices
+                                                                                        (ρi and ρj ) in terms of the Pauli matrices.
+This upper-bounds the resulting kernel element after the
+                                                                                           We then simplify the resulting expression using prop-
+local application of L depolarising noise channels.
+                                                                                        erties of the tensor product.
+
+A.2      Local Depolarising Noise on Kernel -                                                                  1             X
+                                                                                                                                          (i) (j)
+         Exact Expression                                                                          K̃ij =                                rµ  rν
+                                                                                                            22N
+                                                                                                                   m,n,µ,ν ∈{0,1,2,3}N
+  In this section, we derive an exact expression for the                                                 N
+                                                                                                                                              !      (75)
+noisy kernel affected by 1 layer of local depolarising
+                                                                                                         O
+                                                                                                   Tr          (Knk σνk Knk Kmk σµk Kmk )
+noise channels for N qubits.                                                                             k=1
+  Recall that we express the state after applying a sin-
+gle local depolarising channel on each qubit in an N -                                   (i) (j)
+                                                                                        rµ rν are scalars, hence they are taken out of the trace
+qubit system using the tensor product of the single-qubit                               expression.
+Kraus operators in the following form:                                                    In order to further simplify this expression, we recall
+                                                                                        the definition of the Kraus operators for single-qubit local
+                 X           N
+                             O
+                                          !        N
+                                                   O
+                                                                   !                    depolarising noise channels.
+                                                           †                              We consider the nk and νk terms inside the trace ex-
+      ρ̃ =                         Kmk         ρ          Km k
+                                                                           (71)
+             m∈{0,1,2,3}N    k=1                    k=1                                 pression, for k = 1.
+
+
+                                                                                   25
+                        Kn1 σν1 Kn1                                                             σi σj σi = −i (σi σk )
+Since n1 , ν1 ∈ [0, 1, 2, 3], we have the following scenar-              Now applying the result for the product of two Pauli ma-
+ios.                              √                                      trices for σi σk gives us:
+  If n1 = 0, then Kn1 = K0 = 1 − p I. Thus here,
+                                                                                       −i (σi σk ) = −i (δik I + i ϵikj σj )
+                 K0 σν1 K0 = (1 − p)σν1
+                                              p                          Simplifying this gives us the following result for the case
+However, if n1 ̸= 0, then Kn1 = Ki =               p/3 σi for i ∈        of (i ̸= j):
+[1, 2, 3]. In this case:
+                                p                                                                    σi σj σi = −σj
+                    Ki σν1 Ki =   σν
+                                3 1                                      However, when σi = σj , this easily simplifies to
+In light of these cases, we can introduce the following
+constant:                                                                               σi σj σi = σi (σi )2 = σi (I) = σi              (77)
+                   (
+                     (1 − p) if ni = 0                                   Using the above results, we can now introduce a gener-
+              cni = p
+                     3       if ni ∈ [1, 2, 3]                           alised result for the product of three Pauli matrices.
+
+Now, we similarly attempt to describe the σν1 factor.                                                σi σj σi = ηij σj                  (78)
+
+              Kn1 σν1 Kn1 = cn1 σn1 σν1 σn1                              where ηi,j is defined as:
+                                                                                                (
+We first analyse the product of three general Pauli ma-                                          +1, if j ∈ {0, i}
+trices of the form σi σj σi                                                              ηi,j =
+                                                                                                 −1, else
+   We use the following result for the product of two Pauli
+matrices:                                                                We can now rewrite Kn1 σν1 Kn1 using this relationship
+                  σi σj = δij I + i ϵijk σk            (76)              as:
+where δij is the Kronecker delta, which has the defini-
+tion:                                                                                       Kn1 σν1 Kn1 = cn1 ηn1 ,ν1 σν1               (79)
+                        (                                                Similarly, we can define the expression: Km1 σµ1 Km1 =
+                         1, if i = j                                     cmi ηm1 ,µ1 σµ1 . Substituting these expressions into 75 re-
+                  δij =
+                         0, else                                         sults in:
+and ϵijk is the Levi-Civita symbol, which is defined as:
+                                                                                                 1             X
+                                                                                                                              (i) (j)
+                                                                                      K̃ij =                                 rµ  rν
+                                                                                               22N
+                                                                                                       m,n,µ,ν ∈{0,1,2,3}N
+          +1, for even permutations of (i, j, k)
+          
+                                                                                                                                  !     (80)
+                                                                                      N
+    ϵijk = −1, for odd permutations of (i, j, k)                                      O
+                                                                                           cnk cmk ηnk ,νk ηmk ,µk Tr (σνk σµk )
+            0, for repeated indices
+          
+                                                                                      k=1
+
+Using this result to determine the product of three Pauli                To simplify further, we analyse the tensor product of the
+matrices (where σi ̸= σj ), we get:                                      trace term. Expanding this gives
+
+              σi σj σi = σi (δji I + i ϵjik σk )                            N
+                                                                            O
+                                                                                  Tr (σνk σµk ) = Tr (σν1 σµ1 ⊗ · · · ⊗ σνN σµN )       (81)
+This becomes                                                                k=1
+
+
+                                                                    26
+Simplifying using trace properties, Tr(A ⊗ B) = Tr(A) ·                                While it is possible to obtain an exact form for the
+Tr(B) and Tr(σi σj ) = 2δij .                                                       ij-th noisy kernel element, the above expression lacks
+                                                                                    a closed-form simplification and the second term be-
+              Tr(σν1 σµ1 ) . . . Tr(σνN σµN ) = 2N δνµ                  (82)        comes analytically-intractable for large N .
+                                                                                       For these reasons, we derive and present bounds for
+We now substitute this into our expression and set ν =                              the noisy kernel elements the main text.
+µ.
+
+                                                                          !         A.3     Auxiliary Results for Upper Margin
+                                          N
+          1       X
+                              (i) (j)
+                                          Y                                                 Bounds
+K̃ij =                       rµ  rµ             cnk cmk ηnk ,µk ηmk ,µk
+         2N      m,n,µ,                   k=1                                       A.3.1   Result 1A
+               ∈{0,1,2,3}N
+                                                 (83)                                 Here we consider the effect of the noisy kernel
+where we changed the tensor product to a product over                               bounds on the noisy squared weighted norm. The noisy
+the scalars.                                                                        squared weighted norm is defined as:
+  Separating the m = n = 0 term from the rest of the
+                                                                                                             X
+sum leaves:                                                                                        ∥w̃∥2α̃ =   α̃i α˜j yi yj K̃ij   (86)
+                                                                                                                i,j
+
+                     1                        X                      1              Substituting the noisy kernel bounds gives us:
+          K̃ij =       (1 − p)2N                          (i) (j)
+                                                         rµ  rµ +
+                    2N                                              2N                                X                                   X
+                                        µ∈{0,1,2,3}N                                ∥w̃∥2α̃ ≤ (1−p)2N     α̃i α˜j yi yj Kij +(1−(1−p)2N )   α̃i α˜j yi yj
+                                        N
+                                                                     !
+          X                             Y                                                               i,j                                 i,j
+                         (i) (j)
+                        rµ  rµ                cnk cmk ηnk ,µk ηmk ,µk
+  m,n,µ, ∈{0,1,2,3}N                    k=1                                         The second KKT condition reduces this inequality to the
+     (m=n̸=0)                                                                       form:                        X
+                                                                        (84)                 ∥w̃∥2α̃ ≤ (1 − p)2N   α̃i α˜j yi yj Kij   (87)
+                                                                                                                        i,j
+where
+                       1         X                                                  Comparing this form with its noiseless counterpart, we
+                                               (i) (j)
+                                              rµ  rµ                                see that it can be rewritten as
+                      2N
+                             µ∈{0,1,2,3}N
+                                                                                                      ∥w̃∥2α̃ ≤ (1 − p)2N ∥w∥2α̃                  (88)
+can easily be shown to be the expression for the ij-th
+noiseless kernel element, Kij                                                       where we define
+   Thus, the final exact expression for the noisy kernel                                                        X
+affected by local depolarising noise is:                                                             ∥w∥2α̃ =         α̃i α˜j yi yj Kij
+                                                                                                                i,j
+
+                                      1             X                               This is just the definition of the squared norm of the
+    K̃ij = (1 − p)2N Kij +
+                                     2N                                             weight with the noiseless kernel values and noisy La-
+                                          m,n,µ, ∈{0,1,2,3}N
+                                             (m=n̸=0)                               grangian variables (α̃) used instead of the noiseless al-
+                                                              !         (85)        ternative.
+                              N
+                              Y
+                  (i) (j)
+                 rµ  rµ             cnk cmk ηnk ,µk ηmk ,µk
+                              k=1                                                   A.3.2   Result 1B
+Similarly, this can be modified to include the application                            Similarly, we can construct a bound for the squared
+of L layers of local depolarising noise channels to N                               weighted norm that uses noisy kernel values with clean
+qubits as detailed in Appendix A.1.                                                 Lagrangian variables. This quantity has the form:
+
+                                                                               27
+                               X                                                                                      m
+                    ∥w̃∥2α =          αi αj yi yj K̃ij               (89)                                             X
+                                                                                                  ∥α∥1 = ∥w∥2α +            αi ξi        (97)
+                                i,j
+                                                                                                                      i=1
+
+            X                                                                    We now apply the KKT condition for the non-separable
+ ∥w̃∥2α ≤         αi αj yi yj [(1 − p)2N Kij + (1 − (1 − p)2N )]                 data case for which αi = C when ξi ̸= 0, to get:
+            i,j
+                                                                                                                        m
+                                                                                                                        X
+As with Result 1A, this can be simplified using the KKT                                           ∥α∥1 = ∥w∥2α + C            ξi         (98)
+conditions and rewritten using the noiseless definition of                                                              i=1
+the squared weighted norm as:                                                    Consequently, this results in the relation:
+
+                    ∥w̃∥2α ≤ (1 − p)2N ∥w∥2α                         (90)                               ∥w∥2α ≤ ∥α∥1                     (99)
+
+A.3.3   Result 2                                                                 A.3.4   Result 3
+  Starting with the complementarity condition (ex-
+                                                                                   We nowPconstruct a bound for the sum of the slack
+pressed by the fourth KKT condition), we have:                                               m
+                                                                                 variables i=1 ξi .
+                                                                                   First, we recap the primal optimisation problem (with
+                    yi (w · ϕ(xi ) + b) = 1 − ξi                     (91)
+                                                                                 p = 1):
+By multiplying both sides by αi and taking the sum, we                                                                  m
+get:                                                                                                        1          X
+                                                                                                P = min       ∥w∥2 + C     ξi          (100)
+                                                                                                      w,b,ξ 2
+        m
+        X                                      m
+                                               X                                                                       i=1
+               αi yi (w · ϕ(xi ) + b) =              αi (1 − ξi )    (92)        which is subject to the following constraints:
+         i=1                                   i=1
+
+Simplifying and applying the KKT conditions results in:
+                                                                                    yi (w · ϕ(xi ) + b) ≥ 1 − ξi and ξi ≥ 0 for i ∈ [1, m]
+            m
+            X                           m
+                                        X             m
+                                                      X
+                  αi yi w · ϕ(xi ) =           αi −         α i ξi   (93)        .
+            i=1                          i=1          i=1                        We can now construct a trivial solution for the optimi-
+The term on the LHS is exactly the squared weighted                              sation problem. To do this, we choose the solution
+norm. We show this by using its definition to get:                               (w∗ = 0, b∗ = 0, ξ ∗ = 1).
+                                                                                    Clearly, the trivial solution always satisfies the above
+                          ∥w∥2 = w · w                               (94)        constraints and is hence a feasible solution for this opti-
+                                                                                 misation problem.
+                                      m
+                                      X                                             Evaluating the primal objective function using this triv-
+                    ∥w∥2 = w ·              αi yi ϕ(xi )             (95)        ial solution results in
+                                      i=1
+                                                                                                                           m
+which can be rewritten as:                                                                                     1          X
+                                                                                         P (w∗ , b∗ , ξ∗ ) =     ∥0∥2 + C     1 = mC
+                                                                                                               2          i=1
+                             m
+                             X
+                    ∥w∥2 =            αi yi w · ϕ(xi )               (96)        Let (w, b, ξ) denote the optimal solution to the above
+                               i=1                                               primal optimisation problem, which takes the form
+Substituting this definition into the above equation and                                                                    m
+rewriting the squared weight norm for notation consis-                                                          1          X
+                                                                                              P (w, b, ξ) =       ∥w∥2 + C     ξi      (101)
+tency gives:                                                                                                    2          i=1
+
+
+                                                                            28
+Due to optimality, the primal objective function evaluated                             A.4.2   Result 2
+at the optimal solution must be at most the value of the
+function evaluated at any other feasible solution (such                                  An analogous relation to that found in Section A.4.1
+as our trivial solution). Hence, we have the relation:                                 can be constructed for the noisy kernel and noisy dual
+                                                                                       solution as:
+                                                                                                                                 m
+        P (w, b, ξ) ≤ P (w∗ = 0, b∗ = 0, ξ ∗ = 1)                         (102)                                                  X
+                                                                                                           ∥α̃∥1 = ∥w̃∥2α̃ + C         ξ˜i              (106)
+This reveals the following relation:                                                                                             i=1
+
+                                 m
+                                                                                       Clearly, we can equate both results to obtain the relation
+                     1          X
+                       ∥w∥2 + C     ξi ≤ mC                               (103)                                  m                           m
+                     2                                                                                           X                           X
+                                i=1                                                                ∥w̃∥2α̃ + C         ξ˜i = ∥w∥2α̃ + C            ζi
+Since 12 ∥w∥2 ≥ 0, we get:                                                                                       i=1                         i=1
+
+                              m
+                              X                                                        Finally, rearranging this gives:
+                          C         ξi∗ ≤ mC                              (104)                    m                                 m
+                              i=1
+                                                                                                   X                                 X
+                                                                                               C         ζi = ∥w̃∥2α̃ − ∥w∥2α̃ + C           ξ˜i        (107)
+                                                                                                   i=1                               i=1
+A.4      Auxiliary Results for Lower Margin
+         Bounds                                                                        A.5     About the Datasets
+A.4.1     Result 1
+                                                                                          In this section, we provide more details relating to the
+   Here, we prove the analogous relation to that found                                 initial preparation of the datasets to be used for the nu-
+in Section A.3.3 using the noisy dual solution with the                                merical simulations.
+noiseless kernel.                                                                         As mentioned in the main text, the Heart Disease,
+   Similar to the noiseless analogue, we start with the                                (White) Wine, HTRU2, and Breast Cancer datasets
+complementarity condition:                                                             were obtained using the UCI Machine Learning Repos-
+                                                                                       itory [41].
+                   yi (wα̃ · ϕ(xi ) + b̃) = 1 − ζi                                        (White) Wine Dataset This dataset includes white
+                                                                                       vinho verde wine samples, with the target variable con-
+We then multiply both sides by α̃i and take the sum.                                   taining values quantifying wine quality. Wine quality
+After applying KKT conditions, we get:                                                 contained multiple classes, with values ranging from 3
+          m
+          X                               m
+                                          X                m
+                                                           X                           to 9.
+                α̃i yi (wα̃ · ϕ(xi )) =         α̃i −            α̃i ζi                   We categorise all samples with wine quality scores
+          i=1                             i=1              i=1                         of above 5 as premium quality wine, and the remaining
+Similarly, the LHS is exactly the squared norm of the                                  samples as standard quality wine. We then defined all
+weight vector. After applying the KKT condition stating                                premium quality wine to form the binary class 1, with
+that if ζi ̸= 0, α̃i = C, else ζi = 0, we get:                                         standard quality wine forming class 0, thereby trans-
+                                                                                       forming this dataset for a binary classification task.
+                                                m
+                                                X                                         Heart Disease Dataset The heart disease dataset
+                     ∥w∥2α̃ = ∥α̃∥1 − C               ζi                               consists of 13 features and 1 target variable. Similar
+                                                i=1
+                                                                                       to the Wine Quality dataset, this target variable con-
+Finally, we get the following relationship:                                            tained multiple values, ranging from 0 to 4, where the
+                                                m
+                                                                                       values ∈ [1, 4], indicated the presence of heart disease
+                                                                                       in the particular patient, with 0 indicating the absence
+                                                X
+                     ∥α̃∥1 = ∥w∥2α̃ + C               ζi                  (105)
+                                                i=1
+                                                                                       of heart disease. The target variable has similarly been
+
+
+                                                                                  29
+transformed for binary classification by defining all sam-
+ples with heart diseases scores above 0 as class 1, with
+samples with scores of 0 used to form class 0. This
+allows the dataset to be separated into samples of pa-
+tients who have heart disease, and those who do not.
+Additionally, this dataset initially had 6 missing values; 2
+and 4 values two features, respectively. These missing
+values were imputed with the median value from each
+feature vector using sklearn’s SimpleImputer.
+   Breast Cancer Dataset This dataset contains a 9 fea-
+tures and 1 binary target variable with values "M" or "B"
+labelling if a tumour is malignant or benign. This col-
+umn was also transformed for binary classification by
+mapping malignant and benign tumours to the values 1
+and 0, respectively.
+   HTRU2 Dataset The HTRU2 dataset contains pul-
+sar candidates from the HTRU2 (South) survey. This
+dataset consists of 7 feature vectors and 1 binary tar-
+get variable. This target variable takes the value of 1 for
+pulsars and 0 if not.
+   Gaussian Dataset The Gaussian dataset was cu-
+rated using scikit-learn’s make_blobs function. This
+function is used to two generate isotropic Gaussian
+blobs representing the two classes for binary classifi-
+cation. This distribution was generated with a cluster
+standard deviation of 3. Larger values for the cluster
+standard deviation result in a higher degree of overlap
+between the two classes resulting in non-linearly sepa-
+rable data.
+
+
+
+
+                                                               30
+

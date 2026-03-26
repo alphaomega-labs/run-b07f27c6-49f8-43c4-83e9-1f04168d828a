@@ -1,0 +1,2338 @@
+                                              Theory and interpretability of Quantum Extreme Learning Machines:
+                                                               a Pauli-transfer matrix approach
+
+                                                                           Markus Gross1, ∗ and Hans-Martin Rieser1
+                                                            1
+                                                                Institute for AI Safety and Security, German Aerospace Center (DLR),
+                                                                                  Sankt Augustin and Ulm, Germany
+                                                                                        (Dated: March 20, 2026)
+                                                  Quantum reservoir computers (QRCs) have emerged as a promising approach to quantum ma-
+                                               chine learning, since they utilize the natural dynamics of quantum systems for data processing and
+arXiv:2602.18377v2 [quant-ph] 18 Mar 2026
+
+
+
+
+                                               are simple to train. Here, we consider n-qubit quantum extreme learning machines (QELMs) with
+                                               initial-state encoding and continuous-time reservoir dynamics. QELMs are memoryless QRCs capa-
+                                               ble of various ML tasks, such as image classification and time series forecasting. We apply the Pauli
+                                               transfer matrix (PTM) formalism to theoretically analyze the influence of encoding, reservoir dy-
+                                               namics, and measurement operations (including temporal multiplexing) on the QELM performance.
+                                               This formalism makes explicit that the encoding determines the complete set of (nonlinear) features
+                                               available to this type of QELM, while the quantum channels linearly transform these features before
+                                               they are probed by the chosen measurement operators. Optimizing such a QELM can therefore be
+                                               cast as a decoding problem in which one shapes the channel-induced transformations such that task-
+                                               relevant features become available to the regressor, effectively reversing the information scrambling
+                                               of a unitary. We show how operator spreading under unitary evolution determines feature decodabil-
+                                               ity, which underlies the nonlinear processing capacity of the reservoir. The PTM formalism yields
+                                               a nonlinear vector (auto-)regression model as the classical representation of a QELM. As a specific
+                                               application, we focus on learning nonlinear dynamical systems and show that a QELM trained on
+                                               such trajectories learns a surrogate-approximation to the underlying flow map.
+
+
+
+
+                                                                                     I.   INTRODUCTION
+
+                                               QRCs have enjoyed significant attention since their introduction [1], featuring applications in
+                                            various domains, such as image classification [2–5], time series forecasting [1, 6–10], fluid dynamics
+                                            [11, 12], or post-processing of quantum experiments [13–16]. A major advantage of QRCs is their
+                                            suitability for noisy intermediate-scale quantum (NISQ) hardware, primarily because the training
+                                            process is restricted to the classical readout layer, thereby rendering the training problem convex
+                                            and avoiding the barren plateau problem associated with variational quantum algorithms [17, 18].
+                                            QRCs are often resilient to, and can even benefit from, environmental noise [19–22]. The relevance of
+                                            nonlinear input transformations has been analyzed for QRCs in [23–25], and universality conditions
+                                            have been derived in [6, 26–30]. Notably, QRCs are closely related to quantum kernel methods
+                                            [31]—a fact that can be utilized to find optimal measurement operators [32] and harness insights
+                                            from the classical domain [33–35]. For general overviews on QRCs, we refer to [36, 37].
+                                               A specific QRC variant without any coherently evolving internal state is the QELM [2, 36–38].
+                                            Its classical counterpart, the ‘extreme learning machine’, is essentially a feedforward network with
+                                            fixed internal architecture [39], similarly to a random-feature model [40]. A QELM differs from
+                                            a conventional quantum neural network with fixed internal parameters in two important ways:
+                                            first, instead of gate-based architectures, it typically employs the natural dynamics of a physical
+
+
+                                            ∗ markus.gross@dlr.de
+                                                                                                         2
+
+quantum system (a reservoir). Second, instead of optimizing a measurement output for a certain
+task, one usually collects multiple unspecific measurements into a large readout vector and feeds
+it into a classical regression or classification algorithm. The main task in optimizing QELMs thus
+consists in tuning the quantum properties of the reservoir to maximize information processing and
+being able to properly decode relevant features from the measurements [14, 41–50]. Identifying
+possible quantum advantages, e.g., related to the exponentially large Hilbert space into which data
+is encoded, is an active research topic [3, 37, 44, 48, 51, 52]. However, the exponential concentration
+effect emerging for large qubit numbers is a phenomenon conceptually related to barren plateaus
+and can strongly reduce QELM performance [53].
+   The present study aims at an interpretable framework that can explain why and which failures in
+QELMs occur and thereby support their systematic design. To this end, we will also analyze well-
+known optimization tools like temporal multiplexing [1] or information processing capacity [54, 55]
+in the light of the PTM formalism. We use chaotic dynamical systems as benchmarks since they
+have a known ground-truth model and are in principle discoverable from training data [56]. The
+developed formalism is restricted to n-qubit QELMs in which the encoding is time-independent and
+separated from reservoir evolution, hence excluding models with dynamical input injection [14, 57]
+or generic continuous-variable (infinite-dimensional) encodings [24, 58, 59]. Our findings also hold
+implications for other QML models that fall into this category.
+
+
+                                                 II.   MODEL
+
+   We briefly present the formalism of QELMs and the specific implementation used in this work
+[1, 36, 37]. Let M(H) denote the space of d × d Hermitian matrices (real vector space of dimension
+d2 ) on the d-dimensional Hilbert space H, where d = 2n in terms of the number of qubits n. Given
+classical inputs x ∈ RD , a QELM is defined by the output function
+                                                   m
+                                                   X
+                                       f (x) =           wk tr[Mk ρ(x)],                             (2.1)
+                                                   k=1
+
+where {Mk }m  k=1 are a set of measurement operators in M(H), and ρ(x) ∈ M(H) is the density
+matrix of the quantum system, obtained after applying encoding and other quantum channels to
+an initial state, ρ(x) = E(· · · Exenc (ρ0 ) · · · ). The trainable weights wk are determined by minimizing
+the empirical risk:
+                                           P
+                                           X                          λ
+                                    minm         L (f (xi ), yi ) +     ∥w∥22 ,                      (2.2)
+                                   w∈R
+                                           i=1
+                                                                      2
+
+where L is a loss function, λ is a regularization parameter, and {(xi , yi )}P    i=1 are P training data
+points. Typical loss functions are the least-squares loss L(ŷ, y) = 21 (ŷ − y)2 for regression (including
+time-series prediction), and the hinge loss Lhinge (ŷ, y) = max(0, 1 − y ŷ), with y ∈ {−1, +1} for
+classification. In the case of the least-squares loss, the optimal weights are given by
+                          ŵ = (ΨΨ⊤ + λ1m )−1 Ψy,               Ψki = tr(Mk ρ(xi )),                 (2.3)
+             P                                         m×P
+where y ∈ R is the sample vector and Ψ ∈ R         is the readout design matrix.
+                                                                             2
+  When optimizing over a complete basis of measurement operators {Mk }dk=1 , the QELM takes
+the form of a quantum kernel model [31, 32] (see Section A for a summary). In the present work,
+we do not use that formalism, but instead work with a preselected observable set and optimize only
+over the associated weights wk .
+                                                                                                             3
+
+                                               A.    Feature map
+
+  We consider pure states, i.e., ρ(x) = |ψ(x)⟩⟨ψ(x)|, with the quantum state |ψ(x)⟩ ∈ H given by
+                                          |ψ(x)⟩ = UR (t)S(x)|Φ0 ⟩.                                       (2.4)
+Here, S(x) is a data encoding unitary, UR is a reservoir unitary, and we take the initial state as
+|Φ0 ⟩ = |0⟩⊗n . The unitary UR (t) = exp(−itHR ) is defined by time evolution under a reservoir
+Hamiltonian HR . Specifically, we consider random Hamiltonians HR as well as two variants of a
+transverse field Ising model (TFIM)
+                                                     n−1
+                                                     X                   n
+                                                                         X
+                                     zz-x
+                                    HTFIM = −J             Zj Zj+1 − h         Xj ,                      (2.5a)
+                                                     j=1                 j=1
+                                                     n−1
+                                                     X                   n
+                                                                         X
+                                     xx-z
+                                    HTFIM = −J             Xj Xj+1 − h         Zj ,                      (2.5b)
+                                                     j=1                 j=1
+
+with couplings J, h ∈ R. Here and in the following, {Xj , Yj , Zj } denote single-qubit Pauli operators
+acting on the j-th qubit and Zj Zj+1 is a shorthand for the usual n-qubit tensor product (with
+identity operators acting on the remaining qubits). The two TFIM variants in Eq. (2.5) are related
+by a global Hadamard transform UH = H⊗n :
+           UH Xj UH† = Zj ,      UH Yj UH† = −Yj ,       UH Zj UH† = Xj ,           zz-x
+                                                                                UH HTFIM UH† = HTFIM
+                                                                                                xx-z
+                                                                                                     .    (2.6)
+
+
+                                          B.      Encoding schemes
+
+  We consider time-independent (parallel) product state encodings with D = n, producing the
+state
+                                     n
+                                     O                                   n
+                                                                         O
+           ρenc (x) = S(x)ρ0 S(x)† =    |ψenc (xj )⟩⟨ψenc (xj )|, S(x) =   Sj (xj ),   (2.7)
+                                            j=1                                            j=1
+
+where the unitary Sj act on the j-th qubit. In our numerical experiments we employ amplitude
+and rotational encoding schemes [60]. The former comes in two variants, where one either encodes
+data on half a great circle of the Bloch sphere:
+                                        √        √
+                            |ψenc (x)⟩ = x|0⟩ + 1 − x|1⟩,   x ∈ [0, 1],                     (2.8)
+or on the full great circle:
+                                                     p
+                               |ψenc (x)⟩ = x|0⟩ +       1 − x2 |1⟩,      x ∈ [−1, 1].                    (2.9)
+Rotational encoding is defined by the unitary
+                         Sj (xj ) = exp(−iπxj σ pj ) = Rpj (2πxj ),              x ∈ [0, 1],             (2.10)
+where σ p ∈ {1, X, Y, Z} are single-qubit Pauli matrices, p ∈ {0, x, y, z}, and Rpj denotes rotation
+gates. In order to avoid irrelevant phases or trivial states, one typically uses RY gates, which yield
+the single-qubit state
+                        |ψenc (xj )⟩ = RY (2πxj )|0⟩ = cos(πxj )|0⟩ + sin(πxj )|1⟩.                      (2.11)
+                                                                                                       4
+
+                                             III.     THEORY
+
+   QML models, including QELMs, have often been analyzed from the Fourier perspective, which
+is natural for Hamiltonian-based encoding [51–53]. In the following, we instead employ the Pauli
+transfer matrix (PTM) formalism, which allows a more direct identification of the relevant features
+for models with initial-state encoding [36, 46, 61–63] and has been previously used for the analysis
+of QRCs [28, 36, 49].
+
+
+                           A.    Pauli-transfer formulation of a QELM
+
+  In the PTM formalism, we expand states and operators in the n-qubit Pauli basis
+                                                                                   2
+                                                                          −1
+                           {Pk = σa1 ⊗ · · · ⊗ σan : ai ∈ {0, x, y, z}}dk=0  ,                      (3.1)
+which consists of d2 Pauli-strings Pk , with P0 = I and d = 2n , orthonormalized by tr(Pk Pl ) = dδkl .
+Every state admits the expansion
+                                     d2 −1
+                                1 X
+                         ρ(x) = n   ϕk (x)Pk ,                ϕk (x) = tr(Pk ρ(x)),                 (3.2)
+                               2
+                                     k=0
+                                               2
+giving rise to a feature vector ϕ(x) ∈ Rd . For product state encodings, the components of ϕk (x)
+correspond to all possible d2 monomial combinations of the single-Pauli features (see Section III B).
+Any quantum channel E acts linearly on this vector via the Pauli transfer matrix:
+                                                     1             
+                                       (TE )kl =       tr Pk E(Pl ) ,                               (3.3)
+                                                     d
+transforming the features as ϕ′ = TE ϕ. If the channel E is completely positive (CPTP), it admits
+a Kraus representation
+                                                      µ
+                                                            Kℓ ρKℓ†
+                                                      X
+                                             E(ρ) =                                                 (3.4)
+                                                      ℓ=1
+
+with ℓ=1 Kℓ† Kℓ = 1 and µ ≤ d2 (dependent on the channel, e.g., µ = 1 for a unitary channel, see
+     Pµ
+Section D for further discussion).
+  Consider the QELM in Eq. (2.1) with a subset S of measured Pauli operators {Pk }k∈S , m ≡
+                                                                   2
+|S| ≤ d2 . This selection can be represented by a matrix S ∈ Rm×d (a subset of rows of the identity
+matrix) that extracts the corresponding
+                                        rows from TE . The readout vector F(x) ∈ Rm contains their
+expectation values Fk (x) = tr Pk E(ρenc (x)) . Expanding ρenc as in Eq. (3.2) and using Eq. (3.3)
+gives the model output function
+                                                                            2
+                                                                           dX −1
+                                                (m)
+                                                               X
+                             ⊤             ⊤
+                   f (x) = w F(x) = w          TE ϕ(x) =              wk         (STE )kj ϕj (x),   (3.5)
+                                                               k∈S         j=0
+
+                                                    (m)
+where w ∈ Rm are classical weights and TE       ≡ STE is the m × d2 block of TE restricted to
+the measured observables. This formulation explicitly shows that f (x) is a linear function of the
+features ϕ(x) generated solely by the encoding and mixed by the reservoir channel TE .
+                                                                                                                     5
+
+  With the Kraus representation (3.4), we can write
+                                             µ
+                             (m)           1X                 1
+                                              tr Pk Kℓ Pj Kℓ† = tr Pk Pj ,
+                                                                    (H) 
+                          (TE      )kj =                                                                          (3.6)
+                                           d                   d
+                                            ℓ=1
+
+where the last expression introduces the generalized Heisenberg representation of an observable O,
+                                                           µ
+                                                                 Kℓ† OKℓ .
+                                                           X
+                                                 (H)
+                                             O         =                                                          (3.7)
+                                                           ℓ=1
+
+Specifically, for the unitary channel, we have K = U (t) (µ = 1), such that TE becomes an orthogonal
+matrix V (t) ∈ SO(d2 ) with elements
+                                              1 
+                                    Vkj (t) = tr Pk U (t)Pj U (t)† ,
+                                                                  
+                                                                                                (3.8)
+                                              d
+and Vkj (0) = δkj . For general CPTP maps, TE can also induce contraction and translation of the
+feature vector (see Section D 2).
+
+
+                                           B.     Feature encoding
+
+  The dependence of the feature vector ϕ(x) on the encoding can be made explicit for product-
+state encodings. Using Eq. (2.7) and an initial product state, the encoded state before the reservoir
+unitary is
+                                                   n
+                                                   O
+             ρenc (x) = S(x) |0⟩⟨0|⊗n S(x)† =              ρj (xj ),      ρj (xj ) = Sj (xj )|0⟩⟨0|Sj (xj )† .    (3.9)
+                                                   j=1
+
+It is convenient to introduce the single-qubit Pauli features
+                                                          ⊤
+              ϕ(j) (xj ) = 1, ϕ(j)       (j)       (j)
+                                                               ϕ(j)
+                                                                             a        
+                               x (xj ), ϕy (xj ), ϕz (xj )   ,  a (xj ) = tr σ ρj (xj ) ,                        (3.10)
+
+with ϕ0 = tr(ρj ) = 1 (normalization), σ 0 ≡ 1 and σ x,y,z ≡ X, Y, Z as before. The three non-
+       (j)
+
+trivial components of ϕ(j) define the Bloch vector, which has unit magnitude for pure states (see
+Section D for further discussion). Since both the state and the Pauli basis factorize across qubits,
+the n-qubit feature vector is
+                                                           n
+                                                           O
+                                            ϕ(x) =               ϕ(j) (xj ),                                     (3.11)
+                                                           j=1
+
+and its components are given by
+                                 n
+                               hO               i Yn
+                                     aj
+             ϕa1 ...an (x) = tr    σ      ρenc (x) =   ϕ(j)
+                                                        aj (xj ),                     aj ∈ {0, x, y, z}.         (3.12)
+                                    j=1                           j=1
+
+The subscript a1 . . . an corresponds to the explicit site representation of the index k in Eq. (3.2).
+The ϕk thus run over all possible combinations of the single-qubit features in Eq. (3.10): for each
+                                                 (j)   (j)  (j)
+qubit one chooses one of the four factors {1, ϕx , ϕy , ϕz }, yielding a total of at most d2 = 4n
+features. The readout features resulting from some simple encoding schemes are summarized in
+Table I. Effects of feature mixing by a unitary channel are discussed in the next section.
+                                                                                                             6
+
+                                                                       (k)
+                                                            Feature ϕak (uk )
+          Factor in observable P Amplitude on [0, 1] Amplitude on [−1, 1] Rotational
+                                    p                       p
+               · · · ⊗ Xk ⊗ · · ·  2 (1 − uk )uk        2uk 1 − u2k        sin(2πuk )
+                 · · · ⊗ Yk ⊗ · · ·              0                       0                   0
+                 · · · ⊗ Zk ⊗ · · ·           2uk − 1                 2u2k − 1          cos(2πuk )
+             · · · ⊗ 12 (I + Zk ) ⊗ · · ·       uk                       u2k            cos2 (πuk )
+
+Table I. Pauli–basis projections ⟨ψenc |P |ψenc ⟩ of an encoded product   state ρenc (u) for amplitude encoding
+(2.8) or (2.9) as well as rotational encoding (2.10). Here P = n
+                                                                    N
+                                                                      k=1 σak denotes a Pauli operator (σak ∈
+{I, X, Y, Z}) and the classical datum entering qubit k is uk . For convenience, we have included the projection
+operator 12 (I + Zk ). One observes that each Pauli factor σak (1st column) in an observable P produces the
+                                      (k)                       
+corresponding single-qubit feature ϕak (uk ) := tr σak ρk (uk ) (2nd–4th columns). For instance, the Xk row
+        (k)                             (k)
+gives ϕx (uk ) and the Zk row gives ϕz (uk ).
+
+
+              IV.     PTM ANALYSIS FOR A UNITARY QUANTUM CHANNEL
+
+                                                                          Nn
+  For separable (product) quantum channels, the PTM factorizes as T = j=1 Tj into single-qubit
+PTMs Tj . The action of a local unitary is discussed in Section D 1. To understand and opti-
+mize a QELM with general nonlocal quantum channels, we must analyze the full PTM [Eqs. (3.5)
+and (3.6)]. We focus in the following on the unitary case. The optimization can be split into several
+subtasks that define the fundamental reconstruction problem in (quantum) reservoir computing
+with explicit feature maps [14, 45, 49, 64]:
+   1. Decide which types of features {ϕr } are best suited to learn the dataset. For example, non-
+      Markovian time series (including harmonic signals) require delay coordinates [65, 66], whereas
+      Markovian dynamical systems can already be modeled by instantaneous monomial features.
+      While commonly used encodings support universal function approximation [6, 26–30], they
+      can differ in their approximation errors, generalization behavior, or robustness during autore-
+      gressive rollout.
+   2. Select suitable measurement observables {Pk }. Ideally, the Heisenberg-evolved observables
+        (H)
+      Pk (t) have strong overlap with the observable Pr generating the desired feature ϕr [see
+      Eq. (3.6)]. One possibility to achieve this is to determine an optimal measurement operator
+      M ∗ via primal or dual optimization, which can then be further expanded into a set of rotated
+      Pauli-Z operators [32]. Another possibility is temporal multiplexing [1, 47, 67, 68], discussed
+      further in the PTM framework below (see Section IV B).
+   3. When the available measurement operations are restricted, one must tune the quantum chan-
+      nel E and the readout layer such that the desired features ϕr become decodable. Strict decod-
+      ability means that, for each such ϕr , there exists a weight vector wr such that wr TE ϕ ∝ ϕr
+      (see Section IV C). In practice, decodability in the statistical sense (as a correlation) and
+      within a certain error tolerance is often sufficient, since the features needed for typical train-
+      ing tasks can usually be approximated on limited domains from the available Pauli features
+      (see Section IV D). We will show that temporal multiplexing directly enhances decodability
+      by increasing the operator support.
+   In temporal multiplexing [1, 69], instead of working at a fixed evolution time t and a potentially
+large set of observables Pk , one selects a small subset S of size m and evaluates them at several
+                                                                                                    7
+
+times t1 , . . . , tL [cf. Eq. (3.5)]. One then stacks the corresponding rows of V (t) into a mL × d2
+observability matrix
+                                                             
+                                                     SV (t1 )
+                                                    SV (t2 ) 
+                                                             
+                                              R= . 
+                                                   
+                                                              .                                 (4.1)
+                                                    .. 
+                                                     SV (tL )
+
+The case without temporal multiplexing corresponds to L = 1. The full unitary PTM R = V (t) is
+then recovered for S = 1d2 .
+
+
+                                   A.    Classical representation
+
+  Let q ≤ d2 be the effective number of features (excluding features identically vanishing due to
+the encoding), and B be the total number of measurements, e.g. B = mL. According to Eq. (3.5),
+a QELM has an equivalent classical representation as a PTM-weighted nonlinear function library,
+
+                               f (u) = w⊤ F(u),        F(u) ≡ Rϕ(u),                             (4.2)
+
+where R ∈ RB×q is the effective PTM (4.1) (including any row-selection and temporal multiplexing)
+and Fk = Rkj ϕj are the Pauli features available at the readout.
+  If R has full column rank, it is left-invertible [70] and thus the regressor can always find weights
+w ∝ (R+ )r that isolate any desired element ϕr . Since one usually trains with arbitrary targets y
+instead of ϕr , the actual weights [Eq. (2.3)] contain projections from the Pauli feature space to the
+data space:
+
+                        ŵ = (GG⊤ + λ1B )−1 Gy = R(CR⊤ R + λ1q )−1 Φy,                           (4.3)
+
+where we introduced the feature design and Gram matrices
+
+                        Φ ≡ [ϕ(u1 ) · · · ϕ(uP )] ∈ Rq×P ,   C = ΦΦ⊤ ∈ Rq×q ,                    (4.4)
+
+and the corresponding readout design and Gram matrices
+
+                 G ≡ [F(u1 ) · · · F(uP )] = RΦ ∈ RB×P ,     GG⊤ = RCR⊤ ∈ RB×B .                 (4.5)
+
+The latter are typically computed in a QELM implementation, whereas R and Φ are theoretical
+objects. We will analyze in the following subsections the requirements on the encoding and reservoir
+unitary to improve trainability and avoid expensive hyperparameter search.
+  The last equality in (4.3) (which follows from the Woodbury identity) implies that for the full
+unitary PTM R = V [Eq. (3.8)], the weights are simply rotated versions of the ones without PTM
+mixing:
+
+                                        ŵ = V (C + λ1q )−1 Φy.                                  (4.6)
+
+Moreover, since V is orthogonal, it drops out from the predictor (4.2), consistent with the absence of
+a reservoir unitary in the kernel-representation (A1). Such a QELM is then simply a regressor acting
+on the full d2 -dimensional feature library ϕ. In the context of time series processing (especially
+                                                                                                    8
+
+when using some inputs uj to encode delay states) this is reduces to a “next-generation” reservoir
+computer (NG-RC) [71] or, equivalently, a nonlinear vector autoregressive process (NVAR). When
+R merely has full column rank, it can be interpreted to induce a regressor operating on the mixed
+feature set ϕ′ = Rϕ.
+   A coarse measure for expressivity is the rank of the readout Gram matrix in Eq. (4.3), which can
+be bounded as
+                           rank(G) ≤ min(rank(R), rank(Φ)) ≤ min(B, P, q).                       (4.7)
+For sufficiently diverse data, Φ typically achieves a rank near its maximum min(q, P ), but can
+suffer from ill-conditioning since the features ϕk are in general not orthogonal. Accordingly, for
+large sample number P , the rank of the readout approximately follows the rank of the effective
+PTM:
+                                           rank(G) ≃ rank(R).                                    (4.8)
+For random Hamiltonians, rank(R) typically grows proportionally to the measurement budget B
+and then saturates near q (see Fig. 4). By contrast, structured Hamiltonians like the TFIM are not
+fully scrambling, resulting in rank(R) ≪ q. The achieved ranks indicate the quality of the temporal
+multiplexing scheme and thus of the training accuracy of the QELM (see Fig. 10).
+
+
+                        B.     Krylov growth and Pauli weight spreading
+
+  Temporal multiplexing enables the regressor to “reverse” the information scrambling caused by
+quantum evolution. The latter is captured by the Krylov growth of an operator under conjugation
+[64, 67, 72], which we summarize here in our setting. Specifically, the unitary Heisenberg-evolution
+[Eq. (3.7)] of a given Pauli observable Pk satisfies
+                                                                       ∞
+                     (H)
+                                                                       X (it)ℓ
+                   Pk (t) ≡ U (t)† Pk U (t) = eiHt Pk e−iHt =                     adℓH (Pk ),    (4.9)
+                                                                             ℓ!
+                                                                       ℓ=0
+
+where adH (O) ≡ [H, O] and adℓH denotes ℓ nested commutators with H. The time-evolved observ-
+able therefore spans the (increasing) Krylov subspace
+                           Kℓ (Pk ) = span Pk , adH (Pk ), . . . , adℓ−1
+                                          
+                                                                     H (Pk ) .         (4.10)
+While there is no strict one-to-one identification of the integer Krylov order ℓ with the continuous
+time t, ℓ can be understood as the depth of a truncation of the nested-commutator series. Due to
+the suppression by the factorial, a rough estimate is ℓ ∼ t ∥H∥ in case of local Hamiltonians. It is
+useful to note that for the TFIM models in Eq. (2.5), the Hadamard equivalence (2.6) implies that
+                        (Zj1 · · · Zjk )H (t) zz-x = UH† (Xj1 · · · Xjk )H (t) xx-z UH ,        (4.11)
+                                        zz-x                                             xx-z
+i.e., Pauli-Z observables evolve under HTFIM  equivalently to Pauli-X observables under HTFIM up
+to a global unitary.
+   In the PTM approach, Krylov growth can be represented in terms of operator spreading in the
+                                                                       (H)
+Pauli basis [73]. Accordingly, expanding the time-evolved observable Pk (t) gives
+                                                      2
+                                                     dX −1
+                                         (H)
+                                        Pk (t) =             Vkj (t)Pj ,                        (4.12)
+                                                      j=0
+                                                                                                          9
+
+
+
+
+                      (a)                             (b)                        (c)
+
+Figure 1. Time evolution of the Pauli weight average ν̄k [Eq. (4.13)] of a single-site Pauli σk in the h–J
+coupling parameter space of the TFIM (2.5a) for n = 3 qubits.
+
+
+where we used cyclicity of the trace to introduce V (t) from Eq. (3.8). Thus, for non-Clifford H,
+an initial weight fully localized on Pk can spread to other (higher and lower order) Pauli strings
+as t increases. A convenient diagnostic is the Pauli (Hamming) weight ν(Pj ) ∈ {0, . . . , n}, i.e., the
+number of non-identity factors in Pj , and its coefficient-weighted average
+                                                    2
+                                                   dX −1
+                                       ν̄k (t) =           ν(Pj ) Vkj (t)2 .                         (4.13)
+                                                   j=0
+
+For local (including nonintegrable/chaotic ones) Hamiltonians, the Lieb–Robinson bound [50, 74–
+77] heuristically implies that an initially local operator can only develop support within distance
+≲ vLR t until finite-size saturation:
+                                      (
+                                        1 + const · vLR t (intermediate times)
+                            ν̄k (t) ∼                                                        (4.14)
+                                        O(n)              (late times)
+
+with a typical late-time value ν̄k ≈ 43 n, corresponding to a uniform distribution of coefficients Vkj
+                                                                                                     2
+
+over Pauli strings. From the definition (3.7) and the expansion (4.12), it straightforwardly follows
+        (H)            Pd2 −1 2               Pd2 −1 2
+that ∥Pk ∥2 = d = d j=0 Vkj       , and thus j=0 Vkj    = 1 for all t. Consequently, for Haar-random
+unitaries, one expects a typical late-time magnitude
+
+                                           |Vkj (t → ∞)| = 2−n .                                     (4.15)
+
+This is the origin of the exponential concentration effect, which makes accessing information about
+the input infeasible for large qubit numbers n → ∞ [53]. Integrable models (such as the TFIM at
+its integrable points) typically show more structured behavior due to stable quasiparticle modes.
+An extreme case is a Clifford unitary, for which Vkj is a signed permutation matrix (no spreading).
+By contrast, a Haar-random unitary on the full Hilbert space can generate rapid delocalization
+[78–82]. The evolution of the Pauli weight average is illustrated in Fig. 1.
+
+
+                                      C.   Pauli feature decoding
+
+  Following Eq. (4.2), we denote the set of Pauli features available at the readout by Fk = Rkj ϕj
+(k = 1, . . . , B), which emerge by linear transformations of the input features ϕj (j = 1, . . . , q ≤ d2 )
+                                                                                                         10
+
+
+
+
+                        (a)                                                    (b)
+
+Figure 2. Visualization of the operator spreading (4.12) via the effective PTM R [Eq. (4.1)] constructed
+in the temporal multiplexing scheme for the TFIM (a) and random unitary (b). The selected observable
+set S are all weight-1 Pauli operators of a n = 3 qubit system. With increasing evolution time (from
+top to bottom), these initial operators develop nonzero projection onto the full d2 -dimensional Pauli basis
+[Eq. (4.12)]. In the TFIM case, the supporting basis exhibits a sparse pattern, whereas it is dense for a
+random unitary.
+
+
+via the effective PTM R ∈ RB×q [Eq. (4.1)], possibly including temporal multiplexing. We now ask
+for conditions that enable the regressor to isolate a given input feature ϕr (x) by finding weights w
+such that (approximately)
+
+                                    w · F ∝ ϕr     ⇔      w⊤ R = ωe⊤
+                                                                   r ,                               (4.16)
+
+where ω is a free parameter and er is the r-th basis vector of Rq .
+  If R corresponds to the full unitary channel, then R = V (t) ∈ Rq×q is invertible and any feature
+can be decoded by
+
+                                  w = ωV (t)er .       (unitary channel)                             (4.17)
+
+If we select subsets of observables, then Eq. (4.16) can in general not be satisfied for arbitrary
+r since features get mixed under a quantum channel. The exact condition derived in Section B
+provides a Pauli feature decodability score:
+                                                    q
+                                                    X
+                               γr2 ≡ (R+ R)rr ,           γr2 = rank(R) ≤ q,                         (4.18)
+                                                    r=1
+
+and associated decoding weights
+                                                             ⊤
+                                           w = ω (R+ )r,:         ,                                  (4.19)
+
+in terms of the Moore–Penrose pseudoinverse R+ . These coincide with the minimum-norm least-
+                                                                             2                2
+squares solution. Exact decodability of the r-th feature is indicatedp by γr = 1. A value γ   r < 1
+                                                                                            2
+implies that the feature can only be reconstructed up to an error ∼ 1 − γr2 ∥ϕ∥2 . We take γr ≳ 0.5
+as a useful decodability threshold. Note that γr2 is a geometric notion and ignores statistical
+correlations or noise floor (see Section C for further discussion).
+                                                                                              n
+  Both score
+       2
+            Qnand weights
+                   2
+                                                                               P R: if R2 = ⊗i=1 Ri
+                            preserve tensor product structure of the general PTM
+                                   n                                     2
+then γr = i=1 γr,i and w = ⊗i=1 wi . For R = SV (t), one obtains γr = k∈S V (t)kr , showing
+                                                                                                          11
+
+
+
+
+                    (a)                             (b)                             (c)
+
+Figure 3. Projector R+ R of the effective PTM [Eq. (4.1)] for different unitary types and a complete weight-1
+Pauli observable set. Panels (a,b) directly correspond to the R shown in Fig. 2, which are constructed by
+temporal multiplexing. Panel (c) shows the projector based on R = V (t = 0.5) (no temporal multiplexing).
+The dashed white lines indicate features for which γj2 > 0.5, while the black lines indicate Pauli weight
+sector boundaries. Due to operator spreading over a time t = 0.5, decodability in (c) has significantly
+decreased.
+
+
+that feature r is decodable only to the extent that the “spread” of that Pauli under V (t) lands in
+the measured subset S.[83] Specifically, for Haar-random unitaries, late-time decodability decays
+exponentially with qubit number n [see Eq. (4.15)],
+
+                                            γr2 t→∞ ∼ |S|4−n .                                        (4.20)
+
+Noisy channels can have invertible PTMs [see Section D 2] and then do not strictly reduce the
+accessible feature subspace. If they are contracting, they effectively suppress high-weight Pauli
+features [see Eq. (D12)], but require large weight norms ∥w∥ which degrades conditioning. Such
+maps are unstable under finite sampling and thus effectively lead to information loss.
+   Operator spreading under temporal multiplexing is visualized in Fig. 2, where the effective PTM
+R is plotted for the case of a TFIM and a random unitary. The related projector matrices R+ R are
+shown in Fig. 3(a,b). Since we include here t = 0 in the multiplexing scheme, the first |S| = 9 rows
+of R have 1 on the diagonal (no spreading), leading to perfect decodability of the weight-1 Pauli
+sector. Without temporal multiplexing and nonzero initial time, perfect feature reconstruction is
+not possible, see Fig. 3(c).
+   The evolution with multiplexing steps L of the mean decodability γ̄r2 of each Pauli sector is
+further illustrated in Fig. 4. Since we now start with t = 1, the selected low-weight Paulis are
+already spread and initial decodability is low on average [84]. Structured Hamiltonians, like the
+TFIM [Eq. (2.5)], can have strong impact on the achievable decodability score depending on the
+variant or the specific observables used. Comparing Fig. 4(c) and (g), Pauli-Z’s evolving under the
+                 xx-z                                                             zz-x
+Hamiltonian HTFIM      render only weak scores compared to the Hamiltonian HTFIM       [85]. A more
+                                                                                                xx-z
+detailed analysis using the Jordan-Wigner/Majorana formalism [86, 87] shows that, under HTFIM        ,
+the Pauli strings generated from an initial Z are mainly consisting of Z-strings with X/Y endpoints,
+of which there are ∼ O(n2 ). By contrast, spreading under HTFIM zz-x
+                                                                     almost fully saturates the Pauli
+           n
+basis (O(4 ) strings, up to sub-exponential factors).
+   Random Hamiltonians, by contrast, typically populate the full Pauli basis. Under temporal
+multiplexing they thus consistently lead to a higher rank of R and a more even decodability over
+Pauli sectors for large L. In general, we find that temporal multiplexing with Pauli Z and ZZ
+observables and random unitaries requires L ∼ d2 /|S| measurements to achieve high decoding
+scores in all Pauli sectors, along with a saturated rank rank(R) ∼ |S|L ∼ d2 . In practice, however,
+                                                                                                        12
+
+
+
+
+            (a)                                        (b)
+
+
+
+
+            (c)                                        (d)
+
+
+
+
+             (e)                                       (f)
+
+
+
+
+                               (g)
+
+Figure 4. Feature decodability score γ̄j2 obtained from the effective PTM R [Eq. (4.18)], averaged over
+each Pauli weight sector, of a n = 3 qubit model as a function of temporal multiplexing iteration length
+L [Eq. (4.1)]. The unitary evolution time is given by tL = L (i.e., initial time t1 = 1). The corresponding
+rank and number of rows of R, representing the measurement budget (B = mL), are shown on the top
+axis (as a fraction of the total operator space dimension d2 = 64). We consider the TFIM (2.5a) in (a,c,e),
+the TFIM (2.5b) in (g), and random Hamiltonians in (b,d,f). The observable set S is either only Z-Paulis
+(a,b), Z- and ZZ-Paulis (c,d,g), or all weight-1 Paulis (e,f).
+
+
+
+this exponential measurement budget is rarely needed, since relevant features can be statistically
+decoded with much fewer measurements (see Figs. 6 and 7 below).
+   Summary. The decodability framework reinterprets the pseudo-inverse solution of the RC train-
+ing in terms of individually decodable features [54, 88–90]. The decodability score (4.18) is a data-
+independent property of the chosen measurement observables and quantum operations after the
+encoding. For moderate qubit numbers n, full Pauli feature decodability is guaranteed when one
+either performs a full measurement (m = d2 ) on an invertible quantum channel, or one employs
+a temporal multiplexing scheme leading to a full column rank of R, again requiring an exponen-
+tial measurement budget mL ∼ d2 . Practically sufficient decodability can already be achieved
+with modest scores and polynomial-in-n measurement budgets, as typically done in applications
+[1, 47, 67, 68]. Structured unitaries can be advantageous in the large-n limit to avoid exponential
+concentration issues [53].
+                                                                                                            13
+
+
+
+
+     (a)                                                 (b)
+
+Figure 5. Ideal nonlinear capacity score R2 (k) [Eq. (4.21)] for amplitude and rotational encodings [Eqs. (2.8)
+and (2.10)], indicating the ability of an ideal QELM f (u) = w⊤ ϕ(u) to generate degree-k monomials of the
+input uα (α = 1, . . . , D and n = D). Unless indicated, only Pauli-Z features are measured in (a). Nonlinear
+capacity is significantly enhanced when measuring over all Paulis (b). This is also demonstrated by the
+score for amplitude encoding with Pauli-X readout included in (a). The dash-dotted curve represents the
+theoretical score for R2Z (k) with amplitude encoding and n = 5 input qubits [Eq. (4.22)], which agrees
+exactly with the numerical results. Σ denotes the integrated capacity over all k.
+
+
+
+                              D.    Statistical decodability of input data
+
+
+   We focused above on the Pauli features ϕj , which are generated by the encoding and transform
+linearly under the action of the QELM. However, they are themselves nonlinear functions of the
+classical input u ∈ RD . For example, with amplitude encoding (2.8), a single Pauli-Z generates
+plinear readout ⟨Z⟩ ∝ 1u, a single
+a                                    Pauli-X can introduce significant nonlinearities since ⟨X⟩ =
+   1 − (2u − 1)2 = 1 − 2 (2u − 1)2 − 18 (2u − 1)4 + . . . (cf. Table I). It is therefore important to
+understand the actual nonlinearities in u present at the readout. This is a classical problem in
+reservoir computing, studied initially as memory capacity [90] and later generalized in terms of
+information processing capacity [47, 54, 55, 91]. We discuss this, as well as an alternative approach,
+next.
+
+
+
+
+                                      1.   Nonlinear degree at readout
+
+
+  In order to estimate the degree of nonlinearity in u available at the readout, one typically cal-
+culates the empirical correlation between the readout features F(u) [see Eq. (3.5)] and certain
+nonlinear target functions y(u). Raw monomials like {uj } are strongly correlated under typical
+distributions of u and thus do not allow for clear identification of the nonlinear degree within this
+statistical approach. Following [47, 54], we therefore use orthogonal polynomials pj (uα ) (degree j)
+                                                      QD                  PD
+to construct orthogonal degree-k targets as ye (u) = α=1 peα (uα ), with α=1 eα = k. Specifically,
+for amplitude encoding, we use (shifted) Legendre polynomials, which are orthonormal w.r.t. the
+uniform distribution [−1, 1] or [0, 1]; for angle encoding, we use Hermite polynomials, which are
+orthonormal w.r.t. the Gaussian distribution N (0, 1) [92].
+                                                                                                           14
+
+
+
+
+           (a)                                            (b)
+
+
+
+
+           (c)                                            (d)
+
+Figure 6. Nonlinear capacity score R2 (k) [Eq. (4.21)] as a function of the nonlinear order k and the temporal
+multiplexing iteration length L [Eq. (4.1)]. The unitary evolution time is given by tL = L. We consider
+a n = 3 qubit model in the same setup as in Fig. 4. The unitary is based on the TFIM (2.5a) (a,c) or
+a random Hamiltonian (b,d), while the observable set S consists of either only Z-Paulis (a,b) or Z- and
+ZZ-Paulis (c,d).
+
+
+  We take the coefficient of determination [54, 55]
+
+                              1 X 2                                     Eu (ye (u) − fˆ(u))2
+                   R2 (k) =      R [ye ],              R2 [ye ] = 1 −                        ,         (4.21)
+                              Nk                                            Varu ye (u)
+                                  |e|=k
+
+
+averaged over all Nk = D+k−1
+                                 
+                             k      degree-k monomials, to indicate whether the trained predictor
+fˆ(u) can generate nonlinearities of degree k in the (D = n)-dimensional input [93]. R2 generalizes
+the geometric score (4.18) by taking statistical correlations into account (see Section C). In the
+special case where the targets are whitened orthonormal features, one has R2 [yr ] = γr2 . In the case
+of amplitude encoding (2.8) with Pauli-Z readout, the number of representable degree-k targets is
+  D
+  k , giving an averaged score
+                                              (
+                                                  D   D+k−1
+                                                            
+                                                  k /            for k ≤ D,
+                                  R2Z (k) =             k                                              (4.22)
+                                              0                  for k > D
+
+which exponentially decreases with k.
+   In Fig. 5, we first display the nonlinear capacity that can be ideally achieved from the encoded
+state without effects of feature mixing, i.e., we take F = ϕ in (4.2). As shown in panel (a), a
+Pauli-X readout (black symbols with dotted curves) generates even degree monomials, behaving
+similarly to angle encoding with Pauli-Z observables (connected open symbols). In Fig. 5(b) we
+show the nonlinear capacity score R2 (k) obtained for a complete Pauli observable set. Notably, the
+presence of non-Z Paulis significantly enhances the nonlinearity present in the readout, as becomes
+clear by comparison to the dash-dotted curve corresponding to R2Z (k) for D = n = 5 [Eq. (4.22)].
+Moreover, angle and amplitude encodings show a similar behavior. We attribute the decay of R2 (k)
+with k mainly to fact that the product state encoding only generates square-free monomials of the
+Pauli features ϕj , while we test against (the practically relevant case of) all possible degree-k targets
+[94].
+   Figure 6 illustrates the nonlinear capacity score R2 (k) obtained for a QELM under temporal
+multiplexing of Pauli-Z/ZZ observables with the TFIM or random Hamiltonians. The score follows
+                                                                                                           15
+
+
+
+
+           (a)                                            (b)
+
+
+
+
+           (c)                                            (d)
+
+Figure 7. Relative nonlinear capacity score R2 (k)/(R2all (k) + δ) [Eq. (4.21)] as a function of the nonlinear
+order k and the temporal multiplexing iteration length L [Eq. (4.1)]. R2all is the nonlinear capacity score
+obtained for a complete Pauli observable set, and we choose δ = 0.1 as a cut-off since scores R2all ≲ 0.1 are
+not considered meaningful. We use the same setup as in Fig. 6. The unitary is based on the TFIM (2.5a)
+(a,c) or a random Hamiltonian (b,d), while the observable set S consists of either only Z-Paulis (a,b) or Z-
+and ZZ-Paulis (c,d).
+
+
+a similar pattern as the data-independent Pauli decodability γj2 (see Fig. 4) as they both show
+a delayed growth with increasing nonlinear order k and multiplexing step L. However, R2 (k)
+saturates faster than γj2 because the considered nonlinear target functions yk (u) can be generated
+already from relatively few Pauli features. The decrease of R2 (k) with k stems from two facts: (i)
+the encodings used here can generate only a small subset of all possible degree-k monomials (see
+Eq. (4.22) and Fig. 5). A clearer measure of the effectiveness of temporal multiplexing to generate
+nonlinearities is thus the score R2 (k) normalized by the score R2all (k) obtained when measuring
+over the complete Pauli observable set (see Fig. 7). (ii) Higher-order observables can be missing for
+highly structured Hamiltonians or insufficient multiplexing steps. Hamiltonians with a more global
+and random structure are thus beneficial when measurements are restricted to Pauli-Z observables
+but higher-order nonlinearities are desired.
+
+
+                                    2.   Nonlinear monomials at readout
+
+   Raw monomials in uα are often relevant features for practical applications,        such as autoregressive
+learning of dynamical systems. Let thus B(u) = {1, u1 , . . . , u1 u2 , . . . , α urα } be the vector of size
+                                                                               Q
+b = (r + 1)D of monomials of {uα }1≤α≤D up to degree r (per coordinate). The order-r Taylor
+expansion of the Pauli features {ϕj (u)}1≤j≤q within a small region around some operating point
+u0 (e.g., data mean) can then be written as ϕ(u) ≃ A(u0 )B(u − u0 ) with a coefficient matrix
+A(u0 ) ∈ Rq×b . As before, we can define a geometric decodability score
+                                                 b
+                                                 X
+                           κ2j ≡ (A+ A)jj ,            κ2j = rank(A) ≤ min(q, b),                      (4.23)
+                                                 j=1
+
+which measures how accurately a certain monomial b ∈ B can be constructed from linear combina-
+tions of ϕj . This score depends on the operating point u0 , but is independent of quantum properties
+of the reservoir, and ranges between 0 and 1 (no/exact construction possible). Intermediate values
+indicate that construction is possible only within an error ∼ (1 − κ2j )1/2 due to off-diagonal terms in
+                                                                                                                            16
+
+                       1.0                                                                                     Ampl.
+                                                                     Input decodability κ2j
+                       0.8                                                                                     Rot.
+
+                       0.6
+
+                       0.4
+
+                       0.2
+
+                       0.0
+
+
+
+
+                                      y2 z
+                                     xyz
+                                      x2 y
+
+                                    x y2 z
+                                    x2 y z
+                                      x3 y
+
+                                    x y3 z
+
+                                      x4 z
+
+
+                                  x 2 y3 z
+
+
+
+
+                                  x 3 y3 z
+
+
+
+                                  x 3 y4 z
+
+
+
+                                  x 4 y4 z
+                                         x2
+
+
+                                      y z3
+
+
+
+                                     y 2 z3
+                                      x z4
+                                  x 2 y z2
+                                     x 3 z2
+                                     y 3 z3
+                                  x y 2 z3
+                                     x 2 z4
+                                  x 3 y z2
+                                     x 4 z2
+                                     y 3 z4
+                                  x y 3 z3
+                                   2 2 3
+                                     x 3 z4
+                                  x 4 y z2
+                                     y 4 z4
+                                 x 2 y 2 z4
+                                  x 3 y z4
+                                 x 4 y 2 z2
+                                  x y 4 z4
+                                 x 3 y 2 z4
+                                  x 4 y z4
+                                 x 3 y 4 z3
+                                 x 4 y 4 z2
+                                 x 4 y 4 z3
+                                         y2
+
+
+
+
+                                         y4
+                                         1
+                                         x
+
+
+
+
+                                 x y z
+                    (a)
+                                 1   50           100    125             1     50           100       125
+                             1                              1        1                                   1
+                                          A+ A, ampl. enc.                          A+ A, rot. enc.
+                                                                                                                      1.0
+
+                                                                                                                      0.8
+
+                          50                                 50     50                                  50            0.6
+
+                                                                                                                      0.4
+
+                                                                                                                      0.2
+
+                          100                                100   100                                  100           0
+
+
+                          125                               125    125                                   125
+                    (b)          1   50           100    125             1     50           100       125
+
+
+Figure 8. Ability to construct monomials of the input {x, y, z} for amplitude encoding (2.8) and rotational
+encoding (2.10) with n = D = 3. (a) Decodability score κ2j according to Eq. (4.23). (b) Projector matrix
+A+ A, where nonzero off-diagonals correspond to κ2j < 1 and indicate decoding is possible only within a
+certain accuracy. The underlying Taylor expansion is performed up to order r = 4 in each uj = {x, y, z}
+and changes are mild upon further increasing r. The scores and matrices are averaged over a uniform grid
+of expansion points u0 ∈ [0.1, 0.9]3 for amplitude encoding (with some margin to the singular boundaries)
+and u0 ∈ [0, 1]3 for rotational encoding. For readability, monomial labels are incompletely displayed in (a)
+and replaced by column/row indices in (b).
+
+
+
+the j-th row/column of the projector A+ A. A somewhat artificial dependence of κ2j on the Taylor
+order r (owing to the rank constraint) can be mitigated by considering large r and b. Indeed, most
+of the κ2j decrease upon increasing r, except for a few stable ones. These include monomials that
+arise directly from the tensor product structure of the encoding state. For amplitude encoding
+(2.8) including all Z-strings, these are all square-free monomials up to order n (e.g., for n = D = 3:
+Bstable = {1, x, y, z, xy, xz, yz, xyz}).
+   The typical behavior of κ2j and of the projectors A+ A (averaged over a range of expansion points)
+is illustrated in Fig. 8. While the score typically decays with increasing nonlinear degree, rotational
+encoding tends to have a greater expressivity towards higher-order monomials. This is associated
+with less leakage into off-diagonal terms of A+ A [see Fig. 8(b)], and contributes to the robust
+performance often observed for rotational encoding.
+
+
+
+
+                                           E.     Summary and Discussion
+
+
+  It is useful to briefly discuss the injectivity property of the feature map [49], which ensures that
+distinct inputs map to distinct readouts. A standard condition for local injectivity of F(u) = Rϕ(u)
+                                                                                                   17
+
+[Eq. (4.2)] is a full-rank Jacobian:
+
+                                                               ∂ϕ(u)
+                          rank RJϕ (u) = D,         Jϕ (u) =         ∈ Rq×D .                  (4.24)
+                                                                ∂u
+For the considered product state encodings it is straightforward to check that ϕ(u) is injective
+on the respective domains in RD (possibly after removing one endpoint). Hence, local injectivity
+of F(u) is determined by whether R is injective on the tangent space range Jϕ (u), i.e. whether
+ker R ∩ im Jϕ (u) = {0}. In a generic setting, this condition is satisfied (at fixed u) if rank R ≥ D,
+which is the case for adequate measurement schemes and sufficiently scrambling dynamics.
+   Decodability of Pauli features can be understood as the underlying concept that determines the
+expressivity of a QELM with initial-state encoding and data-independent reservoir dynamics. High
+decodability scores are associated with high-rank effective PTMs R, which are achieved for random
+unitaries. Strongly mixing quantum channels can help expressivity and nonlinear processing in
+QELMs [14, 44, 50], and are thus often beneficial for training performance apart from concentration
+effects [53]. By contrast, QRCs with internal memory states often work best at a point where random
+matrix behavior just begins to dominate (“edge of chaos”) (see, e.g., [41, 95, 96]). An alternative
+to increasing randomness is to devise task-aligned reservoir structures and measurement schemes
+[2, 32, 43, 50, 97]. Knowing the connection between the readout and the encoding-generated features
+via the PTM framework can thus inform feature engineering strategies to enhance expressivity.
+
+
+             V.   INTERPRETABLE LEARNING OF DYNAMICAL SYSTEMS
+
+                             A.    Time series modeling with QELMs
+
+  The classical representation (4.2) allows us to identify the surrogate model a QELM learns during
+the training process. Specifically, for the product state encodings considered in Section II B, the
+function library ϕ : RD → Rq consists of q = 3n monomials of the single-Pauli features ϕk (recall
+that observables containing Pauli-Y factors have vanishing expectation values, see Table I). We
+consider the standard problem of learning to forecast a chaotic dynamical system by training on its
+sampled trajectory ut = u(t0 + t∆t) ∈ RD . The continuous and discrete evolutions are given by
+
+                        dynamical system:       u̇ = g(u),       ut+1 = ψg (ut ),                (5.1)
+
+where ψg (u) = u + ∆tg(u) + O(∆t2 ) is the flow map (propagator) that can be computed from the
+vector field g(u) ∈ RD via a Taylor/Lie series expansion:
+                                         ∞
+                                         X ∆tk
+              ψg (u) = exp(∆t Lg ) u =              (Lkg u),    (Lg f )(x) = g(x) · ∇f (x).      (5.2)
+                                               k!
+                                         k=0
+
+The non-integrable nature and fractal attractors of chaotic systems make them natural bench-
+marks for system identification, which addresses the question to which extent the underlying data-
+generating process can be uniquely discovered from the data [56, 98].
+   If the dynamics is Markovian, it can be modeled solely with a NG-RC or QELM based on an
+instantaneous feature map (see [32] for examples). Accordingly, we formulate the training problem
+of the QELM (4.2) as
+
+                               QELM:        ut+1 = f (ut ) = W ⊤ Rϕ(ut )                         (5.3)
+                                                                                                                    18
+
+and seek to learn an approximation to the flow map ψg via minimizing the least-squares loss
+(2.2) on the dataset {x = ut , y = ut+1 }P  t=1 . The generalization of (2.1) to multiple outputs is
+straightforward and involves training a separate predictor fr for each output dimension r via the
+weight matrix W = [w1 , . . . , wD ] ∈ RB×D .
+   We use the Lorenz-63 and Halvorsen models as benchmarks (D = 3 dimensions) [99]:
+                                                                     
+                                                                                              2
+                     ẋ = σ(y − x)
+                                                                     ẋ = −ax − 4y − 4z − y
+                                                                      
+           Lorenz-63: ẏ = x(ρ − z) − y                     Halvorsen: ẏ = −ay − 4z − 4x − z 2                   (5.4)
+                                                                     
+                      ż = xy − βz                                     ż = −az − 4x − 4y − x2
+                                                                     
+
+
+with parameters σ = 10, β = 8/3, ρ = 28 for Lorenz-63, and a = 1.4 for Halvorsen. This setup leads
+to chaotic behavior with largest Lyapunov exponents λLor63                 Halv
+                                                         max ≈ 0.89 and λmax ≈ 0.76, respectively.
+The polynomial form of the vector field in (5.4) then suggests to use amplitude encoding (2.8) with
+n = 3 qubits, leading to a library of the following 27 terms:
+                      n       q                   q                   q               q
+           n=3
+         ϕamp (u) =       1, 2 (1 − x)x, 2x − 1, 2 (1 − y)y, 2(2x − 1) −((y − 1)y), 4 (x − 1)x(y − 1)y, 2y − 1,
+                           q                                         q                  q
+                          2 −((x − 1)x)(2y − 1), (2x − 1)(2y − 1), 2 (1 − z)z, 2(2x − 1) −((z − 1)z),
+                                   q                               q               q
+                          2(2y − 1) −((z − 1)z), 2(2x − 1)(2y − 1) −((z − 1)z), 4 (x − 1)x(z − 1)z,
+                                   q                   q                            q
+                          4(2y − 1) (x − 1)x(z − 1)z, 4 (y − 1)y(z − 1)z, 4(2x − 1) (y − 1)y(z − 1)z,             (5.5)
+                           q                                       q
+                          8 −((x − 1)x(y − 1)y(z − 1)z), 2z − 1, 2 −((x − 1)x)(2z − 1), (2x − 1)(2z − 1),
+                           q                               q                               q
+                          2 −((y − 1)y)(2z − 1), 2(2x − 1) −((y − 1)y)(2z − 1), 4(2z − 1) (x − 1)x(y − 1)y,
+                                             q                                                      o
+                          (2y − 1)(2z − 1), 2 −((x − 1)x)(2y − 1)(2z − 1), (2x − 1)(2y − 1)(2z − 1)
+
+
+ We will also consider the amplitude encoding scheme (2.9), which has a similar polynomial struc-
+ture.
+  In order to confine the trajectory to the interval u ∈ [0, 1]3 or [−1, 1]3 , as required by the encoding,
+we apply the transformation u → u′ = α ⊙ (u − m) with α, m ∈ R3 to the state (we typically use
+the same α for all coordinates). This leads to the rescaled Lorenz-63 model:
+                                    αx
+                      u̇ = −σu + σ     v + σαx (my − mx ),
+                                    αy
+                                 αy              αy         αy
+                       v̇ = −v +    (ρ − mz )u −    mx w −       uw + αy mx (ρ − mz ) − αy my ,                   (5.6)
+                                 αx              αz        αx αz
+                                    αz        αz        αz
+                      ẇ = −βw +         uv +    my u +    mx v + αz (mx my − βmz ),
+                                  αx αy       αx        αy
+
+
+and the rescaled Halvorsen model:
+                               αx     αx     αx my    αx 2                           2
+                 u̇ = −au − 4     v−4    w−2       v − 2 v + αx (−amx − 4my − 4mz − my ),
+                               αy     αz      αy      αy
+                               αy     αy     αy mz     αy 2                           2
+                  v̇ = −av − 4    w−4    u−2       w − 2 w + αy (−amy − 4mz − 4mx − mz ),                         (5.7)
+                               αz     αx      αz       αz
+                               αz     αz     αz mx    αz 2                           2
+                 ẇ = −aw − 4     u−4    v−2       u − 2 u + αz (−amz − 4mx − 4my − mx ).
+                               αx     αy      αx      αx
+
+
+ This vector field-level transformation simplifies comparison between the learned coefficients and
+the true ones.
+                                                                                                          19
+
+
+
+
+Figure 9. QELM vs. its classical representation: The forecast obtained from a QELM [Eq. (2.1)] trained
+on the rescaled Lorenz-63 model is matched exactly by the forecast of its iterated classical (surrogate)
+representation [Eq. (4.2)]. Both eventually diverge from the true trajectory due to the Lyapunov instability.
+The QELM employs amplitude encoding (2.8) with n = 3 qubits. Ground-truth trajectories are generated
+with a resolution of ∆t = 0.01. Time is given in model time units. For the scaling transformation in
+Eq. (5.6), we use parameters ακ = 0.004 and m = [−30, −30, −5].
+
+
+                                         B.    Numerical results
+
+  We use here a complete measurement operator set of 4n Pauli observables. In this setup, the
+reservoir unitary becomes immaterial [see Eq. (4.6)]. We generate trajectories using a 5th-order
+Runge-Kutta integrator with a time step of ∆t = 0.01. Reported values of the training error and
+forecast horizon are averaged over multiple initial conditions. After training the QELM, we obtain
+a classical surrogate model f̂ (u) by inserting into Eq. (4.2) the learned weights ŵ.
+  The RMS training error
+                                                P
+                                             1 X                          1/2
+                                  ϵtrain =            ∥ut+1 − f̂ (ut )∥2                               (5.8)
+                                              P t=1
+
+measures one-step accuracy of the trained predictor f̂ . As a measure of multi-step prediction
+accuracy, the autonomously generated trajectory ût+1 = f̂ (ût ) is compared to the true trajectory
+via the forecast horizon
+
+                                   Tfch /∆t = inf {t : ∥ut − ût ∥ > σ} ,                              (5.9)
+             1
+               PP                     1
+                                        PP
+where ū = P t=1 ut and σ 2 = P t=1 ∥ū − ut ∥2 are the mean and variance of the trajectory,
+respectively. We average Tfch over multiple starting points u0 ∈ RD and express it in units of the
+Lyapunov time TL = 1/λmax .
+  Results of training a QELM in various setups are summarized in Table II. As exemplified for the
+rescaled Lorenz-63 model in Fig. 9, we find exact agreement between the autonomously generated
+prediction of the trained QELM and the iterated classical model. Both remain close to the true
+trajectory for a time Tfch /TL ≈ 6, when the intrinsic Lyapunov instability of the chaotic system
+                                                                                                          20
+
+             System    type QELM setup                             α     λ     ϵtrain Tfch /TL
+             Lorenz-63 std. ampl. enc. [0, 0.3], Eq. (2.8)         -     10−6 10−5 4.3 ± 1.7
+             Lorenz-63 resc. ampl. enc. [0, 1], Eq. (2.8)          0.005 10−8 10−6 6.2 ± 1.4
+             Halvorsen std. ampl. enc. [0.1, 0.8], Eq. (2.8)       -     10−8 10−4 2.3 ± 0.8
+             Halvorsen std. . . . + add squares to readout vector -      10−8 10−5 5.8 ± 1.7
+             Halvorsen resc. ampl. enc. [0, 1], Eq. (2.8)          0.027 10−7 10−4 3.4 ± 1.0
+             Halvorsen resc. . . . + add squares to readout vector 0.027 10−7 10−6 6.8 ± 1.7
+             Halvorsen std. ampl. enc. [−0.01, 0.01], Eq. (2.9) -        10−15 10−7 5.9 ± 1.2
+             Halvorsen resc. ampl. enc. [−1, 1], Eq. (2.9)         0.001 10−15 10−7 5.9 ± 1.5
+
+Table II. Training RMS errors ϵtrain [Eq. (5.8)] and forecast horizons Tfch [Eq. (5.9)] for the benchmark
+systems and (unitary-free) QELM setups discussed in the text. We generally use n = 3 input qubits (no
+delay states) and a time resolution of ∆t = 0.01. Tfch with its standard deviation (not error of the mean) is
+given in units of the Lyapunov time TL . The column ‘type’ indicates whether we use the standard [Eq. (5.4)]
+or rescaled dynamical system. In the latter case, α gives the rescaling factor in Eqs. (5.6) and (5.7) (same
+for all coordinates).
+
+
+
+
+leads to a divergence, triggered by errors in the initial condition, discretization, and extra terms in
+the surrogate model (see below) [100].
+
+   When repeating the experiments with the Halvorsen model (5.7), we obtain slightly lower forecast
+horizons of Tfch /TL ≈ 3 and RMS training errors of ϵtrain ≈ 10−4 . One reason for this reduced
+performance compared to the Lorenz-63 model lies in the absence of squares of the state variables
+{x, y, z} in the library (5.5). These are crucial for the Halvorsen equations (5.7), whereas the
+Lorenz-63 model (5.6) depends only on cross terms of the state variables. Indeed, when enhancing
+the readout vector by its squares, prediction accuracy for the Halvorsen model improves significantly
+(see Table II). Alternatively, a similar performance can also be achieved when using the amplitude
+encoding variant in (2.9), which already involves squares of the state variables. In the context of
+reservoir computing it is, of course, well known that prediction performance can be enhanced by
+feature engineering [68, 71, 101]. The present analysis exemplifies that, within the PTM framework,
+this optimization can be systematically phrased as an inverse problem, where the structure of the
+ground-truth model dictates the required terms in the encoding.
+
+  When employing temporal multiplexing, the rank of the readout matrix G [Eq. (4.5)] can serve
+as an indicator of the training accuracy, as illustrated in Fig. 10. This rank is upper bounded
+by the number of nonzero Pauli features q, which, for the encoding (2.9) used here, is q = 3n .
+When conditioning is controlled and exponential concentration effects are avoided [48, 53], achieving
+rank(G) ≃ q makes essentially all Pauli features available to the readout and can thus improve
+performance. Indeed, the QELM in Fig. 10(b) achieves training error and forecast horizon essentially
+identical to the ones reported in Table II obtained with a complete Pauli observable set. By contrast,
+Fig. 10(a) shows that performance remains poor when the readout utilizes only a few effective
+observables. In the present setting, this is a consequence of using a structured Hamiltonian like the
+TFIM [Eq. (2.5a)], which spreads observables less effectively over the full operator space, so that
+rank(G) ≃ rank(R) ≪ q [see Eq. (4.8) and Fig. 4]. This effect is most pronounced when using the
+                          xx-z
+specific TFIM variant HTFIM     [Eq. (2.5b)] with Z-type observables. Numerical experiments confirm
+the close relation (4.8) between the readout and PTM rank.
+                                                                                                          21
+
+                                          C.    Interpretability
+
+  When training a NG-RC with an instantaneous feature library on a Markovian dynamical system,
+the model learns an approximation of the flow map [71, 102–105]. Libraries ϕ of the form (5.5),
+however, do not render directly interpretable models due to the structural mismatch with the ground
+truth model [106]. In the present teacher-forcing setup, a way to render the model interpretable is
+thus to express the feature map ϕ in terms of a N -dimensional library B of functions that make
+up the flow map ψg [Eq. (5.1)],
+                                               ϕ(u) ≃ KB(u),                                          (5.10)
+and insert this into the learned model (4.2),
+
+                                   f̂ (u) = Ŵ ⊤ RKB(u) ≃ ψapprox (u).                                (5.11)
+This renders an approximation ψapprox to the flow map via Eq. (5.3), with a transformation matrix
+K ∈ Rq×N .
+   While there are several methods to determine K (such as collocation), we perform here a Taylor
+expansion of ϕ(u) around some operating point ū (data mean). This is natural here, since, for the
+considered polynomial dynamical systems,    we can take B = Br to be the set of monomials in uj up
+to order r, of which there are N = D+r  r   . Recall that low-order monomials are well constructible
+from the library ϕ [see Section IV D 2]. However, due to the tensor product structure of ϕ [see
+Eq. (3.11)] and the fact, that the derivatives of the single-qubit feature vector lie in a 2-dimensional
+space (vanishing Pauli-Y ), K typically has here not full column rank when N < q. A consequence of
+this is that only a rank(K)-dimensional subspace of the library B is accessible through the encoding
+features ϕ and that hence some monomials in B are not independently identifiable. Nevertheless,
+deviations are small for the settings considered here [107].
+
+
+
+
+                           (a)                                               (b)
+
+Figure 10. Prediction performance (forecast horizon and RMS training error) under temporal multiplexing
+of a QELM trained on the Halvorsen model (5.7). We use amplitude encoding (2.9) with n = 3 qubits, single-
+                                                            zz-x
+qubit Pauli-Z observables, and (a) the TFIM Hamiltonian HTFIM     [Eq. (2.5a)] or (b) a random Hamiltonian.
+The top horizontal axis shows the numerically obtained rank of the readout matrix G [Eq. (4.5)] relative to
+the maximum achievable rank q = 3n [Eq. (4.7)]. Forecast horizon is given in units of the Lyapunov time
+                                                                                xx-z
+TL ; no additional features are added to the readout. For the TFIM variant HTFIM      [Eq. (2.5b)], we obtain
+                                n                              −4
+a maximum rank of rank(G)/3 ≃ 0.22, RMSE ϵtrain ≃ 7 × 10 , and forecast horizon Tfch ≃ 0.
+                                                                                                                                                                                                                                   22
+
+                                                                                               Lorenz-63 (resc., ampl.-sqrt. enc.)
+
+                                            0                     8.35         0                16.43                     0     12.32     1.68                43.53
+                                x                 -8.36                               -3.12               -9.19                                    -19.46              -22.70    -175.80      -4.94       -5.53    -38.51
+
+
+
+
+                    Component
+                                                                                                                                                                                                                            300
+                                                                                                                                                                                                                            200
+                                                  27.24                     30.98     13.86     21.24                                                         50.47    152.00     189.90     102.70       48.54     41.88   100
+                                y   -3.52                     -1.71                                     -256.70      -5.79     -21.76   -7.12      -26.49
+                                                                                                                                                                                                                            0
+                                                                                                                                                                                                                            -100
+                                     3.97                                             40.83    177.40     76.66                           3.48      86.18              244.20     387.90                  49.85     82.16   -200
+                                z                -36.46      -25.17         -6.68                                   -10.64     -34.50                       -320.40                         -102.20
+                                                                                                                                                                                                                            -300
+
+
+
+
+                                                                                                                                                                                   z
+                                                                                      x2
+
+
+
+
+                                                                                                                                        z2
+
+
+
+
+                                                                                                                                                                       xy 2
+
+
+
+
+                                                                                                                                                                                              xz2
+
+
+
+
+                                                                                                                                                                                                                   yz2
+                                                                                                                    y2
+                                                                                                        xz
+
+
+
+
+                                                                                                                                                               z
+
+
+
+
+                                                                                                                                                                                                            z
+                                                                                                                              yz
+
+
+
+
+                                                                                                                                                     y
+                                                                                               xy
+                                    1
+
+
+
+
+                                                                         z
+                                                  x
+
+
+                                                             y
+
+
+
+
+                                                                                                                                                             x2
+
+
+
+
+                                                                                                                                                                                                          y2
+                                                                                                                                                                                 xy
+                                                                                                                                                   x2
+              (a)                                                                                                 Monomial feature
+
+
+
+
+              (b)
+                                                                                                Halvorsen (resc., ampl.-sq. enc.)
+
+                                        0                 15.64               27.15    37.19   33.61 -982.10 -31.85 -19.61 -48.84                    4.51 -109.10                                          38.16     1.87
+                                x               -2.34               -3.75                                                                 -9.22                       -7.41 -109.60     -7.82 -32.85
+                    Component
+
+
+
+
+                                                                                                                                                                                                                            750
+                                                                                                                                                                                                                            500
+                                        0                           15.64 -19.39       33.82 -31.63     27.26     37.14 -982.10     1.88 -109.80    38.10     4.81
+                                y               -3.75     -2.34                                                                                                       -7.00 -32.10 -48.84 -10.15 -109.00            -7.82   250
+                                                                                                                                                                                                                            0
+                                                                                                                                                                                                                            -250
+                                        0       15.64                                          37.31 -19.45       33.94   27.33                              38.07                         1.88 -110.50     4.83 -48.83
+                                                                                                                                                                                                                            -500
+                                z                         -3.75     -2.34 -982.10 -31.77                                           -7.82 -31.82 -109.50               -7.51     -9.19
+                                                                                                                                                                                                                            -750
+
+
+
+
+                                                                                                                                                                      z
+                                                                              x2
+
+
+
+
+                                                                                                                          z2
+
+                                                                                                                                   x3
+
+
+
+
+                                                                                                                                                            xy 2
+
+
+
+
+                                                                                                                                                                                xz2
+
+
+
+
+                                                                                                                                                                                                           yz2
+
+                                                                                                                                                                                                                    z3
+                                                                                                        y2
+
+
+
+
+                                                                                                                                                                                        y3
+                                                                                               xz
+
+
+
+
+                                                                                                                                                      z
+
+
+
+
+                                                                                                                                                                                                   z
+                                                                                                                  yz
+
+
+
+
+                                                                                                                                            y
+                                                                                      xy
+                                    1
+
+
+
+
+                                                                    z
+                                                x
+
+                                                        y
+
+
+
+
+                                                                                                                                                    x2
+
+
+
+
+                                                                                                                                                                                                 y2
+                                                                                                                                                                      xy
+                                                                                                                                          x2
+
+
+
+
+              (c)                                                                                                 Monomial feature
+
+
+
+
+            (d)
+
+Figure 11. Illustration of the flow map learned by a QELM, obtained from the Taylor-approximation
+approach Eq. (5.11). The QELM is trained on (a) the Lorenz-63 model (5.6) and (c) the Halvorsen model
+(5.7), using the amplitude encoding variants (2.8) and (2.9), respectively. The rescaling parameters are
+here m = [−30, −30, 5], ακ = 0.004 (Lorenz-63) and m = [−10, −10, −10], ακ = 0.001 (Halvorsen). The
+corresponding true flow maps ψg [Eq. (5.1)], expanded to third order in the state variables, are shown in
+(b,d) for comparison (terms identically zero are omitted).
+
+
+   Figure 11 shows the learned flow maps, resulting from Eq. (5.11) after training a QELM with
+amplitude encoding [Eqs. (2.8) and (2.9)] on the (rescaled) Lorenz-63 and Halvorsen models (no
+feature engineering in the readout). Comparison to the theoretical expectation [Eq. (5.2)] reveals
+good agreement especially for low-order coefficients. While deviations can be large for higher-order
+coefficients, their influence on the overall training error is still small, since they are multiplied by
+increasing powers of ∆t.
+   As illustrated in Fig. 12, also in the case of rotational encoding [Eq. (2.10)] the QELM forms
+linear combinations of the feature library ϕ(u) so that its Taylor expansion approximately matches
+the true flow map ψg [Eq. (5.2)]. Compared to amplitude encoding, rotational encoding renders a
+slightly more accurate flow map approximation and lower training error. We find that the lowest
+                                                                                                                                                                                                               23
+
+                                                                                             Lorenz-63 (resc., rot. enc.)
+
+                                         0            9.49       0            0.35 -22.32                         0 -149.40   86.24       0                   33.60 -15.61     0.26 -11.85         0
+                                 x           -9.15                   -0.72                   -0.11   -0.94                                    -2.37   -1.16
+                                                                                                                                                                                                       1000
+
+
+
+
+                     Component
+                                                                                                                                                                                                       500
+                                         0    7.79                                                                0 -12.81-1095.00     3.22 121.30                             1.00            1.62
+                                 y                   -0.58   -0.99   -2.26   -3.89 -466.80   -0.75 -25.79                                             -1.66   -0.19 -163.50           -7.01
+                                                                                                                                                                                                       0
+
+                                                                                                                                                                                                       -500
+                                              1.01    1.02           35.60 436.20            37.86                                                    20.15
+                                 z   -0.10                   -2.64                   -2.52           -0.79   -4.65   -1.67    -7.39 -644.20   -4.10           -2.39   -1.68 -208.50   -1.42 -160.10
+
+                                                                                                                                                                                                       -1000
+
+
+
+
+                                                                                                                                                       z
+                                                                     x2
+
+
+
+
+                                                                                                             z2
+
+                                                                                                                      x3
+
+
+
+
+                                                                                                                                              xy 2
+
+
+
+
+                                                                                                                                                              xz2
+
+
+
+
+                                                                                                                                                                                      yz2
+
+                                                                                                                                                                                              z3
+                                                                                             y2
+
+
+
+
+                                                                                                                                                                      y3
+                                                                                     xz
+
+
+
+
+                                                                                                                                        z
+
+
+
+
+                                                                                                                                                                                z
+                                                                                                     yz
+
+
+
+
+                                                                                                                                y
+                                                                             xy
+                                     1
+
+
+
+
+                                                             z
+                                             x
+
+                                                     y
+
+
+
+
+                                                                                                                                      x2
+
+
+
+
+                                                                                                                                                                              y2
+                                                                                                                                                      xy
+                                                                                                                              x2
+               (a)                                                                                   Monomial feature
+
+
+
+
+               (b)
+                                                                                             Halvorsen (resc., rot. enc.)
+
+                                     0.04             1.86            8.39   19.54                                            85.57 -227.90 -56.70    29.61 -182.00   -3.06 -28.31 2441.00     6.45
+                                 x           -1.44           -3.92                   -2.92 -489.20   -9.67   -6.27 -162.10
+                     Component
+
+
+
+
+                                                                                                                                                                                                       2000
+
+                                                                                                                                                                                                       1000
+                                     0.04                     1.86                            8.79   19.08 -489.90    6.46 -64.60 2331.00 -87.81      21.83 -120.60 -162.10   45.19 -85.20
+                                 y           -3.92   -1.44           -5.98   -1.55 -10.56                                                                                                     -3.06
+                                                                                                                                                                                                       0
+
+                                                                                                                                                                                                       -1000
+                                     0.04     1.86                                   17.99                    8.07            31.62 -214.20 2480.00   55.84 -41.98     6.46 -67.16 -100.20 -162.10
+                                 z                   -3.92   -1.44 -489.70   -9.11           -5.46   -1.90           -3.05
+                                                                                                                                                                                                       -2000
+
+
+
+
+                                                                                                                                                      z
+                                                                     x2
+
+
+
+
+                                                                                                             z2
+
+                                                                                                                     x3
+
+
+
+
+                                                                                                                                              xy 2
+
+
+
+
+                                                                                                                                                              xz2
+
+
+
+
+                                                                                                                                                                                      yz2
+
+                                                                                                                                                                                              z3
+                                                                                             y2
+
+
+
+
+                                                                                                                                                                      y3
+                                                                                     xz
+
+
+
+
+                                                                                                                                        z
+
+
+
+
+                                                                                                                                                                                z
+                                                                                                     yz
+
+
+
+
+                                                                                                                                y
+                                                                             xy
+                                     1
+
+
+
+
+                                                             z
+                                             x
+
+                                                     y
+
+
+
+
+                                                                                                                                      x2
+
+
+
+
+                                                                                                                                                                              y2
+                                                                                                                                                      xy
+                                                                                                                              x2
+
+
+
+
+               (c)                                                                                   Monomial feature
+
+
+
+
+             (d)
+
+Figure 12. Illustration of the flow map learned by a QELM, obtained from the Taylor-approximation
+approach Eq. (5.11). The QELM uses rotational encoding [Eq. (2.10)] and is trained on (a) the Lorenz-63
+model (5.6) and (c) the Halvorsen model (5.7). The rescaling parameters are here m = [1, 1, 20], ακ =
+0.002 (Lorenz-63) and m = [−3, −3, −3], ακ = 0.002 (Halvorsen). The corresponding true flow maps ψg
+[Eq. (5.1)], expanded to third order in the state variables, are shown in (b,d) for comparison. The coefficients
+differ from Fig. 11 due to the different expansion points.
+
+
+training error is achieved when scaling the training trajectories u(t) to an interval ∼ 10−2 around
+their mean.
+
+
+                                                                                          VI.                SUMMARY
+
+  We have employed the Pauli transfer matrix (PTM) formalism to describe a memoryless quantum
+reservoir computer (quantum extreme learning machine, QELM) with initial-state encoding and
+data-independent reservoir dynamics. Writing states and channels in the Pauli basis (or any other
+orthogonal operator basis) turns the QELM into a sequence of real linear maps TEj acting on the
+                                                                                                       24
+
+
+
+
+                 (a)                              (b)                               (c)
+
+Figure 13. Pauli weight average (a) of Heisenberg-evolved measurement observables can predict the training
+error (b) and forecast horizon (c) of a QELM. We use a TFIM Hamiltonian (varying coupling parameters
+J, h, fixed t = 6) with n = 3 qubits and amplitude encoding (2.8) (no temporal multiplexing). The Pauli
+weight average is data-independent, while the QELM in (b,c) is trained on the Lorenz-63 model and employs
+1-qubit Pauli-Z observables in the readout, enhanced by monomials up to degree 2 to increase sensitivity
+to nonlinear terms.
+
+
+vector of Pauli features ϕ(u) representing the encoded state ρenc (u). These features carry the full
+dependence of the QELM on the encoded input u and determine the nonlinearities that the model
+can possibly express. Unitaries appear as orthogonal rotations on the traceless sector of ϕ(u),
+while general CPTP maps act affinely. Training a QELM reduces to classical linear regression over
+the components ϕk (u) and can be framed as a decoding problem of features mixed by quantum
+channels.
+   While the PTM formalism has been previously been applied to QRCs [28, 36, 46, 49], we focused
+here on its implications for time-series prediction and system identification with QELMs. First,
+this approach allows one to cast optimization of a QELM as an inverse problem: knowing the
+target features can point to an ideal encoding scheme as well as to constraints on the decodability
+paths. This goes beyond universal approximation theorems [6, 26–30] and allows one to gain more
+control over the training performance. Second, we have determined a classical and interpretable
+representation of the QELM in terms of a nonlinear vector (auto-)regression model (or “next-
+generation” RC [71]). The question of classical representations of QML models has been explored
+in numerous works [50, 108–110]. These insights can help to construct reduced-order models in
+cases where the exact data-generating process is unknown and address the problem of black-box
+system identification [98, 111]. Examining temporal multiplexing and operator spreading within the
+PTM framework demonstrated that greater reservoir randomness is advantageous under restricted
+measurement schemes. Using the Pauli basis is justified by the measurement process, but not the
+only possibility. For future work, it could thus be interesting to study other orthogonal operator
+sets and assess the generality of the present findings.
+   Numerous previous studies noted that simply enhancing the quantum nature of a QML model
+often does not improve its performance on practical datasets [112–118]. The present study adds
+further explanations of this finding: first, a reservoir unitary mixes features and reversing this poten-
+tially detrimental effect requires complex measurement schemes (i.e., high-order Pauli observables,
+optimized pre-measurement unitaries, or temporal multiplexing schemes). We can demonstrate this
+mechanism directly by comparing the Pauli weight average of single-qubit observables to its train-
+ing accuracy. As illustrated in Fig. 13, for such a minimal QELM without temporal multiplexing,
+large Pauli weight average strongly correlates with high training error and short forecast horizon
+                                                                                                       25
+
+on a time-series task. In conventional QML models, instead, feature mixing must be controlled by
+training of variational gates.
+   Second, learning of the flow map of a dynamical system benefits from a structurally aligned feature
+library [102, 105]. If the encoding scheme does not provide this, the resulting surrogate model can
+exhibit significant errors (cf. Fig. 11). In the case of chaotic systems, such errors are magnified
+by the Lyapunov instability and yield short forecast horizons Tfch [119]. Beside optimizing the
+measurement process [32, 45] and carefully structuring the Hamiltonian [43, 50, 97], the present work
+thus points to the encoding as a central turning knob for performance of QELMs and, more generally,
+QML models (see, e.g., [120, 121] for further insights along this line). How this surrogate-model
+argument gets modified when training on datasets with unknown ground truths is an interesting
+avenue for future work [122].
+   The 4n -dimensional space of Pauli features [123] can be compared to the exponential frequency
+content of QML models that employ gate-based rotational encoding [51, 52, 124]. These and similar
+properties stemming from the exponential Hilbert space dimensionality point to possible quantum
+advantages, but require specific measurement strategies. Moreover, simply increasing qubit number
+n does not generally improve QRC performance, as ill-conditioning and exponential concentration
+effects can become prevalent [12, 48, 50, 53]. In that regime, more sophisticated reservoir design
+strategies will be required to steer feature propagation through the quantum layers.
+
+
+                                   Appendix A: Kernel representation
+
+                                                                              2
+  Training over a complete basis of measurement operators {Mk }dk=1 results in a quantum kernel
+form of the QELM [32]:
+                          P
+                          X
+                                αj∗ K(x, xj ) = tr(M ∗ ρ(x)),        K(x, x′ ) = tr ρ(x)ρ(x′ )
+                                                                                                 
+                f (x) =                                                                              (A1)
+                          j=1
+
+For the least-squares loss, the optimal parameters have the explicit representation α∗ = (K +
+λ1)−1 y, with the Gram matrix Kij = K(xi , xj ) and the sample vector y ∈ RP . If the reservoir
+consists only of a data-independent unitary, it drops out from Eq. (A1),
+                       K(x, x′ ) = tr ρenc (x)ρenc (x′ ) ,
+                                                        
+                                                           (unitary reservoir)            (A2)
+showing that such a QELM only depends on the encoding state ρenc (x). An optimal measurement
+operator can be identified from Eq. (A1) as
+                                                     P
+                                                     X
+                                              M∗ =         αj∗ ρ(xj ).                               (A3)
+                                                     j=1
+
+Compared to the equivalent primal formulation [Eq. (2.1)], this representation is computationally
+more efficient when P ≪ d2 .
+
+
+             Appendix B: Exact feature isolation criterion: null-space condition
+
+  Equation (4.16) is equivalent to requiring w⊤ R = ωe⊤                                   ⊤
+                                                      r with some scalar weight ω, i.e., er ∈ R
+                                                                                               q
+                                                    m×q
+belongs to the row-space of the effective PTM R ∈ R     . This, in turn, is equivalent to
+                                 er ⊥ null(R),       (r-th feature isolatable)                       (B1)
+                                                                                                           26
+
+                      Symbol Meaning
+                      H      Hilbert space
+                      M(H) Space of Hermitian operators on H
+                      n      Number of qubits
+                      d      Hilbert space dimension (d = 2n )
+                      D      Input data dimension
+                      P      Number of training samples
+                      m      Number of measurement operators
+                      L      Number of temporal multiplexing steps
+                      B      Total number of measurements (e.g., B = mL)
+                      q      Number of nonzero Pauli features (q ≤ d2 )
+                      x, u   Input data (x, u ∈ RD )
+                      y      Target value (y ∈ R)
+                      ρ(x)   Density matrix of the quantum state (feature map)
+                      Mk     Measurement operators
+                      Pk     n-qubit Pauli operators (k = 0, . . . , d2 − 1)
+                      σj     single-site Pauli matrices (I, X, Y , Z)
+                      U      Unitary evolution operator
+                                                                           2 2
+                      TE     Pauli transfer matrix (channel E, TE ∈ Rd ×d )
+                      V      Unitary PTM (V ∈ SO(d2 ))
+                                                                               2
+                      R      Effective PTM (temporal multiplexing) (R ∈ RB×d )
+                      S      Selected observable set (|S| = m)
+                      S      Selector matrix corresponding to S
+                                                              2
+                      ϕ(x) Pauli feature vector (ϕ(x) ∈ Rd )
+                      F(x)   Readout feature vector (F(x) = Rϕ(x))
+                      w      Readout weights (w ∈ RB )
+                      λ      Regularization parameter
+                      f (x)  QELM output function (f (x) = w⊤ F(x))
+                      ν      Pauli weight
+                      γ      Noise parameter
+
+  Table III. Summary of notation used in this work. A trained quantity is indicated by a hat (e.g., ŵ).
+
+
+i.e., the r-th component of every (basis) vector of null(R) must be zero. If Eq. (B1) is met, the
+solution for w is provided by the pseudoinverse R+ via
+                                             w⊤ = ωe⊤
+                                                    r R
+                                                        +
+                                                                                                     (B2)
+up to a term ∝ h(1m − RR+ ) with an arbitrary vector h ∈ R1×m accounting for the non-uniqueness
+of the solution if R does not have full row rank. Without this term, Eq. (B2) represents the
+minimum-norm solution.
+  Consider the case where R ∈ Rm×q is dense and quasi-random, arising, e.g., for a Haar-random
+unitary U . For m < q, the null space is necessarily nonzero and in random orientation. Accordingly,
+the probability that the same component vanishes for all vectors of null(R) is essentially zero, such
+that no features are isolatable. Once m ≥ q, R has full column rank, hence null(R) = 0 and the
+                                                                                                             27
+
+
+
+
+                                 (a)                                      (b)
+
+Figure 14. Null-space criterion (B1): Number of isolatable features as a function of the number of observ-
+ables (=rows of the PTM) m, for (a) the TFIM at various evolution times t and (b) a random unitary, for
+n = 4 qubits (d2 = 256). Panel (a) shows the total number of isolatable features, while panel (b) shows the
+number of isolatable 1-qubit features. In contrast to statistical decodability (cf. Section C), isolatability is
+an exact geometric criterion independent of the data.
+
+
+null-space condition in Eq. (B1) is trivially fulfilled, implying that all q features become instantly
+isolatable for a random R. In this case one may define W = R+ = (R⊤ R)−1 R⊤ and assign
+w⊤ = e⊤ r W.
+   For a Clifford unitary, which maps between elements of the Pauli group, row(R) simply consists
+of a subset of signed standard basis vectors, hence rank(R) features are isolatable even if R is
+wide. For unitaries based on structured Hamiltonians or at small evolution times, one may expect
+Eq. (B1) to be fulfilled for a certain set of features, provided m is sufficiently large (but can still
+be m ≪ q). This is confirmed numerically in Fig. 14, where the behavior of the feature isolation
+criterion (B1) is illustrated for various unitaries as a function of the number of observables m (rows
+of R).
+
+
+                Appendix C: Decodability scores and coefficient of determination
+
+   The decodability score γr2 [Eq. (4.18)] tells to which extent a feature can be geometrically recon-
+structed from the readout. It disregards statistical correlations and effects of noise, i.e., features
+with small singular values in the effective PTM R could be considered decodable, although it would
+lead to huge weight norms. A straightforward way to limit noise amplification is to replace the
+pseudoinverse by its Tikhonov regularized form
+                                                      s
+                                                                      σi2
+                                  (R R + λ1) R R rr =
+                                  ⊤                  X
+                                            −1 ⊤
+             2
+                 = (Rλ+ R)rr =                                            v2 ,        2
+                                                                                            → γr2
+                                                 
+            γr,λ                                                                     γr,λ→0               (C1)
+                                                                   σ + λ ri
+                                                                    2
+                                                                i=1 i
+
+where σi=1,...,s are the singular values of R and vi the right-singular vectors. Directions with σi2 ≪ λ
+                       2
+contribute little to γr,λ  and are thus considered undecodable.
+  To account for data correlations within a refined R2 -score, consider the regression solution in
+Section IV A, assume all quantities are centered, and define the target alignment vector
+                                         bk := E[ϕ(u)yk (u)] ∈ Rq .                                       (C2)
+Using Eq. (4.3), the mean-squared error satisfies
+                             Eu (yk − f )2 = Varu (yk ) − (Rbk )⊤ ŵ.
+                                         
+                                                                                                          (C3)
+                                                                                                      28
+
+Plugging this into the definition in Eq. (4.21) gives the expression for the coefficient of determination
+(in the unregularized case λ = 0)
+
+                                                b⊤  ⊤      ⊤ +
+                                                 k R (RCR ) Rbk
+                                   R2 [yk ] =                   ,                                   (C4)
+                                                      Var(yk )
+
+where C = E[ϕϕ⊤ ] is the feature covariance matrix. All quantities herein are to be averaged over
+the input distribution of u.
+  In the special where the targets are the Pauli features, yr (u) = ϕr (u), and under the additional
+assumption of orthonormality (whitened features),
+
+                       E[yr yr′ ] = δrr′ =⇒ C = 1q ,     br = er ,     Var(yr ) = 1,                (C5)
+
+the coefficient of determination R2 [yr ] in Eq. (C4) reduces to the decodability score
+
+                          R2 [yr ] = b⊤  ⊤   ⊤ +       ⊤   +        2
+                                      r R (RR ) Rbr = er (R R)er = γr .                             (C6)
+
+  In the generic non-orthogonal case, this simple relation breaks down and R2 depends also on the
+covariance C and target-feature alignment. Then, R2 measures the extent to which the target lies
+in the decodable subspace. As a consequence, it is then possible to have γr2 = 0 (feature direction
+not present in row-space of R), yet still R2 [yr ] > 0 if ϕr is statistically correlated with other ϕj
+that are present. Hence, R2 in Eq. (C4) generally measures predictability from correlations and
+not just isolatability of a feature.
+
+
+                Appendix D: Pauli-Transfer Matrix Formalism: Further Details
+
+  We provide here some further details on the Pauli-Transfer Matrix (PTM) formalism for QELMs
+[28, 36, 49], including some geometrical intuitions [125] and discussion of noisy channels.
+  When ordering the basis with identity first, we have ϕ = (ϕ0 , s), where ϕ0 = tr(ρ) = 1 and
+       2
+s ∈ Rd −1 is the traceless (Bloch) part. A maximally mixed state has s = 0, i.e., is in the center of
+the generalized Bloch sphere. √By contrast, a pure state (tr(ρ2 ) = 1) has |s|2 = d − 1 and thus lies
+on the hypersphere of radius d − 1 (although not all points on it are valid quantum states).
+
+
+                                        1.   Unitary channels
+
+  For a unitary channel U(ρ) = U ρU † , one has
+                                                  1
+                                                    tr Pα U Pβ U † ,
+                                                                  
+                                      TU,αβ =                                                       (D1)
+                                                 2n
+Trace preservation and unitality imply the form
+                                                            !
+                                                     1 0⊤
+                                             TU =               ,                                   (D2)
+                                                     0 ΩU
+
+i.e., the traceless coefficients undergo a real orthogonal rotation with ΩU ∈ SO(d2 − 1). For Clifford
+unitaries, TU is a signed permutation of Pauli strings.
+                                                                                                                        29
+                                                        Pn     (j)
+  Consider a separable reservoir Hamiltonian HR =         j=1 hR , such that the reservoir unitary
+                       Nn
+factorizes as U (t) =     j=1 Uj (t). Such a structure emerges, e.g., for a TFIM with h/J → ∞
+[Eq. (2.5)]. This implies a Kronecker-product structure of the unitary PTM (D1) (and similarly for
+any other product quantum channel),
+
+                                                 TU (t) = V (1) (t) ⊗ · · · ⊗ V (n) (t),                              (D3)
+
+where each V (j) (t) ∈ SO(4) acts on the single-qubit feature vector ϕ(j) . Consequently, the evolved
+features remain factorized:
+
+                ϕ′ (x) = TU (t)ϕ(x) = V (1) (t)ϕ(1) (x1 ) ⊗ · · · ⊗ V (n) (t)ϕ(n) (xn ) .
+                                                                                      
+                                                                                                (D4)
+
+Thus, each Pauli-string feature ϕa1 ...an evolves only by local mixing among the single-qubit labels
+aj ∈ {0, x, y, z}, without coupling different qubits and without operator spreading.
+  Each local unitary Uk (t) = e−ithk rotates the local Pauli components, so Y -strings can become
+nonzero only through this local mixing. More explicitly, writing the local Pauli feature vector as
+  (k)           (k)   (k)   (k)
+ϕ̃      ≡ (ϕx , ϕy , ϕz )⊤ , any single-qubit unitary induces a SO(3) rotation
+                                   ′                                                ′
+                                       (k)                         (k)                  (k)      (k)
+                                  ϕ̃         (uk ) = R(k) (t) ϕ̃         (uk ),    ϕ0         = ϕ0 = 1,               (D5)
+       ′
+         (k)             (k)    (k)
+i.e., ϕa = b∈{x,y,z} Rab (t) ϕb , with R(k) the adjoint representation of Uk (t) on the Pauli vector.
+             P
+
+For example, for a local Z-field hk = Z,
+
+         Uk (t)† XUk (t) = cos(2t) X − sin(2t) Y,                         Uk (t)† Y Uk (t) = cos(2t) Y + sin(2t) X,   (D6)
+            ′
+                (k)                      (k)
+so that ϕy (uk ) = sin(2t) ϕx (uk ) and, correspondingly, ϕ′...yk ... (x) = sin(2t) ϕ...xk ... (x), while Z-
+features remain invariant. This shows how unitaries act to make specific features accessible to the
+readout when the latter uses a restricted set of observables.
+
+
+                      2.    General quantum channels: affine action on the Bloch part
+
+  Consider a channel E that is completely positive and trace-preserving (CPTP) and has associated
+Kraus operators {Kℓ }. Then
+                                                             1 X
+                                                                 tr Pα Kℓ Pβ Kℓ† ,
+                                                                                
+                                                  TE,αβ =     n
+                                                                                                                      (D7)
+                                                            2
+                                                                    ℓ
+
+which corresponds in block form (compatible with ϕ = (1, s)) to
+                                            !
+                                      1 0⊤
+                                TE =          ,    s′ = t + Ωs,                                                       (D8)
+                                      t Ω
+
+where t = 0 for unital channels. For a single qubit, Ω is a contracting map (singular values ≤ 1).
+Such a map can improve numerical robustness by damping high-weight Pauli components that are
+often noise sensitive. Non-unitality produces a translation t of the Bloch part, e.g., a maximally
+mixed state would be shifted away from the center of the Bloch sphere.
+  Consider the following single-qubit PTMs for non-unitary noise channels [126–128]:
+                                                                                                        30
+
+   • Isotropic depolarization Dλ (ρ) = λρ + (1 − λ)I/2:
+                                          Tdep (λ) = diag(1, λ, λ, λ).                         (D9)
+                                                                        (n)                      
+     For a global isotropic depolarizing channel on dimension d = 2n , Tdep (λ) = diag 1, λId2 −1 .
+   • Z-dephasing with probability p:
+                                    TdephZ (p) = diag(1, 1 − 2p, 1 − 2p, 1).                        (D10)
+
+   • Amplitude damping with parameter γ ∈ [0, 1] and polarization z∗ ∈ [−1, 1] (with z∗ = 1
+     corresponding to the zero-temperature fixed point |0⟩⟨0|):
+                                                                   
+                                          1      0        0      0
+                                              √
+                                         0     1−γ       0      0 
+                                                                   
+                              TAD (γ) =               √            .                (D11)
+                                         0      0       1−γ     0 
+                                         z∗ γ    0        0     1−γ
+
+                                                                           Nn
+Modeling n-qubit noise as tensor products of single-qubit channels E (n) = i=1 E (i) is often used as
+a baseline in QRC models [19, 22, 49, 129]. Since the PTMs (D9) and (D10) are Pauli-diagonal, they
+do not lead to Pauli spreading and hence do not enlarge the accessible feature subspace. Amplitude
+damping [Section D 2] produces Pauli-I/Z-mixing, which causes operator weight decay.
+   A particularly transparent characterization emerges if the noise channel is approximately diag-
+onal. For instance, for the n-qubit depolarizing channel D(n) = ⊗ni=1 Dλ [see Eq. (D9)], any Pauli
+string P of weight ν(P ) is an eigenoperator with
+
+                                           D(n) (P ) = λν(P ) P.                                    (D12)
+Accordingly, high-weight Pauli strings are exponentially suppressed by near-diagonal noise channels.
+In conjunction with unitary-induced operator spreading, this can increase information loss under
+finite sampling. On the other hand, amplitude damping noise is often observed to improve QRC
+performance as the associated superoperator spreads the state’s probability weight into more Pauli
+directions, thereby enriching the feature map [19]. This has been related to the ‘coherence influx’
+present for amplitude damping but not depolarization [46].
+
+
+
+
+  [1] K. Fujii and K. Nakajima, Harnessing Disordered-Ensemble Quantum Dynamics for Machine Learn-
+      ing, Phys. Rev. Applied 8, 024030 (2017).
+  [2] A. Sakurai, M. P. Estarellas, W. J. Munro, and K. Nemoto, Quantum Extreme Reservoir Computation
+      Utilizing Scale-Free Networks, Phys. Rev. Applied 17, 064044 (2022).
+  [3] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz, P. Weinberg, M. Hamdan, A. Zhdanov, S. H. Cantu,
+      H. Zhou, R. A. Bravo, K. Bagnall, J. I. Basham, J. Campo, A. Choukri, R. DeAngelo, P. Frederick,
+      D. Haines, J. Hammett, N. Hsu, M.-G. Hu, F. Huber, P. N. Jepsen, N. Jia, T. Karolyshyn, M. Kwon,
+      J. Long, J. Lopatin, A. Lukin, T. Macrı̀, O. Marković, L. A. Martı́nez-Martı́nez, X. Meng, E. Os-
+      troumov, D. Paquette, J. Robinson, P. S. Rodriguez, A. Singh, N. Sinha, H. Thoreen, N. Wan,
+      D. Waxman-Lenz, T. Wong, K.-H. Wu, P. L. S. Lopes, Y. Boger, N. Gemelke, T. Kitagawa,
+      A. Keesling, X. Gao, A. Bylinskii, S. F. Yelin, F. Liu, and S.-T. Wang, Large-scale quantum reservoir
+      learning with an analog quantum computer (2024), arXiv:2407.02553 [quant-ph].
+                                                                                                        31
+
+ [4] A. Sakurai, A. Hayashi, W. J. Munro, and K. Nemoto, Simple Hamiltonian dynamics is a powerful
+     quantum processing resource (2025), arXiv:2405.14245 [quant-ph].
+ [5] A. D. Lorenzis, M. P. Casado, M. P. Estarellas, N. L. Gullo, T. Lux, F. Plastina, A. Riera, and
+     J. Settino, Harnessing Quantum Extreme Learning Machines for image classification, Phys. Rev.
+     Applied 23, 044024 (2025), arXiv:2409.00998 [quant-ph].
+ [6] J. Chen, H. I. Nurdin, and N. Yamamoto, Temporal Information Processing on Noisy Quantum
+     Computers, Phys. Rev. Applied 14, 024065 (2020).
+ [7] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yasuoka, and N. Yamamoto, Natural quantum reservoir com-
+     puting for temporal information processing, Scientific Reports 12, 1353 (2022).
+ [8] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano, and R. Zambrini, Time Series Quantum
+     Reservoir Computing with Weak and Projective Measurements, npj Quantum Information 9, 16
+     (2023), arXiv:2205.06809 [quant-ph].
+ [9] O. Ahmed, F. Tennie, and L. Magri, Prediction of chaotic dynamics and extreme events: A recurrence-
+     free quantum reservoir computing approach (2024), arXiv:2405.03390 [quant-ph].
+[10] O. Ahmed, F. Tennie, and L. Magri, Optimal training of finitely-sampled quantum reservoir computers
+     for forecasting of chaotic dynamics (2024), arXiv:2409.01394 [quant-ph].
+[11] P. Pfeffer, F. Heyder, and J. Schumacher, Hybrid quantum-classical reservoir computing of thermal
+     convection flow, Phys. Rev. Research 4, 033176 (2022), arXiv:2204.13951 [quant-ph].
+[12] P. Pfeffer, F. Heyder, and J. Schumacher, Reduced-order modeling of two-dimensional turbulent
+     Rayleigh-Bénard flow by hybrid quantum-classical reservoir computing, Phys. Rev. Research 5, 043242
+     (2023), arXiv:2307.03053 [physics].
+[13] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo, V. Cimini, T. Giordani, I. Palmisano, E. Polino,
+     N. Spagnolo, F. Sciarrino, G. M. Palma, A. Ferraro, and M. Paternostro, Experimental Property
+     Reconstruction in a Photonic Quantum Extreme Learning Machine, Phys. Rev. Lett. 132, 160802
+     (2024).
+[14] M. Vetrano, G. Lo Monaco, L. Innocenti, S. Lorenzo, and G. M. Palma, State estimation with quantum
+     extreme learning machines beyond the scrambling time, npj Quantum Information 11, 20 (2025).
+[15] D. Zia, L. Innocenti, G. Minati, S. Lorenzo, A. Suprano, R. D. Bartolo, N. Spagnolo, T. Giordani,
+     V. Cimini, G. M. Palma, A. Ferraro, F. Sciarrino, and M. Paternostro, Quantum reservoir com-
+     puting for photonic entanglement witnessing, Science Advances 11, 10.1126/sciadv.ady7987 (2025),
+     arXiv:2502.18361 [quant-ph].
+[16] H. Assil, A. El Allati, and G. L. Giorgi, Entanglement estimation of Werner states with a quantum
+     extreme learning machine, Phys. Rev. A 111, 022412 (2025).
+[17] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Babbush, and H. Neven, Barren plateaus in quantum
+     neural network training landscapes, Nature Communications 9, 4812 (2018).
+[18] M. Larocca, S. Thanasilp, S. Wang, K. Sharma, J. Biamonte, P. J. Coles, L. Cincio, J. R. McClean,
+     Z. Holmes, and M. Cerezo, Barren Plateaus in Variational Quantum Computing, Nature Reviews
+     Physics 7, 174 (2025), arXiv:2405.00781 [quant-ph].
+[19] L. Domingo, G. Carlo, and F. Borondo, Taking advantage of noise in quantum reservoir computing
+     (2023), arXiv:2301.06814 [quant-ph].
+[20] D. Fry, A. Deshmukh, S. Y.-C. Chen, V. Rastunkov, and V. Markov, Optimizing quantum noise-
+     induced reservoir computing for nonlinear and chaotic time series prediction, Scientific Reports 13,
+     19326 (2023).
+[21] A. Sannia, R. Martı́nez-Peña, M. C. Soriano, G. L. Giorgi, and R. Zambrini, Dissipation as a resource
+     for Quantum Reservoir Computing, Quantum 8, 1291 (2024).
+[22] F. Monzani, E. Ricci, L. Nigro, and E. Prati, Non-unital noise in a superconducting quantum computer
+     as a computational resource for reservoir computing (2024), arXiv:2409.07886 [quant-ph].
+[23] P. Mujal, J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano, and R. Zambrini, Analytical
+     evidence of nonlinearity in qubits and continuous-variable quantum reservoir computing, Journal of
+     Physics: Complexity 2, 045008 (2021).
+[24] J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, V. Parigi, M. C. Soriano, and R. Zambrini, Gaussian
+     states of continuous-variable quantum systems provide universal and versatile reservoir computing,
+     Communications Physics 4, 53 (2021).
+                                                                                                       32
+
+[25] L. C. G. Govia, G. J. Ribeill, G. E. Rowlands, and T. A. Ohki, Nonlinear input transformations are
+     ubiquitous in quantum reservoir computing, Neuromorphic Computing and Engineering 2, 014008
+     (2022).
+[26] J. Chen and H. I. Nurdin, Learning Nonlinear Input-Output Maps with Dissipative Quantum Systems,
+     Quantum Information Processing 18, 198 (2019), arXiv:1901.01653 [quant-ph].
+[27] T. Goto, Q. H. Tran, and K. Nakajima, Universal Approximation Property of Quantum Machine
+     Learning Models in Quantum-Enhanced Feature Spaces, Phys. Rev. Lett. 127, 090506 (2021),
+     arXiv:2009.00298 [quant-ph].
+[28] R. Martı́nez-Peña and J.-P. Ortega, Quantum reservoir computing in finite dimensions, Phys. Rev. E
+     107, 035306 (2023).
+[29] F. Monzani and E. Prati, Universality conditions of unified classical and quantum reservoir computing
+     (2024), arXiv:2401.15067 [quant-ph].
+[30] L. Gonon and A. Jacquier, Universal Approximation Theorem and Error Bounds for Quantum Neural
+     Networks and Quantum Reservoirs, IEEE Transactions on Neural Networks and Learning Systems
+     36, 11355 (2025).
+[31] M. Schuld, Supervised quantum machine learning models are kernel methods, Journal of Machine
+     Learning Research 10.1145/3451902.3451903 (2021).
+[32] M. Gross and H.-M. Rieser, Kernel-based optimization of measurement operators for quantum reser-
+     voir computers (2026), arXiv:2602.14677 [quant-ph].
+[33] A. Canatar, E. Peters, C. Pehlevan, and S. Wild, Bandwidth enables generalization in quantum kernel
+     models, Trans. Mach. Learn. Res. 2023 (2022).
+[34] M. Gross, M. Lange, B. Bujnowski, and H.-M. Rieser, Expressivity vs. Generalization in Quantum
+     Kernel Methods, in 33rd European Symposium on Artificial Neural Networks, Computational Intel-
+     ligence and Machine Learning, ESANN 2025, edited by M. Verleysen (Ciaco - i6doc.com, Bruges,
+     Belgium, 2025) pp. 543–548.
+[35] M. Kempkes, A. Ijaz, E. Gil-Fuster, C. Bravo-Prieto, J. Spiegelberg, E. van Nieuwenburg, and V. Dun-
+     jko, Double descent in quantum kernel methods, PRX Quantum 7, 010312 (2026), arXiv:2501.10077
+     [quant-ph].
+[36] K. Fujii and K. Nakajima, Quantum reservoir computing: A reservoir approach toward quantum
+     machine learning on near-term quantum devices (2020), arXiv:2011.04890 [quant-ph].
+[37] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni, G. L. Giorgi, M. C. Soriano, and R. Zam-
+     brini, Opportunities in Quantum Reservoir Computing and Extreme Learning Machines, Advanced
+     Quantum Technologies 4, 2100027 (2021).
+[38] C. M. Wilson, J. S. Otterbach, N. Tezak, R. S. Smith, A. M. Polloreno, P. J. Karalekas, S. Heidel,
+     M. S. Alam, G. E. Crooks, and M. P. da Silva, Quantum Kitchen Sinks: An algorithm for machine
+     learning on near-term quantum computers (2019), arXiv:1806.08321 [quant-ph].
+[39] G.-B. Huang, Q.-Y. Zhu, and C.-K. Siew, Extreme learning machine: Theory and applications, Neu-
+     rocomputing Neural Networks, 70, 489 (2006).
+[40] A. Rahimi and B. Recht, Random Features for Large-Scale Kernel Machines, in Advances in Neural
+     Information Processing Systems, Vol. 20 (Curran Associates, Inc., 2007).
+[41] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. Soriano, and R. Zambrini, Dynamical Phase
+     Transitions in Quantum Reservoir Computing, Phys. Rev. Lett. 127, 100502 (2021).
+[42] L. Domingo, G. Carlo, and F. Borondo, Optimal quantum reservoir computing for the noisy
+     intermediate-scale quantum era, Phys. Rev. E 106, L043301 (2022).
+[43] A. Hayashi, A. Sakurai, S. Nishio, W. J. Munro, and K. Nemoto, Impact of the form of weighted
+     networks on the quantum extreme reservoir computation, Phys. Rev. A 108, 042609 (2023),
+     arXiv:2211.07841 [quant-ph].
+[44] N. Götting, F. Lohof, and C. Gies, Exploring quantumness in quantum reservoir computing, Phys.
+     Rev. A 108, 052427 (2023).
+[45] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Paternostro, and G. M. Palma, Potential and
+     limitations of quantum extreme learning machines, Communications Physics 6, 118 (2023).
+[46] S. Kobayashi, Q. H. Tran, and K. Nakajima, Coherence influx is indispensable for quantum reservoir
+     computing (2024), arXiv:2409.12693 [quant-ph].
+                                                                                                      33
+
+[47] S. Čindrak, B. Donvil, K. Lüdge, and L. Jaurigue, Enhancing the performance of quantum reservoir
+     computing and solving the time-complexity problem by artificial memory restriction, Phys. Rev.
+     Research 6, 013051 (2024).
+[48] N.-E. Schütte, N. Götting, H. Müntinga, M. List, D. Brunner, and C. Gies, Expressivity Limits of
+     Quantum Reservoir Computing (2025), arXiv:2501.15528 [quant-ph].
+[49] R. Martı́nez-Peña and J.-P. Ortega, Input-dependence in quantum reservoir computing, Phys. Rev.
+     E 111, 065306 (2025).
+[50] A. D. Lorenzis, M. P. Casado, N. L. Gullo, T. Lux, F. Plastina, and A. Riera, Entanglement and
+     Classical Simulability in Quantum Extreme Learning Machines (2025), arXiv:2509.06873 [quant-ph].
+[51] M. Schuld, R. Sweke, and J. J. Meyer, Effect of data encoding on the expressive power of variational
+     quantum-machine-learning models, Phys. Rev. A 103, 032430 (2021).
+[52] S. Shin, Y. S. Teo, and H. Jeong, Exponential data encoding for quantum supervised learning (2023),
+     arXiv:2206.12105.
+[53] W. Xiong, G. Facelli, M. Sahebi, O. Agnel, T. Chotibut, S. Thanasilp, and Z. Holmes, On fundamental
+     aspects of quantum extreme learning machines (2023), arXiv:2312.15124 [quant-ph, stat].
+[54] J. Dambre, D. Verstraeten, B. Schrauwen, and S. Massar, Information Processing Capacity of Dy-
+     namical Systems, Scientific Reports 2, 514 (2012).
+[55] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini, and M. C. Soriano, Information Processing
+     Capacity of Spin-Based Quantum Reservoir Computing Systems, Cognitive Computation 15, 1440
+     (2023).
+[56] Z. Shumaylov, P. Zaika, P. Scholl, G. Kutyniok, L. Horesh, and C.-B. Schönlieb, When is a System
+     Discoverable from Data? Discovery Requires Chaos (2025), arXiv:2511.08860 [math].
+[57] G. McCaul, J. S. Totero Gongora, W. Otieno, S. Savelev, A. Zagoskin, and A. G. Balanov, Minimal
+     quantum reservoirs with Hamiltonian encoding, Chaos: An Interdisciplinary Journal of Nonlinear
+     Science 35, 093135 (2025).
+[58] C. Weedbrook, S. Pirandola, R. Garcia-Patron, N. J. Cerf, T. C. Ralph, J. H. Shapiro, and S. Lloyd,
+     Gaussian Quantum Information, Reviews of Modern Physics 84, 621 (2012), arXiv:1110.3234 [quant-
+     ph].
+[59] L. C. G. Govia, G. J. Ribeill, G. E. Rowlands, H. K. Krovi, and T. A. Ohki, Quantum reservoir
+     computing with a single nonlinear oscillator, Phys. Rev. Research 3, 013077 (2021), arXiv:2004.14965
+     [quant-ph].
+[60] M. Schuld and F. Petruccione, Machine Learning with Quantum Computers (Springer, Cham, 2021).
+[61] M. C. Caro, Learning Quantum Processes and Hamiltonians via the Pauli Transfer Matrix, ACM
+     Transactions on Quantum Computing 5, 1 (2024), arXiv:2212.04471 [quant-ph].
+[62] L. Hantzko, L. Binkowski, and S. Gupta, Fast generation of Pauli transfer matrices utilizing tensor
+     product structure, Physica Scripta 100, 075125 (2025), arXiv:2411.00526 [quant-ph].
+[63] A. Angrisani, A. Schmidhuber, M. S. Rudolph, M. Cerezo, Z. Holmes, and H.-Y. Huang, Classically
+     estimating observables of noiseless quantum circuits (2025), arXiv:2409.01706 [quant-ph].
+[64] S. Čindrak, L. Jaurigue, and K. Lüdge, Engineering Quantum Reservoirs through Krylov Complexity,
+     Expressivity and Observability (2025), arXiv:2409.12079 [quant-ph].
+[65] H. So, K. W. Chan, Y. Chan, and K. Ho, Linear prediction approach for efficient frequency estimation
+     of multiple real sinusoids: Algorithms and analyses, IEEE Transactions on Signal Processing 53, 2290
+     (2005).
+[66] S. V. Vaseghi, Advanced Digital Signal Processing and Noise Reduction (Wiley, Chichester, U.K,
+     2008).
+[67] S. Čindrak, K. Lüdge, and L. Jaurigue, From Krylov Complexity to Observability: Capturing Phase
+     Space Dimension with Applications in Quantum Reservoir Computing (2025), arXiv:2502.12157
+     [quant-ph].
+[68] J. Steinegger and C. Räth, Predicting three-dimensional chaotic systems with four qubit quantum
+     systems, Scientific Reports 15, 6201 (2025), arXiv:2501.15191 [quant-ph].
+[69] L. Appeltant, M. C. Soriano, G. Van der Sande, J. Danckaert, S. Massar, J. Dambre, B. Schrauwen,
+     C. R. Mirasso, and I. Fischer, Information processing using a single dynamical node as complex
+     system, Nature Communications 2, 468 (2011).
+                                                                                                          34
+
+[70] This allows for the existence of a pseudoinverse such that R+ R = 1q .
+[71] D. J. Gauthier, E. Bollt, A. Griffith, and W. A. S. Barbosa, Next generation reservoir computing,
+     Nature Communications 12, 5564 (2021).
+[72] D. E. Parker, X. Cao, A. Avdoshkin, T. Scaffidi, and E. Altman, A Universal Operator Growth
+     Hypothesis, Phys. Rev. X 9, 041017 (2019), arXiv:1812.08657 [cond-mat].
+[73] A. Nahum, S. Vijay, and J. Haah, Operator Spreading in Random Unitary Circuits, Phys. Rev. X 8,
+     021014 (2018).
+[74] E. H. Lieb and D. W. Robinson, The finite group velocity of quantum spin systems, Communications
+     in Mathematical Physics 28, 251 (1972).
+[75] B. Nachtergaele, Y. Ogata, and R. Sims, Propagation of Correlations in Quantum Lattice Systems,
+     J. Stat. Phys. 124, 1 (2006).
+[76] C.-F. (Anthony) Chen, A. Lucas, and C. Yin, Speed limits and locality in many-body quantum
+     dynamics, Reports on Progress in Physics 86, 116001 (2023).
+[77] B. J. Mahoney and C. S. Lent, Lieb-Robinson correlation function for the quantum transverse-field
+     Ising model, Phys. Rev. Research 6, 023286 (2024).
+[78] S. Gopalakrishnan, D. A. Huse, V. Khemani, and R. Vasseur, Hydrodynamics of operator spread-
+     ing and quasiparticle diffusion in interacting integrable systems, Phys. Rev. B 98, 220303 (2018),
+     arXiv:1809.02126 [cond-mat].
+[79] A. Avdoshkin and A. Dymarsky, Euclidean operator growth and quantum chaos, Phys. Rev. Research
+     2, 043234 (2020).
+[80] J. D. Noh, Operator growth in the transverse-field Ising spin chain with integrability-breaking longi-
+     tudinal field, Phys. Rev. E 104, 034112 (2021).
+[81] R. Kaneko and I. Danshita, Dynamics of correlation spreading in low-dimensional transverse-field
+     Ising models, Phys. Rev. A 108, 023301 (2023).
+[82] A. Sahu, N. D. Varikuti, B. K. Das, and V. Madhok, Quantifying operator spreading and chaos in
+     Krylov subspaces with quantum state reconstruction, Phys. Rev. B 108, 224306 (2023).
+[83] If R contains a t = 0 block, then since V (0) = 1d2 the corresponding rows of R include e⊤     j for all
+     j ∈ S (up to basis ordering), hence ej ∈ row(R). Since R+ R is the orthogonal projector onto row(R),
+     (R+ R)ej = ej and thus γj2 = (R+ R)jj = 1.
+[84] Including t ≈ 0 in the temporal multiplexing scheme improves decodability at early iterations, but
+     does not affect the final decodability for sufficiently large L.
+[85] By global Hadamard equivalence, the statement flips for Pauli-X as initial operators.
+[86] G. B. Mbeng, A. Russomanno, and G. E. Santoro, The quantum Ising chain for beginners, SciPost
+     Physics Lecture Notes , 082 (2024).
+[87] T. Prosen and I. Pižorn, Operator space entanglement entropy in a transverse Ising chain, Phys. Rev.
+     A 76, 032316 (2007).
+[88] S. M. Kay, Fundamentals of Statistical Processing: Estimation Theory (Prentice Hall, Englewood
+     Cliffs, N.J, 1993).
+[89] T. Kailath, A. H. Sayed, and B. Hassibi, Linear Estimation (Prentice Hall, Upper Saddle River, N.J,
+     2000).
+[90] H. Jaeger, Short term memory in echo state networks (2001).
+[91] T. Kubota, H. Takahashi, and K. Nakajima, Unifying framework for information processing in stochas-
+     tically driven dynamical systems, Phys. Rev. Research 3, 043135 (2021).
+[92] Due to periodicity of rotational encoding [Eq. (2.10)], the achievable capacity can be slightly reduced
+     when sampling u ∼ N .
+[93] In Eq. (4.21), Varu y(u) denotes the variance of y(u) over the distribution of u.
+                                                                  (i)
+[94] This argument is not fully rigorous, since features like ϕx (ui ) have infinite Taylor expansion in ui
+                                                              m
+     and can thus correlate locally with raw monomials ui .
+[95] W. Xia, J. Zou, X. Qiu, and X. Li, The reservoir learning power across quantum many-body localiza-
+     tion transition, Frontiers of Physics 17, 33506 (2022).
+[96] M. N. Ivaki, A. Lazarides, and T. Ala-Nissila, Quantum reservoir computing on random regular
+     graphs, Phys. Rev. A 112, 012622 (2025).
+                                                                                                            35
+
+ [97] A. Palacios, R. Martı́nez-Peña, M. C. Soriano, G. L. Giorgi, and R. Zambrini, Role of coherence in
+      many-body Quantum Reservoir Computing, Communications Physics 7, 369 (2024).
+ [98] L. Ljung, System Identification: Theory for the User (Pearson, Upper Saddle River, NJ, 1999).
+ [99] J. C. Sprott, Elegant Chaos: Algebraically Simple Chaotic Flows (World Scientific, 2010).
+[100] We find that training on increments via ut+1 − ut = f (ut ) does not significantly improve the forecast
+      horizon, unless one uses small integrator time steps ∆t ≲ 0.001.
+[101] C. Yang, J. Qiao, H. Han, and L. Wang, Design of polynomial echo state networks for time series
+      prediction, Neurocomputing 290, 148 (2018).
+[102] S. L. Brunton, J. L. Proctor, and J. N. Kutz, Discovering governing equations from data by sparse
+      identification of nonlinear dynamical systems, Proceedings of the National Academy of Sciences 113,
+      3932 (2016).
+[103] T.-C. Chen, S. G. Penny, T. A. Smith, and J. A. Platt, ‘Next Generation’ Reservoir Comput-
+      ing: An Empirical Data-Driven Expression of Dynamical Equations in Time-Stepping Form (2022),
+      arXiv:2201.05193 [cs].
+[104] Y. Zhang, E. R. Santos, and S. P. Cornelius, How more data can hurt: Instability and regularization
+      in next-generation reservoir computing (2025), arXiv:2407.08641 [cs].
+[105] M. Gross, Flow Map Learning in Nonlinear Vector Autoregressive Models (2026).
+[106] Moreover, non-orthogonal function libraries are typically highly redundant, reflected in large condition
+      numbers of the corresponding design matrices [Eqs. (4.4) and (4.5)].
+[107] Deviations are small for N < q: in practice, for n = D = 3 (thus q = 27) and monomials of order
+      r = 3 (thus N = 19 excluding the constant term), we get rank(K) = 16.
+[108] R. Sweke, D. P. Recio, S. Jerbi, E. Gil-Fuster, and E. Fuller, Potential and limitations of random
+      fourier features for dequantizing quantum machine learning, Quantum 7, 872 (2023).
+[109] F. J. Schreiber, J. Eisert, and J. J. Meyer, Classical Surrogates for Quantum Learning Models, Phys.
+      Rev. Lett. 131, 100803 (2023).
+[110] S. Masot-Llima, E. Gil-Fuster, C. Bravo-Prieto, J. Eisert, and T. Guaita, Prospects for quantum
+      advantage in machine learning from the representability of functions (2025), arXiv:2512.15661 [quant-
+      ph].
+[111] S. L. Brunton and J. N. Kutz, Data-Driven Science and Engineering: Machine Learning, Dynamical
+      Systems, and Control (Cambridge University Press, Cambridge, 2019).
+[112] J. Bowles, S. Ahmed, and M. Schuld, Better than classical? The subtle art of benchmarking quantum
+      machine learning models, arXiv.org 10.48550/arXiv.2403.07059 (2024).
+[113] J. Schnabel and M. Roth, Quantum kernel methods under scrutiny: A benchmarking study, Quantum
+      Machine Intelligence 7, 58 (2025).
+[114] D. Basilewitsch, J. F. Bravo, C. Tutschku, and F. Struckmeier, Quantum neural networks in practice:
+      A comparative study with classical models from standard data sets to industrial images, Quantum
+      Machine Intelligence 7, 110 (2025).
+[115] T. Rohe, D. Schuman, J. Nüßlein, L. Sünkel, J. Stein, and C. Linnhoff-Popien, The Questionable
+      Influence of Entanglement in Quantum Optimisation Algorithms (2025), arXiv:2407.17204 [quant-
+      ph].
+[116] H. Gundlach, H. Kukina, J. Lynch, and N. Thompson, Quantum Deep Learning Still Needs a Quantum
+      Leap (2025), arXiv:2511.01253 [quant-ph].
+[117] T. Fellner, D. Kreplin, S. Tovey, and C. Holm, Quantum vs. classical: A comprehensive benchmark
+      study for predicting time series with variational quantum machine learning, Machine Learning: Science
+      and Technology 7, 010501 (2026), arXiv:2504.12416 [quant-ph].
+[118] D. Freinberger and P. Moser, The Role of Quantum in Hybrid Quantum-Classical Neural Networks:
+      A Realistic Assessment (2026), arXiv:2601.04732 [quant-ph].
+[119] This is in contrast to the one-step training error, which can be decreased even by linear delay features.
+[120] D. Giannakis, A. Ourmazd, P. Pfeffer, J. Schumacher, and J. Slawinska, Embedding classical dynamics
+      in a quantum computer (2021), arXiv:2012.06097 [quant-ph].
+[121] S. Han, L. Jia, and L. Guo, Multiple Embeddings for Quantum Machine Learning, arXiv.org
+      10.48550/arXiv.2503.22758 (2025).
+[122] E. Gil-Fuster, J. Eisert, and C. Bravo-Prieto, Understanding quantum machine learning also requires
+                                                                                                     36
+
+      rethinking generalization, Nature Communications 15, 2277 (2024).
+[123] Due to symmetries, the actual effective dimension is lower, and typically ∼ 3n .
+[124] E. Peters and M. Schuld, Generalization despite overfitting in quantum machine learning models,
+      Quantum 6, 777 (2022).
+[125] M. Beth Ruskai, S. Szarek, and E. Werner, An analysis of completely-positive trace-preserving maps
+      on M2, Linear Algebra and its Applications 347, 159 (2002).
+[126] M. A. Nielsen and I. L. Chuang, Quantum Computation and Quantum Information: 10th Anniversary
+      Edition (Cambridge University Press, Cambridge ; New York, 2010).
+[127] M. M. Wilde, Quantum Information Theory (Cambridge University Press, Cambridge, UK ; New
+      York, 2017).
+[128] J. Watrous, The Theory of Quantum Information (Cambridge University Press, Cambridge, 2018).
+[129] T. Kubota, Y. Suzuki, S. Kobayashi, Q. H. Tran, N. Yamamoto, and K. Nakajima, Quantum Noise-
+      Induced Reservoir Computing (2022), arXiv:2207.07924 [quant-ph].
+

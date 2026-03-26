@@ -1,0 +1,18 @@
+{
+  "seeds": [7, 11, 19, 23, 42],
+  "tiers": ["D_easy", "D_mid", "D_hard"],
+  "noise_eta": [0.0, 0.001, 0.005, 0.01, 0.02],
+  "shots": [128, 512, 2048],
+  "noise_eta_ent": [0.0, 0.001, 0.003, 0.005, 0.01, 0.02],
+  "shots_ent": [64, 128, 512, 2048, 8192],
+  "exp-sim-1-parity-tier-benchmark": {
+    "baselines": [
+      "QRC-Ising entangling reservoir with angle encoding and Pauli-observable readout",
+      "QRC-Ising non-entangling control with identical qubit count/depth/observables",
+      "Classical echo-state network (ESN) with matched state dimension and linear ridge readout",
+      "Classical random feature/ELM model with matched feature budget m",
+      "RBF-kernel SVM on identical fold-local PCA components",
+      "Quantum kernel classifier without reservoir dynamics (same encoding depth/qubit count)"
+    ]
+  }
+}

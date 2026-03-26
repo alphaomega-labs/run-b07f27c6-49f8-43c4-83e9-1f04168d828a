@@ -1,0 +1,901 @@
+                                             A Quantum Reservoir Computing Approach to Quantum Stock Price Forecasting in
+                                                                     Quantum-Invested Markets
+                                              Wendy Otieno,1 Alexandre Zagoskin,1 Alexander G. Balanov,1 Juan Totero Gongora,1 and Sergey E. Savel’ev1
+                                                                  1
+                                                                      Department of Physics, Loughborough University, Loughborough LE11 3TU, UK
+                                                           We present a quantum reservoir computing (QRC) framework based on a small-scale quantum
+                                                         system comprising at most six interacting qubits, designed for nonlinear financial time-series fore-
+                                                         casting. We apply the model to predict future daily closing trading volumes of 20 quantum-sector
+                                                         publicly traded companies over the period from April 11, 2020, to April 11, 2025, as well as minute-
+                                                         by-minute trading volumes during out-of-market hours on July 7, 2025. Our analysis identifies
+                                                         optimal reservoir parameters that yield stock trend (up/down) classification accuracies exceeding
+                                                         86%. Importantly, the QRC model is platform-agnostic and can be realized across diverse physi-
+                                                         cal implementations of qubits, including superconducting circuits and trapped ions. These results
+                                                         demonstrate the expressive power and robustness of small-scale quantum reservoirs for modeling
+arXiv:2602.13094v1 [quant-ph] 13 Feb 2026
+
+
+
+
+                                                         complex temporal correlations in financial data, highlighting their potential applicability to real-
+                                                         world forecasting tasks on near-term quantum hardware.
+
+
+                                                             I.   INTRODUCTION                               do deviate from this perfect efficiency [30–34]. They ex-
+                                                                                                             hibit nonlinear and dynamic structures that contradict
+                                                                                                             EMH, as evidenced by well-documented anomalies such
+                                               The complex, non-linear [1, 2] and volatile nature
+                                                                                                             as volatility clustering [35, 36], volume-driven spikes, mo-
+                                            of stock returns have made stock market prediction an
+                                                                                                             mentum (predictable returns) [37, 38], return autocorre-
+                                            arduous endeavor. Economical (GDP growth, interest
+                                                                                                             lation [39–41] and short term predictability [42] which
+                                            rates, inflation) [1, 3–6], geopolitical [1, 5–7] (government
+                                                                                                             draw market microstructure effects, revealing clear tem-
+                                            policies [8], wars, sanctions, trade agreements), societal
+                                                                                                             poral memory in price and volume formation. These
+                                            [1, 5, 6] (consumer behaviour, social movements, demo-
+                                                                                                             deviations are what predictive models such as Artificial
+                                            graphic shifts, technological adoption [9]), environmental
+                                                                                                             Neural Networks (ANNs) and Quantum Machine Learn-
+                                            [7] (natural disasters, climate change policies), and psy-
+                                                                                                             ing (QML) exploit. ANN and QML models can detect
+                                            chological [10–13] (herd behavior from investors, behav-
+                                                                                                             nonlinear patterns in financial data and learn its hidden
+                                            ioral influences, spontaneous panic-selling) factors add
+                                                                                                             structure by operating in high dimensional state spaces
+                                            complexities to stock price forecasting as it introduces a
+                                                                                                             where the interwoven interactions between price, volume,
+                                            wide range of elements that are strenuous to integrate
+                                                                                                             returns and order flow exists. QML is advantageous in
+                                            into predictive models. This makes it incredibly difficult
+                                                                                                             exploring extremely large, high-dimensional data spaces
+                                            to quantify a mathematical model that captures every
+                                                                                                             enabling them to learn complex correlations. Thus if
+                                            nuances of the stock market. Despite this challenge, vari-
+                                                                                                             QRC can demonstrate significant predictive power for
+                                            ous aspects of the market’s behaviour have been captured
+                                                                                                             future daily closing volumes (DCV) and market trends
+                                            by mathematical models such as quantitative financial
+                                                                                                             (up/down), this is an implication of the presence of non-
+                                            models (Black-Scholes option pricing and risk manage-
+                                                                                                             linear, exploitable structure in the DCV financial time se-
+                                            ment [14]), stochastic processes (Brownian motions [15–
+                                                                                                             ries. Such structure contradict EMH and therefore QRC
+                                            18], random walk models [19–22]), agent-based modelling
+                                                                                                             performances show proof of deviations from perfect mar-
+                                            [23–25] and decision-making strategies that involve the
+                                                                                                             ket efficiency.
+                                            intersection of game theory and behavioural economics
+                                            [26–28]. These models act as approximations where they              To tackle all complexities associated with the inherent
+                                            are beneficial in forecasting controlled scenarios. How-         nature of the stock market, advanced techniques such
+                                            ever, adjustments to these models are needed to account          as classical machine learning, and now quantum com-
+                                            for the evolution of real-world conditions.                      puting, have been explored to achieve better accuracy
+                                               The Efficient Market Hypothesis (EMH) introduced by           in stock market price prediction. This entails employ-
+                                            Eugene F. Fama [29] defines a theoretical benchmark of           ing various types of specialized Artifical Neural Networks
+                                            perfect market efficiency. It claims that (1) past prices        (ANNs) i.e. Long Short Term Memory (LSTM) net-
+                                            have no predictive information (weak form) (2) public            works, Recurrent Neural Networks (RNNs) and Self Or-
+                                            information does not lead to consistent excess returns           ganizing Fuzzy Neural Networks (SOFNNs), to find non-
+                                            (semi-strong form) and (3) public and private informa-           linear relationships, trends and patterns in stock price
+                                            tion cannot generate consistent excess returns making            data. LSTM networks have proven to predict directional
+                                            forecasting trends impossible (strong form) [29]. With           movement (binary up/down classifcation) of S&P 500
+                                            this, EMH defines a theoretical state of perfect market          index stocks from 1992 to 2015, which exhibited high
+                                            efficiency in which the possibility of prediction is not fea-    volatility and short term reversal return profile, with an
+                                            sible. In principle, perfect information market efficiency       accuracy of 56%-60% [43]. These networks outperform
+                                            is an ideal state. In reality, real financial data can and       traditional memory-free machine learning classification
+                                                                                                                           2
+
+models (i.e. Random Forests (RAF), Deep Neural Net-             processed data [52]. All these contributions have paved
+works (DNN) and Logistic Regression (LOG) [43]) by              the way in improving quantum models for accurate fi-
+learning from past patterns after preserving sequential         nancial forecasting and trend (up/down) prediction. The
+dependencies. Likewise, ANNs have also provided an ac-          ability of QRC to exploit subtle nonlinear dependencies
+curacy of 75.54% on directional movement of the Istan-          and long range temporal correlations [53–56] can be ap-
+bul Stock Exchange (ISE) National Index surpassing the          plied to financial data allowing it to detect weak ineffi-
+predicted accuracy of Support Vector Machines (SVM)             ciencies in the data which violate strict EMH assump-
+by about 1.056% when using 10 technical indicators as           tions.
+input features [8]. Moreover, self-organizing fuzzy neu-           By leveraging the unique properties of entanglement
+ral network have demonstrated the influence of twitter’s        and superposition, quantum computers can tackle com-
+public sentiments (collective mood states) on stock mar-        plex financial data much faster than classical comput-
+ket movement in Dow Jones Industrial Average (DJIA)             ers. However challenges still occur in limited quan-
+[10] by showing that mood dimensions significantly im-          tum hardware due to early stage development. Conse-
+proves DJIA prediction accuracy (predicted accuracy of          quently, data limitations, noise sensitivity, integration
+87.6%) in DJIA’s up/down closing values [10].                   issues (combining quantum models to existing classical
+   Apart from forecasting the stock market’s directional        computing framework used in modern financial infras-
+trend, LSTM-RNN models - models beneficial in opti-             tructures) and algorithmic challenges (i.e. fine tuning
+mizing investment portfolios and risk management - have         and optimization requirements) arise. Quantum hard-
+been shown to predict the daily closing price of Amazon         ware realization for scalability and large-scale system is
+(AMZN) with root mean squared error (RMSE) of 2.51              pivotal to unlocking the full potential of quantum com-
+and mean absolute percentage error (MAPE) 1.84% [44].           puting as it enables fault-tolerant quantum computing
+These results were obtained by analyzing historical stock       (less susceptible to decoherence and noise) [57–59], uses
+data to help capture hidden patterns and non-linear rela-       modular architectures (i.e quantum system on chip) to
+tionships and evaluating various hyperparameters to de-         overcome physical limitations [60–63], can support bil-
+termine the hyperparameters’ influence on the prediction        lions of quantum operators to solve real world problems
+accuracy [44]. The ability to preserve sequential depen-        [64] (such as optimization, complex PDEs modelling,...)
+dencies and learn from past patterns places ANNs above          faster with lower power consumption and more. All these
+traditional models as the latter models reduces its abil-       are beneficial in tackling physical qubit constraints, fabri-
+ity to capture stock market trends over time by analyzing       cation challenges, noise sensitivity and control complexi-
+each input independently. Despite all these favourable re-      ties of qubits. Some compelling development in quantum
+sults, ANNs still suffer from low convergence speed and         hardware realization for scalability and large-scale sys-
+high complexity in algorithm [1].                               tem involves a modular, scalable system on chip (QSoC)
+   Recently, quantum machine learning (QML) has been            framework developed by researchers at MIT and MITRE
+utilized for stock price prediction [1, 45, 46], option pric-   [63], Cryo-CMOS multiplexing for Silicon Spin Qubits de-
+ing [45, 47], time series forecasting [48, 49] and many         veloped by the SCALLOP project [65] and a framework
+other financial applications such as fraud detection [50],      involving hundreds of thousands to millions of physical
+portfolio optimization [51, 52] and risk management [51].       qubits for practical quantum advantage developed by Mi-
+Quantum computing overcomes the limitation of classi-           crosoft and Collaborators [66]. The latter development
+cal computing by applying two fundamental quantum               highlights how architecture design choices that incorpo-
+principles: superposition and entanglement. Quantum             rate qubit size, speed and controllability can meet scaling
+Support Vector Machines (QSVM) combined with Quan-              requirements [66].
+tum Annealing (QA) have shown to predict the stock                 In this paper, we introduce a scalable and minimalis-
+market up/down movements with a maximum predic-                 tic QRC framework in Section II which is employed to
+tion accuracy of 58.94% for companies such as Apple,            predict the future daily closing volumes of 20 quantum
+Visa, Honeywell and Johnson & Johnson [46]. Future              invested companies. This minimalistic system consists of
+stock prices of Apple and Google, using quantum single-         a quantum reservoir comprised of up to six transmon su-
+task learning QSTL and quantum multi-task learning              perconducting qubits. The QR is scalable as newly added
+QMTL, were predicted with an accuracy of 62.21% (Ap-            qubits easily couple with existing qubits via mutual con-
+ple - QSTL), 71.83% (Apple - QMTL), 56.46% (Google              nection with the optical waveguide. We implement non-
+- QSTL) and 68.30% (Google - QMTL) [1]. Addi-                   autonomous prediction on the encoded input datasets in
+tionally, quantum neural networks (QNNs) composed               Section IV, which requires good non-linearity and trace of
+of parametrized quantum circuits (PQCs) outperformed            memory for better predicted accuracy, and evaluate the
+classical models in forecasting time series dealing with        performance of the QR by measuring the MSE, NMSE
+higher noise variations during effective training, suggest-     and RMSE. We predict future daily closing volume for
+ing the QNN’s ablity to learn complex patterns [48]. Fur-       each company using data that span 5 years, April 11
+thermore, combining fuzzy logics and wavelets to quan-          2020 - 2025, and minute-by-minute volumes of one day
+tum annealing models (D-Wave 2000Q) led to prediction           trading for July 7, 2025. We also evaluate the accuracy of
+accuracies as little as 80% for specific markets with well      the predicted stock price movement. We conclude in Sec-
+                                                                                                                                3
+
+
+
+
+FIG. 1. The architecture of the QRC framework consists of an (a) input (b) encoding scheme (c) quantum reservoir (QR) (d)
+readout layer (e) linear regression and (f) output. A classical input time series is quantum encoded via Hamiltonian parameter
+encoding. The quantum reservoir consists of at most six qubits randomly connected and arranged in an all-to-all topology. The
+QR projects the quantum-encoded input to a higher dimensional feature space to capture temporal corelations. Readout layer
+generates a readout matrix containing the population inversion of each qubit populations. Linear Ridge regression determines
+the linear readout coefficients that relates the targeted input to the QR prediction. This framework models is motivated by
+the architecture of a D-Wave quantum system.
+
+
+tion VI that our reservoir is able to predict stock prices            qubit-qubit interactions are all-to-all. That is, each qubit
+and trends with high accuracy. This demonstrates how                  has a direct connection to all other qubits i.e. enabling
+quantum reservoirs can improve accuracy and robustness                interactions between any pair of qubits. This type of
+in stock price predictive models. Thus, overcoming com-               connectivity significantly enhances quantum algorithms
+plexities and volatility in complex stock price data.                 by providing efficient entanglement distribution and fast
+                                                                      information exchange. The parameter Vmn represents
+                                                                      the interaction between qubits m and n.
+                II.   QRC FRAMEWORK                                      We encode the input time series u using one of the
+                                                                      following parameter encoding options:
+    The QRC architecture is composed of an input, encod-
+                                                                                          ∆n (u) = ∆0 + ru,
+ing layer, quantum reservoir (QR), readout layer, linear
+regression and output (see Fig 1). This model is moti-                                    Ωn (u) = Ω0 + ru,
+vated by the architecture of a D-Wave quantum system.                 where ∆n and Ωn are randomly chosen from a uniform
+The QR is a quantum system consisting of N individual                 distribution centered on ∆0 and Ω0 respectively while
+qubits. The dynamics of the reservoir are governed by                 r is a scaling parameter. The values of ∆n introduces
+the Hamiltonian:                                                      heterogeneity into the reservoir ensuring richer compu-
+           N                                          d              tational dynamics. Ωn influences the dynamics of quan-
+                                                         ⊗ σ̂nd )
+                                          X
+                            d Ωn (u) x          Vmn (σ̂m
+          X
+Ĥ(u) =        −∆n (u)σ̂n +           σ̂n +                       .   tum state evolution (i.e. modulating decoherence or co-
+          n=1
+                                   2        m>n
+                                                    N −1              herence, influencing entanglement dynamics, etc...). The
+                                                           (1)        interaction strength between qubits Vmn are also chosen
+The first term in (1) describes the contribution of the               randomly around V0 . By encoding u into the Hamilto-
+individual qubits to the dynamics of the QR. Here ∆n                  nian parameters ∆n and Ωn , it can be mapped onto a
+refers to the detuning of the n-th qubit while Ωn gives               higher-dimensional feature space by the quantum reser-
+the Rabi frequency. Ωn and ∆n are the Hamiltonian                     voir.
+parameters in which the input time series u is encoded.                  The QR dynamics are described by the time evolution
+σ̂nd is an operator which projects onto qubit n’s excited             of the density matrix ρ:
+state. It is written in terms of the Pauli operator σ̂nz :
+                                                                                     dρ    i
+σ̂nd = 0.5(1̂ − σ̂nz ). σ̂nx,y,z are Pauli matrices describing                          = − [H(t), ρ(t)] + L[ρ].              (2)
+the n-th qubit.                                                                      dt    ℏ
+    The second term in (1) accounts two-body interactions             [H(t), ρ(t)] is a commutator of the Hamiltonian H(t)
+between various pairs of the qubits. In our model, the                and density ρ(t) that ensures unitary quantum evolution.
+                                                                                                                              4
+
+Dissipation is added to the system via Linbaldian opera-
+tors L[ρ] which satisfy                                                                                               
+                                                                                w1 (t0 ) w1 (t1 ) · · · w1 (tN train )
+                X                                                              w2 (t0 ) w2 (t1 ) · · · w2 (tN train ) 
+        L[ρ] =     (Cn ρ(t)Cn+ − 0.5[Cn+ Cn , ρ(t)]). (3)
+                                                                     Wtrain =  .
+                                                                                                                      
+                                                                                            ..      ..        ..
+                                                                               ..
+                                                                                                                       
+                  n                                                                          .       .         .       
+The first and last term in (3) characterizes the relax-                        wN (t0 ) wN (t1 ) · · · wN (tN train )
+ation and dephasing process respectively [67] where Cn =
+√                                                              which is utilized to find linear readout coefficients X that
+  γn σn+ is the collapse operator and γn is the qubit’s
+strength of dissipative coupling.                              satisfies
+   The reservoir receives the encoded time series u and
+                                                                                     Ytrain = XWtrain                       (7)
+performs single qubit evolution from Te = 0 to Te =
+2π/Ω0 . That is, qubits start in their initial state at time   for a target time series Ytrain . X is determined using
+Te = 0 and evolve according to their Hamiltonian dynam-        Ridge regression
+ics until time Te = 2π/Ω0 . The evolution takes advantage
+of detuning influences, rabi oscillations and inter-qubit                      X = Y W T (W W T + λI)−1                     (8)
+interactions to generate a non-linear feature space. With
+the presence of heterogeneity, distinct qubits evolve at       where we set the regression parameter λ to 10−4 . λ is
+different rates leading to varying time-dependent repre-       used to ensure the managing of overfitting, particularly
+sentation. Qubits become entangled as they evolve form-        in noisy or complex quantum states. It is the readout
+ing a highly connected feature space. Hence, encoded u         layer, where learning occurs, that is trained via ridge
+is mapped from a linear space to a higher-dimensional          regression. Hence, the complexities of training is reduced
+feature space as qubit interactions introduce nonlinear        to solely optimizing the readout layer.
+dependencies which enhances feature extraction.                   After the linear readout coefficients X are determined,
+   The feature space transformation of u(t) is represented     we extract Wtest for the testing time-series
+by the expectations                                                                                                        
+                                                                           w1 (tN train+1 ) w1 (tN train+2 ) · · · w1 (tK )
+          ⟨Ôn (u)⟩ = ⟨ψ0 |eiĤTe Ôn (u)e−iĤTe |ψ0 ⟩   (4)             w2 (tN train+1 ) w2 (tN train+2 ) · · · w2 (tK ) 
+                                                               Wtest = 
+                                                                                                                           
+                                                                                   ..               ..         ..      ..   
+with
+                                                                                   .                .          .       .   
+                               p                                           wN (tN train+1 ) wN (tN train+2 ) · · · wN (tK )
+         |ψ0 ⟩ = ⊗N
+                  n an |0⟩ +    (1 − a2n )e−iϕn |1⟩.     (5)
+                                                               and apply
+These expectations are a set of observable operators {Ôn }
+whose values construct a reservoir state                                              Ypred = XWtest                        (9)
+
+           W = [⟨Ô1 (u)⟩⟨Ô2 (u)⟩...⟨ÔN (u)⟩]T .       (6)   to determine the testing prediction Ypred of the QRC
+                                                               framework.
+The reservoir state is then passed onto the readout layer
+for training purposes.
+   Time is discretized as tk = k∆t where the time index                        A.    Performance Metrics
+and time step are k and ∆t respectively. The input se-
+ries u(t) is discretized in K total points i.e. u(tk ) for       Mean Squared Error (MSE), Normalized Mean
+k ∈ [0, K]. In our case, the qubit population wn (tk ) is      Squared Error (NMSE) and Root Mean Squared Error
+expressed as the expectation value of the observable op-       (RMSE) are employed to quantify the framework’s train-
+erator ⟨Ôn (u(tk ))⟩.                                         ing and testing performance:
+   During the training process, the QR maps the encoded
+input into high-dimensional phase space of the coupled
+                                                                                              X
+                                                                      M SE[y(tk ), ŷ(tk )] =   |y(tk ) − ŷ(tk )|2 , (10)
+qubits while the readout layer learns the relationship be-                                        k
+tween the transformed encoded u(tk ) and the target time                                           M SE
+series yk . Temporal and non-linear features from a time             N M SE[y(tk ), ŷ(tk )] =                  ,          (11)
+                                                                                                 σ 2 (y(tk ))
+series of daily closing volume are naturally extracted by
+the QR without adjusting weights explicitly. Thus, the         and
+reservoir remains fixed (it is not trained) and does not                                                  √
+require backpropagation which is an essential feature of                     RM SE[y(tk ), ŷ(tk )] =         M SE.        (12)
+reservoir computing approach.
+   The QR generates readout, which is the set of values        Here, y(tk ) is the targeted time series, ŷ(tk ) is the QRC’s
+of the population inversion for each qubit populations         predicted output, and σ 2 (y(tk )) is the variance of the
+wn (tk ) for n ∈ [1, N ]. This produces an N × Ntrain read-    targeted time series. The smaller the value of the MSE
+out matrix                                                     and NMSE, the better the QR’s predictive performance
+                                                                                                                                5
+
+(i.e. the prediction is closer to the actual value of the             2. Large-cap markets - IBM, HON, INTC.
+DCV). The absolute closeness between y(tk ) and ŷ(tk ) is
+characterized by RMSE.                                                3. Mega-cap markets - GOOG, AMZN, NVDA,
+   We also include the Mean Absolute Percentage Error                    QUBT, QNC.V, MSFT.
+(MAPE) given by                                                       To quantify how far the closing volume data of (a)
+                                                                   April 11 2020 - 2025 regular trading hours and (b) July
+                         100 X y(tk ) − ŷ(tk )
+           M AP E =            |                |.         (13)    7, 2025 out of trading hours deviates from a normal dis-
+                        Ntotal     y(tk )                          tribution, the Gaussian moments
+                                k
+                                                                                           (
+   The MAPE shows the relative closeness (percentage)                                        (n − 1)!! n is even
+between ŷ(tk ) and y(tk ). Certain thresholds of MAPE                         ΓGaussian
+                                                                                n        =
+                                                                                             0         n is odd,
+values are set to categorize the fit between y(tk ) and
+ŷ(tk ). The fit is classified as excellent, good, reasonable      are compared to the empirical moments
+and poor when the MAPE value falls in the range 0% -
+5%, > 5% - 10%, > 10% - 20% and > 20% respectively.                                            ⟨(y − µ)n ⟩
+                                                                                        Γn =            n ,
+   Lastly, we compute the direction accuracy (DA) for                                          ⟨(y − µ) 2 ⟩
+stock price trend prediction. The direction accuracy rep-
+resents the correct prediction of the increase or decrease         where
+of the stock price data. The predicted trend is character-                              K                             K
+                                                                                     1 X                           1 X
+ized by comparing the current predicted data point with              ⟨(y − µ)n ⟩ =       (y(tk ) − µ)n ,      µ=       y(tk )
+the previous predicted data point. If ŷ(tk ) − ŷ(tk−1 ) > 0,                       K                             K
+                                                                                       k=1                           k=1
+then we say that the stock price has increased (up pre-
+diction). If ŷ(tk ) − ŷ(tk−1 ) < 0, the stock price has fallen   [68, 69]. Financial returns are known to have fat tails,
+(down prediction). If the actual trend matches with the            volatility clustering, non-stationarity and skewness. The
+predicted trend, then we characterize it as correct. We            standardised moment ratios (SMR) Rn = ΓGaussian
+                                                                                                                 n       /Γn
+give the accuracy score as:                                        aids in highlighting these deviations.
+                                                                      Fig 2 demonstrates the dependence of SMR on mo-
+                                                                   ments n for April 11 2020 - 2025 (top row) and July 7,
+              number of correct trend predictions                  2025 (second and third row). During the 5 year period,
+    DA =                                          .        (14)
+               total number of trend predictions                   micro/small-cap markets RGTI, QS, IONQ, ARQQ, QSI,
+  QRC performance is typically assessed by averaging               LAES and ZPTA exhibit heavy tails (Rn decreases with
+multiple simulations to account for stochastic variability.        n) along with mega-cap markets QUBT and QNC.V.
+In this studies, a fixed random seed is applied to the             Heavy tails are typically observed in micro/small cap
+QRC framework to produce consistent, repeatable results            markets due to high volatility, thin order books and ir-
+rather than varying across multiple simulations. This              regular liquidity. This generates irregular volume dy-
+choice still provides meaningful information about the             namics with severe and frequent spikes in trading activ-
+model’s predictive behaviour.                                      ity. Market-wide shocks, episodic liquidity withdrawal
+                                                                   and also institutional order-flow clustering account for
+                                                                   the heavy tails observed in mega-cap markets QUBT and
+       III.    STANDARDIZED MOMENTS IN                             QNC.V. The Pearson correlation between Rn for all mo-
+               EMPIRICAL STOCK DATA                                ment orders (n = 4, 6, 8, 10, 12) ranges from 0.7940 to
+                                                                   0.9799. This indicates a monotonic decay pattern that
+  We evaluate the QRC performance of 20 compa-                     is broadly similar, for these nine companies, differing in
+nies: Rigetti Computing, Inc (RGTI), Quantum Com-                  the mid-order moments (n = 4, 6). The companies, as a
+puting Inc (QUBT), Quantum Corp (QMCO), Quan-                      whole, exhibit partial systematic co-movement with an
+tumScape Corporation (QS), IonQ Inc (IONQ), Quan-                  idiosyncratic structure in conditions that are normal or
+tum eMotion Corp (QNC.V), Defiance Quantum ETF                     moderately extreme. However, when the correlations are
+(QTUM), Arqit Quantum Inc (ARQQ), Quantum-SI In-                   restricted to higher moment orders (n = 8, 10, 12), the
+corporated (QSI), Microsoft (MSFT), D-Wave Quan-                   minimum correlation rises sharply to 0.9799. This sug-
+tum Inc (QBTS), SEALQ Corp (LAES), Zapata AI                       gests that the companies share strong co-movement in
+(ZPTA), IBM (IBM), NVIDIA (NVDA), Form Factor                      the extreme tails, as the companies have nearly identi-
+Inc (FORM), Honeywell (HON), Google (GOOG), Ama-                   cal extreme tail structure, and they are likely to experi-
+zon (AMZN) and Intel (INTC).                                       ence severe shocks in tandem (i.e. crash together in rare
+  The quantum-invested companies can be split into                 events).
+three markets:                                                        Mega-cap markets MSFT, NVDA, GOOG, AMZN and
+                                                                   large-cap market INTC experience lighter tails as Rn in-
+   1. Micro/Small-cap markets - QMCO, RGTI, QS,                    creases with n. This is expected as large/mega-cap mar-
+      IONQ, QTUM, QSI, QBTS, LAES, ZPTA, FORM,                     kets have stable volume and high liquidity. We also ob-
+      ARQQ.                                                        serve lighter tails in small-cap markets QMCO, QBTS
+                                                                                                                           6
+
+
+
+
+FIG. 2. Standardised Moment Ratios for (a) April 11, 2020 - 2025 in-market hours (b) July 7, 2025 pre-market hours and (c)
+July 7, 2025 after-market hours. During the 5 year period, nine companies exhibit heavy tails (see top row – left plot) while
+eight companies experience lighter tails (see top row – middle plot). Three companies QTUM, IBM and HON have mixed tails.
+For pre-market hours (BMH), most companies exhibit lighter tails (see second row – middle plot) indicating stable volume and
+high liquidity. Numerous companies during after-market hours (AMH) experience heavy tails suggesting low liquidity and high
+volatility.
+
+
+and FORM. For the lighter-tail companies, the mini-             HON (large-cap). QTUM and IBM have strong sys-
+mum high order correlation (0.9799) is slightly higher          tematic co-movement in the whole moment distribution
+than the correlation for all moments (0.9654). The Rn           with a correlation of 0.9990. This means they have simi-
+decay pattern is highly similar across companies indicat-       lar liquid regimes, volatility bursts and trading patterns
+ing strong systematic co-movement in the whole moment           leading to an aligned body, mid-tail and tail behaviour.
+distribution. This reflects a more stable, more liquid and      They form a sub-cluster inside the non-monotonic group
+less jump-driven market behaviour with few idiosyncratic        as their non-monotonic patterns occur in similar places.
+shocks (consistent risk structure). In addition to that,        HON is an outlier in the group with a correlation value
+the high order correlation value shows that the compa-          of 0.3774 (with QTUM) and 0.4190 (with IBM). HON
+nies are independent on the extreme tail convergence,           experiences idiosyncratic mid-order behaviour. Supris-
+unlike heavy tail companies, as the companies share a           ingly, when considering higher order moments, all com-
+extreme tail mechanism that is common.                          panies share a systematic extreme tail and are likely to
+                                                                experience rare, severe shocks simultaneously.
+  Non-monotonic behaviour between SMR and moments
+n is seen for QTUM (small-cap), IBM (large-cap) and                In pre-market hours for July 7, 2025 volume data (see
+                                                                                                                       7
+
+                Company           RGTI QUBT QMCO QS IONQ QNC.V QTUM ARQQ QSI MSFT
+         Number of Training Points 598    754    754   701   643   753     754    607    663     754
+         Number of Testing Points 400     503    503   468   430   502     503    405    443     503
+             Minimum DCV           0.375 0.421 2.5099 3.470 3.099 0.0299 23.709 3.7899 0.6330 158.423
+            Maximum DCV             20.0 25.68 189.0 131.67 51.07 1.7799 86.2317 951.5 22.4099 464.854
+
+TABLE I. Number of training point, testing points, minimum daily closing volume and maximum daily closing volume for
+the companies Rigetti Computing, Inc (RGTI), Quantum Computing Inc (QUBT), Quantum Corp (QMCO), QuantumScape
+Corporation (QS), IonQ Inc (IONQ), Quantum eMotion Corp (QNC.V), Defiance Quantum ETF (QTUM), Arqit Quantum
+Inc (ARQQ), Quantum-SI Incorporated (QSI), Microsoft (MSFT).
+
+           Company            QBTS LAES ZPTA IBM              NVDA FORM HON            GOOG AMZN INTC
+    Number of Training Points 652      283      155    754      754    754     754      754      754      754
+    Number of Testing Points   435     190      104    503      503    503     503      503      503      503
+        Minimum DCV          0.41299 0.342 0.0003 83.268 6.713 18.190 110.8916 60.5303 81.8199 18.1299
+       Maximum DCV           12.3999 21.96999 5.6999 264.7399 149.416 62.220 234.7436 207.4736 242.0599 62.0833
+
+TABLE II. Number of training point, testing points, minimum daily closing volume and maximum daily closing volume for the
+companies D-Wave Quantum Inc (QBTS), SEALQ Corp (LAES), Zapata AI (ZPTA), IBM (IBM), NVIDIA (NVDA), Form
+Factor Inc (FORM), Honeywell (HON), Google (GOOG), Amazon (AMZN) and Intel (INTC).
+
+
+Fig 2 second row), heavy tail companies (RGTI, QS,            liquidity and overnight information shocks and in after-
+IONQ, QSI) show strong Rn shape similarity with a             market hours due to stable liquidity and low volatil-
+minumum correlation of 0.8602 across all n and almost         ity. This shows that tail behaviour is session-dependent
+perfectly aligned extreme tails with minimum correla-         (risky in one session and stable in another) with pre-
+tion value of 0.9931. Lighter tail companies (QUBT,           market behaviour dominated by idiosyncratic jumps and
+QMCO, QBTS, LAES, IBM, NVDA, HON, GOOG,                       after-market by systematic predictable flows.
+AMZN, INTC) have a highly consistent and systematic
+risk structure with minimum correlation of 0.9750 across
+all moments and 0.9915 in the higher order moments.            IV.   FIVE YEAR STOCK PRICE PREDICTION
+The non-monotonic companies (QTUM, ARQQ, MSFT)
+show 0.7590 correlation in all moments indicating sub-
+stantial mid-order idiosyncrasy. The higher order cor-           Future values of the input-time series u(tk ), which is
+relation -0.6188 observed for ARQQ and MSFT reveals           the Daily Closing Volume (DCV) data of each company,
+that the extreme tail irregularities move in opposite di-     independently, over the period April 11, 2020 - 2025 (a 5-
+rections. This means no common pre-market tail risk           year span), are predicted via non-autonomous prediction.
+mechanism is shared.                                             For each company, 60% and 40% of the data are set
+                                                              as the training and testing dataset respectively. Tables
+   In after-market hours (see Fig 2 last row), the mini-      I and II show the number of training and testing points
+mum correlation for all moments and higher moments are        for each company along with the minimum and maxi-
+0.9414 and 0.9672 respectively for heavy tail companies       mum DCV over the 5 year span. Initially, we divide the
+QUBT, ARQQ, MSFT, QBTS, IBM, NVDA, GOOG and                   DCV by the maximum value so that the initial time-
+AMZN. This indicates strong shape similarity and closely      series u(tk ) ranges between 0 and 1 for a better perfor-
+aligned extreme tails. Lighter tail companies RGTI,           mance from the QRC. We use the QR parameters ∆0 = 8
+QMCO, QS, IONQ, QSI and LAES also have a stable               (mean detuning), Ω0 = 6 (mean rabi frequency), Te = π
+and systematic risk structure as minimum correlations         , Nsteps = 3000 (number of time steps in the evolution)
+0.9715 and 0.9878 are observed in all n and higher order      and cγ = 1 × 10−8 (decoherence rate) to evaluate how
+n respectively. Computing the correlation of QTUM with        the number of qubits N ∈ [1, 6] affects the stock price
+the other non-monotonic companies HON and INTC we             accuracy of the QRC framework. To incorporate mem-
+get negative minimum correlations -0.1532 in all n and        ory into the QRC framework, we add delay embeddings
+-0.4859 in higher n. We see no similarity across full mo-     by setting δ = 6.
+ment distribution and extreme-tail behaviour move in op-
+                                                                 Fig 3 shows the dependency of MSE Test, NMSE Test,
+posite direction.
+                                                              MAPE Test and RMSE Test on the number of qubits N
+   RGTI, QS, QSI and IONQ exhibit heavy tails and             as a 2D colormap. N = 1 yields the highest MSE Test,
+lighter tails in pre-market hours and after-market hours      for each company, ranging from 0.0076 to 0.2879. HON
+respectively. Some companies can exhibit such behaviour       has the lowest error, MSE test = 9.9301×10−7 , at N = 4.
+in pre-market hours due to thin order books, irregular        Overall, N = 5 yields the lowest error for 11 companies
+                                                                                                                    8
+
+
+
+
+FIG. 3. 2D Colormap showcasing the dependency of MSE Test (top left), NMSE Test (top right), MAPE Test (bottom left)
+and RMSE Test (bottom right) on the number of qubits N for the 20 quantum-invested companies. The MSE Test values
+range from 9.9301 × 10−7 - 0.2879. MSE Test, NMSE Test, RMSE Test and MAPE Test peak at N = 1 and slightly/drastically
+drop depending on the company at N ≥ 2. At N = 5, eleven companies RGTI, QUBT, QMCO, IONQ, QNC.V, QTUM, QSI,
+LAES, IBM, NVDA, INTC) experience low MSE, NMSE and RMSE.
+
+
+(RGTI, QUBT, QMCO, IONQ, QNC.V, QTUM, QSI,                   5% (see Fig 3 left bottom plot). HON has a highly accu-
+LAES, IBM, NVDA, INTC). MSFT, QBTS, FORM,                    rate MAPE Test value ranging from 0.0922% - 0.2975%.
+HON, GOOG and AMZN exhibit the least MSE test at             ZPTA and ARQQ have poor MAPE Test values (> 20%)
+N = 4, ZPTA at N = 3 and QS and ARQQ at N = 6.               for all N .
+The MSE Test ranges from 9.9301 × 10−7 - 0.2879. It is         Fig 4 shows the direction accuracy (DA) of each com-
+a non-monotonic function of N .                              pany for N = 1 - 6 qubits and δ = 6. Surprisingly, one
+  Similar to MSE Test, NMSE Test and RMSE Test               qubit is more than enough for the QRC to sufficiently
+have the same companies with the least errors at N = 5       predict the direction trend (up/down) in daily closing
+(RGTI, QUBT, QMCO, IONQ, QNC.V, QTUM, QSI,                   volumes with a DA > 70% for 15 companies and DA
+LAES, IBM, NVDA, INTC), N = 4 (MSFT, QBTS,                   > 77% for 6 companies (RGTI, QUBT, QMCO, QNC.V,
+FORM, HON, GOOG, AMZN), N = 6 (QS, ARQQ) and                 QSI, AMZN). Overall, the DA for QNC.V is the high-
+N = 3 (ZPTA). RMSE Test ranges from 9.9650 × 10−4            est at N = 2 and N = 4 (DA = 0.9969) indicating the
+- 1.5028 × 10−1 for N ≥ 2 indicating extremely accu-         non-monotonic dependency of DA on N . Nineteen com-
+rate fit between the QRC testing prediction and the ac-      panies have an accuracy greater than 85% for N ≥ 2.
+tual targeted testing time-series. When N = 1, RMSE          ZPTA yields the lowest DA at N = 1 (0.2813) and N = 4
+Test varies from 8.7245 × 10−2 - 5.3659 × 10−1 meaning       (0.7813).
+the prediction for companies such as NVDA (0.5369),            In conclusion, N ≥ 2 is more than enough for the HPE-
+QBTS (0.4672) and QMCO (0.3969) e.t.c are quite poor.        QRC (Hamiltonian Parameter Encoded QRC) frame-
+The ten companies with the best MAPE Test for N ≥ 2          work to predict the up/down trend in DCV with high
+are IONQ, QNC.V, QTUM, MSFT, IBM, FORM, HON,                 accuracy. To have high DA and low MSE, NMSE and
+GOOG, AMZN and INTC with an error that is less than          RMSE in the QRC output, the best choice is N ≥ 3.
+                                                                                                                        9
+
+                                                                We compare the MAPE Test, NMSE Test and DA results
+                                                                to see the competitive nature of the HPE-QRC frame-
+                                                                work with the notable techniques.
+
+
+
+
+FIG. 4. The direction accuracy is a non-monotonic function
+of the number of qubits N . For nineteen companies, the accu-
+racy is greater than 85% when N ≥ 2. ZPTA has the lowest
+accuracy at N = 1 and N = 4 with DA = 0.2813 and 0.7813
+respectively.
+
+
+     A.   Benchmarking MLP, ESN, QIESN and
+                    HPE-QRC
+
+  The performance of the HPE-QRC is compared across
+various machine learning ML models: Echo State Net-
+work (ESN), Quantum Inspired Echo State Network
+(QIESN) and Multilayer Perceptron (MLP). MLP and
+ESN are purely classical models while QIESN incorpo-
+rates quantum-inspired feature maps to a classical ESN
+to enrich the reservoir’s dynamics. We choose the opti-
+mal number of qubits, N = 5, for the HPE-QRC frame-
+work since all companies experience low MSE, NMSE,
+MAPE and RMSE values yielding the best predictive               FIG. 5. MAPE TEST (top) and NMSE Test (bottom) of
+performance.                                                    MLP (blue), ESN (orange), QIESN (yellow) and HPE-QRC
+  Each model is implemented for the purpose of DCV              (purple) when HPE-QRC has five qubits. HPE-QRC outper-
+prediction over a 5 year span with the following param-         forms MLP, ESN and QIESN in 12 companies for MAPE Test
+eters:                                                          and 14 companies for NMSE Test.
+
+   1. MLP: Structure - Dense(156) → Dense(136) →                   Fig 5 (top) compares the MAPE Test for all four mod-
+      Dense(1), Activation function = ReLU, Optimizer           els when HPE-QRC has five qubits in the QR. HPE-QRC
+      = Adam, Epochs = 60, Batch Size = 16, Input =             outperforms MLP, ESN and QIESN in 12 companies
+      60% of DCV dataset, (Training Set, Validation Set)        (QMCO, IONQ, QNC.V, QTUM, LAES, IBM, NVDA,
+      = (50% Input, 50% Input).                                 FORM, HON, GOOG, AMZN, INTC) as it predicts DCV
+                                                                values numerically close to the targeted dataset for these
+   2. ESN: Number of Reservoirs = 400, Spectral Radius          companies. Solely comparing HPE-QRC with MLP, ESN
+      = 0.95, Leak rate = 0.8.                                  and QIESN independently, HPE-QRC dominates in 18,
+                                                                17 and 13 respectively. Overall QIESN and HPE-QRC
+   3. QIESN: Number of Reservoirs = 400, Spectral Ra-           outperform MLP and ESN. MAPE Test has the worst
+      dius = 0.95, Leak rate = 0.8, Sparsity = 0.1, Ran-        performance at N = 1 indicating one qubit does not fo-
+      dom State = 42, Quantum Feature Map = Sin(x).             cus on the quantitative behaviour of the targeted dataset.
+                                                                   HPE-QRC also outperforms MLP, ESN and QIESN
+   4. HPE-QRC: N = 5, ∆0 = 8, Ω0 = 6, cγ = 1 × 10−8 ,           in 14 companies when considering NMSE Test (see Fig 5
+      δ = 6.                                                    (bottom)). The same behaviour is observed for MSE Test
+                                                                                                                              10
+
+and RMSE Test. At N = 1, HPE-QRC has its worst               nerships, etc) that are quite often announced outside reg-
+performance across all companies.                            ular trading hours. By capturing the nuanced dynamics
+                                                             of out-of-market hours, the QRC can anticipate transi-
+                                                             tional behaviour and potential spillover effects which un-
+                                                             fold in regular trading hours.
+                                                                In general, we evaluate the effects of ∆0 , Ω0 and N on
+                                                             the overall performance of the QRC for one day stock
+                                                             trend prediction. We vary ∆0 ∈ [1, 10], Ω0 ∈ [1, 10]
+                                                             and N ∈ [1, 6] for all companies with the exception of
+                                                             QNC.V, FORM and ZPTA which lack pre-market and
+                                                             after-market volume data.
+
+
+                                                                                A.    Pre-Market Hours
+
+                                                                Optimal parameters (N, ∆0 , Ω0 ) exist for nine compa-
+                                                             nies (RGTI - 37, QUBT - 57, QMCO - 80, QS - 436,
+                                                             ARQQ - 140, QSI - 133, QBTS - 48, LAES - 22 and
+                                                             HON - 7) that yield a DA that is greater than 86%. The
+                                                             number of optimal parameters that exhibit the highest
+                                                             DA are dependent on the company (see Table III). For
+FIG. 6. HPE-QRC outperforms ESN and QIESN in 16 and          example QUBT has it highest DA (DA = 0.9167) in
+13 companies respectively for N = 5 where DA > 85%. MLP      nine parameters (N, ∆0 , Ω0 ) = (5, 1, 5-10) and (5, 2, 8-
+performs better than ESN, QIESN and HPE-QRC for all com-     10) while QS has a high DA of 0.9831 in 41 parameters
+panies.
+                                                             i.e. (N, ∆0 , Ω0 ) = (5, 1, 2-7), (5, 2, 4-10) and many more.
+                                                             QMCO, ARQQ and HON have multiple parameters with
+   Fig 6 shows the direction accuracy of MLP, ESN,           DA = 1 since the number of data points are extremely
+QIESN and HPE-QRC. Overall, MLP captures the di-             small (less than thirty points) making it easier for the pa-
+rection trend compared to ESN, QIESN and HPE-QRC             rameters to enhance the QRC’s ability to capture trend
+by having the highest DA for all companies. However,         patterns.
+when comparing HPE-QRC with QIESN and HPE-QRC                   The lowest values for MSE Test, NMSE Test, MAPE
+with ESN, HPE-QRC has a higher DA in thirteen and            Test and RMSE Test occur at (5, 1, 10), (5, 1, 10),
+sixteen companies respectively.                              (5, 4, 10), (5, 1, 7), (6, 6, 9), (5, 1, 10), (5, 1, 10), (4, 5, 10)
+                                                             and (5, 3, 5) for RGTI, QUBT, QS, ARQQ, QSI, QBTS,
+                                                             LAES and HON respectively. This shows that parame-
+  V.   ONE DAY STOCK PRICE PREDICTION                        ters including N = 5 lead to low MSE, NMSE, MAPE
+                                                             and RMSE Test with a high DA. Also, the MAPE TEST
+   In this section, we evaluate the performance of the       in these parameters are less than 0.27% indicating an
+QRC on one day stock price prediction. We take the           excellent fit.
+volume dataset of July 7, 2025 and divide the dataset           To find optimal parameters that include all 17 com-
+into three sections: Pre-market hours (4:00 - 9:29 a.m.      panies, we would need to set the requirement DA >
+EST), In-market hours (9:30 a.m. - 4:00 p.m. EST) and        0.68 since MSFT has a maximum DA value of 0.6833
+After-market hours (4:01 - 8:00 p.m. EST). The volume        in six parameters. In fact the maximum DA value
+data is sampled at one-minute interval for each company.     for RGTI, QUBT, QMCO, QS, IONQ, QTUM, ARQQ,
+The dataset for the pre-market and after-market hours        QSI, MSFT, QBTS, LAES, IBM, NVDA, HON, GOOG,
+are further split into training points (60%) and testing     AMZN and INTC are 0.8737, 0.9167, 1, 0.9831, 0.8544,
+points (40%). We investigate the QRC’s performance on        0.8571, 1, 0.8889, 0.6883, 0.8864, 0.8684, 0.8372, 0.7217,
+forecasting future values of pre-market and after-market     1, 0.8539, 0.72 and 0.7949 respectively. This shows that
+hours using one-step non-autonomous prediction.              the QRC’s predictive performance for pre-hours mar-
+   The motivation in evaluating the QRC’s performance        ket data is good since parameters exists for each com-
+on out of hours stock prediction (pre-market and after-      pany that give satisfactory DA results for MSFT (DA
+market hours) stems from assessing the QRC’s capabili-       = 0.6833), good results for NVDA, AMZN and INTC
+ties in capturing the high volatility and low liquidity in   (0.71 < DA < 0.8) and great results for the remaining 13
+out of hours stock prices. The heightened volatility and     companies (DA > 0.83).
+reduced liquidity can be attributed to news-driven spo-         In most cases, low DA (for example DA < 0.20) means
+radic price jumps which frequently coincide with major       that the framework’s output is a reflection of the de-
+information releases (ex. technological milestones, fund-    sired output. This suggests that certain parameters
+ing announcements, market reports and forecasts, part-       (N, ∆0 , Ω0 ) cause the QR to generate inverted output
+                                                                                                                                      11
+
+     Company Highest DA                   (N, ∆0 , Ω0 )             Lowest MSE Lowest NMSE Lowest MAPE Lowest RMSE
+      RGTI     0.8737              (5, 1, 4-10), (5, 2, 8-10)      4.1689 × 10−6  0.2368      0.1622       0.0020
+                                                                              −6
+      QUBT     0.9167              (5, 1, 5-10), (5, 2, 8-10)      2.5398 × 10    0.1651      0.1239   1.5937 × 10−3
+                                                                              −6
+      QMCO        1                    (3, 3, 4), (3, 5, 7)        8.2296 × 10    1.0771      0.2598   2.8687 × 10−3
+                                      (3, 7, 10), (5, 1, 2)
+                                    (5, 2, 4-6), (5, 3, 7-10)
+                                            (5, 4, 10)
+         QS         0.9831          (5, 1, 2-7), (5, 2, 4-10)      5.6813 × 10−7     0.0674           0.0647        7.5374 × 10−4
+                                   (5, 3, 6-10), (5, 4, 8-10)
+                                   (6, 1, 1-10), (6, 2, 5-10)
+                                           (6, 3, 8-10)
+      ARQQ             1                (6,2,2), (6,4,5)           7.0777 × 10−6     0.4161           0.2269        2.6604 × 10−3
+                                   (6, 5, 6-7), (6, 6, [7, 9])
+                                     (6, 7, 8), (6, 8, 9-10)
+        QSI         0.8889              (1,1,2), (1,2,4)           1.2970 × 10−6     0.0456           0.0986        1.1388 × 10−3
+                                       (1, 3, 6), (1, 4, 8)
+                                   (1, 5, 9-10), (5, 1, 8-10)
+       QBTS         0.8864         (5, 1, 7-10), (6, 2, 4-10)      1.9799 × 10−6     0.2024           0.1255        1.4071 × 10−3
+                                   (6, 1, 6-10), (6, 3, 6-10)
+                                    (6, 4, 8-10), (6, 5, 10)
+       LAES         0.8684         (4, 2, [3, 4]), (4, 3, 5-7)     4.0388 × 10−6     0.2951           0.1357        2.0097 × 10−3
+                                   (4, 4, 7-10), (4, 5, 9-10)
+                                (4, 6, 10), (5, 1, 1), (5, 3, 4)
+                                 (5, 4, 6), (5, 5, 7), (5, 6, 9)
+                                (5, 7, 10), (6, 3, 3), (6, 4, 4)
+                                      (6, 8, 9), (6, 9, 10)
+       HON             1          (2,1,1), (5,3,2), (5, 3, 5)      9.2616 × 10−6     0.9922           0.2672        3.0433 × 10−3
+                                 (5, 4, 7),(5, 5, 9), (5, 7, 5)
+                                             (5, 8, 6)
+
+TABLE III. The highest directional accuracy (DA) for the companies RGTI, QUBT, QS, ARQQ, QSI, QBTS, LAES and HON
+occur in multiple parameters (N, ∆0 , Ω0 ) where N = 5, N = 5, N = [3, 5], N = [5, 6], N = 6, N = [1, 5], N = [5, 6], N = [4, 5, 6]
+and N = [2, 5] respectively. The parameters which yield the lowest MSE Test, NMSE Test and RMSE Test values occur at
+(5, 1, 10), (5, 1, 10), (5, 4, 10), (5, 1, 7), (6, 6, 9), (5, 1, 10), (5, 1, 10), (4, 5, 10) and (5, 3, 5) for RGTI, QUBT, QS, ARQQ, QSI,
+QBTS, LAES and HON respectively with a MAPE Test that is less than 0.27%.
+
+
+relative to the desired stock price data while others align
+with the orientation of the desired output. Therefore,
+the reservoir dynamics robustly encode directional fea-
+tures and one can utilize polarity inversion as a tool for
+predictive alignment.
+   Additionally, we train the QRC using the dataset from
+July 7, 2025 for each company independently and see if
+it can predict future stock trend patterns for July 10-11
+and July 14-18. We choose parameters (N, ∆0 , Ω0 ) =
+(5, 1, 10) to implement this predictive task. Fig 7 shows
+the DA for July 10-11 and July 14-18 using July 7 as
+the training dataset. We find that the stock trend pre-
+diction for these parameters are greater than 77% overall
+                                                                         FIG. 7. Direction Accuracy (DA) for 17 companies using
+for eleven companies (RGTI, QUBT, QMCO, QS, IONQ,
+                                                                         July 7, 2025 dataset as training and predicting up/down
+QTUM, ARQQ, QSI, QBTS, LAES and INTC) indi-                              trends for July 10-11 and July 14-18. Using the parameters
+cating that despite being trained on only one day, it is                 (N, ∆0 , Ω0 ) = (5, 1, 10) we find a DA accuracy greater than
+enough for the QRC to demonstrate great predictive per-                  69% for thirteen companies.
+formance across future pre-market days. Adding MSFT,
+                                                                                                                            12
+
+ Company Highest DA                         (N, ∆0 , Ω0 )                   Lowest MSE Lowest NMSE Lowest MAPE Lowest RMSE
+  QUBT     0.8615                (6, 5, [2, 6]), (6, 6, 7), (6, 7, 9)      2.9809 × 10−7  1.3323      0.0466   5.4598 × 10−4
+                                              (6, 8, 10)
+  QMCO         0.8889              (2, 3, 1), (3, 4, 3), (3, 5, 4)         3.0688 × 10−5  1.3521      0.4484       0.0055
+                                  (3, 6, 5), (3, 7, 6), (3, 8, 7-8)
+                            (3, 9, 8-9), (3, 10, [6, 9, 10]), (4, 9, 3)
+                                   (6, 4, 2), (6, 5, 2), (6, 10, 4)
+   QS          0.8889                    (6, 3, 6), (6, 4, 8)              1.9828 × 10−6  1.5254      0.1173       0.0014
+  QBTS         0.8696                 (6, 2, 4-6), (6, 3, 7-10)            7.8058 × 10−7  0.8165      0.0769   8.8351 × 10−4
+                                             (6, 4, 9-10)
+   HON            1                  (1, 6, 4-10), (2, 1, 2-10)            9.4326 × 10−7  0.9867      0.0848   9.7122 × 10−4
+                                (3, 7, [3, 6-10]), (4, 6, [2, 6-10])
+                           (5, 8, [1, 3, 7-10]), (6, 10, [2, 4, 6-7]), ...
+
+TABLE IV. QUBT, QMCO, QS, QBTS and HON have the highest DA in multiple parameters (N, ∆0 , Ω0 ) where N = 6,
+N = [2, 3, 4, 6], N = 6, N = 6, N = 6 and N = 1-6 respectively. HON has 346 parameters which exhibit the highest DA at
+DA = 1. We show thirty seven parameters in this table for HON. The lowest MSE Test, NMSE Test and RMSE Test values
+occur at (6, 7, 9), (3, 8, 8), (6, 4, 8), (6, 4, 9), and (5, 3, 4) for QUBT, QMCO, QS, QBTS and HON respectively with a MAPE
+Test that is less than 0.5%.
+
+
+NVDA, GOOG, IMB and AMZN leads to DA > 61%                         the information without active trading pressure. When
+across all dates. The predictive performance of HON is             pre-market hours open, the market responds with more
+poor on July 11, 16 and 18 with DA = 0.574, 0.4 and                direction and intentionality which causes the increase of
+0.3636 respectively. However, for July 10 and 17, the DA           volume and reliability. This results to smoother trajec-
+is high as DA = 0.8181 and 1 respectively.                         tories being formed by pre-market data in the quantum
+   Surprisingly, as the days increased, the DA did not             reservoir state space. Thus, the QRC’s ability to predict
+monotonically decrease. In sixteen companies, July 18              input patterns that it can detect and learn from efficiently
+has a DA > 70%. Maintaining a high accuracy over time              is enhanced.
+without retraining indicates that the inductive bias of the
+QRC is great. It is able to extract and retain meaning-
+ful features just by using limited data indicating strong
+model generalization. This suggests a form of temporal
+invariance where the QRC can consistently model cyclical
+liquidity behaviour that rear across Pre-market sessions.
+
+
+                 B.     After-Market Hours
+
+   Table IV shows the optimal parameters with the high-
+est DA for QUBT, QMCO, QS, QBTS and HON. DA
+> 0.86 is observed exclusively in these companies for
+after-market DCV data. The lowest value of MSE Test,               FIG. 8. Using the parameters (N, ∆0 , Ω0 ) = (5, 1, 10), we
+NMSE Test and RMSE Test for QUBT, QMCO, QS,                        find a DA accuracy greater than 76% for 15 companies when
+QBTS and HON are seen in the parameters (6, 7, 9),                 predicting After-Market hours for July 10 - 11 and July 14 -
+(3, 8, 8), (6, 4, 8), (6, 4, 9), and (5, 3, 4) respectively. The   18. The After-Market hours dataset for July 7, 2025 is used
+MAPE values for these parameters are less than 0.5%.               as the training dataset.
+   The order of magnitude of MSE Test is less than -5
+and the NMSE Test ranges from 0.8165 - 1.5254. Because               Fig 8 shows the DA for July 10 - 11 and July 14 -
+after-market hours have little trading volume, the vari-           18 for After-Market hours. Again, the QRC is trained on
+ance shrinks in quiet market conditions making NMSE                After-Market hours for July 7, 2025. We again choose the
+appear large relative to the MSE.                                  parameter (N, ∆0 , Ω0 ) = (5, 1, 10) for all 17 companies.
+   Table III and Table IV show that the direction accu-            DA > 76% for 15 companies (RGTI, QUBT, QMCO, QS,
+racy in pre-market hours dataset are better than after-            IONQ, ARQQ, QSI, MSFT, QBTS, LAES, IBM, NVDA,
+market hours. This is because the response to previous             GOOG, AMZN and INTC) and DA > 65% when HON
+close news is much more settled before pre-market hours            and QTUM are included. HON and QTUM under per-
+begins due to the extended time to process and evaluate            forms on July 11 and 14 respectively. Overall, the high
+                                                                                                                          13
+
+DA is maintained for further days, with DA > 78% on
+July 18, suggesting that the QRC framework can capture
+latent structure within low volumes and high volatility
+of After-Market hours behaviour. This offers insight into
+the nonlinear dependencies which conventional models
+often do not consider.
+   The last two investigations involve: (1) predicting
+After-Market hours data for July 10 - 11 and July 14 - 18
+using Pre-Market hours dataset for July 7, 2025 as input
+and (2) predicting Pre-Market hours data for July 10 -
+11 and July 14 - 18 using After-Market hours dataset for
+July 7, 2025 as input. For the first case, when After hours
+data is sparse (limited or messy), Pre-Market data in-
+sights can help decode After-Market gaps as Pre-Market           FIG. 10. A DA accuracy greater than 52% is observed when
+trader moves based on overnight news or expectations of-         predicting After-Market hours data for July 10 - 11 and July
+ten hint the market’s behaviour later. Therefore, if the         14 - 18 using Pre-Market hours dataset for July 7, 2025 as
+QRC model sees similar patterns over time i.e. stock rises       input with (N, ∆0 , Ω0 ) = (5, 1, 10).
+pre-market and dips after-market, it can make predictive
+model based on that knowledge even on unseen days. We
+again choose parameters (N, ∆0 , Ω0 ) = (5, 1, 10).                                VI.   CONCLUSION
+   For the first task, the up/down predictions are over
+63% for all companies and maintained for further days
+                                                                    We present a quantum reservoir, within a QRC frame-
+(see Fig 9). RGTI, QUBT, QMCO, QS, IONQ, QTUM,
+                                                                 work, consisting of up to six two-level qubits connected
+ARQQ, QBTS and INTC have a DA > 80% which is
+                                                                 via an all-to-all topology. We demonstrate that this
+maintained from July 10 - July 18. The QRC captures
+                                                                 QRC framework is capable of predicting future closing
+trend patterns in pre-market data for July 7 that is es-
+                                                                 daily volumes and up/down stock trends of 20 quantum-
+sential in predicting after-market hours data from July
+                                                                 invested companies. We start by characterizing the tail
+10 - July 18.
+                                                                 behaviour in stock volume data by computing the stan-
+                                                                 dardized moment ratios (SMR) and Pearson correlation
+                                                                 between companies. For the 5 year period (April 11
+                                                                 2020 - 2025), heavy-tail and lighter-tail companies expe-
+                                                                 rience strong co-movement in the extreme tails alongside
+                                                                 non-monotonic companies QTUM and IBM. The non-
+                                                                 monotonic company HON exhibits idiosyncratic mid-
+                                                                 order behaviour. Pre-market tail behaviour for July
+                                                                 7, 2025 varies sharply across heavy-tail, lighter-tail,
+                                                                 and non-monotonic tail companies. Heavy and lighter
+                                                                 tail companies experience systematic extreme tails co-
+                                                                 movement while non-monotonic companies exhibit id-
+                                                                 iosyncratic distortions. After-market behaviour have sys-
+                                                                 tematic co-movement in the heavy and lighter tail com-
+                                                                 panies while non-monotonic companies remain entirely
+FIG. 9. When predicting After-Market hours data for July         idiosyncratic. Despite heavy tails or lighter tails, the
+10 - 11 and July 14 - 18, a DA accuracy greater than 63%         HPE-QRC is capable of great predictive performance.
+is observed for (N, ∆0 , Ω0 ) = (5, 1, 10) when the Pre-Market
+hours dataset for July 7, 2025 is the training dataset.             The HPE-QRC performance is enhanced by applying
+                                                                 non-linear post processing delay embeddings to the read-
+                                                                 outs. To incorporate memory into the framework, we
+   The up/down predictions for the second task are over          add delay embeddings. Adding delay embeddings have
+52%. This is due to QTUM’s and HON’s performance on              demonstrated significant improvements in the QRC per-
+July 17 (DA = 0.5263) and July 16 (DA = 0.6) respec-             formance [70, 71]. We find that the Hamiltonian param-
+tively. Removing HON and QTUM leads to an accuracy               eters ∆0 = 8 and Ω0 = 6, delay δ = 6 along with 60%
+greater than 70% maintained for further days. Therefore          of the initial data points as training points, enables low
+using the after-market data for July 7, the QRC captures         MSE Train, MSE Test, MAPE Test, NMSE Test and
+trend patterns very well for pre-market data of QMCO,            RMSE Test values, depending on the number of qubits
+QS, IONQ, MSFT, QBTS, LAES, IBM, NVDA, GOOG                      N used, with minimal training. For most companies, low
+and AMZN with DA > 83%. This is dominant in MSFT,                NMSE, MSE and RMSE can occur at N = 2, 3, 4, 5 and
+NVDA, GOOG and AMZN where DA > 98.98%.                           6 depending on the initial stock price time series. This
+                                                                 is for a 5 year span: April 11 2020 - 2025.
+                                                                                                                             14
+
+  We additionally capture the effects of ∆0 , Ω0 and N on         86%. We also show that training the QRC on the dataset
+the overall performance of the QRC for Pre-Market and             of one date (i.e. July 7, 2025 pre-market or after-market
+After-Marker hours trend prediction. We find optimal              hours) is more than enough to predict the directional
+parameters (N, ∆0 , Ω0 ) which yield an accuracy of over          accuracy of future days.
+
+
+
+
+ [1] G. Liu and W. Ma, A quantum artificial neural network             the collective motion of high-frequency traders, Physical
+     for stock closing price prediction, Information Sciences          review letters 120, 138301 (2018).
+     598, 75 (2022).                                              [18] M. Garcin, Forecasting with fractional brownian motion:
+ [2] Q. Li, N. Kamaruddin, S. S. Yuhaniz, and H. A. A. Al-             a financial perspective, Quantitative finance 22, 1495
+     Jaifi, Forecasting stock prices changes using long-short          (2022).
+     term memory neural network with symbolic genetic pro-        [19] P. A. Samuelson, Proof that properly anticipated prices
+     gramming, Scientific reports 14, 422 (2024).                      fluctuate randomly, in The world scientific handbook of
+ [3] A. Smithers, The Economics of the Stock Market (Oxford            futures markets (World Scientific, 2016) pp. 25–38.
+     University Press, 2022).                                     [20] B. B. Mandelbrot, The variation of certain speculative
+ [4] T.-S. Quah, Improving returns on stock investment                 prices (Springer, 1997).
+     through neural network selection, in Artificial Neural       [21] C. P. Walter, The random walk model in fi-
+     Networks in Finance and Manufacturing (IGI Global,                nance: A new taxonomy, SSRN Electronic Journal
+     2006) pp. 152–164.                                                10.2139/ssrn.3908441 (2021).
+ [5] B. Buzan and R. Falkner, The Market in Global Inter-         [22] S. J. Taylor, Tests of the random walk hypothesis against
+     national Society: An English School Approach to In-               a price-trend hypothesis, Journal of Financial and Quan-
+     ternational Political Economy (Oxford University Press,           titative Analysis 17, 37 (1982).
+     2024).                                                       [23] S. Thurner, Systemic financial risk: agent based models
+ [6] A. Ebner and N. Beck, The institutions of the market:             to understand the leverage cycle on national scales and
+     organizations, social systems, and governance (Oxford             its consequences, IfP/fgS Working Paper 14 (2011).
+     University Press, USA, 2008).                                [24] P. Klimek, S. Poledna, J. D. Farmer, and S. Thurner,
+ [7] G. F. Davis, Politics and financial markets, The Oxford           To bail-out or to bail-in? answers from an agent-based
+     handbook of the sociology of finance , 33 (2012).                 model, Journal of Economic Dynamics and Control 50,
+ [8] Y. Kara, M. A. Boyacioglu, and Ö. K. Baykan, Predicting          144 (2015).
+     direction of stock price index movement using artificial     [25] J. D. Farmer and D. Foley, The economy needs agent-
+     neural networks and support vector machines: The sam-             based modelling, Nature 460, 685 (2009).
+     ple of the istanbul stock exchange, Expert systems with      [26] A. C. Lyons and J. Kass-Hanna, Behavioral economics
+     Applications 38, 5311 (2011).                                     and financial decision making, SSRN Electronic Journal
+ [9] L. Pástor and P. Veronesi, Technological revolutions             10.2139/ssrn.3887605 (2021).
+     and stock prices, American Economic Review 99, 1451          [27] A. Chauhan, The intersection of game theory and be-
+     (2009).                                                           havioral economics: A theoretical approach, Advance
+[10] J. Bollen, H. Mao, and X. Zeng, Twitter mood predicts             10.22541/au.173627313.33277076/v1 (2024).
+     the stock market, Journal of computational science 2, 1      [28] S. Marmon, Game theory applications in modern
+     (2011).                                                           business strategy: Optimizing competitive decision-
+[11] O. Loang, Psychological Drivers of Herding and Market             making in uncertain markets, SSRN Electronic Journal
+     Overreaction, Advances in Marketing, Customer Rela-               10.2139/ssrn.5141929 (2025).
+     tionship Management, and E-Services (IGI Global Scien-       [29] E. F. Fama, Efficient capital markets: A review of the-
+     tific Publishing, 2024).                                          ory and empirical work, The journal of Finance 25, 383
+[12] S. Bikhchandani and S. Sharma, Herd behavior in finan-            (1970).
+     cial markets, IMF Staff papers 47, 279 (2000).               [30] W. F. De Bondt and R. Thaler, Does the stock market
+[13] K. L. Ooi, Behavioural finance and financial crises, in           overreact?, The Journal of finance 40, 793 (1985).
+     Demystifying Behavioral Finance: Foundational Theo-          [31] D. Grabowski, Technology, adaptation and the efficient
+     ries to Contemporary Applications and Future Directions           market hypothesis, Adaptation and the Efficient Market
+     (Springer, 2025) pp. 79–93.                                       Hypothesis (December 4, 2019) (2019).
+[14] F. Black and M. Scholes, The pricing of options and cor-     [32] A. Y. Gu, Increasing market efficiency: Evidence from
+     porate liabilities, Journal of political economy 81, 637          the nasdaq, American Business Review 22, 20 (2004).
+     (1973).                                                      [33] S. D. Silver, Agent expectations and news sentiment in
+[15] L. Bachelier, Théorie de la spéculation, Annales scien-         the dynamics of price in a financial market, Review of
+     tifiques de l’École Normale Supérieure 3, 17, 21 (1900).        Behavioral Finance 16, 836 (2024).
+[16] K. Kanazawa, T. Sueshige, H. Takayasu, and                   [34] M. Naseer and D. Y. Bin Tariq, The efficient market hy-
+     M. Takayasu, Kinetic theory for financial brownian                pothesis: A critical review of the literature, The IUP
+     motion from microscopic dynamics, Physical review E               journal of financial risk management 12, 48 (2015).
+     98, 052317 (2018).                                           [35] R. Cont, Empirical properties of asset returns: stylized
+[17] K. Kanazawa, T. Sueshige, H. Takayasu, and                        facts and statistical issues, Quantitative finance 1, 223
+     M. Takayasu, Derivation of the boltzmann equa-                    (2001).
+     tion for financial brownian motion: Direct observation of    [36] R. Cont, Volatility clustering in financial markets: em-
+                                                                                                                                15
+
+     pirical facts and agent-based models, in Long memory in      [55] K. Kobayashi, K. Fujii, and N. Yamamoto, Feedback-
+     economics (Springer, 2007) pp. 289–309.                           driven quantum reservoir computing for time-series anal-
+[37] T. J. Moskowitz, Y. H. Ooi, and L. H. Pedersen, Time              ysis, PRX quantum 5, 040325 (2024).
+     series momentum, Journal of financial economics 104,         [56] M. N. Ivaki, A. Lazarides, and T. Ala-Nissila, Quantum
+     228 (2012).                                                       reservoir computing on random regular graphs, Physical
+[38] X. He, K. Li, C. Santi, and L. Shi, Social interaction,           Review A 112, 012622 (2025).
+     stochastic volatility, and momentum, Stochastic Volatil-     [57] T. J. Yoder, E. Schoute, P. Rall, E. Pritchett, J. M. Gam-
+     ity, and Momentum (April 19, 2021) (2021).                        betta, A. W. Cross, M. Carroll, and M. E. Beverland,
+[39] J. Y. Campbell, A. W. Lo, A. C. MacKinlay, and                    Tour de gross: A modular quantum computer based on
+     R. F. Whitelaw, The econometrics of financial markets,            bivariate bicycle codes, arXiv preprint arXiv:2506.03094
+     Macroeconomic Dynamics 2, 559 (1998).                             (2025).
+[40] A. C. MacKinlay, A. W. Lo, and J. Y. Campbell, The           [58] J. E. Bourassa, R. N. Alexander, M. Vasmer, A. Patil,
+     econometrics of financial markets (2007).                         I. Tzitrin, T. Matsuura, D. Su, B. Q. Baragiola, S. Guha,
+[41] G. Holtes, Return volatility estimates: A review and              G. Dauphinais, et al., Blueprint for a scalable pho-
+     practical analysis, Available at SSRN 4693434 (2024).             tonic fault-tolerant quantum computer, Quantum 5, 392
+[42] D. Easley and M. O’hara, Time and the process of se-              (2021).
+     curity price adjustment, The Journal of finance 47, 577      [59] F. Butt, D. F. Locher, K. Brechtelsbauer, H. P. Büchler,
+     (1992).                                                           and M. Müller, Measurement-free, scalable and fault-
+[43] T. Fischer and C. Krauss, Deep learning with long                 tolerant universal quantum computing, arXiv preprint
+     short-term memory networks for financial market pre-              arXiv:2410.13568 (2024).
+     dictions, European journal of operational research 270,      [60] H. Jnane, B. Undseth, Z. Cai, S. C. Benjamin, and
+     654 (2018).                                                       B. Koczor, Multicore quantum computing, Physical re-
+[44] V. Varadharajan, N. Smith, D. Kalla, F. Samaah,                   view applied 18, 044064 (2022).
+     K. Polimetla, and G. R. Kumar, Stock closing price and       [61] C. Monroe, R. Raussendorf, A. Ruthven, K. R. Brown,
+     trend prediction with lstm-rnn, Journal of Artificial In-         P. Maunz, L.-M. Duan, and J. Kim, Large-scale mod-
+     telligence and Big Data 4, 877 (2024).                            ular quantum-computer architecture with atomic mem-
+[45] S. Mourya, H. Leipold, and B. Adhikari, Contextual                ory and photonic interconnects, Physical Review A 89,
+     quantum neural networks for stock price prediction,               022317 (2014).
+     arXiv preprint arXiv:2503.01884 (2025).                      [62] S. Sang, L. Hour, and Y. Han, Toward scalable quan-
+[46] N. Srivastava, G. Belekar, N. Shahakar, et al., The poten-        tum compilation for modular architecture: Qubit map-
+     tial of quantum techniques for stock price prediction, in         ping and reuse via deep reinforcement learning, arXiv
+     2023 IEEE International Conference on Recent Advances             preprint arXiv:2506.09323 (2025).
+     in Systems Science and Engineering (RASSE) (IEEE,            [63] L. Li, L. D. Santis, I. B. Harris, K. C. Chen, Y. Gao,
+     2023) pp. 1–7.                                                    I. Christen, H. Choi, M. Trusheim, Y. Song, C. Errando-
+[47] N. Stamatopoulos, D. J. Egger, Y. Sun, C. Zoufal,                 Herranz, et al., Heterogeneous integration of spin–photon
+     R. Iten, N. Shen, and S. Woerner, Option pricing using            interfaces with a cmos platform, Nature 630, 70 (2024).
+     quantum computers, Quantum 4, 291 (2020).                    [64] IBM, Ibm sets the course to build world’s first large-scale,
+[48] D. Emmanoulopoulos and S. Dimoska, Quantum ma-                    fault-tolerant quantum computer at new ibm quantum
+     chine learning in finance: Time series forecasting, arXiv         data center (2025), accessed 2025-07-31.
+     preprint arXiv:2202.00599 (2022).                            [65] S. K. Bartee, W. Gilbert, K. Zuo, K. Das, T. Tanttu,
+[49] F. Orlandi, E. Barbierato, and A. Gatti, Enhancing fi-            C. H. Yang, N. Dumoulin Stuyck, S. J. Pauka, R. Y. Su,
+     nancial time series prediction with quantum-enhanced              W. H. Lim, et al., Spin-qubit control with a milli-kelvin
+     synthetic data generation: A case study on the s&p 500            cmos chip, Nature , 1 (2025).
+     using a quantum wasserstein generative adversarial net-      [66] M. E. Beverland, P. Murali, M. Troyer, K. M. Svore,
+     work approach with a gradient penalty, Electronics 13,            T. Hoefler, V. Kliuchnikov, G. H. Low, M. Soeken,
+     2158 (2024).                                                      A. Sundaram, and A. Vaschillo, Assessing requirements
+[50] P. Mironowicz, A. Mandarino, A. Yilmaz, T. Anken-                 to scale to practical quantum advantage, arXiv preprint
+     brand, et al., Applications of quantum machine learning           arXiv:2211.07629 (2022).
+     for quantitative finance, arXiv preprint arXiv:2405.10119    [67] A. Andreev, A. Balanov, T. Fromhold, M. Greenaway,
+     (2024).                                                           A. Hramov, W. Li, V. Makarov, and A. Zagoskin, Emer-
+[51] J. Zhou, Quantum finance: Exploring the implications of           gence and control of complex behaviors in driven systems
+     quantum computing on financial models, Computational              of interacting qubits with dissipation, npj Quantum In-
+     Economics , 1 (2025).                                             formation 7, 1 (2021).
+[52] J. Cohen, A. Khan, and C. Alexander, Portfolio optimiza-     [68] L. De Clerk and S. Savel’ev, An investigation of higher
+     tion of 60 stocks using classical and quantum algorithms,         order moments of empirical financial data and their im-
+     arXiv preprint arXiv:2008.08669 (2020).                           plications to risk, Heliyon 8 (2022).
+[53] K. Fujii and K. Nakajima, Harnessing disordered-             [69] L. De Clerk and S. Savel’ev, Ai algorithms for fitting
+     ensemble quantum dynamics for machine learning, Phys-             garch parameters to empirical financial data, Physica A:
+     ical Review Applied 8, 024030 (2017).                             Statistical Mechanics and its Applications 603, 127869
+[54] A. Rosato, A. Ceschini, F. Succetti, S. Y.-C. Chen, and           (2022).
+     M. Panella, A study on quantum reservoir recurrent mod-      [70] C. Zhu, P. J. Ehlers, H. I. Nurdin, and D. Soh, Prac-
+     els for time-constrained volatile sequence forecasting, in        tical and scalable quantum reservoir computing, arXiv
+     2025 International Joint Conference on Neural Networks            preprint arXiv:2405.04799 (2024).
+     (IJCNN) (IEEE, 2025) pp. 1–8.                                [71] G. McCaul, J. S. Totero Gongora, W. Otieno, S. Savel’ev,
+                                                                                                             16
+
+A. Zagoskin, and A. G. Balanov, Minimal quantum reser-   voirs with hamiltonian encoding, Chaos: An Interdisci-
+                                                         plinary Journal of Nonlinear Science 35, 093135 (2025).
+

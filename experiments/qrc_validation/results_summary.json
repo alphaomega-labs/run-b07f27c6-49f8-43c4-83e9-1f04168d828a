@@ -1,0 +1,69 @@
+{
+  "figures": [
+    "paper/figures/fig_robust_gap_surface.pdf",
+    "paper/figures/fig_entanglement_frontier.pdf",
+    "paper/figures/fig_rho_noise_frontier.pdf",
+    "paper/figures/fig_counterexample_stress.pdf"
+  ],
+  "tables": [
+    "paper/tables/table_parity_tiers.tex",
+    "paper/tables/table_entanglement_ate.tex",
+    "paper/tables/table_effect_decomposition.tex",
+    "paper/tables/table_falsification_matrix.tex",
+    "paper/tables/table_leakage_detector.tex",
+    "paper/tables/table_theorem_assumption_checks.tex"
+  ],
+  "datasets": [
+    "experiments/qrc_validation/results/parity_tier_benchmark.csv",
+    "experiments/qrc_validation/results/entanglement_factorial.csv",
+    "experiments/qrc_validation/results/operator_dynamics_factorial.csv",
+    "experiments/qrc_validation/results/boundary_counterexample_stress.csv",
+    "experiments/qrc_validation/results/negative_results_claim_matrix.csv",
+    "experiments/qrc_validation/results/datasets_manifest.json"
+  ],
+  "sympy_report": "experiments/qrc_validation/results/sympy_validation_report.md",
+  "pdf_readability_checks": [
+    "checked_pdf:paper/figures/fig_robust_gap_surface.pdf",
+    "checked_pdf:paper/figures/fig_entanglement_frontier.pdf",
+    "checked_pdf:paper/figures/fig_rho_noise_frontier.pdf",
+    "checked_pdf:paper/figures/fig_counterexample_stress.pdf"
+  ],
+  "sympy_checks": {
+    "fc1_gap_error_equivalence": true,
+    "fc1_robust_min_lower_bound": true,
+    "fc2_loss_accuracy_equivalence": true,
+    "fc3_ratio_dominance_equivalence": true,
+    "fc3_undefined_ratio_guard": true
+  },
+  "claim_support": {
+    "hm-cf-1": "supported",
+    "hm-cf-2": "supported",
+    "hm-cf-3": "mixed"
+  },
+  "figure_captions": {
+    "paper/figures/fig_robust_gap_surface.pdf": {
+      "panels": "Left: baseline accuracy across easy/mid/hard tiers. Right: entangling branch accuracy vs eta by tier.",
+      "variables": "x=tier or eta, y=accuracy, hue=baseline/tier",
+      "takeaway": "Non-easy tiers show modest but non-universal parity-locked gains; uncertainty can erase support in high-noise cells.",
+      "uncertainty": "Tier-level CI values are reported in table_parity_tiers.tex and derived from bootstrap over seeds/noise/shot cells."
+    },
+    "paper/figures/fig_entanglement_frontier.pdf": {
+      "panels": "Left: tau heatmap over (eta,S). Right: tier/policy tau means with CI whiskers.",
+      "variables": "tau = E[L|e=0]-E[L|e=1] with L=1-A",
+      "takeaway": "Entanglement benefit is regime-dependent; several high-noise or low-shot strata are unresolved.",
+      "uncertainty": "Bootstrap confidence intervals define unresolved frontier cells where zero is included."
+    },
+    "paper/figures/fig_rho_noise_frontier.pdf": {
+      "panels": "Left: rho(eta) trajectories by tier. Right: undefined-ratio bins by operator policy.",
+      "variables": "rho = DeltaA_obs / DeltaA_dyn",
+      "takeaway": "Operator-attribution dominance weakens with noise and becomes undefined near small denominators.",
+      "uncertainty": "Undefined-bin handling is explicit; eta_c crossing uses CI-aware interpretation in table_effect_decomposition.tex."
+    },
+    "paper/figures/fig_counterexample_stress.pdf": {
+      "panels": "Single panel: false-advantage rate vs label shuffle under compliant/leaked PCA modes.",
+      "variables": "x=label shuffle %, y=false advantage rate",
+      "takeaway": "Leakage detector is sensitive by construction; intentional leakage sharply inflates false advantage.",
+      "uncertainty": "Stress outcomes are deterministic controls and reported with accompanying falsification matrix tables."
+    }
+  }
+}

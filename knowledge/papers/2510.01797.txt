@@ -1,0 +1,869 @@
+                                           From quantum feature maps to quantum reservoir computing:
+                                                                      perspectives and applications
+
+                                               Casper Gyurik1, † , Filip Wudarski2, † , Evan Philip1 , Antonio Sannia3,2 , Hossein
+                                               Sadeghi1 , Oleksandr Kyriienko4 , Davide Venturelli2 , and Antonio A. Gentile1
+                                                                                 1
+                                                                                     Pasqal SaS, France
+                                                 2
+                                                     USRA Research Institute for Advanced Computer Science (RIACS), USA
+arXiv:2510.01797v1 [quant-ph] 2 Oct 2025
+
+
+
+
+                                           3
+                                               Institute for Cross-Disciplinary Physics and Complex Systems (IFISC) UIB-CSIC,
+                                                                     Campus Universitat Illes Balears, 07122,
+                                                                              Palma de Mallorca, Spain
+                                                               4
+                                                                   School of Mathematical and Physical Sciences,
+                                                                              University of Sheffield, UK
+                                                                       †
+                                                                           These authors contributed equally
+
+
+
+
+                                                                                            1
+                                            Abstract
+     We explore the interplay between two emerging paradigms: reservoir computing and quantum
+computing. We observe how quantum systems featuring beyond-classical correlations and vast
+computational spaces can serve as non-trivial, experimentally viable reservoirs for typical tasks in
+machine learning. With a focus on neutral atom quantum processing units, we describe and exem-
+plify a novel quantum reservoir computing (QRC) workflow. We conclude exploratively discussing
+the main challenges ahead, whilst arguing how QRC can offer a natural candidate to push forward
+reservoir computing applications.
+
+
+
+I.    INTRODUCTION
+
+
+     Quantum computing (QC) is a specific model of computation that uses the principles
+of quantum mechanics to process information. Unlike the classical bits (0 or 1) used in
+the von Neumann architecture, quantum computers use qubits, allowing for superposition
+states. Quantum systems exhibit interference and entanglement, which allow qubits to be
+correlated in ways that classical bits cannot. Digital computation in this model is carried
+out using quantum gates, which are operations that change the state of qubits, similar to
+how logic gates operate on bits in classical circuits. Analog operations where the qubits are
+evolved according to their intrinsic system behaviour are also possible in quantum circuits.
+     While quantum computers grow in size, they remain noisy and limited in size, with a
+number of qubits growing to hundreds, they are still sparsely connected and have non-
+negligible error rates [1]. Hybrid quantum-classical approaches offer the possibility of en-
+hancing capabilities of quantum devices and tailoring them for specific applications [2, 3].
+These algorithms show modularity and flexibility, allowing them to exploit existing hardware
+while delivering the best performance. Additionally, one can scale the size of the system in
+a modular way, connecting registers with a handful of qubits into correlated multi-register
+systems with hundreds. The former can serve as a test-bed for theoretical investigations, as
+well as numerical simulations, that could be used as a performance benchmark for quantum
+hardware runs.
+     Quantum computing can be seen as a part of a broader field of physics-based com-
+puting, encompassing also analog, reservoir and neuromorphic frameworks. In particular,
+reservoir computing leverages upon a complex dynamical system to map inputs into a high-
+
+                                                2
+dimensional computational space, and processes readout data to efficiently solve learning
+tasks, including time-series predictions and classification [4, 5]. Neuromorphic computing
+explores novel ways to process information, attempting to mimic brain processes with the
+intent of matching its efficiency. In this regard, some routes towards neuromorphic com-
+puting entertain the adoption of reservoir-like mappings enabled by biological or physical
+systems [6]. Reservoir computing approaches exemplify heuristic computational paradigms.
+These methods typically lack formal performance guarantees but rely on empirical valida-
+tion, offering solutions to complex or high-dimensional tasks that otherwise are prohibitively
+expensive [7].
+   The main appeal of reservoir computing is twofold: (i) because only the linear readout is
+trained, the models are relatively easy to optimize while still potentially capturing temporal
+dependencies (unlike recurrent neural networks, which are notoriously difficult to train due
+to challenges in backpropagation); and (ii) with appropriately chosen reservoirs, both the
+computational and energy costs of training and inference can be much lower compared to
+other approaches [5, 7]. The promise of QC resides in the favourable scaling of computa-
+tional resources, compared to the best-known classical methods, expected when quantum
+algorithms are applied to certain problems, such as factoring large numbers or simulating
+quantum systems, making QC an obvious candidate in the efforts to optimise the computing
+load across several disciplines [8].
+   In this contribution, we explore quantum reservoir computing (QRC) as an emerging ma-
+chine learning paradigm that combines quantum evolution with non-trivial, high-dimensional
+feature processing. We concentrate on physical systems that are based on neutral atom
+arrays, with arbitrary connectivity and strong interactions. Such systems can naturally
+simulate complex multi-qubit models and their dynamics, satisfying one of the main re-
+quirements of reservoir computing. We describe in full generality the QRC paradigm, and
+highlight the differences from other Quantum Machine Learning (QML) approaches. We
+complement such analysis with exemplary applications of neutral atoms to relevant tasks in
+QRC, suggesting a novel hybrid scheme to leverage NISQ devices for early implementations.
+   Building on such discussion, we argue how QC can amplify other non-von Neumann
+models of computation, providing benefits from coherent operation and entanglement, and
+in particular offer a promising venue to expand efforts in the direction of reservoir and
+neuromorphic computing paradigms.
+
+                                             3
+II.     BASICS OF RESERVOIR COMPUTING
+
+
+      Reservoir computing (RC) systems have been long proposed and successfully applied
+across a wide range of domains. As outlined in [5], these applications can be broadly
+categorized into a few main areas: signal classification (e.g., spoken digit recognition), time
+series prediction (e.g., stock market forecasting), control of dynamical systems (e.g., real-
+time robot control), and PDE-based computations (e.g., fast simulation of certain physical
+systems governed by differential equations).
+      Formally, a RC system operates as follows. Let the input data be denoted by u1 , . . . , ut ,
+where each ui ∈ Rn , and let ui (j) denote the jth entry of ui . We index the data according
+to the order in which it is presented to the learner, to emphasize potential temporal depen-
+dencies. The dynamical map that describes the reservoir evolution is denoted by R, and in
+typical digital implementations, it is parameterized by a set of (fixed) random matrices W .
+At each time step t, the reservoir state rt is given by the recursive relation
+
+                                     rt = R(ut , rt−1 ; W ) ∈ RN .                             (1)
+
+For a suitable choice of R, rt is a function of the past inputs up to a typical characteristic
+time scale, tFM , known as fading memory time, e.g.
+
+                                         rt = rt ({ui }tt−tFM ),                               (2)
+
+allowing the system to encode temporal dependencies in its state.
+      Finally, a linear readout layer Wout ∈ Rm×N is trained to produce
+
+                                            yt = Wout rt ,                                     (3)
+
+where yt ∈ Rm is the output, i.e. the reservoir prediction at time t. Therefore, we can
+distinguish three main subroutines: i) data embedding, ii) dynamical mapping, and iii)
+post-processing for training and prediction. When studying what makes a good reservoir,
+there are certain key considerations.
+      A crucial one is whether the reservoir exhibits some form of fading memory. This require-
+ment is twofold: first, the state of the reservoir should depend on past inputs. However, the
+reservoir should primarily depend on recent inputs rather than inputs from the distant past.
+The first aspect is typically quantified by the short-term memory capacity of the system [9],
+
+                                                  4
+while the second is referred to as the echo state property [10] and can be measured, for in-
+stance, using the echo state property index [11]. The fading memory is imprinted naturally
+in the dynamical map Eq. (2), which exploits non-linear activation functions crucial for good
+performance.
+   Equally important is the presence of non-linearity in the reservoir internal dynamics.
+Since the readout layer is typically linear like in Eq. (3), the reservoir must introduce suf-
+ficient complexity to allow for non-trivial transformations of the input. This often requires
+tuning the system close to the edge of chaos — a regime where the dynamics are rich and
+sensitive to inputs, but not so unstable that they become unpredictable, or input informa-
+tion is completely scrambled. This balance ensures a high-dimensional, expressive training
+space while keeping enough structure for meaningful processing.
+   A significant portion of research in RC is dedicated to identifying physical systems that
+can effectively implement the reservoir mapping r specified in Eq. (1). As detailed in Ref. [5],
+various platforms have been explored for this purpose, including but not limited to: memris-
+tors [12], spintronic devices [13], photonic systems [14], and digital FPGAs and ASICs [15].
+
+
+
+III.   QUANTUM SYSTEMS AS RESERVOIRS
+
+
+   A novel proposal in this direction is to use quantum systems – particularly quantum
+computers, whether digital or analog – as reservoirs. Quantum systems are solid candidates
+for reservoirs due to their inherently complex, high-dimensional state spaces and non-trivial
+dynamics. The underlying idea is straightforward: quantum states live in exponentially
+large Hilbert spaces, making them natural candidates for generating high-dimensional rep-
+resentations suitable for training a linear readout. Inspired by features emerging from the
+QML field – as discussed in Sect. III A – a growing body of literature has investigated how
+to effectively leverage quantum systems as reservoirs, as pioneered by works such as [16, 17]
+and surveyed e.g. in [18].
+   In this contribution, we emphasise how it can be especially promising to adopt quan-
+tum systems exhibiting strong interactions such as lattices of Rydberg atoms (qubits), see
+Sect. III B. These systems naturally support rich entanglement and strongly-correlated be-
+haviour, allowing them to efficiently encode and process temporal correlations in the inputs.
+Moreover, their tunable interaction strengths and coherence properties enable precise con-
+
+                                              5
+trol over the dynamical regime, making it possible to steer the system toward the optimal
+balance between memory and nonlinearity required for effective reservoir computing.
+
+
+     A.    From quantum feature maps to quantum reservoirs
+
+
+     In classical machine learning, feature mapping (FM) is a well established concept whereby
+a certain vector of data u ∈ U (the feature)1 gets mapped via a transformation f from the
+initial space U to a different feature one, in order to better exploit some properties of the
+transformed dataset f (u) ∈ F. A commonly used example is achieving the linear separability
+of a dataset for classification purposes, when adopting a Support Vector Machine (e.g. [19]).
+     A key problem in QML is to load a typically classical input on a quantum device, in
+order to further process it. The way to achieve this typically invokes a quantum feature map
+acting on a (classical) input u, and targeting a quantum Hilbert space H such that:
+
+                                             u ∈ U → |ψ(u)⟩ .                                           (4)
+
+This mapping is often a quantum circuit parameterised via u known as the ansatz, and
+acting as a unitary transformation Uψ [f (u)] of an initial fiducial state, onto the quantum
+state |ψ(u)⟩ ∈ H, where we adopted the common braket notation. The features u can then
+be extracted (in part or in full) by measuring the expectation value of an observable as
+
+                                         ⟨O⟩ = ⟨ψ(u)| O |ψ(u)⟩ ,                                        (5)
+
+which implies an additional (non-linear) transformation of the data. Therefore, one may
+treat not only the data encoding f but also the associated measurement as the feature
+map, as the latter is inherited in order to extract any information from a quantum state.
+Various possible encodings are possible, impacting the scaling in the width and depth of
+the quantum circuit required to embed a dataset of given dimensionality, e.g. M copies of
+size N ≡ dim(u), but also the suitability of the protocol in near-term quantum devices. A
+review of the main possible techniques can be found e.g. in [20], and state-of-art methods
+have produced highly expressive feature maps by appropriately combining classical and
+quantum operations [19, 21].
+
+1
+    For notation brevity we use u for both vectors and scalars, and the nature of u is self-explanatory from
+
+    the context.
+
+
+                                                    6
+FIG. 1. Impact of various feature map encodings. (Left) Single-qubit case with 1D data u on the
+outcome, expressed as the expectation value of a state RZ [f (u)] |+⟩. (Middle) 2-qubit case, where
+two types of observables are extracted, as distinguished by dashed versus solid lines. The colours
+identify different feature map encodings (identity and tanh). (Right) 8-qubit case encoding a 3D
+time-series, i.e. dim(u) = 3, and values of various colour-encoded observables as a function of time.
+
+     We illustrate various feature maps (both on the level of unitary encoding and measure-
+ment) in Fig. 1. First, we consider the most basic scheme of a single-qubit system that
+is transformed with respect to a single-qubit rotation RZ (α) = exp(−iαZ/2), where Z is
+                                                    √
+the Pauli-Z matrix, and the initial state |+⟩ = 1/ 2(|0⟩ + |1⟩). Taking Pauli-X as the
+observable O, the expectation value with respect to the output state |ψ(a)⟩ = RZ (a) |+⟩
+is given as ⟨X⟩ = cos(a). Note that the cosine argument can also undergo a feature map
+transformation as a ≡ f (u), yielding ⟨O⟩ = cos[f (u)]. We illustrate also the impact of
+replacing the identity mapping f ≡ id with various non-linear functions: f ≡ tanh, f ≡ cos
+and f ≡ arccos2 . Similarly in Fig. 1(middle), we consider two-qubit case, where the initial
+state |+⟩ |+⟩ is first rotated with RZ (a) ⊗ RZ (a) (same Z rotation acting on each qubit)
+followed by CX gate. In 2-qubit case, we have more abundant structure of observables that
+one can measure, and we compare single-qubit expectation value ⟨X1 ⟩ and 2-qubit correlator
+⟨X1 X2 ⟩ with different feature maps encoding the input data. For both single- and two-qubit
+toy examples, one notices that different encodings transform the data in completely different
+manner, leaving us with a flexible subroutine to meet machine learning objectives. Finally,
+for a multiqubit system and multi-parameter input data (previously u ≡ u was a scalar), the
+landscape looks more complex. To illustrate this, we plot in Fig. 1(right) various observables
+extracted from encoding input data from the chaotic system Lorenz63 detailed and adopted
+2
+    Note that in case of arccos(·) we operate on a truncated domain
+
+
+                                                    7
+later in Sec. III C. Here, the dependency is against time, as the Lorenz63 is a 3D time-series
+and the encoding phase mixes all components of the input vector together.
+   When bearing in mind the requirements for a good reservoir structure elicited in Sect. III,
+a first question concerning Eq. (4) is: to what extent can we introduce non-linearities in a
+quantum reservoir adopting a FM scheme? In the classical case, such non-linearities where
+naturally present in the dynamical map. However, the evolution of a closed quantum system
+(an approximation valid for many quantum devices) is linear and described by unitary
+transformations U . Then, a natural choice is to invoke a non-linear behaviour within the
+feature map encoding of the data. That is, f (u) shall be a non-linear function of u.
+   Additional challenges and opportunities arise when considering the way we extract clas-
+sical information from a quantum system – i.e. the measurement. The latter invokes the
+estimation of observables, i.e. special operators acting on the system’s Hilbert space. In
+a quantum reservoir framework, this measurement step preludes the final, linear readout
+operation in Eq. (3). However, a well-known aspect of quantum measurement is that it
+collapses the internal state of the system in a non-reversible fashion, producing a classically
+processable bitstring as a result, of the same size as the number of qubits in the device. Each
+bit therein represents the collapsed value in the computational basis of the corresponding
+qubit, and average estimates like Eq. (5) require access to many copies of the same state,
+and repeated measurements.
+   The requirements to build a reservoir are somewhat different from other QML tasks
+like linear regression or classification, where the reset of the system’s memory after each
+measurement does not pose any fundamental issues. Fading memory requirements conflict
+with “forgetting” the process generating the output quantum state - which is, to some
+extent, the outcome of the measurement process. Therefore, other strategies are required
+to restore the ability of a quantum system to retain memory of past inputs, highlighting a
+central challenge in quantum reservoir computing design, that we discuss in further details
+in Sect. IV.
+
+
+
+   B.   Neutral atom dynamics
+
+
+   Let us consider a specific example of a quantum system suitable for use as a reser-
+voir: analog quantum simulators based on neutral atoms, particularly arrays of Rydberg
+
+                                             8
+atoms [22]. These systems are currently capable of storing hundreds of physical qubits in
+vacuum chambers sitting at room temperatures, which can be manipulated by laser address-
+ing of appropriate frequency, and engineered pulses. In general, such a system comprising
+n atoms can be described by a Hamiltonian of the form3 :
+                                            X
+                                            n                                  X
+                  H({Ωj }, {δj }, U, t) =         (Ωj (t) Xj + δj (t) nj ) +         Uij (t)ni nj ,   (6)
+                                            j=1                                i<j
+
+where nj = (1 + Zj )/2 is the number operator. The first two parameters Ω (amplitude) and
+δ (detuning) are connected with the laser light - atoms interaction, whereas the coupling
+strengths Uij can be tuned independently from each other. In principle, all three parameters
+are dependent on time t, as pulses can be modulated, and the atom positions can be modified
+via optical-tweezers during the computation allowing for additional operations [23].
+     In our tests we tend to implement less general versions of Eq. (6). The three parameters
+can often be considered static in time, as some Neutral-Atom devices have adopted fixed
+atom arrays throughout the computation (thus making Uij constant), and the modulation of
+the pulses occurs on timescales fast enough, that can be considered constant at least block-
+wise in terms of overall system evolution. An important simplification is also attained by
+adopting global Ω, δ for the whole array, as this removes the demanding requirement of laser-
+addressing single atomic sites independently [22]. When including all such simplifications,
+we are left with a type of Transverse Field Ising Model (TFIM) Hamiltonian [24]:
+                                            X
+                                            n                        X
+                            H(Ω, δ, U ) =         (Ω Xj + δ nj ) +         Uij ni nj .                (7)
+                                            j=1                      i<j
+
+Beside the obvious potential of directly quantum-simulating such models directly on a neu-
+tral atomic system, Eq. (7) can still be expressive enough to implement machine-learnable
+models, as demonstrated e.g. in [19].
+
+
+     C.   Hybrid Quantum-Classical Reservoir Computing with Neutral Atoms
+
+
+     In the spirit of targeting early experimental implementations on NISQ available quantum
+devices, we focus now on describing a possible hybrid QCRC (hQCRC) framework, suitable
+in particular to the neutral atom platform introduced in Sect. III B. A hybrid approach can
+
+3
+    Hereby we assume ℏ = 1 to simplify notation.
+
+
+                                                      9
+serve as a remedy for fading memory [25], as (in its most elementary design) the dynamical
+map can be split into two parts: classical and quantum. The former handles memory effects,
+while the latter exploits an exponentially large Hilbert space for the data encoding. Both
+parts process their respective data streams with non-linear characteristics, thus having the
+necessary components to form a good RC architecture.
+     The framework we propose is inspired by [3] (see also [26] which further exploits classical
+processing techniques), with adjustments to the neutral atom platform, which will eventually
+provide digital-analog capabilities as in [27]. A schematic workflow focusing on sequential
+datasets is depicted in Fig. 2. The framework operates in three phases:
+
+     1. classical data pre-processing — responsible for creating suitable input data to feed in
+        the dynamical map as mentioned in Sect. II,
+
+     2. quantum encoding — a subroutine of the dynamical mapping whose general behaviour
+        we described in Eq. (2),
+
+     3. classical post-processing — combining contributions from the classical and quantum
+        dynamical maps, whose output serves training or prediction purposes.
+
+This is evidently a hybrid classical-quantum-classical scheme, relying on various transforma-
+tions. First (i), the input data is prepared as {Yi (t)} to fit the quantum ansatz, representing
+a quantum subroutine of the dynamical map, hence it is transformed via combination of lin-
+ear and non-linear transformations fiDE : Dinput → Dlayer , where Dinput/layer is the dimension
+of input/layer. Linear transformations are matrix multiplication with fixed - usually random
+- matrices WiDE – see also Eq. (3) – whereas the non-linear ones are activation functions
+similar to those elicited in Fig. 1.
+     The input data is transformed n-times with different (random) WiDE and different fiDE ,
+where n is the number of parameterized (data-dependent) layers in the quantum circuit
+(ii). The quantum ansatz is constructed by first fixing the arrangement of atoms4 , which
+is responsible for interaction between atoms and thus also the generation of entanglement.
+Next a series of laser pulses, algorithmically arranged into layers, are applied to encode the
+transformed data into a quantum state through time-dependent evolution. Each layer has
+4
+    In principle the arrangement could also depend on transformed data Yi (t), however changing the ar-
+
+    rangement from iteration to iteration extends wall-clock execution time, therefore one needs to take these
+
+    overheads into account.
+
+                                                     10
+a number of tunable parameters: Ω, δ, ϕ (described in Sect. III B) as well as the duration
+(which is fixed per-layer in our experiments). The number of terms depends on the type
+of pulses that are applied, e.g. with local pulses one has the flexibility to address 1 to
+N − 1 different atoms, while global pulses addressing the whole atom register allow for
+adjustment of only the introduced parameters. Also, in principle the shape of each pulse
+can be modelled in a time-dependent fashion; however, constant pulses can still provide
+sufficient data encoding expressivity. Future generations of neutral atom platforms are
+expected to provide even more flexibility, for example, Raman transitions and in-processing
+layout re-arrangement are areas of active research [22, 23].
+   The quantum state after the full evolution, i.e. when all layers have been applied, has
+the form
+                      |ψ(t)⟩ = UG [Yn (t)] . . . UL [Y2 (t)] UG [Y1 (t)] |0⟩⊗N ,           (8)
+
+where UG/L [Yi (t)] is a global/local unitary (pulse) parameterized by transformed data Yi (t).
+This state is then measured according to a measurement protocol that enables us to create a
+measurement vector Mt composed of expectation values of selected observables. For example,
+for Z type measurements, one may create a measurement vector comprised of single-qubit
+expectation values and two-qubit correlators as
+
+                    Mt = (⟨Z1 ⟩, ⟨Z2 ⟩ . . . , ⟨ZN ⟩⟨Z1 Z2 ⟩, . . . ⟨ZN −1 ZN ⟩)T ,        (9)
+
+where the ansatz design specify which qubits and what correlators are used. The goal
+of a quantum encoding subroutine is to spread classical data in a high-dimensional Hilbert
+space, whilst preserving the possibility for measurement protocols to extract such compressed
+information. Hence, the structure of the protocol is treated as a hyperparameter of the
+network that needs to be carefully selected, ideally taking into account trade-offs between
+the number of the measurements and informational content they carry on in a measurement
+vector.
+   As a final step (iii), we process available streams of data: input data, measurement vector
+and previous reservoir states to construct a compact reservoir state rt
+
+             rt = (1 − α)rt−1 + αgWg [fX (WX ut ) + fr (Wr rt−1 ) + fM (WM Mt )] ,        (10)
+
+where α is a leak rate, fX , fr , fM are non-linear functions responsible for transforming the
+input data ut , previous reservoir state rt−1 and measurement vector Mt , that first undergo
+
+                                                11
+                                                         UG [Y1(t)]                                                                            UG [Yn(t)]
+                                                                                                                    Circuit
+             Data                                                                                                  encoding
+           encoding
+                                                   Y1(1)(t)                                                                               Yn(1)(t)
+                        Y1(t)
+
+
+
+
+                                             Ω
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     Measurement protocol
+                                                   Y1(2)(t)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               Yn(2)(t)
+
+
+
+
+                                      Global
+                                        δ
+                        Y2(t)                      Y1(3)(t)                                                                               Yn(3)(t)
+
+
+
+
+                                       ϕ
+     ut
+                        Y3(t)                                                Y2(1)(t)       Y2(2)(t)    Y2(3)(t)        Y2(N )(t)
+
+
+
+
+                                      Ω
+                                                                             Y2(N+1)(t) Y2(N+2)(t) Y2(N+3)(t)           Y2(2N )(t)
+
+
+
+
+                                           Local
+                                       δ
+                        Yn(t)                                                Y2(2N+1)(t)   Y2(2N+2)(t) Y2(2N+3)(t)      Y2(3N )(t)
+
+                                       ϕ
+
+          Yi(t) = fiDE (WiDEut)                                Fixed
+                                                                                           UL [Y2(t)]
+                                                              Layout
+                                                                                                         | ψ(t)⟩ = UG [Yn(t)]…UL [Y2(t)] UG [Y1(t)] | 0⟩⊗N
+
+                                                                           Reservoir creation
+                                                                                   &                                                                 <latexit sha1_base64="GUM9lwTXGbFGHpWanBPr83uxHZc=">AAACs3icbZHfT9swEMedwDbW/aDA414sqknsYVUCDPYyCbGXvYBAWgtaXWWOc0ktHCeyL0hVlH+QR97238xtI9FSTrL01efrO5/v4lJJi0Hwz/M3Nl+9frP1tvPu/YeP292d3aEtKiNgIApVmNuYW1BSwwAlKrgtDfA8VnAT3/2c+Tf3YKws9G+cljDOeaZlKgVHh6Luw0VUY0N/UKYgxQMWQyZ1zY3h06YWDVNcZwronyhkZiEZe4KHS/A+KdCuuJcvpYSrWcv8aJmvVasvv4bNU1EGOmn7ZEZmE/wSdXtBP5gHXRdhK3qkjauo+8iSQlQ5aBSKWzsKgxLHrihKoaDpsMpCycUdz2DkpOY52HE9n3lDPzuS0LQw7mikc7qcUfPc2mkeu5s5x4l97s3gS96owvT7uJa6rBC0WDyUVopiQWcLpIk0IFBNneDCSNcrFRNuuEC35o4bQvj8y+tieNgPT/on18e9s/N2HFvkE9knByQkp+SM/CJXZECEF3hDL/L++t/8kR/7yeKq77U5e2Ql/Pw/+PTWAA==</latexit>
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          0                                 1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                hZ1 i
+                                                                               training                                                                   B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                hZ2 i
+                 rt = (1 − α)rt−1 + αgWg [ fX(WXut) + fr(Wrrt−1) + fM(WM Mt)]
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ..                        C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .                        C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      hZN i                      C
+                                                                                                                                                     Mt = B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     hZ1 Z2 i                    C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                                                                                                                     −1
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                hZ1 Z3 i
+                                                                                           Wout = URT (RRT + η𝕀)
+                                                                                                                                                          B                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 C
+                                  Rt = (1,fu(ut), fR(rt))
+                                                                       T                                                                                  @                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ...                       A
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              hZN 1 ZN i
+
+
+
+
+FIG. 2. A representation of the 3 phases of the suggested hybrid Quantum Reservoir Computing
+protocol. A data encoding manipulates the initial vector ut into a modified Yi (t) which is then
+encoded into the quantum circuit, where i indicates the layer in which the data is injected. The
+encoding is here exemplified for a Neutral Atom architecture compatible with Eq. (6), and processes
+                  (j)
+the input Yi (t) according to the chosen (sets of) free parameters j such as Ω, δ, ϕ, alternatively
+operating at a global or local level (details in the main text). The pulse sequences shown for the
+circuit encoding are generated in Pulser [28]. The readout from the quantum circuit Mt is finally
+post-processed in a reservoir-like fashion compatible with the relation (1), and trained until rt
+reproduces the target dataset. Phases implemented in classical (quantum) devices are encircled in
+dark (light) gray boxes.
+
+linear transformation with fixed (usually random) matrices WX , Wr and WM , respectively.
+The entire second part can additionally be transformed in a similar way, i.e. a combination
+of linear and non-linear parts with a function gWg ≡ g(Wg ·). The reservoir state update is
+responsible for memory effects by mixing previous states with current construction, allowing
+it to learn time characteristics. The reservoir states are constituents of a reservoir vector Rt
+
+                                                                Rt = (1, fu (ut ), fR (rt ))T                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               (11)
+
+where unity plays the role of a bias, and fx , fR are non-linear activation functions for the
+
+                                                                               12
+input data ut and the reservoir state rt 5 , respectively. The reservoir vectors are then ag-
+gregated into a matrix R = [Rp , Rp+1 , . . . , Rd ], where we discarded the first p − 1 vectors
+to avoid reliance on the initial conditions, and kept remaining vectors from the training set
+(t = 1, 2, . . . , d, keeping d − p). The collected reservoir vectors are used to determine an
+output matrix Wout in the ridge regression procedure that aims to find least-square mean
+between target data u = [up , up+1 , . . . , ud ] and the training data R as
+                                                               −1
+                                Wout = URT RRT + ηI                ,                                     (12)
+
+where η is regularization coefficient that stabilize the solution. The output matrix is then
+used to predict future time-steps as
+
+                                yt+1 = Wout Rt ,      for t = d, d + 1, . . . .                          (13)
+
+This setup gives us a flexible and modular approach that can be easily adjusted to hard-
+ware restrictions, e.g. the currently cloud-available neutral-atom hardware supports global
+channels only [28, 29]. Additionally, it provides a great test-bed for investigating the tran-
+sition between classical and quantum reservoir computing. In particular, one can turn off
+the quantum part by setting fM ≡ 0 or turn off the dependence of the reservoir states
+on the input data (setting fX ≡ 0) to investigate the importance of quantum or classical
+contribution. The standard echo state network is recovered for fX = fr = id, fM ≡ 0 and
+gWg = tanh (see, for example, [30]).
+     As a demonstration of the functionality of the approach, we present in Fig. 3 a comparison
+between the predictions from Eq.(10) with and without the quantum part, i.e. when fM ≡ id
+and fM ≡ 0, respectively. The results here are based on a standard chaotic benchmark -
+Lorenz63 [4, 31] - that allows us to assess the performance of the framework in a challenging
+time-series forecasting task. For the quantum phase, we adopt an ansatz spanning an 8-
+qubit register, where the measurement protocol is fixed, composed of Z-type measurements
+to get ⟨Zi ⟩, ⟨Zi Zj ⟩ and ⟨Zi Zj Zk ⟩ on all possible combinations of i, j, k. We stress that a fixed
+approach, may not necessarily be the most optimal, as it lacks any information or feedback
+about the problem. The purpose of the displayed results is to demonstrate the relevance
+of the quantum part, as all other parameters are the same, serving as a fair comparison
+5
+    In principle, one can combine these non-linear transformations, with yet another set of linear transforma-
+
+    tions. Our numerical experiments on small system sizes suggest that it is unnecessary to obtain reasonably
+
+    good outcomes.
+
+
+                                                     13
+between classical and quantum. Therefore, one may perceive the contribution from the
+quantum processing as a beneficial addition to the classical system, which is based on ex-
+ploiting the Hilbert space (circuit) encoding and extracting of information from the quantum
+states via measurements. Note that we did not optimize over the ansatz hyperparameters,
+leaving this additional improvement for future contribution, and rather treat these results
+as a representative co-processing boost that can be attained by our hQRC approach, when
+running on an analog neutral atom platform. A more thorough benchmark will be required
+to assess average performances and benefits of our protocol (similar to what attained in [3]
+for a gate-based approach). Further details are reported in an external repository [32].
+   The purpose of the displayed results is to demonstrate the relevance of the quantum
+part, as all other parameters are the same, serving as a fair comparison between classical
+and quantum. Therefore, one may perceive the contribution from the quantum processing as
+a beneficial addition to the classical system (blue line in Fig. 3), which is based on exploit-
+ing the Hilbert space (circuit) encoding and extracting of information from the quantum
+states via measurements. Note that we did not optimize over the ansatz hyperparameters.
+These results are thus intended as a representative co-processing boost attainable via our
+hQCRC approach on existing analog neutral atom platforms. More thorough benchmarks
+will be required to assess average performances and ultimate benefits of a hybrid protocol
+(as attained in [3] for digital approaches).
+
+
+
+IV.   THE ROAD SO FAR, THE ROAD TO COME
+
+
+   In Sect. III, we have elicited some fundamental challenges impacting in general the use
+of quantum systems as performing reservoirs beyond feature mapping – such as the ability
+to retain fading memory over sequences of inputs, a hallmark of RC. We thus described in
+Sect. III C how one can defy such criticalities in an exemplary demonstration, focusing on a
+neutral atom platform and benefitting from a hybrid architecture to bypass some desirable
+reservoir properties lacking from what readily implementable in the described quantum
+device. Here, we intend to discuss in perspective some of these design choices, and how they
+might evolve in the near future.
+   While quantum systems are naturally suited for generating expressive, high-dimensional
+representations, ensuring that they also possess the temporal dynamics necessary for memory
+
+                                               14
+FIG. 3. Prediction phase of the normalized Lorenz63 time-series benchmark (black) for x, y and z
+components (left to right). The red line represents a numerical simulation of the hQCRC frame-
+work in (10) (i.e. fM ≡ id), whereas the blue line synthetically retrieves a classical-phase only
+performance by imposing fM ≡ 0 in the same equation, while the green line uses fX ≡ 0, i.e. the
+reservoir rt depends only on measurements extracted from the quantum states Mt . Finally, the teal
+line depicts the best performing setup for classical RC. Implementations details of the circuit in the
+main text. The shaded region describes ± standard deviation over 20 random seeds of quantum
+reservoirs.
+
+
+remains non-trivial. We elicited before the incompatibility between projective quantum
+measurements and the necessity for the reservoir to retain memory during the processing. A
+straightforward workaround is to reinitialize and evolve the quantum reservoir from scratch
+for each new data point, but this quickly becomes intractable as the number of inputs
+grows. Hybrid approaches like ours, or the one introduced in [25], outsource the memory
+build-up to classical co-processing. A more advanced approach for mitigating this issue
+would be to adopt so-called weak measurements, which are agnostic to the specific quantum
+hardware used. Rather than performing a full projective measurement – as illustrated before,
+which collapses the quantum state entirely – weak measurements couple “reservoir qubits”
+to “ancillary qubits”. Only the latter are targeted to extract classical information, with
+minimal disturbance to the reservoir quantum state. This strategy implies a careful trade-
+off between the strength of the measurement, the memory capacity of the reservoir, and
+the computational overhead of resetting the system to successfully perform on benchmark
+tasks [33, 34].
+
+   On the other side, a proper reservoir’s behaviour shall prioritise recent inputs, and thus
+needs to erase information over time. Mathematically, it means that the map that describes
+
+                                                15
+the reservoir state evolution, r in Eq. (2), needs to be a contraction. As a consequence,
+the fully unitary dynamics introduced in Sect. III is not suitable for QRC purposes. Again,
+in our hQCRC setting, this issue is overcome by post-processing the measured data from
+the quantum system with a classical fading memory function. However, moving to a fully
+quantum regime, fading memories could only be obtained if non-negligible losses are present
+[35]. Within this strategy, an envisioned setting is to evolve an initial quantum state but
+extract classical information only via measurements on a subsystem. Concretely, for a
+neutral atom system compatible with the one in Fig. 2, one starts with an N -qubit initial
+state |0⟩⊗N , and maps e.g. the transformed input Y1 (t) to a set of Hamiltonian parameters
+ (1,2,3)
+Y1         . Due to the presence of losses, the evolved state after a fixed time t becomes a more
+                          (1,2,3)
+complex function L(Y1               , t) generalising over Eq. (8), where L is the so-called Liouvillian
+which models the lossy reservoir evolution. The reservoir state r1 is extracted by weak-
+measuring a subset of M < N atoms, e.g., repeating the experiments so that finite-shot
+expectation values of local observables can be computed. For each subsequent input ut , the
+                                                               (1,2,3)
+procedure can be repeated, but the additional L(Yn                       , t) acts on the quantum state as
+evolved until the previous n − 1 timestep, and altered by the weak measurement.
+     In a more general case, depending on the particular encoding, different physical properties
+of the quantum system itself can be used for introducing effective losses to the system.
+For example, if the input is encoded in a reservoir subsystem, scrambling dynamics are
+favourable for having a fading memory [36]. Also, many open quantum systems are described
+by a Markovian behaviour, which erases information of past inputs exponentially fast over
+time [37], precluding the possibility of solving tasks where a coexistence of short and long
+time correlations is needed. This challenge, in a fully quantum case, can only be addressed
+with the introduction of quantum non-Markovianity [37]. However, hybrid scenarios like the
+one introduced can leverage upon classical memory to allow for such longer time correlations.
+     Another fundamental challenge is the extraction of information from the quantum device,
+encompassing beyond RC to more generic quantum machine learning tasks. Data processing
+is expected to occur in the vast Hilbert space available already to modest-sized quantum
+devices, however it is often lower-dimensional classical data that are required as the usable
+output for real-world tasks. This throughput mismatch is known as the readout problem,
+and it is closely related to concentration phenomena. Specific techniques are being explored
+to extract such crux of information [38], often at the heart of the performance of quantum
+
+                                                     16
+algorithms. In our specific case, this readout challenge emerges naturally e.g. when adopt-
+ing ancillary subsystems and scrambling dynamics, because the number of measurements
+needed to properly compute the reservoir response can exponentially scale with the reservoir
+dimension [39, 40] and only the presence of appropriate symmetries can solve the issue [40].
+A measurement overhead problem can also be present in the neutral atom setting considered
+here, as the system size scales and (linearly) more expectations values need being computed
+in Eq. (9). Possible strategies for dealing with this issue will be the topic of further research.
+     On the positive side, QRC does not require expensive circuit gradient estimate and op-
+timization [10], which affects instead other variational QML techniques. Therefore, it could
+elude trainability issues connected with the emergence of complex or flat optimization land-
+scapes [41], whilst harnessing the expressivity accessible to complex, high-dimensional quan-
+tum states to potentially capture patterns in specific datasets better than classical tools [25].
+     Finally, we can safely assume that noise limitations in the quantum device of choice
+for QRC implementations will play a crucial role in dictating architectures. At a stage
+in quantum computing where extremely different technologies coexist, to the point that
+appropriate cross-platform benchmarking is still an actively developed and debated research
+topic [1, 42], it is expected how different quantum architectural choices - with their strengths
+and weaknesses in terms of gate fidelity, scalability in circuit width and depth, repetition
+rate and access to native operations - will influence the design of the corresponding QRC
+protocols. Indeed, each of these aspects will impact differently noise on the processing and
+readout phases. In this contribution we focused on a Neutral Atom implementation, but
+even restricting ourselves to a single platform and its related noise model, we can envisage
+how a careful design and optimisation of the ansatz can bring massive performance benefits.
+The long-term complexity of this optimisation problem, as circuits scale beyond classical
+simulability and ease of result interpretation, will eventually invoke the aid of automated
+strategies, similarly to what has happened in the field of variational QML with Quantum
+Architecture Search schemes [43].
+
+
+
+V.     CONCLUSIONS
+
+
+     We have presented a vision for quantum reservoir computing implemented in a hybrid
+quantum-classical framework (hQCRC). The purpose of this approach is to mitigate all
+
+                                              17
+shortcomings of a quantum system for being a potent reservoir, while taking advantage of
+exponentially large Hilbert spaces.
+   In this regard, we showed that (quantum) feature maps represent an important tool for
+reservoir computing, as they enable processing in such high-dimensional latent space. We
+mitigated the impact of destructive measurements by moving the memory part of the reser-
+voir from the quantum subroutine to a classical one. We also combined the encoding of input
+data into quantum states through analog evolution (data-to-circuit), with non-linearities as-
+sociated with the measurement protocol. Additionally, our hQCRC framework uses feature
+maps on the level of classical reservoir states, making it more flexible to accommodate com-
+plex tasks. The balance between purely classical and hybrid processing in our approach can
+be tuned and the quantum part easily turned completely off, to study the impact of the
+latter on task performances.
+   Crucially, we highlighted how our hQCRC can fit current and future hardware. We
+demonstrated how the mapping described above can invoke arrays of interacting qubits,
+where reconfigurable Rydberg neutral atom arrays represent a prominent example of such
+a quantum architecture. The modularity of the quantum circuit construction enables us
+to scale complexity of each component in the framework - type and number of operations
+addressing the qubits, the size of the register and the number of extracted observables
+(which translates into reservoir sizes). Therefore, one can adjust the hQCRC approach to
+meet hardware restrictions.
+   We demonstrated in a proof-of-concept experiment, how the hQCRC implemented on a
+simulated neutral-atom platform can predict future evolution of chaotic time-series system,
+and the quantum subroutine can be effectively exploited to augment the performance of
+a classical counterpart. Our results show how the efficient combination of quantum and
+classical resources can be beneficial for information processing in typical reservoir computing
+tasks, such as time-series prediction. Our work opens a route to new quantum-classical
+reservoir computing approaches and raises the question of useful resources in the hybrid
+domain.
+   Acknowledgements C.G. O.K. & A.A.G. acknowledge the support from the Euro-
+pean Union’s Horizon Europe research and innovation program under Grant Agreement
+No. 101070347-MANNGA. Views and opinions expressed are those of the authors only
+and do not necessarily reflect those of the European Union or the European Health
+
+                                             18
+and Digital Executive Agency (HADEA). Neither the European Union nor the grant-
+ing authority can be held responsible for them.         O.K. acknowledges support from the
+QCi3 Hub (grant number EP/Z53318X/1). A. S. acknowledges the Spanish State Re-
+search Agency, through the Marı́a de Maeztu project CEX2021-001164-M funded by the
+MCIU/AEI/10.13039/501100011033, through the COQUSY project PID2022-140506NB-
+C21 and -C22 funded by MCIU/AEI/10.13039/501100011033, MINECO through the QUAN-
+TUM SPAIN project, and EU through the RTRP - NextGenerationEU within the framework
+of the Digital Spain 2025 Agenda. A.S. also acknowledges the CSIC Interdisciplinary The-
+matic Platform (PTI+) on Quantum Technologies in Spain (QTEP+) and the support of a
+fellowship from the “la Caixa” Foundation (ID 100010434 - LCF/BQ/DI23/11990081).
+
+
+
+
+ [1] Timothy Proctor, Kevin Young, Andrew D Baczewski, and Robin Blume-Kohout. Bench-
+    marking quantum computers. Nature Reviews Physics, pages 1–14, 2025.
+ [2] Adam Callison and Nicholas Chancellor. Hybrid quantum-classical algorithms in the noisy
+    intermediate-scale quantum era and beyond. Physical Review A, 106(1):010101, 2022.
+ [3] Filip Wudarski, Daniel OConnor, Shaun Geaney, Ata Akbari Asanjan, Max Wilson, Elena
+    Strbac, P Aaron Lott, and Davide Venturelli. Hybrid quantum-classical reservoir computing
+    for simulating chaotic systems. preprint arXiv:2311.14105, 2023.
+ [4] Jason A Platt, Stephen G Penny, Timothy A Smith, Tse-Chun Chen, and Henry DI Abar-
+    banel. A systematic exploration of reservoir computing for forecasting complex spatiotemporal
+    dynamics. Neural Networks, 153:530–552, 2022.
+ [5] Min Yan, Can Huang, Peter Bienstman, Peter Tino, Wei Lin, and Jie Sun. Emerging oppor-
+    tunities and challenges for the future of reservoir computing. Nature Communications, 15,
+    2024.
+ [6] Danijela Marković, Alice Mizrahi, Damien Querlioz, and Julie Grollier. Physics for neuromor-
+    phic computing. Nature Reviews Physics, 2(9):499–510, 2020.
+ [7] Daniel J Gauthier, Erik Bollt, Aaron Griffith, and Wendson AS Barbosa. Next generation
+    reservoir computing. Nature communications, 12(1):5564, 2021.
+ [8] Hsin-Yuan Huang, Soonwon Choi, Jarrod R McClean, and John Preskill. The vast world of
+    quantum advantage. preprint arXiv:2508.05720, 2025.
+
+                                              19
+ [9] Herbert Jaeger and Harald Haas. Harnessing nonlinearity: Predicting chaotic systems and
+    saving energy in wireless communication. Science, 304(5667):78–80, 2004.
+[10] Herbert Jaeger.   The “echo state” approach to analysing and training recurrent neural
+    networks-with an erratum note. German NRC for information technology - technical report,
+    148, 2001.
+[11] Claudio Gallicchio et al. Chasing the echo state property. In ESANN 2019-Proceedings, 27th
+    European Symposium on Artificial Neural Networks, Computational Intelligence and Machine
+    Learning. ESANN, 2019.
+[12] Yanan Zhong, Jianshi Tang, Xinyi Li, Bin Gao, He Qian, and Huaqiang Wu. Dynamic
+    memristor-based reservoir computing for high-efficiency temporal signal processing. Nature
+    communications, 12, 2021.
+[13] Giovanni Finocchio, Massimiliano Di Ventra, Kerem Y Camsari, Karin Everschor-Sitte, Pe-
+    dram Khalili Amiri, and Zhongming Zeng. The promise of spintronics for unconventional
+    computing. Journal of Magnetism and Magnetic Materials, 521, 2021.
+[14] Guy Van der Sande, Daniel Brunner, and Miguel C Soriano. Advances in photonic reservoir
+    computing. Nanophotonics, 6, 2017.
+[15] Bogdan Penkovsky, Laurent Larger, and Daniel Brunner. Efficient design of hardware-enabled
+    reservoir computing in fpgas. Journal of Applied Physics, 124, 2018.
+[16] Keisuke Fujii and Kohei Nakajima. Quantum reservoir computing: a reservoir approach
+    toward quantum machine learning on near-term quantum devices. Reservoir Computing:
+    Theory, Physical Implementations, and Applications, 2021.
+[17] Danijela Marković and Julie Grollier. Quantum neuromorphic computing. Applied physics
+    letters, 2020.
+[18] Pere Mujal, Rodrigo Martı́nez-Peña, Johannes Nokkala, Jorge Garcı́a-Beni, Gian Luca Giorgi,
+    Miguel C Soriano, and Roberta Zambrini. Opportunities in quantum reservoir computing and
+    extreme learning machines. Advanced Quantum Technologies, 4, 2021.
+[19] Boris Albrecht, Constantin Dalyac, Lucas Leclerc, et al. Quantum feature maps for graph
+    machine learning on a neutral atom quantum processor. Physical Review A, 107(4):042615,
+    2023.
+[20] Maria Schuld and Nathan Killoran. Quantum machine learning in feature hilbert spaces.
+    Physical review letters, 122(4):040504, 2019.
+
+
+                                              20
+[21] Oleksandr Kyriienko, Annie E Paine, and Vincent E Elfving. Solving nonlinear differential
+    equations with differentiable quantum circuits. Physical Review A, 103(5):052416, 2021.
+[22] Loı̈c Henriet, Lucas Beguin, Adrien Signoles, Thierry Lahaye, Antoine Browaeys, Georges-
+    Olivier Reymond, and Christophe Jurczak.         Quantum computing with neutral atoms.
+    Quantum, 4, 2020.
+[23] Dolev Bluvstein, Simon J Evered, Alexandra A Geim, Sophie H Li, Hengyun Zhou, Tom
+    Manovitz, Sepehr Ebadi, Madelyn Cain, Marcin Kalinowski, Dominik Hangleiter, et al. Logical
+    quantum processor based on reconfigurable atom arrays. Nature, 626(7997):58–65, 2024.
+[24] Henning Labuhn, Daniel Barredo, Sylvain Ravets, Sylvain de Léséleuc, Tommaso Macrı̀,
+    Thierry Lahaye, and Antoine Browaeys. Realizing quantum ising models in tunable two-
+    dimensional arrays of single rydberg atoms. preprint arXiv:1509.04543, 2015.
+[25] Milan Kornjača, Hong-Ye Hu, Chen Zhao, Jonathan Wurtz, Phillip Weinberg, Majd Hamdan,
+    Andrii Zhdanov, Sergio H Cantu, Hengyun Zhou, Rodrigo Araiza Bravo, et al. Large-scale
+    quantum reservoir learning with an analog quantum computer. preprint arXiv:2407.02553,
+    2024.
+[26] J Settino, L Salatino, L Mariani, F D’Amore, M Channab, L Bozzolo, S Vallisa, P Barillà,
+    A Policicchio, N Lo Gullo, et al. Memory-augmented hybrid quantum reservoir computing.
+    Physical Review Applied, 24(2):024019, 2025.
+[27] Adrian Parra-Rodriguez, Pavel Lougovski, Lucas Lamata, Enrique Solano, and Mikel Sanz.
+    Digital-analog quantum computation. Physical Review A, 101(2):022305, 2020.
+[28] Henrique Silvério, Sebastián Grijalva, Constantin Dalyac, Lucas Leclerc, Peter J Karalekas,
+    Nathan Shammah, Mourad Beji, Louis-Paul Henry, and Loı̈c Henriet. Pulser: An open-source
+    package for the design of pulse sequences in programmable neutral-atom arrays. Quantum,
+    6:629, 2022.
+[29] Pasqal SaS Cloud Services, 2025. https://docs.pasqal.com/cloud/.
+[30] Mantas Lukoševičius. A practical guide to applying echo state networks. In Neural Networks:
+    Tricks of the Trade: Second Edition, pages 659–686. Springer, 2012.
+[31] Edward N Lorenz. Deterministic nonperiodic flow. Journal of atmospheric sciences, 20(2):130–
+    141, 1963.
+[32] Zenodo Public Repository. 10.5281/zenodo.17153722, 2025. Code in this repo are embargoed
+    until 1/9/2026. Please contact the Authors for early access.
+
+
+                                              21
+[33] Pere Mujal, Rodrigo Martı́nez-Peña, Gian Luca Giorgi, Miguel C Soriano, and Roberta Zam-
+    brini. Time-series quantum reservoir computing with weak and projective measurements. npj
+    Quantum Information, 9, 2023.
+[34] Giacomo Franceschetto, Marcin Plodzień, Maciej Lewenstein, Antonio Acı́n, and Pere Mujal.
+    Harnessing quantum back-action for time-series processing. preprint arXiv:2411.03979, 2024.
+[35] Antonio Sannia, Rodrigo Martı́nez-Peña, Miguel C. Soriano, Gian Luca Giorgi, and Roberta
+    Zambrini. Dissipation as a resource for Quantum Reservoir Computing. Quantum, 8:1291,
+    March 2024.
+[36] Rodrigo Martı́nez-Peña, Gian Luca Giorgi, Johannes Nokkala, Miguel C Soriano, and Roberta
+    Zambrini. Dynamical phase transitions in quantum reservoir computing. Physical Review
+    Letters, 127, 2021.
+[37] Antonio Sannia, Ricard Ravell Rodrı́guez, Gian Luca Giorgi, and Roberta Zambrini.
+    Non-markovianity and memory enhancement in quantum reservoir computing.            preprint
+    arXiv:2505.02491, 2025.
+[38] Chelsea A Williams, Stefano Scali, Antonio A Gentile, Daniel Berger, and Oleksandr Kyri-
+    ienko. Addressing the readout problem in quantum differential equation algorithms with
+    quantum scientific machine learning. preprint arXiv:2411.14259, 2024.
+[39] Weijie Xiong, Zoë Holmes, Armando Angrisani, Yudai Suzuki, Thiparat Chotibut, and Su-
+    panut Thanasilp. Role of scrambling and noise in temporal information processing with quan-
+    tum systems. preprint arXiv:2505.10080, 2025.
+[40] Antonio Sannia, Gian Luca Giorgi, and Roberta Zambrini. Exponential concentration and
+    symmetries in quantum reservoir computing. preprint arXiv:2505.10062, 2025.
+[41] Martı́n Larocca, Supanut Thanasilp, Samson Wang, Kunal Sharma, Jacob Biamonte, Patrick J
+    Coles, Lukasz Cincio, Jarrod R McClean, Zoë Holmes, and M Cerezo. Barren plateaus in
+    variational quantum computing. Nature Reviews Physics, pages 1–16, 2025.
+[42] Jeanette Miriam Lorenz, Thomas Monz, Jens Eisert, Daniel Reitzner, Félicien Schopfer,
+    Frédéric Barbaresco, Krzysztof Kurowski, Ward van der Schoot, Thomas Strohm, Jean Senel-
+    lart, et al. Systematic benchmarking of quantum computers: status and recommendations.
+    preprint arXiv:2503.04905, 2025.
+[43] Darya Martyniuk, Johannes Jung, and Adrian Paschke. Quantum architecture search: a
+    survey. In 2024 IEEE International Conference on Quantum Computing and Engineering
+
+
+                                             22
+(QCE), volume 1, pages 1695–1706. IEEE, 2024.
+
+
+
+
+                                      23
+

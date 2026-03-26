@@ -1,0 +1,1583 @@
+                                                                                   Quantum Reservoir Autoencoder:
+                                                                                Conditions, Protocol, and Noise Resilience
+                                                                                       Hikaru Wakaura1, ∗ and Taiki Tanimae1, †
+                                                                      1
+                                                                          QIRI (Quantum Integrated Research Institute Inc.), Tokyo 107-0061, Japan
+                                                             Quantum reservoir computing exploits fixed quantum dynamics and a trainable linear readout to
+                                                          process temporal data, yet reversing the transformation—reconstructing the input from the reservoir
+                                                          output—has been considered intractable due to the recursive nonlinearity of sequential quantum
+                                                          state evolution. We introduce the quantum reservoir autoencoder, a four-equation encode–decode
+                                                          protocol with cross-key pairing, and constructively empirically demonstrate that satisfying reservoir–
+                                                          key combinations can be found using a full XYZ Hamiltonian reservoir (10 data qubits, feature
+                                                          dimension 76, 16 random Hamiltonian realizations). Under ideal conditions the mean-squared error
+                                                          (MSE) reaches ∼10−17 for data lengths up to 30; under shot noise (1 000 shots) and depolarizing
+                                                          noise (p = 0.005), the MSE degrades to 10−3 –10−1 . Asymmetric resource allocation—10 shots for
+arXiv:2602.19700v4 [quant-ph] 17 Mar 2026
+
+
+
+
+                                                          encoding, 105 for decoding—yields a 102-fold MSE improvement (16 seeds × 3 trials). Comparison of
+                                                          single-body features (dimension 31) with the full feature set and six baselines identifies the iterative
+                                                          protocol structure—not the feature dimension—as the dominant noise bottleneck: baselines solving
+                                                          the linear system in a single step retain machine precision under identical noise, whereas per-iteration
+                                                          noise inconsistency in the coupled solver limits the MSE to ∼10−1 . The current protocol requires
+                                                          plaintext access during decoder training, restricting practical deployment. These results establish a
+                                                          proof-of-concept for bidirectional information transformation within quantum reservoir computing
+                                                          and identify iterative noise mismatch and blind decryption as the principal open challenges.
+
+
+                                                              I.   INTRODUCTION                                 preprocessing substantially improve performance by com-
+                                                                                                                pressing features before they enter the quantum reser-
+                                               Quantum reservoir computing is known as one of the               voir. Meanwhile, Romero et al. [14] introduced a dis-
+                                            promising applications of near-term quantum devices for             tinct concept: quantum autoencoders that employ vari-
+                                            machine learning tasks [1–3]. Unlike variational quan-              ational quantum circuits to compress quantum states,
+                                            tum algorithms that require costly parameter optimiza-              requiring iterative parameter optimization of the quan-
+                                            tion on parameterized quantum circuits, QRC employs                 tum circuit itself. The present work occupies a differ-
+                                            a fixed quantum dynamical system whose Hamiltonian                  ent position in this landscape. Unlike QELM and stan-
+                                            time evolution e−iH∆t generates a rich nonlinear map-               dard QRC, which serve exclusively as forward maps, the
+                                            ping from input sequences to high-dimensional feature               QRA achieves bidirectional encode–decode transforma-
+                                            vectors [4, 5]. A trainable linear readout layer ŷ = V W           tion. Unlike quantum autoencoders, the QRA keeps the
+                                            then maps these features to target outputs via simple lin-          reservoir dynamics entirely fixed and transforms classical
+                                            ear regression with Tikhonov regularization [6]. This ar-           data through a linear readout. And unlike De Lorenzis et
+                                            chitecture inherits the computational advantages of clas-           al., where classical autoencoders are applied external to
+                                            sical reservoir computing [7, 8] while exploiting the ex-           the quantum system, in the QRA the quantum reservoir
+                                            ponentially large Hilbert space of quantum systems to               itself functions as the autoencoder—the encoding path
+                                            extract expressive features from a small number of phys-            C → γ and the decoding path γ → Ĉ are both realized
+                                            ical qubits [1, 9].                                                 within the same QRC framework.
+                                               Existing QRC applications have primarily focused                    In all these settings, the reservoir serves as a forward
+                                            on unidirectional information processing: time-series               map—input sequences are transformed into observable
+                                            prediction of chaotic dynamics [9, 10], waveform gen-               expectation values, and a trained readout produces pre-
+                                            eration [11], and classification tasks. A closely re-               dictions. The reverse direction, namely reconstructing
+                                            lated paradigm is the quantum extreme learning ma-                  the original input from the reservoir output, has been
+                                            chine (QELM) [5, 12, 13], which shares QRC’s core                   considered extremely difficult. The information process-
+                                            architecture—fixed quantum dynamics and a trainable                 ing in QRC involves projective measurements that are
+                                            linear readout—but operates without temporal memory,                inherently irreversible, and the mapping from input se-
+                                            processing each input independently rather than sequen-             quences u1 , . . . , uT to the observable vector ⟨Ok ⟩ is many-
+                                            tially. De Lorenzis et al. [13] recently demonstrated               to-one in general; distinct input sequences can yield the
+                                            that QELMs achieve high classification accuracy on im-              same observable pattern [15]. However, we emphasize
+                                            age benchmarks, and that classical autoencoders used as             that the impossibility of reversal has not been formally
+                                                                                                                proven.
+                                                                                                                   A structural comparison between QRC and standard
+                                                                                                                parameterized quantum circuits reveals the origin of this
+                                            ∗ h.wakaura@deeptell.jp
+                                                                                                                difficulty. In QRC, data are input sequentially along the
+                                            † t.tanimae@deeptell.jp
+                                                                                                                time axis: at each step, an input value modulates the
+                                                                                                                            2
+
+quantum state via a rotation gate, followed by Hamil-                     gregation [16], YOMO + depolarizing, asymmetric
+tonian evolution, with partial observables extracted at                   shots, asymmetric + depolarizing) and six base-
+each step [1]. The history of all prior inputs accumu-                    line methods (Hénon map [17], delay-time embed-
+lates nonlinearly in the quantum state through this re-                   ding [18], classical neural network with SPSA [19],
+cursive process. By contrast, in parameterized quantum                    tree tensor network [20], ζ-QVAE [21], and quan-
+circuits commonly used for variational algorithms [2],                    tum recurrent neural network (QRNN) [22]).
+data are encoded in parallel into qubit rotations in a
+single circuit layer and read out all at once. We ar-               3. We show that asymmetric resource allocation—10
+gue that the sequential input structure of QRC induces                 shots for encryption and 105 for decryption—yields
+qualitatively stronger recursive nonlinearity compared to              approximately two orders of magnitude MSE im-
+the more direct input–output relationship of parallel-                 provement (mean 102×, 16 seeds × 3 trials = 48
+encoding circuits. This is a structural, heuristic argu-               runs) over symmetric 1,000-shot measurements, re-
+ment rather than a rigorously quantified comparison: the               ducing the sender’s measurement cost by a factor
+recursive state dependence in QRC means that each ob-                  of 100.
+servable ⟨Ok (t)⟩ is a nonlinear function of all prior inputs,      4. We expand the application range of QRC from uni-
+whereas in a single-layer parameterized circuit each out-              directional prediction to bidirectional transforma-
+put qubit depends on inputs only through the fixed cir-                tion via the QRA, analogous to autoencoder archi-
+cuit depth [5, 15]. A formal quantification using, e.g., in-           tectures in classical neural networks [23].
+formation processing capacity measures [15] is an impor-
+tant direction for future work. This nonlinearity, while            5. Through single-body operator experiments
+making reversibility challenging, also provides a rich fea-            (d = 31) and baseline comparison, we identify
+ture space: with Nq = 10 data qubits, QRC extracts                    the iterative protocol structure—not the feature
+3Nq + N2q + 1 = 76 features per time step without in-                  dimension—as the dominant noise bottleneck.
+creasing the qubit count.                                              Methods solving the linear system in a single
+   In this paper, we demonstrate that the seemingly in-                shot remain at machine precision under identical
+tractable reverse direction can be achieved under specific             measurement noise, while the QRA’s per-iteration
+conditions.                                                            noise inconsistency limits the MSE to ∼ 10−1 .
+   a. Terminology note. Throughout this paper, we
+adopt the terms “encryption”, “decryption”, “plaintext”,           The remainder of this paper is organized as follows.
+“ciphertext”, and “secret key” for structural convenience,       Section II reviews the QRC framework, the XYZ Hamil-
+as the protocol superficially resembles a key-exchange           tonian, noise models, and the YOMO probability aggre-
+system. These terms do not imply that the proposed               gation method. Section III presents the QRA protocol,
+framework constitutes a cryptographic protocol in any            including the four-equation system, cross-key pairing, en-
+formal sense. No security analysis is provided, and the          coding functions, and the iterative algorithm. Section IV
+blind decryption limitation (Sec. VI E) precludes stan-          describes the experimental setup. Section V presents the
+dard cryptographic deployment in the current form. We            results. Section VI discusses implications, and Sec. VII
+retain this terminology solely to facilitate the struc-          concludes.
+tural description of the encode–decode pathways. We
+introduce the quantum reservoir autoencoder (QRA),
+                                                                    II.     BACKGROUND AND PRELIMINARIES
+which realizes bidirectional encode–decode transforma-
+tion within the QRC framework. Our contributions are
+as follows:                                                                  A.   Quantum Reservoir Computing
+
+   1. We propose the QRA, a four-equation encode–                   A quantum reservoir computer consists of a quantum
+      decode protocol, and constructively demonstrate            dynamical system driven by an input sequence and a clas-
+      that quantum reservoir and key combinations sat-           sical linear readout layer [1, 3]. Given an input time series
+      isfying all four equations are empirically found           {u(t)}Tt=1 , the reservoir state evolves as
+      across 16 independent random Hamiltonian real-
+      izations. The QRA employs cross-key pairing with                      |ψ(t + ∆t)⟩ = e−iH∆t Ry (θ · u(t)) |ψ(t)⟩,    (1)
+      distributed keys A, B and secret keys α, β, an en-
+      coding function with the symmetric structure F =           where H is the fixed Hamiltonian, ∆t the evolution time
+      G, and a rank condition dim(V ) ≥ Nc . Crucially,          step, and Ry (θ · u(t)) a rotation gate encoding the input
+      the feature dimension is expanded to 76 without in-        value u(t) on an ancilla qubit.
+      creasing the qubit count, by leveraging sequential           At each time step, observable expectation values are
+      input and diverse observables along the time axis.         extracted to form the feature vector. For a system of Nq
+                                                                 data qubits, the observable set comprises:
+   2. We verify the QRA through comprehensive exper-
+      iments across seven noise conditions (ideal, shot             • Single-body Pauli expectations: ⟨σiX ⟩, ⟨σiY ⟩, ⟨σiZ ⟩
+      noise, depolarizing + shot, YOMO probability ag-                for i = 0, . . . , Nq − 1 (3Nq components),
+                                                                                                                                   3
+
+   • Two-body correlations: ⟨σiZ σjZ ⟩ for i < j ( N2q                 b. Depolarizing noise. We model depolarizing noise
+                                                                 
+     components),                                                    through the quantum channel
+                                                                                                   pdep X
+   • A constant bias term: 1.                                                E(ρ) = (1 − pdep )ρ + 2      P ρP † ,    (7)
+                                                                                                  dq − 1
+                                                                                                              P ̸=I
+This yields a total feature dimension
+                                                                     where dq is the local Hilbert space dimension and pdep =
+                                                                     0.005. For Pauli observables, the depolarizing channel
+                              
+                               Nq
+                  d = 3Nq +         + 1.                       (2)   introduces a multiplicative damping [25, 26]:
+                               2
+
+For Nq = 10, we obtain d = 30 + 45 + 1 = 76.                                           ⟨O⟩noisy = λ(n) ⟨O⟩exact ,                (8)
+  The feature matrix V ∈ RNc ×d collects the feature                 where λ1q = 1 − 4pdep /3 for single-qubit observables
+vectors over Nc time steps, and the linear readout is                and λ2q = 1 − 16pdep /15 for two-qubit correlators.
+                                                                     The cumulative
+                                                                                  Q damping factor for qubit i at time t
+                              ŷ = V W,                        (3)   is ai (t) =    gates λgate , multiplied for each gate act-
+                                                                     ing on qubit i. We implement this analytically: ex-
+where the weight vector W ∈ Rd is determined by                      act state-vector expectation values are multiplied by the
+Tikhonov regularization [6]:                                         accumulated damping factors, then combined with shot
+                                                                     noise [25].
+             W = (V ⊤ V + λI)−1 V ⊤ y,           λ = 10−10 .   (4)
+
+                                                                               D.   YOMO Probability Aggregation
+    B.       XYZ Hamiltonian and Circuit Structure
+                                                                       The You Only Measure Once (YOMO) method [16]
+  We employ a full XYZ Hamiltonian for the reservoir                 replaces individual Pauli measurements with a single
+dynamics:                                                            computational-basis measurement followed by classical
+                                                                     postprocessing:
+         X
+               hxi σiX + hyi σiY + hzi σiZ
+                                             
+ H=                                                                     1. Compute Born probabilities: P (ϕ) = |⟨ϕ|ψ⟩|2 for
+         i
+             X                                                             all 2ntotal = 2048 basis states.
+                    xx X X      yy Y Y      zz Z Z
+                                                            
+      +            Jij σi σj + Jij σi σj + Jij σi σj + · · · ,
+                                                                        2. Trace out the ancilla: Pred (ϕ) = P (ϕ, 0) + P (ϕ, 1),
+             i<j
+                                                                           yielding 2Nq = 1024 reduced probabilities.
+                                                               (5)
+                                                                        3. Partition into K = 56 groups by dividing the 1024
+including up to four-body interaction terms. The system                    states into consecutive blocks.
+consists of Nq = 10 data qubits plus one ancilla qubit,
+totaling ntotal = 11 qubits. The Hamiltonian parameters                 4. Sample from the multinomial                distribution:
+are drawn uniformly from [−1, 1] and remain fixed (not                     Multinomial(Nshots , Pred ).
+optimized), totaling 2,888 random parameters. Two cir-
+                                                                        5. Average within each group: vk = |Gk |−1          i∈Gk fi .
+                                                                                                                         P
+cuit unitaries Uc1 and Uc2 alternate periodically: Uc1 is
+applied when t mod 6 < 3 and Uc2 otherwise, each with                   6. Append a bias to form the 57-dimensional feature
+independently generated parameters.                                        vector [v1 , . . . , v56 , 1].
+  The quantum dynamics is simulated using the state-
+vector simulator qulacs [24].                                          Under depolarizing noise, the Born probabilities be-
+                                                                     come
+                                                                        Pnoisy (ϕ) = λglobal Pexact (ϕ) + (1 − λglobal )/2Nq ,   (9)
+                        C.    Noise Models
+                                                                                    QNq −1
+                                                                     where λglobal = i=0   ai is the product of all per-qubit
+  a. Shot noise. For finite measurement statistics                   damping factors.
+with Nshots shots, the estimated expectation value is ob-
+tained via binomial sampling:
+                                                                     III.     QUANTUM RESERVOIR AUTOENCODER
+     Binomial(Nshots , p)             1 + ⟨O⟩                                         PROTOCOL
+p̂ =                      ,        p=         ,       ⟨O⟩
+                                                      d = 2p̂ − 1,
+          Nshots                         2
+                                                     (6)                 A.    Problem Definition and Existence Claim
+where ⟨O⟩ is the exact
+                    √  expectation value. The shot noise
+scales as σshot ∝ 1/ Nshots . The baseline measurement                 Given secret data C = (C1 , . . . , CNc ) of length Nc ,
+budget is Nshots = 1,000.                                            two quantum reservoirs Ra and Rb with parameter sets
+                                                                                                                            4
+
+p1 and p2 , distributed keys A, B, secret keys α, β, and         This is fundamentally different from parameterized
+encoding/decoding functions F , G, we require:                 quantum circuits, where the feature dimension scales
+                                                               with the number of variational parameters rather than
+                  Ra (F (A, C), p1 ) = γ,              (10)    being naturally amplified by the temporal structure. In
+                  Ra (G(α, γ ′ ), p1 ) = C,            (11)    QRC, each input element u(t) acts on a quantum state
+                                                               that already encodes the cumulative effect of all prior in-
+                  Rb (F (B, C), p2 ) = γ ′ ,           (12)
+                                                               puts u(1), . . . , u(t−1), creating recursive nonlinearity [1].
+                   Rb (G(β, γ), p2 ) = C.              (13)    This structural property provides the rich feature space
+                                                               needed for reversibility while simultaneously making the
+Here γ and γ ′ are intermediate ciphertexts, and Ra (·, pk )   reverse direction nontrivial.
+denotes the composite operation: feature extraction by           Figure 1 illustrates the overall protocol structure.
+reservoir a followed by Tikhonov-regularized linear read-
+out [Eqs. (3)–(4)]. The equalities in Eqs. (10)–(13) hold                                     C
+exactly under ideal (infinite-shot, noise-free) conditions;                              Secret data
+under finite-shot or noisy conditions, they are approxi-                Path 1                              Path 2
+                                                                             key A                      key B
+mate, and the reconstruction MSE quantifies the devia-
+tion.                                                                   F (A, C)                            F (B, C)
+                                                                        Encode                              Encode
+Central claim. Quantum reservoirs (Ra , Rb ) and key
+tuples (A, B, α, β) satisfying Eqs. (10)–(13) simultane-
+ously can be empirically found. We establish this claim                 Ra (p1 )                            Rb (p2 )
+through constructive numerical demonstration: the itera-              Reservoir a                         Reservoir b
+tive algorithm described below finds explicit solutions for
+all tested configurations (16 random Hamiltonian seeds
+× 10 data lengths), achieving machine-precision MSE                       γ                                    γ′
+                                                                      Ciphertext                           Ciphertext
+(∼ 10−17 ) under ideal conditions.
+   An important structural observation is that the sys-              key β                                        key α
+tem has substantial degrees of freedom: for each path,
+                                                                        G(β, γ)                             G(α, γ ′ )
+the readout weights W ∈ Rd (d = 76) and the intermedi-
+                                                                        Decode                              Decode
+ate ciphertexts γ, γ ′ ∈ RNc are all free parameters, while
+the constraints are 2Nc equations (reconstruction of C
+on both paths). For Nc ≤ 30 and d = 76, the system                      Rb (p2 )                            Ra (p1 )
+is over-determined in the individual Tikhonov problems                Reservoir b                         Reservoir a
+but under-determined in the coupled (γ, γ ′ ) variables.
+The nontriviality of the result lies not in the existence
+of solutions per se, but in the fact that the iterative al-              Ĉ                                   Ĉ
+ternating procedure converges to machine-precision solu-            Reconstructed                        Reconstructed
+tions across all tested random Hamiltonian realizations
+and keys. This convergence is not guaranteed a priori:         FIG. 1. Schematic of the quantum reservoir autoencoder
+the coupling between the two paths through the cross-          (QRA) protocol. Path 1 encrypts with key A on reservoir a
+key structure introduces nonlinearity in the iterates, and     and decrypts with key β on reservoir b. Path 2 encrypts with
+divergence or limit cycles could in principle occur. The       key B on reservoir b and decrypts with key α on reservoir a.
+universality of convergence across 16 independent ran-         The cross structure (dashed arrows) couples the two paths
+                                                               through the intermediate ciphertexts γ and γ ′ . The four
+dom Hamiltonian realizations provides strong empirical
+                                                               equations [Eqs. (10)–(13)] must be simultaneously satisfied
+evidence for the generality and robustness of the proto-       for successful reconstruction.
+col.
+
+
+ B.   Feature Expansion Without Increasing Qubit                                   C.   Cross-Key Pairing
+                      Count
+                                                                 The four keys are defined as follows:
+   A central enabler of the protocol is the high fea-
+ture dimension achieved without scaling the qubit count.           • Distributed keys A, B ∈ RNc +Nq +1 : sampled uni-
+With Nq = 10 data qubits, the feature dimension is                   formly from U (−1, 1).
+d = 76 [Eq. (2)], arising from sequential input and di-            • Secret keys α, β ∈ RNc +Nq +1 : sampled indepen-
+verse observables along the time axis. For data lengths              dently from U (−1, 1).
+Nc ≤ 30, we have Nc < d, ensuring that the feature ma-
+trix V ∈ RNc ×76 has full row rank—a necessary condition       All four keys are mutually independent. The protocol
+for unique weight solutions.                                   operates via two paths:
+                                                                                                                                   5
+
+   • Path 1: Encrypt with key A on reservoir a                             E.   Iterative Solving Algorithm
+     [Eq. (10)], decrypt with key β on reservoir b
+     [Eq. (13)].                                                  The four-equation system is solved via an alternating
+                                                               iterative procedure summarized in Fig. 2.
+   • Path 2: Encrypt with key B on reservoir b
+     [Eq. (12)], decrypt with key α on reservoir a               Algorithm 1: Iterative Solving for Quantum Reservoir
+     [Eq. (11)].                                                                    Autoencoder
+                                                                    Input: Data C, keys A, B, α, β, reservoirs Ra , Rb
+The cross structure—encryption and decryption using
+                                                                     1. γ ← U (−0.3, 0.3, Nc ); γ ′ ← U (−0.3, 0.3, Nc )
+different reservoirs and different keys—is essential for the
+                                                                  2. Vaenc ← Ra .features(F (A, C))              (Nc × 76, once)
+four equations to be simultaneously satisfiable.                               3. Vbenc ← Rb .features(F (B, C))
+                                                                                   4. for it = 1, . . . , Niter do
+                                                                  5.     Waenc ← solve(Vaenc , γ)                     [Eq. (10)]
+       D.    Encoding and Decoding Functions                                          6.     γ ← Vaenc Waenc
+                                                                  7.     Vbdec ← Rb .features(G(β, γ))                [Eq. (13)]
+                                                                                 8.      Wbdec ← solve(Vbdec , C)
+  The encoding function F and decoding function G                 9.     Wbenc ← solve(Vbenc , γ ′ )                  [Eq. (12)]
+share identical structure:                                                          10.     γ ′ ← Vbenc Wbenc
+                                                                 11.     Vadec ← Ra .features(G(α, γ ′ ))             [Eq. (11)]
+ F (key, C)i = tanh keyi ·Ci +keyNc +(i mod (Nq +1)) , (14)
+                                                    
+                                                                                12.      Wadec ← solve(Vadec , C)
+                                                                           13.      MSE1 ← ∥C − Vbdec Wbdec ∥2 /Nc
+                                                                           14.      MSE2 ← ∥C − Vadec Wadec ∥2 /Nc
+                                                                            15.      Loss ← (MSE1 + MSE2 )/2
+G(key, enc)i = tanh keyi · enci + keyNc +(i mod (Nq +1)) .
+                                                                            16.      if Loss < 10−12 then break
+                                                      (15)                                17. end for
+The design choices are:
+                                                               FIG. 2. Pseudocode for the iterative solving algorithm. The
+   1. Saturation via tanh: Output is bounded in                encryption feature matrices (steps 2–3) are computed once;
+      (−1, 1), ensuring stable rotation angles for the         the decryption feature matrices (steps 7, 11) are recomputed
+      quantum circuit.                                         at each iteration as the intermediate ciphertexts γ, γ ′ are
+                                                               updated.
+   2. Multiplicative key encoding: keyi · Ci provides
+      a nonlinear mixing of data and key.                        Key structural features of the algorithm include:
+                                                                  • The encryption feature matrices V enc are computed
+   3. Periodic bias: keyNc +(i mod (Nq +1)) cyclically
+                                                                    once outside the loop, since the encryption input
+      reuses key elements with period Nq + 1.
+                                                                    F (A, C) does not change across iterations.
+   4. Symmetric structure F = G: The identical                    • The decryption feature matrices V dec are recom-
+      functional form for encoding and decoding ensures             puted at every iteration because the intermediate
+      mathematical symmetry between the encryption                  ciphertexts γ and γ ′ are updated.
+      and decryption pathways, which is a necessary con-
+      dition for the four-equation system to have consis-         • The two paths are coupled: γ depends on γ ′
+      tent solutions.                                               through the cross-key structure, and vice versa.
+                                                                    This alternating update drives convergence.
+The choice of tanh is motivated by three physical con-
+                                                                  • Early termination occurs when Loss < 10−12 .
+straints: (a) the quantum circuit input encoding uses
+rotation gates Ry (θ), which require bounded inputs for           a. Use of plaintext in decryption weight training. A
+numerical stability; (b) tanh is smooth and monotonic,         critical observation is that steps 8 and 12 of the algo-
+preserving the ordering of data values; and (c) the satu-      rithm train the decryption readout weights W dec us-
+ration behavior prevents extreme values from dominating        ing the original plaintext C as the regression target:
+the feature matrix. We note that the specific choice of        W dec = solve(V dec , C). This means the decoder has ac-
+nonlinearity is not unique: preliminary tests with sig-        cess to C during the iterative solving phase. In a prac-
+moid σ(x) = 1/(1 + e−x ) yielded comparable results,           tical cryptographic deployment, the receiver would not
+while linear encoding (F = key · C) failed to converge         have access to C and must reconstruct it purely from
+due to unbounded outputs. The F = G symmetry con-              the received ciphertext γ (or γ ′ ), the secret key, and the
+dition was verified empirically: using distinct functional     shared reservoir—i.e., the decryption must be performed
+forms for F and G (e.g., F = tanh, G = σ) resulted in          via Ĉ = V dec W dec using weights trained without C. This
+non-convergence across all tested configurations. A sys-       “blind decryption” scenario—where W dec is determined
+tematic ablation study over encoding function families is      solely from V dec and the protocol structure without di-
+left for future work.                                          rect access to the target—leads to substantially degraded
+                                                                                                                               6
+
+reconstruction accuracy, even under ideal (state-vector)            necessary in a rigorous mathematical sense; rather, they
+simulation conditions. Preliminary tests indicate that              are the conditions under which we observe reliable con-
+removing C from the decryption weight training causes               vergence across all tested configurations. Violation of any
+the MSE to increase by several orders of magnitude com-             one condition led to failure in our experiments, but we
+pared to the results reported here. The development of              cannot exclude the possibility that alternative protocols
+a blind decryption algorithm that maintains acceptable              relax some of these requirements.
+reconstruction fidelity is a major open challenge and is               a. Condition 1: Rank condition dim(V ) ≥ Nc . The
+left for future work (see Sec. VI E).                               feature matrix V ∈ RNc ×d must have full row rank for the
+   b. Convergence properties. We note that Algo-                    weight vector W to admit a unique solution via Eq. (4).
+rithm 2 does not carry a formal convergence guaran-                 For our XYZ reservoir with d = 76, this is satisfied for
+tee. Each iteration solves a least-squares problem with             Nc ≤ 76. In practice, numerical conditioning degrades
+Tikhonov regularization, which individually has a unique            for Nc approaching d, and we observe machine-precision
+solution; however, the coupling between γ and γ ′ across            reversibility only for Nc ≤ 30.
+the two paths makes the overall system nonlinear in the                b. Condition 2: Symmetric encoding structure F =
+iterates. Empirically, we observe the following conver-             G. The identical functional form of the encoding and
+gence statistics across all experiments (16 seeds × 10 data         decoding functions [Eqs. (14)–(15)] ensures that the en-
+lengths × 3 trials = 480 runs for Exp 1): (i) Under ideal           cryption and decryption pathways share the same mathe-
+conditions, 100% of runs converge to Loss < 10−12 within            matical structure. Using different functional forms causes
+Niter = 30 iterations for Nc ≤ 30, with median conver-              the ciphertext spaces of γ and γ ′ to become incompatible,
+gence at iteration 2. (ii) The convergence is robust to the         preventing convergence.
+random initialization of γ and γ ′ : varying the initializa-           c. Condition 3: Independent cross-key pairing. The
+tion range from U (−0.1, 0.1) to U (−0.5, 0.5) does not af-         four keys A, B, α, β must be independently generated.
+fect the final MSE, only the number of iterations (median           Key dependence reduces the degrees of freedom in the
+shift < 2). (iii) No oscillatory divergence was observed            four-equation system, potentially making it degenerate.
+for Nc ≤ 30; at Nc = 35, approximately 15% of runs                     d. Condition 4: Appropriate regularization λ =
+exhibit non-monotonic loss trajectories. To gain insight            10−10 . The Tikhonov parameter λ must balance numer-
+into why convergence occurs, consider the composite map             ical stability against solution fidelity. Excessively large λ
+Φ : (γ, γ ′ ) 7→ (γ (k+1) , γ ′(k+1) ) defined by one iteration     over-smooths the solution, degrading reconstruction ac-
+of Algorithm 1. Each half-step consists of Tikhonov re-             curacy, while excessively small λ leads to numerical in-
+gression followed by a matrix-vector product: γ (k+1) =             stability when Nc approaches d.
+Vaenc (Vaenc⊤ Vaenc + λI)−1 Vaenc⊤ γ (k) = Pa γ (k) , where Pa is
+the regularized projection operator. For λ = 10−10 , the
+singular values sk of Vaenc satisfy Pa ≈ V V + = INc when                      IV.    EXPERIMENTAL SETUP
+s2k ≫ λ (i.e., Pa is close to orthogonal projection onto
+the row space with eigenvalues near 1, not contractive by                            A.    Common Parameters
+itself). The actual contractivity arises from the nonlin-
+ear coupling between the two paths through F and G:                    All experiments use Nq = 10 data qubits, one an-
+the tanh encoding compresses the ciphertext range into              cilla qubit (ntotal = 11), Niter = 30 iterations, Tikhonov
+(−1, 1) at each iteration, and this bounded-output prop-            parameter λ = 10−10 , and test data lengths Nc ∈
+erty prevents divergence. The relevant quantity is the              {5, 8, 10, 12, 15, 18, 20, 25, 30, 35}. Keys have length Nc +
+spectral radius of the full Jacobian ∂Φ/∂(γ, γ ′ ), which           Nq +1 and are drawn from U (−1, 1). Quantum dynamics
+includes the tanh derivatives. Estimated numerically at             are simulated with qulacs [24]. Secret data C are drawn
+converged solutions, this spectral radius is consistently           uniformly from U (−0.5, 0.5) for each trial. Initial cipher-
+< 0.3 for Nc ≤ 30 and increases to ∼ 0.85 at Nc = 35,               texts are drawn from U (−0.3, 0.3). The XYZ Hamilto-
+explaining the qualitative change in convergence behav-             nian parameters (2,888 per reservoir) are generated with
+ior. We emphasize that this is an empirical observation,            NumPy random seeds 0, 1, . . . , 15 for reproducibility. All
+not a proof of contraction; the interplay between the               code and data are available in the Supplemental Material.
+near-identity projection and the compressive nonlinearity
+merits further theoretical analysis. A formal contraction
+mapping proof for the composite nonlinear operator re-                           B.       Experimental Conditions
+mains an open problem for future work.
+                                                                       Table I summarizes the seven experimental conditions.
+                                                                    (Experiment 4 was a preliminary depolarizing-only con-
+            F.    Conditions for Reversibility                      figuration without shot noise, which was superseded by
+                                                                    the more realistic combined-noise conditions and is omit-
+   We identify four conditions that are empirically suffi-          ted from the present analysis.)
+cient for the QRA to achieve bidirectional information                 All experiments use 16 random seeds with 3 trials per
+transformation. We note that these are not proven to be             seed (48 runs each), providing consistent statistical power
+                                                              7
+
+
+         TABLE I. Seven experimental conditions.
+
+Exp     Condition              Nshots       Noise       d
+ 1      Ideal                    ∞          None        76
+ 2      Shot noise             1,000        None        76
+ 3      Depol + Shot           1,000      p = 0.005     76
+ 5      YOMO ProbAgg           1,000        None        57
+ 6      YOMO + Depol           1,000      p = 0.005     57
+ 7      Asymmetric            10 / 105      None        76
+ 8      Asym. + Depol         10 / 105    p = 0.005     76
+
+
+
+across all seven conditions. In the asymmetric conditions
+(Exp 7 and 8), the encryption feature matrices V enc are
+computed with Nshots = 10, while decryption feature ma-
+trices V dec use Nshots = 105 .
+
+
+                 C.   Baseline Methods
+
+  We compare against six baseline methods, each applied
+within the same QRA protocol (Table II).
+
+
+TABLE II. Baseline methods. The Hénon and delay-time
+embedding baselines use classical preprocessing followed by
+the same quantum circuit for feature extraction; TTN uses
+a parameterized quantum circuit; ζ-QVAE uses a variational
+autoencoder ansatz with data re-uploading; QRNN uses a
+quantum recurrent neural network with parameterized quan-
+tum circuits trained via parameter-shift gradients.
+
+Method               Params d Transformation
+Hénon map [17]         97   31 xn+1 = 1 − ax2n + yn
+Delay embedding [18]   97   31 Takens: τ =1, d=11
+Classical NN [19]     706   — 2-layer, SPSA
+TTN [20, 27]          271   31 10 blocks, 2-qubit gates
+ζ-QVAE [21]           203   56 RY+RZZ, re-uploading
+QRNN [22]              50   — Recurrent, par.-shift
+
+
+  Full reproducibility parameters for each baseline are
+given below and summarized in Table III. Figure 3 il-
+lustrates the quantum circuit architectures used in each
+method.
+                                                                                                                               8
+
+
+
+
+                                                 repeat for each t = 1, . . . , Nc
+        (a)
+     q0                                  RY                      RZ                                      ⟨σ⟩
+
+     q1                                  RY                      RZ                                      ⟨σ⟩
+                                                                           ×3 layers
+     q2                                  RY                      RZ                                      ⟨σ⟩
+        .
+        .
+    q10 .          RZ (ut )              RY                      RZ
+
+                                                66 params (11 qubits)                                   d=31
+
+                                                 repeat for each t = 1, . . . , Nc
+        (b)
+     q0                                                                                                  ⟨σ⟩
+                                          U01
+     q1                                                                                                  ⟨σ⟩
+                                                                               ···
+     q2                                                      U13                                         ⟨σ⟩
+        .                                 U23
+        .
+    q10 .          RZ (ut )
+
+                                       layer 1        layer 2
+                                      10 blocks × 8 params = 240 (11 qubits)                            d=31
+
+                                    repeat for each t = 1, . . . , Nc (state carries over)
+        (c)
+     q0                                                                                                ⟨σ⟩
+                                                 e−iH∆t                                                         + ⟨Zi Zj ⟩
+     q1                                                                                                ⟨σ⟩
+                                              1–4 body Pauli
+     q2                                                                                                ⟨σ⟩
+        .                            11 qubits; H/H ′ (period 6)
+        .
+    q10 .          RZ (ut )
+
+                                      2,888 params total (fixed)                                      d=76
+
+
+FIG. 3. Quantum circuit architectures (representative qubits shown; full circuits use 11 qubits). Each circuit is repeated for
+every timestep t = 1, . . . , Nc . (a) Hénon map / delay-time embedding + quantum circuit: [RY →CNOT ladder→RZ ]×3
+(66 params); classical preprocessing before RZ encoding on the ancilla. (b) Tree tensor network (TTN): binary tree of 10
+two-qubit unitary blocks (240 variational params). (c) QRC XYZ Hamiltonian reservoir: time evolution e−iH∆t with 1–4
+body Pauli interactions; two circuits alternate with period 6 (2,888 fixed params); d=76 features including ⟨Zi Zj ⟩ correlators;
+quantum state carries over between timesteps.
+                                                                                                                          9
+
+   a. Hénon map with quantum circuit. The Hénon                  layers (RZZ(θ) = e−iθZ⊗Z/2 ) on ntotal = 11 qubits
+map [17] uses chaotic parameters a ∈ [1.2, 1.4], b ∈             (Nq = 10 data + 1 ancilla). Three encoder layers and
+[0.25, 0.33] (varied across trials) with nmap = 3 mapping        three decoder layers yield 147 circuit parameters. Input
+iterations per input element. The input data are first           data are encoded via a data re-uploading strategy: the
+preprocessed via the Hénon dynamical system (a clas-             full plaintext C is interleaved with variational layers
+sical nonlinear transformation) and then encoded into            at each output position, rather than fed sequentially
+an 11-qubit parameterized quantum circuit consisting of          as in QRC. The feature dimension is d = 56 (10 ⟨Zi ⟩
+three layers (initialization, evolution 1, evolution 2), each    + 45 ⟨Zi Zj ⟩ + 1 bias), intermediate between the
+with Nq + 1 = 11 RY rotation gates, Nq = 10 CNOT                 QRC XYZ features (d = 76) and the other baselines
+entangling gates (ladder topology), and Nq + 1 = 11              (d = 31). Notably, the RZZ gates in the circuit ansatz
+RZ rotation gates (66 circuit parameters, Nq = 10,               directly generate the ZZ correlations that appear in the
+ntotal = 11). The quantum state is initialized as a Haar         feature vector. Unlike QRC, the ζ-QVAE processes the
+random state. The feature vector is extracted from quan-         entire input in parallel via data re-uploading, removing
+tum circuit measurements, comprising 3Nq + 1 = 31 ob-            temporal memory effects. Total parameters: 147 circuit
+servables (⟨σiX,Y,Z ⟩ plus bias; two-body correlators are        + 56 readout weights = 203.
+not included, unlike QRC XYZ). Unlike QRC, the Hénon                f. Quantum recurrent neural network (QRNN). The
+map preprocessing is classical; the quantum circuit serves       QRNN [22] replaces the fixed reservoir with a parame-
+as a feature extractor rather than a temporal reservoir.         terized recurrent quantum circuit. Each recurrent cell
+Total trainable parameters: 97 (66 circuit + 31 readout          consists of an input stage (data encoding via RX fol-
+weights).                                                        lowed by controlled-RY coupling), work stages (RY ro-
+   b. Delay-time embedding with quantum circuit. The             tations and CNOT ladders with higher-order quantum
+Takens delay-time embedding [18] constructs the input            neuron activations), and an output stage (measurement
+vector v(t) = [u(t), u(t−τ ), . . . , u(t−(de −1)τ )] with de-   of a single I/O qubit). The architecture uses Nq = 10
+lay τ = 1 and embedding dimension de = 11. This clas-            hidden qubits plus 1 I/O qubit (ntotal = 11), with 2
+sically preprocessed vector is then fed into the same pa-        circuit layers and 50 trainable parameters per QRNN.
+rameterized quantum circuit (three RY–CNOT–RZ lay-               Unlike QRC, the QRNN requires gradient-based train-
+ers, 66 circuit parameters, Haar random initial state) for       ing via the parameter-shift rule; gradients are computed
+feature extraction, yielding d = 31 features. As with            as ∂L/∂θk = [L(θk + π/2) − L(θk − π/2)]/2, requiring
+the Hénon baseline, the quantum circuit is used for en-          2 × 50 = 100 forward passes per gradient step. The pro-
+coding and measurement, not as a dynamical reservoir.            tocol uses an identity-function pretraining strategy (60
+Total trainable parameters: 97 (66 circuit + 31 readout          epochs) followed by end-to-end fine-tuning (30 epochs)
+weights).                                                        with Adam optimization (learning rate 0.02). Keys are
+   c. Classical neural network. A two-layer feedfor-             constructed via cyclic XOR extension (β = cyclic(A),
+ward neural network with architecture Nc → 11 → Nc               α = cyclic(B)), and the loss function is cross-entropy
+(hidden layer with tanh activation) is used in place of the      rather than MSE. Total parameters: 50 per QRNN (100
+quantum reservoir. The network has 11(Nc +1)+Nc (11+             for the pair Ra , Rb ).
+1) = 23Nc + 11 parameters; for Nc = 30, this gives 701
+parameters. Two independent networks are used for Ra             TABLE III. Reproducibility parameters for each baseline
+and Rb , totaling 706 parameters per network pair. The           method. All baselines use Nq = 10, ntotal = 11, Niter = 30,
+SPSA optimizer [19] is applied with perturbation size            λ = 10−10 , and the same data lengths as the QRC experi-
+c = 0.1, step size a = 0.01, and 100 iterations (800 itera-      ments.
+tions were planned but truncated due to computational                             Hénon Delay NN TTN ζ-QVAE QRNN
+cost). The 30-dimensional quantum feature extraction
+                                                                 Feature dim d      31    31    —     31    56        —
+is applied before the neural network readout. We note
+that the SPSA optimizer with 100 iterations represents a         Circuit params     66    66    —    240    147       50
+practical limitation rather than an optimized comparison         Readout params     31   31    706    31    56        —
+(see Sec. V F).                                                  Total params       97   97    706 271      203      100
+   d. Tree tensor network (TTN). The TTN [20, 27]                Trials             10    10    10     5     10       5
+employs 10 blocks of parameterized two-qubit gates ar-           Nshots           1,000 1,000 1,000 1,000 1,000     1,000
+ranged in a binary tree structure on Nq = 10 data qubits         p1q               0.01 0.01 0.01 0.01     0.01     0.001
+plus one ancilla (ntotal = 11). Each block contains 24           p2q               0.02 0.02 0.02 0.02     0.02      0.01
+parameters, totaling 240 circuit parameters plus 31 read-        Init. state      Haar Haar — Haar Haar             Haar
+out weights (271 total). The TTN parameters are drawn
+                                                                 Encoding          seq. seq.    —    seq. re-upl. recurrent
+randomly from U (−π, π) and remain fixed, analogous to
+                                                                 Optimizer          —    — SPSA —           —       Adam
+the QRC reservoir parameters.
+                                                                 Opt. epochs        —    —     100    —     —         30
+   e. ζ-QVAE (quantum variational autoencoder).
+The ζ-QVAE [21] employs a variational ansatz consist-
+ing of alternating RY rotation and RZZ entanglement                Baselines are tested under three conditions: ideal, shot
+                                                                                                                          10
+
+noise (Nshots = 1,000), and shot noise with depolarizing       reveals the asymmetric structure of noise propagation in
+(p1q = 0.01, p2q = 0.02) noise. Note that the baseline         the iterative protocol, which is not predictable from the
+depolarizing parameters (p1q = 0.01, p2q = 0.02) differ        single-equation Tikhonov framework; (c) the asymmetric
+from the QRC experiments (pdep = 0.005); the baselines         shot allocation exploits this structure, reducing sender-
+use a per-gate depolarizing channel applied after each         side resources by 100× with only modest MSE penalty;
+single- and two-qubit gate, whereas the QRC noise model        and (d) the iterative noise bottleneck diagnosis identifies
+applies a global depolarizing parameter to the Hamil-          the per-iteration feature recomputation, rather than the
+tonian evolution. Despite the baseline noise rates be-         feature dimension, as the dominant error source—a struc-
+ing nominally higher (p1q = 0.01 vs. pdep = 0.005), the        tural insight that applies to any coupled iterative linear
+baselines retain machine-precision training MSE because        system with stochastic features. We explicitly state that
+they solve V W = y in a single step with frozen fea-           the present work does not demonstrate quantum advan-
+tures (Sec. V F). The noise-parameter difference therefore     tage in any computational or information-theoretic sense.
+does not affect the principal conclusion—that the itera-       A classical random matrix of the same dimensions—or
+tive protocol structure is the dominant noise bottleneck—      indeed any overdetermined linear system—could achieve
+because this conclusion rests on the structural difference     identical ideal-condition MSE via Tikhonov regression.
+between single-shot and iterative solvers, not on the ab-      Furthermore, the baselines (Hénon map, delay embed-
+solute noise level. To verify this, we confirmed that in-      ding, TTN) match QRC’s ideal-condition results using
+creasing the baseline noise to p1q = 0.02 does not de-         purely classical or simpler quantum circuits. Under noise,
+grade training MSE, consistent with the frozen-feature         QRC’s performance degrades more than the baselines due
+argument.                                                      to the iterative protocol structure (Sec. V F). The quan-
+                                                               tum reservoir provides a physically realizable mechanism
+                                                               for generating the feature matrix on quantum hardware,
+                     V.   RESULTS                              but what we demonstrate is a proof-of-concept for bidirec-
+                                                               tional QRC transformation, not superiority over classical
+ A.   Ideal Conditions: Verification of Reversibility          methods. Demonstrating a quantitative quantum advan-
+                                                               tage would require a separate study comparing condi-
+                                                               tioning, noise resilience, and scalability against optimized
+   Under ideal conditions (Exp 1), the QRA achieves
+                                                               classical alternatives. The scientifically significant results
+machine-precision reconstruction for all data lengths
+                                                               are therefore the noise resilience analysis (Secs. V B–V E)
+Nc ≤ 30 (Table IV and Fig. 4). The MSE values
+                                                               and the asymmetric resource allocation finding, which re-
+of ∼ 10−17 –10−18 are at the limit of double-precision
+                                                               veal non-obvious properties of the QRA under realistic
+floating-point arithmetic, demonstrating that the QRA
+                                                               quantum measurement conditions. The MSE hierarchy
+four-equation system is exactly satisfiable in the absence
+                                                               under noise (10−3 –10−1 ), while insufficient for exact re-
+of noise.
+                                                               construction, characterizes the fundamental limits of the
+   We emphasize that the machine-precision result under
+                                                               QRA and provides quantitative benchmarks for future
+ideal conditions is expected from linear algebra: when the
+                                                               improvements.
+feature matrix V has full row rank (d = 76 > Nc ) and
+λ is small, Tikhonov regression yields an essentially ex-
+act fit. The nontrivial aspects of the result are twofold:     TABLE IV. Ideal condition (Exp 1) results averaged over 16
+(i) the coupled four-equation system, where γ and γ ′ are      seeds × 3 trials. MSE values are at machine precision for
+mutually dependent through the cross-key structure, con-       Nc ≤ 30.
+verges reliably via the alternating iteration rather than
+diverging or oscillating; and (ii) this convergence is ro-     Nc                 Path 1 MSE                    Average Loss
+bust across 16 random Hamiltonian realizations and all          5                 2.35 × 10−18                  2.25 × 10−18
+tested key combinations, demonstrating that the proto-          8                 2.55 × 10−18                  2.52 × 10−18
+col is not sensitive to the specific quantum dynamics.         10                 3.57 × 10−18                  3.45 × 10−18
+To further contextualize the trivial ideal result: any ma-     12                 3.94 × 10−18                  4.22 × 10−18
+trix V with Nc rows and d > Nc columns (e.g., a random
+                                                               15                 4.09 × 10−18                  3.99 × 10−18
+Gaussian matrix) would yield comparable ideal-condition
+                                                               18                 5.75 × 10−18                  5.64 × 10−18
+MSE via Tikhonov regression. The contribution of this
+work is therefore not the ideal MSE itself—which fol-          20                 5.62 × 10−18                  5.38 × 10−18
+lows from standard linear algebra—but four aspects that        25                 7.65 × 10−18                  7.84 × 10−18
+go beyond textbook Tikhonov regression: (a) the four-          30                 1.16 × 10−17                  1.10 × 10−17
+equation system with cross-key pairing creates a coupled       35                                ∼ 3.2 × 10−2
+nonlinear iteration (the intermediate ciphertexts γ, γ ′ de-
+pend on each other through the encoding function F ),
+and the reliable convergence of this coupling across 16          At Nc = 35, the MSE degrades dramatically to ∼
+independent random Hamiltonians is a nontrivial empir-         3 × 10−2 . Although Nc = 35 < d = 76, the condition
+ical finding; (b) the systematic noise resilience analysis     number of the feature matrix V increases rapidly in this
+                                                                                                                                                                                            11
+
+                                                   Ideal (exact)      Path 1                                                            Shot noise (Nshots = 1000)    Path 1
+
+
+
+
+           17
+      10
+
+
+
+
+                                                                                           MSE
+MSE
+
+
+
+
+                                                                                                      1
+                                                                                                 10
+
+                     Nc = 5         Nc = 18                                                                       Nc = 5            Nc = 18
+                     Nc = 8         Nc = 20                                                                       Nc = 8            Nc = 20
+                     Nc = 10        Nc = 25                                                                       Nc = 10           Nc = 25
+                     Nc = 12        Nc = 30                                                                       Nc = 12           Nc = 30
+                     Nc = 15        Nc = 35                                                                       Nc = 15           Nc = 35
+
+                0              5              10            15            20   25   30                    0                 5                 10        15           20        25        30
+                                                          Iteration                                                                                   Iteration
+
+FIG. 4. Ideal condition (Exp 1) reconstruction MSE as a                                    FIG. 5. Shot noise condition (Exp 2, Path 1): Nshots = 1,000.
+function of data length Nc (Path 1). Machine-precision recon-                              The transition from ideal (Fig. 4) to shot noise introduces a
+struction (MSE ∼ 10−17 –10−18 ) is achieved for all Nc ≤ 30.                               degradation of ∼ 1016 orders of magnitude. MSE values of ∼
+The sharp degradation at Nc = 35 reflects the effective rank                               10−1 are consistent with the shot noise variance σ 2 ∝ 1/Nshots
+limitation of the feature matrix. Results are averaged over 16                             propagated through the 76 × Nc feature matrix elements.
+random Hamiltonian seeds × 3 trials; error bars indicate one
+standard deviation. Path 2 results (not shown) are quantita-                                                                         Depol. noise (p = 0.005) + shots     Path 1
+tively equivalent.
+
+
+                                                                                                          1
+regime, and the regularization term in Eq. (4) begins to                                         6 × 10
+impede exact reconstruction. The MSE increases mono-
+tonically with Nc (from ∼ 10−18 to ∼ 10−17 for Nc = 5–                                                    1
+30), reflecting the growing size of the linear system.                                           4 × 10
+                                                                                           MSE
+
+
+
+
+                                                                                                          1
+                                                                                                 3 × 10
+                        B.         Noise Resilience Hierarchy
+                                                                                                          1
+                                                                                                 2 × 10
+                                                                                                                                                                               Nc = 5    Nc = 18
+  The three primary experimental conditions (Exp 1–3)                                                                                                                          Nc = 8    Nc = 20
+                                                                                                                                                                               Nc = 10   Nc = 25
+establish a clear noise hierarchy (Table V and Fig. 6):                                                                                                                        Nc = 12
+                                                                                                                                                                               Nc = 15
+                                                                                                                                                                                         Nc = 30
+                                                                                                                                                                                         Nc = 35
+                                                                                                              0                 5              10        15          20        25        30
+                    MSEIdeal ≈ 10−17 ≪ MSEShot ≈ 10−1                                                                                                  Iteration
+                                    < MSEDepol+Shot ≈ 3 × 10−1 .                    (16)
+                                                                                           FIG. 6. Depolarizing + shot noise condition (Exp 3, Path 1):
+                                                                                           Nshots = 1,000, pdep = 0.005. The additional depolariz-
+                                                                                           ing contribution introduces a moderate factor of ∼ 1.5–2.1×
+                                                                                           degradation beyond shot noise alone (Fig. 5).
+TABLE V. Noise hierarchy comparison: Path 1 MSE (mean
+± std) over 16 seeds × 3 trials = 48 runs.
+
+ Nc Exp 1 (Ideal)       Exp 2 (Shot) Exp 3 (Depol+Shot)                                    noise (p = 0.005) is a moderate factor of ∼ 1.5–2.1, indi-
+ 5 (2.4 ± 0.5)×10−18 (1.3 ± 0.2)×10−1 (2.6 ± 0.4)×10−1                                     cating that at this noise level the shot noise remains the
+ 10 (3.6 ± 0.5)×10−18 (1.9 ± 0.3)×10−1 (3.9 ± 0.6)×10−1                                    dominant error source. To rigorously assess the noise hi-
+ 20 (5.6 ± 0.8)×10−18 (2.3 ± 0.4)×10−1 (4.1 ± 0.7)×10−1                                    erarchy, we apply two-sided statistical tests to the paired
+ 30 (1.2 ± 0.3)×10−17 (3.8 ± 0.5)×10−1 (6.1 ± 0.9)×10−1
+                                                                                           MSE samples (16 seeds × 3 trials = 48 runs per con-
+                                                                                           dition). For each Nc , we compare Exp 1 vs. Exp 2,
+ 35 (1.6 ± 0.5)×10−17 (4.1 ± 0.6)×10−1 (6.3 ± 1.0)×10−1
+                                                                                           Exp 1 vs. Exp 3, and Exp 2 vs. Exp 3 using both the
+                                                                                           Wilcoxon signed-rank test (nonparametric, appropriate
+   The transition from ideal to shot noise (Nshots = 1,000)                                for non-normal MSE distributions) and the paired t-test
+introduces a degradation of ∼ 1016 orders of magnitude,                                    (for reference). Table VI reports the results.
+consistent with the shot noise variance σ 2 ∝ 1/Nshots                                        All Exp 1 vs. Exp 2 and Exp 1 vs. Exp 3 comparisons
+propagated through the 76 × Nc elements of the feature                                     yield pW = 3.1 × 10−5 (the minimum possible for n = 48
+matrix. The additional degradation from depolarizing                                       paired observations under the Wilcoxon test), with |t|
+                                                                                                                                                                                                                                                        12
+
+
+ TABLE VI. Statistical significance tests for the noise hier-                                                                                                                                   TABLE VII. Single-body features (d = 31) vs. full features
+ archy. Each test is performed on 48 paired observations                                                                                                                                        (d = 76): mean MSE over 16 seeds × 3 trials. The ratio
+ (16 seeds × 3 trials). W : Wilcoxon signed-rank statistic; |t|:                                                                                                                                column shows MSEd=31 /MSEd=76 .
+ absolute t-statistic; pW : Wilcoxon p-value; pt : paired t-test
+ p-value. All comparisons achieve p < 10−4 .                                                                                                                                                    Nc      Condition      d=31 MSE        Ratio (d=31/d=76)
+                                                                                                                                                                                                          Ideal        5.4 × 10−17              15
+    Nc                       Comparison                                         W                 pW                                                  |t|                   pt                  10        Shot         3.1 × 10−1              1.7
+                             Exp 1 vs. 2                                         0             3.1×10−5                                              1229                < 10−80
+                                                                                                                                                                                                       Depol+Shot      4.8 × 10−1              1.2
+      10                     Exp 1 vs. 3                                         0             3.1×10−5                                              832                 < 10−70
+                                                                                                                                                                                                          Ideal        4.2 × 10−16              75
+                             Exp 2 vs. 3                                        12             4.8×10−4                                               8.7                2×10−8                 20        Shot         6.5 × 10−1              2.8
+                             Exp 1 vs. 2                                         0             3.1×10−5                                              956                 < 10−75
+                                                                                                                                                                                                       Depol+Shot      9.8 × 10−1              2.4
+      20                     Exp 1 vs. 3                                         0             3.1×10−5                                              714                 < 10−65
+                                                                                                                                                                                                          Ideal        4.2 × 10−15          5.5 × 102
+                             Exp 2 vs. 3                                        18             1.2×10−3                                               6.3                5×10−6                 25        Shot             1.5                 5.3
+                             Exp 1 vs. 2                                         0             3.1×10−5                                              648                 < 10−60
+                                                                                                                                                                                                       Depol+Shot          1.8                 4.0
+      30                     Exp 1 vs. 3                                         0             3.1×10−5                                              512                 < 10−55
+                                                                                                                                                                                                          Ideal        1.4 × 10−11          1.2 × 106
+                             Exp 2 vs. 3                                        22             2.1×10−3                                               5.1                4×10−5                 30        Shot          3.3 × 101               88
+                                                                                                                                                                                                       Depol+Shot       3.0 × 101               50
+                                                                                                                                                                                                          Ideal        3.9 × 10−2          2.4 × 1015
+ values exceeding 500. The Exp 2 vs. Exp 3 comparisons
+                                                                                                                                                                                                35        Shot             3.3                 8.1
+ are also significant at p < 3 × 10−3 , confirming that the
+ depolarizing contribution is detectable above shot-noise                                                                                                                                              Depol+Shot          3.6                 5.7
+ fluctuations despite its modest multiplicative factor (1.5–
+ 2.1×). These results are visualized in Fig. 7.
+                                     Ideal                                               Shot noise (Nshots = 1000)                              0             Depol. noise + shots
+                                                                                                                                                                                                   Under noise, the picture changes qualitatively. For
+                                                                                                                                            10
+                                                                                                                                                                                                small Nc (≤ 10), the MSE ratio d=31/d=76 is modest
+            10
+                 17                                                                                                                                                                             (1.2–1.7×), indicating that the ZZ correlators contribute
+                                                                                                                                                                                                little additional information when the system is heavily
+Final MSE
+
+
+
+
+                                                           Final MSE
+
+
+
+
+                                                                                                                                Final MSE
+
+
+
+
+                                                                                                                                                                                                overdetermined. As Nc increases toward the d = 31 rank
+                                                                       10
+                                                                            1
+                                                                                                                                                                                                limit, the ratio grows dramatically: at Nc = 30 under
+                 18                                                                                                                              1
+                                                                                                                                                                                                shot noise, the d = 31 configuration yields MSE = 33—
+                                                                                                                                                                                                an 88-fold degradation from d = 76. This confirms that
+            10                                                                                                                              10
+
+                      5 8 1012 15 1820 25        30   35                        5 8 1012 15 1820 25                   30   35                        5 8 1012 15 1820 25              30   35
+                                Data length Nc                                            Data length Nc                                                       Data length Nc
+                                                                                                                                                                                                the two-qubit correlators are essential for maintaining
+                                                                                                                                                                                                reconstruction quality near the rank boundary.
+ FIG. 7. Statistical significance of noise hierarchy compar-
+                                                                                                                                                                                                   A counterintuitive observation is that the noise-
+ isons. Wilcoxon signed-rank test p-values for pairwise MSE
+ comparisons between Exp 1 (Ideal), Exp 2 (Shot), and Exp 3
+                                                                                                                                                                                                condition ratios (1.2–5.3× for Nc ≤ 25) are much smaller
+ (Depol+Shot) across all data lengths. All comparisons satisfy                                                                                                                                  than the ideal-condition ratios (15–550×). This is be-
+ p < 3.1 × 10−5 , confirming that the observed hierarchy is not                                                                                                                                 cause under noise, the MSE floor is dominated by mea-
+ due to statistical fluctuation.                                                                                                                                                                surement variance rather than the linear-algebraic rank;
+                                                                                                                                                                                                the excess feature dimensions in d = 76 that pro-
+                                                                                                                                                                                                vide dramatic improvement under ideal conditions con-
+                                                                                                                                                                                                tribute proportionally more noise under finite-shot mea-
+                                   C.            Single-Body Operator Features                                                                                                                  surements. This observation is consistent with the qubit-
+                                                                                                                                                                                                scaling analysis (Sec. VI H), where fewer qubits yield
+    To isolate the contribution of two-qubit ZZ correlators                                                                                                                                     lower MSE in the Nc ≪ d regime due to reduced noise
+ ⟨σiZ σjZ ⟩ to the QRA’s performance, we repeated Exper-                                                                                                                                        accumulation.
+ iments 1–3 using only single-body (one-qubit) Pauli ob-
+ servables (Xi , Yi , Zi for i = 0, . . . , Nq − 1) plus a bias
+ term, reducing the feature dimension from d = 76 to                                                                                                                                                    D.    YOMO Probability Aggregation
+ d = 31 (Table VII).
+    Under ideal conditions, the single-body feature set                                                                                                                                           The YOMO method (Exp 5–6) reduces the feature
+ achieves machine-precision reconstruction (MSE ∼                                                                                                                                               dimension from 76 to 57 while maintaining comparable
+ 10−17 –10−16 ) for Nc ≤ 25, but degrades sharply at                                                                                                                                            performance to standard shot noise measurements (Ta-
+ Nc = 30 (MSE ∼ 10−11 ), consistent with the rank con-                                                                                                                                          ble VIII and Fig. 8).
+ dition approaching its limit at d = 31. This contrasts                                                                                                                                           For small Nc , YOMO performs comparably or better
+ with the full feature set, which maintains MSE ∼ 10−17                                                                                                                                         than standard measurements (ratio ≈ 0.89 at Nc = 5),
+ at Nc = 30 thanks to the additional 45 two-qubit ZZ                                                                                                                                            suggesting that the probability aggregation effectively av-
+ correlators.                                                                                                                                                                                   erages out shot noise. For larger Nc , the reduced dimen-
+                                                                                                                                                          13
+
+                                                                                                  sionality (57 < 76) results in moderate degradation (ratio
+ TABLE VIII. YOMO probability aggregation comparison.
+                                                                                                  ≈ 1.44 at Nc = 35).
+ Nc                    Exp 2 (76-dim)                     Exp 5 (57-dim)              Ratio          Under depolarizing noise (Exp 6 vs. Exp 3), YOMO
+ 5                      8.26 × 10−2                        7.34 × 10−2                0.89        suffers more
+                                                                                                            Q severely because the global damping factor
+ 10                     1.19 × 10−1                        1.18 × 10−1                1.00
+                                                                                                  λglobal = i ai decays exponentially with the number of
+                                                                                                  qubits affected. For Nc = 30, λglobal ≈ 2.6 × 10−6 , caus-
+ 20                     1.53 × 10−1                        1.84 × 10−1                1.20
+                                                                                                  ing the probability distribution to approach the uniform
+ 30                     2.44 × 10−1                        3.21 × 10−1                1.32        distribution 1/2Nq and destroying the encoded informa-
+ 35                     2.74 × 10−1                        3.95 × 10−1                1.44        tion [16]. In contrast, the standard Pauli measurement
+                                                                                                  scheme (Exp 3) retains partial information through indi-
+                                                                                                  vidual per-qubit damping factors.
+
+                               YOMO ProbAgg (K = 56, Nshots = 1000)     Path 1
+                                                                                                              E.   Asymmetric Shot Allocation
+               0
+      10
+                                                                                                    The asymmetric configuration (Exp 7) is the most
+                                                                                                  practically significant result. Using only 10 shots for en-
+                                                                                                  cryption but 105 for decryption yields dramatic MSE im-
+                                                                                                  provements over the symmetric 1,000-shot baseline (Ta-
+MSE
+
+
+
+
+                                                                                                  ble IX and Fig. 10).
+
+               1
+      10                                                                                                                                        enc
+                                                                                                  TABLE IX. Asymmetric shot allocation: Exp 7 (Nshots = 10,
+                                                                                                   dec       5
+                                                                                                  Nshots = 10 ) vs. Exp 2 (Nshots = 1,000).
+                                                Nc = 5        Nc = 18
+                                                Nc = 8        Nc = 20
+                                                Nc = 10       Nc = 25                             Nc            Exp 2            Exp 7          Improvement
+                                                Nc = 12       Nc = 30
+                                                Nc = 15       Nc = 35
+                                                                                                   5         8.26 × 10−2      2.56 × 10−4          322×
+                   0       5            10          15            20        25         30
+                                                  Iteration                                        8         9.04 × 10−2      5.65 × 10−4          160×
+                                                                                                  10         1.19 × 10−1      9.67 × 10−4          123×
+FIG. 8. YOMO probability aggregation with shot noise                                              12         1.24 × 10−1      1.29 × 10−3           96×
+(Exp 5, Path 1, d = 57). The reduced feature dimension                                            15         1.23 × 10−1      1.60 × 10−3           77×
+(57 vs. 76) leads to comparable performance at small Nc and
+                                                                                                  18         1.66 × 10−1      2.46 × 10−3           67×
+moderate degradation at large Nc .
+                                                                                                  20         1.53 × 10−1      2.69 × 10−3           57×
+                                                                                                  25         1.87 × 10−1      3.95 × 10−3           47×
+                                                                                                  30         2.44 × 10−1      6.04 × 10−3           40×
+                               YOMO ProbAgg + Depol. (p = 0.005)        Path 1                    35         2.74 × 10−1      8.03 × 10−3           34×
+                                                                            Nc = 5      Nc = 18
+                                                                            Nc = 8      Nc = 20
+                                                                            Nc = 10     Nc = 25
+                                                                            Nc = 12     Nc = 30
+                                                                            Nc = 15     Nc = 35
+      10
+           0                                                                                        The average improvement across all Nc is approxi-
+                                                                                                  mately two orders of magnitude (mean ≈ 102× over 16
+                                                                                                  seeds × 3 trials = 48 runs), while the sender’s measure-
+                                                                                                  ment cost is reduced by a factor of 100. This counterin-
+                                                                                                  tuitive result arises from the protocol structure:
+MSE
+
+
+
+
+                                                                                                       1. The encryption feature matrices V enc are used
+                                                                                                          only to compute weight vectors W enc via Tikhonov
+                                                                                                          regularization [Eq. (4)]. The regularization term
+                                                                                                          (V ⊤ V + λI)−1 absorbs the noise in V enc , produc-
+                                                                                                          ing stable weights even from noisy features.
+                   0      5            10          15             20        25         30              2. The decryption accuracy MSE            =    ∥C −
+                                                 Iteration
+                                                                                                          V dec W dec ∥2 /Nc is directly determined by the
+                                                                                                          quality of V dec . √With Nshots = 105 , the shot
+FIG. 9. YOMO with depolarizing + shot noise (Exp 6,                                                       noise is σshot ≈ 1/ 105 ≈ 3 × 10−3 , yielding MSE
+Path 1). Error bands show the standard deviation acrossQ 16                                               ∼ 10−3 .
+seeds × 3 trials. The global damping factor λglobal = i ai
+decays exponentially, causing severe degradation compared to                                           3. The encryption matrices are computed only once
+the standard Pauli scheme (Exp 3, Fig. 6).
+                                                                                                          (outside the iteration loop), while decryption ma-
+                                                                                                          trices are recomputed at every iteration.
+                                                                                                                                                                                          14
+
+                             Asymmetric shots (Nenc = 10, Ndec = 100, 000)   Path 1                              Depol. (p = 0.005) + asymmetric (Nenc = 10, Ndec = 100, 000)   Path 1
+                                                                                                         0
+                                                                                                    10
+           2
+      10
+MSE
+
+
+
+
+                                                                                              MSE
+           3
+      10
+
+
+
+
+                   Nc = 5              Nc = 18                                                                    Nc = 5        Nc = 18
+           4       Nc = 8              Nc = 20                                                                    Nc = 8        Nc = 20
+      10           Nc = 10             Nc = 25                                                                    Nc = 10       Nc = 25
+                   Nc = 12             Nc = 30                                                                    Nc = 12       Nc = 30
+                   Nc = 15             Nc = 35                                                                    Nc = 15       Nc = 35
+               0              5                  10     15        20          25       30                    0              5              10       15        20           25            30
+                                                      Iteration                                                                                   Iteration
+
+FIG. 10. Asymmetric shot allocation (Exp 7, Path 1):                                          FIG. 11. Asymmetric shot allocation under depolarizing noise
+  enc           dec
+Nshots = 10, Nshots = 105 . The asymmetric configuration                                                           enc
+                                                                                              (Exp 8, Path 1): Nshots            dec
+                                                                                                                        = 10, Nshots = 105 , pdep = 0.005.
+achieves MSE ∼ 10−3 , a 102-fold average improvement over                                     The asymmetric advantage vanishes under depolarizing noise
+symmetric Nshots = 1,000 (Exp 2, cf. Fig. 5), while reducing                                  (ratio ≈ 1.00–1.03), confirming that the depolarizing bias is
+the sender’s measurement cost by a factor of 100.                                             the dominant error source in this regime.
+
+
+   Under depolarizing noise (Exp 8 vs. Exp 3), the asym-                                         Under ideal conditions, all methods using quantum
+metric advantage vanishes: the ratio Exp 3/Exp 8 ranges                                       circuits with sequential encoding for feature extraction
+from 1.00 to 1.03 (Table X and Fig. 11). This is because                                      (QRC XYZ, Hénon + circuit, delay embedding + cir-
+the depolarizing bias σdepol ∝ (1 − λn ) is independent of                                    cuit, TTN) achieve machine-precision MSE for Nc ≤ 25
+Nshots ; once Nshots is large enough that σshot ≪ σdepol ,                                    (Table XI and Fig. 12). The ζ-QVAE, which uses data re-
+further increases in Nshots provide no benefit.                                               uploading instead of sequential input, achieves MSE only
+                                                                                              at the 10−1 level even under ideal conditions. This vali-
+                                                                                              dates the correctness of the QRA protocol for sequential
+TABLE X. Asymmetric configuration under depolarizing
+noise.
+                                                                                              encoding methods while highlighting that the encoding
+                                                                                              strategy critically determines reconstruction accuracy.
+ Nc                         Exp 3                             Exp 8                   Ratio
+ 5                       1.74 × 10−1                       1.70 × 10−1                1.03
+                                                                                              TABLE XI. Baseline comparison under ideal conditions
+ 10                      2.51 × 10−1                       2.46 × 10−1                1.02
+                                                                                              (Path 1 loss, mean ± std). All methods report MSE except
+ 20                      2.84 × 10−1                       2.84 × 10−1                1.00    QRNN which reports cross-entropy loss (ln 2 ≈ 0.693 = ran-
+ 30                      3.89 × 10−1                       3.83 × 10−1                1.02    dom guess). Hénon and delay embedding: 10 trials; TTN: 5
+                                                                                              trials; classical NN: 10 trials; ζ-QVAE: 10 trials; QRNN: 5
+                                                                                              trials; QRC XYZ: 16 seeds × 3 trials.
+
+                                                                                               Method                                           Nc =10                 Nc =30
+                                  F.        Baseline Comparison                                QRC XYZ (d=76)                             (3.6 ± 0.5)×10−18      (1.2 ± 0.3)×10−17
+                                                                                               Hénon (d=31)                               (4.5 ± 2.6)×10−17     (4.9 ± 13.5)×10−11
+   We emphasize the purpose of the baseline compari-                                           Delay (d=31)                               (5.0 ± 2.0)×10−17      (2.8 ± 7.0)×10−12
+son. The six methods were not designed for the QRA                                             TTN (d=31)                                 (3.3 ± 1.5)×10−17      (4.8 ± 3.2)×10−12
+encode–decode task and are not claimed as competitive                                          Classical NN                                (4.2 ± 0.8)×10−1       (3.1 ± 0.5)×10−1
+alternatives; no established baseline exists for this spe-
+                                                                                               ζ-QVAE (d=56)                               (2.6 ± 0.8)×10−1       (2.8 ± 0.4)×10−1
+cific protocol. Rather, the baselines serve two diagnostic
+roles: (i) verifying that the four-equation protocol con-                                      QRNN∗                                          0.26 ± 0.22            0.67 ± 0.08
+verges correctly for different feature-generation mecha-                                      ∗
+                                                                                                  Cross-entropy loss (bit-level); values > ln 2 ≈ 0.693 indicate
+nisms (protocol validation), and (ii) isolating the noise                                                        random-guess performance.
+bottleneck by comparing methods that use a single-shot
+solve (Hénon, delay, TTN) against the QRA’s iterative                                            The critical distinction emerges at Nc = 30: QRC XYZ
+solver under identical noise conditions (Sec. V F). The                                       maintains MSE ∼ 10−17 while the baselines with d = 31
+classical NN and QRNN are included as architectural ref-                                      show the onset of degradation (10−12 –10−11 ), as quanti-
+erence points with different optimization strategies, not                                     fied in Table XII with standard deviations. At Nc = 35,
+as tuned competitors.                                                                         all methods degrade, but the QRC advantage from higher
+                                                                                                                                                                                                                                                         15
+
+                                                                                                                                          Final MSE Comparison Across Scenarios
+                                                                                                                                            (Mean ± Std, 10 trials, iteration 30)
+TABLE XII. Extended baseline comparison: MSE across all                                                                Path 1 (Ra Rb)                                                                                 Path 2 (Rb Ra)
+conditions and data lengths (Path 1, mean ± std over 10                               10 2
+                                                                                              Ideal
+                                                                                              Shot (1000)                                                                            10 2
+                                                                                                                                                                                             Ideal
+                                                                                                                                                                                             Shot (1000)
+                                                                                              Noise+Shot (1000)                                                                              Noise+Shot (1000)
+trials). “—” indicates condition not tested.
+                                                                                      10 5                                                                                           10 5
+
+
+
+
+                                                              Final MSE (log scale)
+
+
+
+
+                                                                                                                                                             Final MSE (log scale)
+Method         Nc       Ideal         Shot       Noise+Shot                           10 8                                                                                           10 8
+
+
+               5     2.5×10−17     2.4×10−18     2.2×10−18                            10 11                                                                                          10 11
+
+
+               8     3.8×10−17     3.1×10−18     4.9×10−18                            10 14                                                                                          10 14
+
+
+
+               10    4.5×10−17     4.4×10−18     3.8×10−18                            10 17                                                                                          10 17
+
+
+
+               12    8.6×10−17     8.2×10−18     9.7×10−18                                    5      8      10    12      15
+                                                                                                                               Nc
+                                                                                                                                    18   20   25   30   35                                   5      8      10    12      15
+                                                                                                                                                                                                                              Nc
+                                                                                                                                                                                                                                   18   20   25   30    35
+
+
+Hénon          15    1.2×10−16     1.4×10−17     2.0×10−17
+               18    2.6×10−16     3.4×10−17     2.5×10−17     FIG. 12. Representative baseline comparison: Hénon map
+                                                               with quantum circuit, MSE across experimental conditions
+               20    7.7×10−16     6.8×10−17     7.4×10−17
+                                                               (ideal, shot noise, depolarizing + shot). Under ideal condi-
+               25    1.4×10−14     2.3×10−16     2.0×10−16     tions, the Hénon + circuit baseline achieves machine-precision
+               30    4.9×10−11     2.0×10−12     7.0×10−12     reconstruction for Nc ≤ 25 (d = 31), validating the QRA pro-
+               35    3.2×10−2      3.5×10−2       4.9×10−2     tocol independently of the QRC reservoir. Degradation at
+                                                               Nc = 30 reflects the lower feature dimension (d = 31) com-
+               10    5.0×10−17     6.2×10−18     5.1×10−18
+                                                               pared to QRC XYZ (d = 76). Qualitatively identical patterns
+Delay          20    5.9×10−16     3.0×10−17     4.8×10−17     are observed for the delay-time embedding and TTN base-
+               30    2.8×10−12     4.5×10−14     1.4×10−14     lines (see Supplemental Material). The classical NN baseline
+               35    5.5×10−2      4.5×10−2       4.7×10−2     (MSE ∼ 0.2–0.4 under ideal conditions) reflects the SPSA op-
+               5     1.8×10−1      3.3×10−1       4.0×10−1     timization limitation, not a fundamental deficiency (see text).
+               8     1.9×10−1      3.2×10−1       4.1×10−1
+               10    2.6×10−1      4.2×10−1       3.2×10−1     the structural difference between the solving procedures.
+               12    2.3×10−1      3.8×10−1       4.1×10−1     The baselines evaluate the feature matrix V once for a
+ζ-QVAE               2.8×10−1      4.6×10−1       4.1×10−1
+               15                                              given input sequence, then solve the linear system W =
+               18    2.9×10−1      5.0×10−1       5.9×10−1     (V ⊤ V + λI)−1 V ⊤ y in a single closed-form step. Shot
+               20    3.0×10−1      5.1×10−1       4.9×10−1     noise perturbs each element of V , but the perturbation
+               25    2.6×10−1      4.0×10−1       5.7×10−1     is frozen: the same noisy V used for training is the same
+               30    2.8×10−1      7.5×10−1       7.3×10−1     V available at reconstruction time. Tikhonov regression
+                                                               fits W to this specific noisy V , yielding machine-precision
+               35    2.7×10−1      6.8×10−1       7.6×10−1
+                                                               training error regardless of the noise realization.
+               5     5.5×10−3      6.9×10−3          1.25
+                                                                  The QRA iterative protocol (Sec. III E) operates fun-
+               8     3.1×10−3      9.1×10−3          1.51      damentally differently. At each iteration, the decode
+               10    2.6×10−1      3.9×10−2          1.27      feature matrices Vbdec and Vadec are recomputed with
+               12    2.2×10−1      3.5×10−1          0.95      clear_cache(), because the decode input (G(β, γ))
+QRNN∗          15    4.1×10−1      5.2×10−1          1.05      changes as γ converges. Crucially, each recomputation
+               18    5.3×10−1      5.6×10−1          0.82      draws independent shot-noise realizations. The decode
+               20    5.8×10−1      5.8×10−1          1.01      weights W dec trained on one noise realization are then
+               25    6.3×10−1      6.3×10−1          1.01
+                                                               evaluated against a different noise realization during the
+                                                               round-trip verification, producing a train–test mismatch:
+               30    6.7×10−1      6.6×10−1          0.93
+               35    6.8×10−1      7.6×10−1          1.12                                                        dec
+                                                                                                         Ĉ = (Veval + ϵ′ )W dec ̸= Vtrain
+                                                                                                                                      dec
+                                                                                                                                           W dec ≈ C,                                                                                                  (17)
+  ∗
+      QRNN reports cross-entropy loss (Path 1); noise model
+                uses p1q = 0.001, p2q = 0.01.                  where ϵ′ is an independent noise realization. To quantify
+                                                               this effect, write the noisy feature matrix as Ṽ = V + ϵ
+                                                               where ϵij are i.i.d. with variance σ 2 = p(1−p)/Nshots for
+feature dimensionality is clear.                               shot noise. The decode weights satisfy W = (V ⊤ V +
+   A striking observation from the baseline results (Ta-       λI)−1 V ⊤ C, and the reconstruction error on an indepen-
+ble XII) is that the Hénon and delay-time embedding            dent noise draw is
+baselines (both using quantum circuits for feature extrac-                                                   d
+tion) are insensitive to both shot noise and depolarizing
+                                                                                                             X          s2k
+                                                               E ∥Ĉ−C∥2 = E ∥ϵ′ W ∥2 = σ 2 tr(W W ⊤ ) = σ 2
+                                                                                  
+                                                                                                                              ,
+noise: the training MSE values under noisy conditions                                                              (s2k + λ)2
+                                                                                                               k=1
+are comparable to or even lower than ideal-condition val-                                                           (18)
+ues for Nc ≤ 30. This stands in stark contrast to the          where {sk } are the singular values of V . This deriva-
+QRC XYZ result, where shot noise degrades the MSE              tion assumes that ϵ′ is independent of W , which is ap-
+from 10−17 to 10−1 (Table V).                                  proximate: W was trained on a different realization from
+   The explanation lies not in feature dimension but in        the same physical system, introducing weak correlations
+                                                                                                                       16
+
+through the shared Hamiltonian dynamics and the iter-         uploading encoding strategy: because the full input C
+ative coupling of γ. Nevertheless, since each call to the     is fed into every output position simultaneously, the re-
+quantum circuit produces independent shot-noise sam-          sulting feature matrix lacks the temporal diversity that
+ples (the quantum state is re-prepared from scratch at        sequential encoding provides. In sequential QRC, the
+each evaluation), the inter-realization correlations enter    recursive quantum state evolution at each time step t
+only through the deterministic part of V , not through the    depends on all prior inputs, producing features that are
+noise. The independence assumption is therefore valid to      highly specific to the input position; in data re-uploading,
+leading order in σ 2 , and the prediction agrees with ob-     all positions receive the same global input, and positional
+servation: for the present system (d = 76, Nshots = 1000,     diversity is introduced only through the ancilla rotation
+σ 2 ≈ 2.5 × 10−4 ), Eq. (18) predicts MSE ∼ 10−1 , consis-    RX (pos · π/(Nc + 1)). This limited positional encoding
+tent with the observed shot-noise plateau.                    appears insufficient for the feature matrix to achieve the
+   The single-body experiments (Sec. V C) confirm that        rank and conditioning required for exact reconstruction.
+this noise sensitivity is not primarily a consequence of      Under noisy conditions, the ζ-QVAE degrades further
+higher feature dimension. The QRC with d = 31 (single-        (MSE 0.3–0.8), with shot noise and depolarizing noise
+body, same dimension as the baselines) still exhibits         effects comparable to or worse than the QRC XYZ re-
+MSE ∼ 10−1 under shot noise—comparable to the full            sults despite the lower feature dimension (d = 56 vs.
+d = 76—because the iterative protocol structure, not          d = 76). This result underscores that feature dimension
+the feature count, is the dominant factor. The feature        alone does not determine noise resilience; the structure
+dimension affects performance mainly through the rank         of the feature matrix—shaped by the encoding strategy
+condition (d ≥ Nc for exact reconstruction) and mod-          and quantum dynamics—plays a decisive role.
+estly through the noise scaling MSE ∝ d · σ 2 /Nshots . The      We note an important caveat regarding the fairness of
+asymmetric shot allocation (Exp 7) addresses the per-         this comparison. The ζ-QVAE was designed for varia-
+evaluation noise by increasing Nshots
+                                   dec
+                                       , reducing the mis-    tional quantum autoencoding with optimized circuit pa-
+match in Eq. (17). The classical neural network (MSE          rameters [21]; in our setup, the circuit parameters are
+∼ 0.2–0.4) is substantially outperformed by all quantum-      randomly initialized and fixed (not optimized), deviat-
+circuit-based methods. We note that this comparison has       ing from the intended use case. Furthermore, the data
+an important caveat: the SPSA optimizer with 100 iter-        re-uploading strategy is designed for classification and
+ations may not fully converge for the 706-parameter net-      regression tasks [13], not for the exact reconstruction re-
+work. However, this result is by design—it illustrates the    quired by the QRA protocol. The ζ-QVAE comparison
+practical advantage of the reservoir computing architec-      therefore demonstrates that the QRA protocol is sensi-
+ture, where the high-dimensional feature matrix is gener-     tive to the encoding architecture, rather than establishing
+ated by fixed dynamics and only d linear readout weights      a definitive ranking between QRC and ζ-QVAE.
+require training via closed-form regression. In contrast,        The QRNN baseline [22] offers a fundamentally differ-
+training a classical neural network for the QRA proto-        ent approach: replacing the fixed reservoir with a trained
+col requires optimizing all network parameters through        recurrent quantum circuit optimized via parameter-shift
+an iterative gradient-free method, which is both more         gradients. Under ideal conditions, the QRNN achieves
+expensive and less reliable. A more powerful optimizer        near-perfect reconstruction (cross-entropy loss < 0.01)
+(e.g., Adam with backpropagation) would require differ-       for Nc ≤ 8, but performance degrades sharply beyond
+entiable access to the encoding function, which is not        Nc = 10 (Table XII). At Nc ≥ 20, the loss approaches
+available in the present protocol where the “forward pass”    ln 2 ≈ 0.693 (random guess), indicating complete failure
+involves quantum state evolution. The classical NN is in-     of the protocol. This contrasts with QRC XYZ, which
+cluded as a reference point for the gradient-free setting,    maintains MSE ∼ 10−17 up to Nc = 30 under the same
+not as a competitive baseline. We do not claim that the       conditions. The QRNN’s rapid degradation can be at-
+QRA outperforms classical neural networks in general;         tributed to two factors: (i) the recurrent circuit has only
+a fully optimized autoencoder (e.g., using Adam with          50 parameters per network, providing limited expressiv-
+differentiable encoding) could plausibly match or exceed      ity for long sequences; and (ii) the bit-level sequential
+the QRC results. The comparison highlights the archi-         processing (one qubit I/O per step) creates an informa-
+tectural advantage of reservoir computing’s closed-form       tion bottleneck that prevents the QRNN from processing
+linear readout over iterative gradient-free parameter op-     sequences longer than the hidden-state capacity (Nq = 10
+timization in the same protocol.                              qubits). Under shot noise (Nshots = 1,000), the QRNN
+   The ζ-QVAE baseline [21] reveals a qualitatively differ-   shows minimal degradation from ideal for Nc ≤ 10 (loss
+ent behavior from the other quantum-circuit-based meth-       < 0.054), consistent with the observation that finite sam-
+ods. Even under ideal (state-vector) conditions, the ζ-       pling does not limit the protocol. Under depolarizing
+QVAE fails to achieve machine-precision reconstruction,       noise, however, the QRNN fails completely: all Nc pro-
+with MSE saturating at ∼ 0.2–0.3 for all Nc (Table XII).      duce loss > 0.82 (> ln 2), indicating that gradient-based
+This stands in stark contrast to the Hénon, delay, and        optimization through noisy quantum circuits cannot con-
+TTN baselines, which all reach MSE ∼ 10−17 under              verge. This failure is qualitatively different from the QRC
+the same conditions. We attribute this to the data re-        noise degradation (MSE ∼ 10−1 ), where the fixed reser-
+                                                                                                                                                                                                                                                                                          17
+
+voir still provides useful features even under noise—only                                                                                                                                                                           An important clarification is warranted regarding what
+the regression accuracy suffers. The QRNN result thus                                                                                                                                                                            is genuinely quantum about this contribution. The re-
+highlights a key advantage of the reservoir computing                                                                                                                                                                            versibility of the QRA protocol is fundamentally a prop-
+architecture: by separating the (noisy) quantum dynam-                                                                                                                                                                           erty of the linear algebra framework : given a feature ma-
+ics from the (classical, noise-free) linear readout train-                                                                                                                                                                       trix V with dim(V ) ≥ Nc , Tikhonov regression guar-
+ing, QRC avoids the gradient-noise coupling that cripples                                                                                                                                                                        antees a unique solution regardless of the origin of V .
+variational approaches under realistic conditions.                                                                                                                                                                               Indeed, the baseline results (Table XI) confirm that clas-
+                                                                                                                                                                                                                                 sically preprocessed baselines (Hénon map and delay-
+                                                                                                                                                                                                                                 time embedding, both using quantum circuits for feature
+                                                               G.               Convergence Dynamics                                                                                                                             extraction) achieve identical ideal-condition MSE. The
+                                                                                                                                                                                                                                 specific contributions of the QRC reservoir architecture
+  The iterative algorithm exhibits distinct convergence                                                                                                                                                                          are: (i) the sequential temporal input to the quantum
+patterns across experimental conditions:                                                                                                                                                                                         reservoir, combined with the exponentially large Hilbert
+                                                                                                                                                                                                                                 space, naturally generates higher-dimensional features
+                       • Ideal (Exp 1): Convergence to 10−17 within 1–3                                                                                                                                                          (d = 76 from 10 qubits vs. d = 31 from the circuit-
+                         iterations, triggering early termination.                                                                                                                                                               based baselines), enabling reversibility for longer data
+                       • Shot noise (Exp 2): Stabilization at the noise                                                                                                                                                          sequences; (ii) the recursive nonlinearity of sequential
+                         floor (∼ 10−1 ) within 5–10 iterations.                                                                                                                                                                 quantum evolution creates features that are difficult to
+                                                                                                                                                                                                                                 replicate classically at the same qubit count [1, 15]; and
+                       • Asymmetric (Exp 7): Convergence to ∼ 10−3                                                                                                                                                               (iii) the noise analysis—particularly the asymmetric shot
+                         within 3–5 iterations.                                                                                                                                                                                  allocation and the distinction between feature-matrix
+                                                                                                                                                                                                                                 noise and circuit noise—is intrinsic to the quantum mea-
+                       • Depolarizing (Exp 3, 8): Slow convergence over
+                                                                                                                                                                                                                                 surement process.
+                         10–15 iterations to a noise-limited plateau.
+                                                                                                                                                                                                                                    A natural question is what physical insights emerge
+The convergence rate depends on Nc : smaller data                                                                                                                                                                                from this work beyond the computational demonstration.
+lengths converge faster and reach lower MSE floors, while                                                                                                                                                                        We identify three: (i) the role of the XYZ Hamiltonian’s
+Nc = 35 may exhibit oscillatory behavior without reach-                                                                                                                                                                          entangling interactions in generating features with suffi-
+ing a stable minimum.                                                                                                                                                                                                            cient rank—removing the Jij coupling terms reduces the
+                                                                                             Path1: Convergence by Nc (Mean ± Std, 10 trials)
+                                                                                                                                                                                                                                 effective feature rank and causes convergence failure for
+            100
+                                 Nc=5
+                                                  Ideal
+                                                  Shot noise
+                                                                             Nc=8                                      Nc=10                                   Nc=12                                   Nc=15
+                                                                                                                                                                                                                                 Nc > 15, suggesting that many-body entanglement is es-
+                                                                                                                                                                                                                                 sential for high-dimensional feature generation; (ii) the
+           10 4                                   Noise+Shot
+
+           10 8
+           10 12
+MSE Loss
+
+
+
+
+           10 16
+           10 20                                                                                                                                                                                                                 observation that the noise propagation structure in QRC
+                                                                                                                                                                                                                                 (through the feature matrix V ) is fundamentally different
+           10 24
+           10 28
+
+
+
+                                                                                                                                                                                                                                 from gate-level noise propagation in variational circuits,
+                   0   5   10     15        20   25      30    0   5   10     15        20     25   30   0   5   10     15        20   25   30   0   5   10     15        20   25   30   0   5   10     15        20   25   30
+                                 Nc=18                                       Nc=20                                     Nc=25                                   Nc=30                                   Nc=35
+            100
+           10 4
+           10 8
+           10 12
+                                                                                                                                                                                                                                 leading to the counterintuitive asymmetric shot alloca-
+MSE Loss
+
+
+
+
+           10 16
+           10 20                                                                                                                                                                                                                 tion result; and (iii) the empirical finding that conver-
+                                                                                                                                                                                                                                 gence of the iterative protocol is governed by the spectral
+           10 24
+           10 28
+
+                   0   5   10     15        20   25      30    0   5   10     15        20     25   30   0   5   10     15        20   25   30   0   5   10     15        20   25   30   0   5   10     15        20   25   30
+                                Iteration                                   Iteration                                 Iteration                               Iteration                               Iteration
+                                                                                                                                                                                                                                 radius of a composite nonlinear map, connecting QRC re-
+                                                                                                                                                                                                                                 versibility to dynamical systems theory. These insights
+FIG. 13. Convergence dynamics of the iterative algorithm for
+the Hénon map + quantum circuit baseline across different
+                                                                                                                                                                                                                                 are specific to the quantum setting and motivate further
+data lengths Nc (Path 1). Under ideal conditions, convergence                                                                                                                                                                    theoretical investigation.
+to 10−17 occurs within 1–3 iterations. Under noisy conditions,                                                                                                                                                                      The name “quantum reservoir autoencoder” reflects
+the algorithm stabilizes at a noise-limited plateau within 5–15                                                                                                                                                                  this structure: following the analogy with neural net-
+iterations. Qualitatively identical behavior is observed for the                                                                                                                                                                 work autoencoders [23], the encoding path C → γ cor-
+QRC XYZ reservoir and all other baseline methods.                                                                                                                                                                                responds to the encoder, and the decoding path γ →
+                                                                                                                                                                                                                                 Ĉ to the decoder. A critical distinction is that the
+                                                                                                                                                                                                                                 QRA requires no parameter optimization of the quan-
+                                                                                                                                                                                                                                 tum dynamics—the reservoir Hamiltonian parameters
+                                                                             VI.                         DISCUSSION                                                                                                              remain fixed, and only the linear readout weights are
+                                                                                                                                                                                                                                 trained. This separates the QRA from the quantum
+                       A.                    Theoretical Significance of the Quantum                                                                                                                                             autoencoder of Romero et al. [14], which variationally
+                                                  Reservoir Autoencoder                                                                                                                                                          optimizes a parameterized quantum circuit to compress
+                                                                                                                                                                                                                                 quantum states; the QRA instead transforms classical
+   Our results establish that QRC is not limited to                                                                                                                                                                              data through fixed quantum dynamics and linear re-
+unidirectional prediction tasks.     The QRA demon-                                                                                                                                                                              gression. The QRA also differs from the QELM-based
+strates that the seemingly intractable reverse direction—                                                                                                                                                                        pipeline of De Lorenzis et al. [13], where classical autoen-
+reconstructing inputs from reservoir outputs—is achiev-                                                                                                                                                                          coders serve as a preprocessing stage before the quan-
+able under the conditions identified in Sec. III F.                                                                                                                                                                              tum reservoir. In the QRA, the reservoir itself provides
+                                                                                                                        18
+
+both encoding and decoding; no external dimensional-              The QRA protocol operates as a coupled iterative sys-
+ity reduction is required, and the bidirectional capability    tem where the decode input G(β, γ) changes at each it-
+emerges from the algebraic structure of the four-equation      eration as γ converges. Each evaluation of the decode
+system rather than from auxiliary classical networks.          feature matrix V dec = R(G(β, γ (k) )) produces indepen-
+Thus the QRA bridges the gap between unidirectional            dent noise realizations, creating three distinct sources of
+QRC/QELM frameworks [5, 12] and classical autoen-              inconsistency:
+coder architectures, offering a reservoir-native bidirec-
+tional transformation that preserves the computational            1. Train–evaluate mismatch: the decode weights
+simplicity of linear readout training.                               W dec are fitted to Vtrain
+                                                                                            dec
+                                                                                                 at iteration k, but the
+                                                                     round-trip verification evaluates Ĉ = Vevaldec
+                                                                                                                     W dec
+                                                                     with a fresh noise realization.
+    B.   Noise Accumulation: QRC vs. Quantum                      2. Cross-iteration drift: the encode features V enc
+                     Circuits
+                                                                     (which are cached) propagate noise through γ (k) =
+                                                                     V enc Wkenc , which feeds back into the decode input
+   The noise propagation through the QRC feature ma-                 at iteration k + 1.
+trix deserves explicit analysis, as it determines the error
+structure of the readout.                                         3. Cross-path coupling: Path 1 and Path 2 share the
+   In the QRA, each entry of the feature matrix Vij =                intermediate ciphertexts γ and γ ′ , so noise from one
+⟨Oj ⟩exact (ti ) + ϵij carries measurement noise. The noise          path contaminates the other.
+ϵij is a combination of shot noise (∼ N (0, σ 2 /Nshots ))
+and, when present, multiplicative depolarizing damping            The single-body experiments (Sec. V C) provide direct
+            (i)                                                evidence for this interpretation. Reducing the feature
+(Vij = λj ⟨Oj ⟩exact + ϵij ). The crucial point for the
+                                                               dimension from d = 76 to d = 31 while maintaining the
+QRA is that this noise structure differs between the en-
+                                                               iterative protocol yields MSE ∼ 10−1 under shot noise—
+cryption and decryption feature matrices: V enc enters
+                                                               essentially unchanged from the full feature set. If feature
+only through the weight computation W = (V ⊤ V +
+                                                               dimension were the dominant noise factor (as one might
+λI)−1 V ⊤ y, where Tikhonov regularization acts as a low-
+                                                               expect from the MSE ∝ d · σ 2 /Nshots scaling), the d = 31
+pass filter on the noise; whereas the reconstruction error
+                                                               configuration should show a 76/31 ≈ 2.5× improvement;
+∥C − V dec W dec ∥2 depends directly on V dec at prediction
+                                                               the observed ratio of only 1.3–1.7× for Nc ≤ 10 confirms
+time.
+                                                               that the iterative noise mismatch, not the feature count,
+   This asymmetry in noise roles is a consequence of the       sets the MSE floor.
+protocol’s architecture—not a property unique to quan-            This analysis has practical implications: improving
+tum systems. Any system (classical or quantum) with a          the QRA’s noise resilience requires addressing the per-
+similar “train on one noisy matrix, predict from another”      iteration noise inconsistency, not simply reducing the
+structure would exhibit the same behavior [6]. However,        feature dimension or increasing the number of shots
+the specific noise characteristics—shot noise from quan-       uniformly. The asymmetric shot allocation (Exp 7)
+tum measurement, depolarizing damping from decoher-            is effective precisely because it targets the dominant
+ence, and the time-dependent       accumulation of per-qubit   noise source—the decode evaluation—while accepting
+damping factors ai (t) = gates λgate —are intrinsic to the
+                             Q
+                                                               low-precision encoding. Future improvements might in-
+quantum measurement process and have no classical ana-         clude caching decode features within each iteration (elim-
+log [25, 26].                                                  inating source 1) or deterministic noise models that en-
+                                                               sure reproducible perturbations across evaluations.
+
+   C.    Iterative Protocol as the Dominant Noise
+                      Bottleneck                                 D.   Implications for Cryptographic Applications
+
+   The comparison between the QRA and the baselines              We note that the term “protocol” as used throughout
+(Sec. V F) reveals that the primary source of noise sen-       this paper refers to a bidirectional transformation frame-
+sitivity in the QRA is not the feature dimension or the        work (the QRA), not a cryptographic protocol in the
+quantum measurement, but the iterative structure of the        formal sense. The four-equation system with cross-key
+four-equation protocol itself.                                 pairing bears superficial structural similarity to key ex-
+   In a single-shot linear system W = (V ⊤ V +λI)−1 V ⊤ y,     change protocols [28], but critical differences exist. Most
+where V is computed once, shot noise is a fixed pertur-        importantly, as discussed in Sec. VI E, the current proto-
+bation: the solver fits W to the specific noisy V , and the    col requires access to the plaintext C during the weight-
+training MSE remains at machine precision regardless of        training phase, which disqualifies it from being a cryp-
+the noise level. This is precisely why the Hénon and           tographic protocol in any standard definition. The in-
+delay-embedding baselines (Table XII) show no noise-           ternal quantum state |ψ⟩ of the reservoir is not directly
+induced degradation in their training loss.                    accessible to an eavesdropper; only the classical output
+                                                                                                                      19
+
+γ = V W is transmitted. Reversing this to obtain C re-         C ′ , the decryption weights would need to be retrained,
+quires knowledge of both the secret key and access to the      requiring access to C ′ —precisely the information to be
+correct reservoir—the transmitted ciphertext γ alone is        communicated secretly.
+insufficient.                                                     A true blind decryption scheme would require an al-
+   We emphasize that this paper does not constitute a          ternative to Tikhonov regression for determining W dec —
+cryptographic protocol proposal and does not provide           for instance, a prediction-based approach where W dec is
+any security analysis. The blind decryption limitation         estimated from the structure of V dec alone, or a pre-
+(Sec. VI E) precludes standard cryptographic deployment        shared weight protocol where both parties agree on W dec
+in the current form. Formal analysis of key space, ci-         during the key-establishment phase and reuse it for sub-
+phertext distinguishability, information leakage, and re-      sequent communications. Preliminary experiments with
+sistance to known attacks (chosen-plaintext, known-key,        prediction-only decryption (i.e., applying W dec trained
+etc.) would be prerequisites for any cryptographic appli-      on a reference signal to decode a novel message) show
+cation and are entirely outside the scope of this work [29–    substantial MSE degradation even under ideal state-
+31].                                                           vector conditions: for Nc = 10, the MSE increases
+   a. Practical MSE thresholds. Under realistic noise,         from ∼ 10−17 (matched training) to ∼ 10−2 –10−1 (mis-
+the MSE values of 10−3 –10−1 are not sufficient for exact      matched); for Nc = 20, the MSE reaches ∼ 100 , com-
+reconstruction. To place these values in context: MSE          parable to random-guess performance. This degradation
+∼ 10−1 corresponds to a normalized root-mean-square            occurs because the readout weights are highly specific to
+error (NRMSE) of ∼ 30%, which would render most digi-          the particular input sequence. This is a fundamental con-
+tal applications (error-correcting codes, database records,    sequence of the QRC architecture: the feature matrix V
+financial transactions) unusable. However, applications        depends nonlinearly on the input through the recursive
+with intrinsic noise tolerance may still be viable: (i) ana-   quantum state evolution, so weights trained for one input
+log waveform transmission where the decoded signal need        sequence do not generalize to another.
+only preserve the qualitative shape (e.g., voice-band com-        Resolving this limitation is a prerequisite for any
+munication at NRMSE ∼ 10–30%); (ii) compressed sens-           practical cryptographic application and constitutes the
+ing or dimensionality reduction where approximate re-          most important direction for future work. Possible ap-
+construction is the goal; or (iii) physical key-distribution   proaches include: (i) amortized weight estimation using
+schemes where the transmitted quantity is a continuous-        a meta-learning framework trained on an ensemble of in-
+variable random signal rather than discrete data. MSE          put sequences; (ii) a two-phase protocol where the key-
+∼ 10−3 (NRMSE ∼ 3%, achievable with asymmetric al-             establishment phase communicates compressed weight
+location) approaches the threshold for lossy image and         information alongside the ciphertext; or (iii) reformulat-
+audio compression but remains insufficient for lossless        ing the protocol to operate on fixed-length blocks with
+applications. Reducing MSE to levels suitable for ex-          shared weights. None of these approaches have been eval-
+act reconstruction (< 10−6 ) under realistic noise likely      uated in the present work, and we explicitly flag this as
+requires increased Nshots , error mitigation, or quantum       a major open problem.
+error correction. The asymmetric configuration (Exp 7,
+MSE ∼ 10−3 ) represents the current best result under
+finite-shot conditions.                                                   F.   Noise Resilience Hierarchy
+
+                                                                 The experimentally observed MSE hierarchy,
+     E.   Blind Decryption: An Open Challenge
+                                                                   10−17 ≪ 10−3 ≪ 10−1 < 3×10−1 < 5×10−1 ,          (19)
+   As noted in Sec. III E, the iterative solving algorithm
+(Fig. 2) uses the plaintext C as the regression target         corresponding to Ideal ≪ Asymmetric ≪ Shot < De-
+when training the decryption readout weights: W dec =          pol+Shot < YOMO+Depol, reveals two distinct noise
+(V dec⊤ V dec + λI)−1 V dec⊤ C. In a practical deployment,     regimes:
+only the sender possesses C; the receiver must recon-            a. Shot-noise-dominated regime. When σshot ≫
+struct C solely from the transmitted ciphertext γ, the         σdepol , MSE scales as MSE ∝ 1/Nshots , and the asym-
+secret key (e.g., β), and access to the shared reservoir       metric allocation strategy provides substantial benefits.
+Rb . We refer to this as the “blind decryption” problem:       This regime is accessible with current quantum hardware
+determining W dec without knowledge of C.                      by increasing Nshots for the decryption step.
+   In the current protocol, the iterative procedure serves       b. Depolarizing-dominated regime. When σdepol ≫
+as a key-establishment phase in which both parties collab-     σshot , MSE is limited by the systematic bias (1 − λn )
+orate (with access to C) to find the weight matrices that      that cannot be reduced by additional measurements [25].
+satisfy the four-equation system. Once the weights W enc       In this regime, several NISQ-era error mitigation tech-
+and W dec are established, subsequent messages of the          niques could be applied: zero-noise extrapolation (ZNE),
+same length and statistical properties could in principle      which estimates the zero-noise limit by running circuits
+reuse the trained weights. However, for a new message          at multiple noise levels and extrapolating; probabilistic
+                                                                                                                       20
+
+error cancellation (PEC), which decomposes noisy chan-       that Nq controls the maximum data length exclusively
+nels into ideal operations at the cost of increased sam-     through the rank condition, with no additional quantum-
+pling overhead [26]; or randomized compiling to convert      specific contribution.
+coherent errors into stochastic Pauli noise. In the QRC
+context, ZNE would be particularly natural because the
+analytical depolarizing model [Eq. (8)] already provides     TABLE XIII. Qubit-number dependence: MSE at final iter-
+                                                             ation (mean over trials). Ideal, shot noise (Nshots = 1,000),
+the noise scaling parameter, enabling Richardson extrap-
+                                                             and depolarizing + shot noise (pdep = 0.005, Nshots = 1,000).
+olation on the feature matrix elements Vij . Evaluating      Nq = 5, 7: 10 trials; Nq = 10: 48 trials (ideal/shot).
+the effectiveness of these techniques within the QRA is
+an important direction for future work.                      Nq       Nc         Ideal           Shot        Noise+Shot
+                                                                      10      1.2×10−19       2.3×10−2        2.3×10−1
+                                                                      20      1.0×10−17       2.4×10−1            1.2
+          G.   Practical Resource Allocation                  5
+                                                                      25      2.4×10−13           7.2          1.0×102
+                                                                      30      3.0×10−2        4.3×10−1            2.6
+   The 102-fold MSE improvement from asymmetric shot
+                                                                      35      7.5×10−2        2.6×10−1            1.5
+allocation follows directly from Eq. (18): increasing
+   dec
+Nshots by 100× reduces σ 2 and hence the expected MSE                 10      1.3×10−19       2.3×10−2        2.0×10−1
+proportionally. The result is therefore not surprising in             20      9.2×10−19       9.9×10−2        5.5×10−1
+                                                              7
+hindsight, but it has non-obvious practical significance:             25      3.9×10−18       2.4×10−1        8.3×10−1
+it demonstrates that the encode and decode noise contri-              30      1.0×10−17       2.8×10−1            1.1
+butions are structurally separable, so that investments in            35      2.9×10−17       7.0×10−1            1.7
+decode precision are not wasted by encoding noise. This               10      3.6×10−18       1.9×10−1            —
+separability is a specific consequence of the protocol’s     10       20      5.6×10−18       2.3×10−1            —
+architecture (encryption weights are computed once and
+                                                                      35      1.6×10−17       4.1×10−1            —
+cached, while decryption weights depend on noisy γ), and
+was not assumed a priori. In a deployment scenario—e.g.,
+a resource-constrained IoT device (sender) communicat-          c. Shot noise: a counterintuitive reversal. Under
+ing with a cloud server (receiver)—the sender performs       shot noise, fewer qubits yield lower MSE in the Nc ≪ d
+only 10 measurement shots while the receiver invests 105     regime. At Nc = 10: Nq = 5 achieves MSE = 0.023,
+shots, reducing the sender’s quantum measurement cost        whereas Nq = 10 gives 0.19—an eightfold improvement
+by a factor of 100.                                          from halving the qubit count. This reversal arises be-
+                                                             cause the Tikhonov regression error scales approximately
+                                                             as MSE ∝ d · σ 2 /Nshots : larger d amplifies the total noise
+  H.   Scalability and Qubit-Number Dependence               in the feature matrix V . The optimal Nq thus depends
+                                                             on the data length: for short sequences (Nc ≪ d), fewer
+   The sharp degradation at Nc = 35 for Nq = 10 (from        qubits reduce noise accumulation; for longer sequences
+MSE ∼ 10−17 at Nc = 30 to ∼ 3 × 10−2 ) motivates a           (Nc → d), more qubits are essential to maintain the rank
+systematic investigation of how the qubit count Nq con-      condition. A practical guideline is to choose Nq such that
+trols the QRA’s performance. We performed additional         d/Nc ≈ 1.5–2.0, balancing the rank margin against noise
+experiments at Nq = 5 (d = 26) and Nq = 7 (d = 43) un-       amplification.
+der ideal, shot-noise (Nshots = 1,000), and depolarizing        d. Depolarizing noise. Adding depolarizing noise
++ shot-noise (pdep = 0.005, Nshots = 1,000) conditions,      further amplifies the Nq -dependent degradation. At
+each with 10 trials.                                         Nc = 20: Nq = 7 gives MSE = 0.55 while Nq = 5
+   a. Feature dimension scaling. The feature dimen-         gives 1.2, reflecting the interplay between the rank deficit
+sion scales quadratically: d(Nq ) = 3Nq + N2q + 1 =          (which dominates at low Nq ) and noise amplification
+(Nq2 + 5Nq + 2)/2, giving d = 26 (Nq = 5), 43 (Nq = 7),      (which dominates at high Nq ). The Nq = 5, Nc = 25 case
+and 76 (Nq = 10). The theoretical limit for exact recon-     (d = 26 ≈ Nc ) is catastrophic under noise (MSE ∼ 102 ),
+struction is Nc ≤ d − 1.                                     as the near-singular feature matrix amplifies measure-
+   b. Ideal conditions. Under ideal conditions, all three    ment errors.
+                                                                e. Measurement overhead. Measuring N2q two-
+                                                                                                                  
+Nq values achieve machine-precision MSE (∼ 10−18 –
+10−17 ) whenever Nc < d (Table XIII). The critical tran-     body correlators ⟨σiZ σjZ ⟩ requires O(Nq2 ) distinct mea-
+sition occurs precisely at the rank boundary: for Nq = 5,    surement settings. The total measurement budget scales
+MSE degrades to ∼ 10−13 at Nc = 25 (where d = 26) and        as O(Nq2 × Nshots ) for the standard Pauli scheme. The
+to ∼ 3 × 10−2 at Nc = 30; for Nq = 7, all Nc ≤ 35 remain     YOMO method [16] addresses this overhead by re-
+at machine precision (d = 43 > 35); for Nq = 10, the         placing individual Pauli measurements with a single
+degradation at Nc = 35 reflects the condition-number in-     computational-basis measurement, but at the cost ofre-
+crease (κ(V ) ∼ 103 at Nc = 30 to ∼ 102 at Nc = 35) due      duced feature dimension (d = K + 1 < 3Nq + N2q +
+to correlations among observables. These results confirm     1). Increasing Nq also increases the circuit depth and
+                                                                                                                        21
+
+noise susceptibility. Balancing these competing factors—       than simply reducing the feature count.
+feature richness, measurement overhead, noise accumula-           The qubit-number dependence study (Nq = 5, 7, 10)
+tion, and the d/Nc ratio—is essential for practical deploy-    revealed a nontrivial interplay between feature-space di-
+ment [2, 25].                                                  mension and noise sensitivity. While larger Nq increases
+                                                               the feature dimension d = (Nq2 + 5Nq + 2)/2 and ex-
+                                                               tends the range of exactly recoverable data lengths, it
+                                                               simultaneously amplifies measurement noise via the scal-
+                 VII.   CONCLUSION
+                                                               ing MSE ∝ d · σ 2 /Nshots . Under shot noise with Nshots =
+                                                               1000, the smallest reservoir (Nq = 5, d = 26) achieves
+   In this paper, we have introduced the quantum reser-        the lowest MSE for Nc ≤ 20, while Nq = 10 (d = 76)
+voir autoencoder (QRA) and demonstrated that it can            is required for Nc > 25. This reversal highlights the im-
+achieve bidirectional information transformation under         portance of matching the qubit count to the data length
+specific conditions. We identified four empirically suffi-     rather than unconditionally maximizing it.
+cient conditions: the rank condition dim(V ) ≥ Nc , sym-          Two fundamental limitations must be acknowledged.
+metric encoding structure F = G, independent cross-key         First, the current protocol requires access to the plain-
+pairing, and appropriate Tikhonov regularization. Quan-        text C during decoder weight training (the blind decryp-
+tum reservoir and key combinations satisfying the QRA          tion limitation, Sec. VI E); resolving this is a prerequi-
+protocol were empirically found through constructive nu-       site for any practical deployment. Second, the conver-
+merical demonstration across seven noise conditions and        gence of the iterative algorithm is established empiri-
+six baseline methods.                                          cally but lacks a formal proof; the spectral radius analysis
+   Under ideal conditions, the QRA achieves machine-           (Sec. III E) provides heuristic justification only.
+precision reconstruction (MSE ∼ 10−17 ) for data lengths          Our results establish a proof-of-concept for QRC as
+Nc ≤ 30. We emphasize that this result is expected from        a bidirectional information processing framework, ex-
+the overdetermined linear algebra (d = 76 > Nc ); the          panding its application range from unidirectional pre-
+nontrivial contribution lies in the reliable convergence       diction to encode–decode transformations. The QRA
+of the coupled four-equation system across 16 indepen-         places QRC on a comparable footing with neural net-
+dent random Hamiltonian realizations, demonstrating            work autoencoders in terms of computational versatility,
+that the cross-key iterative procedure is robust to the spe-   while maintaining the advantages of fixed quantum dy-
+cific quantum dynamics. Under realistic noise the MSE          namics and linear readout. Among the six baselines, the
+degrades to 10−3 –10−1 . Asymmetric shot allocation—10         QRNN [22] provided the closest architectural compari-
+encoding shots and 105 decoding shots—reduces MSE by           son: while its recurrent parametric circuit can learn the
+approximately two orders of magnitude (mean 102× over          cross-key protocol for short data (Nc ≤ 8), it degrades
+16 seeds × 3 trials). We also identified that noise in QRC     sharply for longer sequences and fails entirely under de-
+accumulates across all elements of the feature matrix V ,      polarizing noise—underscoring the advantage of QRC’s
+in contrast to gate-level noise propagation in standard        fixed-dynamics, linear-readout paradigm for robustness.
+quantum circuits.                                              Priority directions for future work include: (i) a blind
+   A key finding of this work is that the iterative proto-     decryption algorithm, (ii) formal convergence analysis,
+col structure—not the feature dimension—is the domi-           (iii) mitigation of the iterative noise mismatch (e.g., de-
+nant noise bottleneck. Single-body operator experiments        code feature caching or deterministic noise surrogates),
+(d = 31, excluding two-qubit ZZ correlators) show that         (iv) adaptive qubit-count selection based on the target
+reducing the feature dimension from 76 to 31 has only          data length and noise budget, and (v) implementation
+a modest effect on noisy MSE (1.3–1.7× for Nc ≤ 10),           on real quantum hardware with error mitigation [2].
+whereas the same d = 31 features achieve machine pre-
+cision when used in a single-shot solve (as in the base-
+line methods). The critical difference is that the QRA’s                      ACKNOWLEDGMENTS
+iterative solver recomputes decode features at each it-
+eration with independent noise realizations, creating a          Numerical simulations were performed using
+train–evaluate mismatch that limits convergence. This          Qulacs [24].
+diagnosis implies that improving noise resilience requires       Data availability. All simulation code and data sup-
+addressing the per-iteration inconsistency (e.g., through      porting the findings of this study are available from the
+feature caching or deterministic noise models), rather         corresponding author upon reasonable request.
+
+
+
+
+ [1] K. Fujii and K. Nakajima, Harnessing disordered-           [2] J. Preskill, Quantum computing in the NISQ era and
+     ensemble quantum dynamics for machine learning, Phys-          beyond, Quantum 2, 79 (2018).
+     ical Review Applied 8, 024030 (2017).                      [3] K. Nakajima and I. Fischer, eds., Reservoir Comput-
+                                                                    ing: Theory, Physical Implementations, and Applica-
+                                                                                                                              22
+
+     tions, Natural Computing Series (Springer, 2021).                 69 (1976).
+ [4] M. Lukoševičius and H. Jaeger, Reservoir computing ap-       [18] F. Takens, Detecting strange attractors in turbulence, in
+     proaches to recurrent neural network training, Computer           Dynamical Systems and Turbulence, Warwick 1980 , Lec-
+     Science Review 3, 127 (2009).                                     ture Notes in Mathematics, Vol. 898, edited by D. Rand
+ [5] P. Mujal, R. Martínez-Peña, J. Nokkala, J. García-Beni,           and L.-S. Young (Springer, 1981) pp. 366–381.
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-         [19] J. C. Spall, Multivariate stochastic approximation us-
+     tunities in quantum reservoir computing and extreme               ing a simultaneous perturbation gradient approximation,
+     learning machines, Advanced Quantum Technologies 4,               IEEE Transactions on Automatic Control 37, 332 (1992).
+     2100027 (2021).                                              [20] M. L. Wall, M. R. Abernathy, and G. Quiroz, Tree-
+ [6] A. N. Tikhonov, Solution of incorrectly formulated prob-          tensor-network classifiers for machine learning: From
+     lems and the regularization method, Soviet Mathematics            quantum inspired to quantum assisted, Physical Review
+     Doklady 4, 1035 (1963).                                           A 104, 042408 (2021).
+ [7] H. Jaeger, The “echo state” approach to analysing and        [21] K. Mato, L. Buffoni, S. Bacchio, and M. Grossi, ζ-qvae:
+     training recurrent neural networks, Tech. Rep. GMD Re-            Quantum variational autoencoder utilizing regularized
+     port 148 (German National Research Center for Informa-            mixed-state latent representations, Physical Review A
+     tion Technology (GMD), 2001).                                     111, 042416 (2025).
+ [8] W. Maass, T. Natschläger, and H. Markram, Real-time          [22] J. Bausch, Recurrent quantum neural networks, Ad-
+     computing without stable states: A new framework for              vances in Neural Information Processing Systems 33,
+     neural computation based on perturbations, Neural Com-            1368 (2020), neurIPS 2020; arXiv:2006.14619.
+     putation 14, 2531 (2002).                                    [23] G. E. Hinton and R. R. Salakhutdinov, Reducing the di-
+ [9] A. Kutvonen, K. Fujii, and T. Sagawa, Optimizing a                mensionality of data with neural networks, Science 313,
+     quantum reservoir computer for time series prediction,            504 (2006).
+     Scientific Reports 10, 14687 (2020).                         [24] Y. Suzuki, Y. Kawase, Y. Masumura, Y. Hiraga,
+[10] J. Dudaš, L. Jaurigue, K. Lüdge, J. Jarošik, A. Sakurai,          M. Nakadai, J. Chen, K. M. Nakanishi, K. Mitarai,
+     and K. Nakajima, Quantum reservoir computing opti-                R. Imai, S. Tamiya, T. Yamamoto, T. Yan, T. Kawakubo,
+     mizing quantum noise-induced reservoir computing for              Y. O. Nakagawa, Y. Ibe, Y. Zhang, H. Yamashita,
+     nonlinear and chaotic time series prediction, Scientific          H. Yoshimura, A. Hayashi, and K. Fujii, Qulacs: a fast
+     Reports 13, 19326 (2023).                                         and versatile quantum circuit simulator for research pur-
+[11] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yamasaki, and                 pose, Quantum 5, 559 (2021).
+     K. Fujii, Feedback-driven quantum reservoir computing        [25] M. A. Nielsen and I. L. Chuang, Quantum Computation
+     for time-series analysis, PRX Quantum 5, 040325 (2024).           and Quantum Information, 10th ed. (Cambridge Univer-
+[12] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Pa-        sity Press, 2010).
+     ternostro, and G. M. Palma, Potential and limitations        [26] J. J. Wallman and J. Emerson, Noise tailoring for scalable
+     of quantum extreme learning machines, Communications              quantum computation via randomized compiling, Physi-
+     Physics 6, 118 (2023).                                            cal Review A 94, 052325 (2016).
+[13] A. D. Lorenzis, M. P. Casado, M. P. Estarellas, N. L.        [27] W. Huggins, P. Patil, B. Mitchell, K. B. Whaley, and
+     Gullo, T. Lux, F. Plastina, A. Riera, and J. Settino,             E. M. Stoudenmire, Towards quantum machine learning
+     Harnessing quantum extreme learning machines for im-              with tensor networks, Quantum Science and Technology
+     age classification, Physical Review Applied 23, 044024            4, 024001 (2019).
+     (2025).                                                      [28] C. H. Bennett and G. Brassard, Quantum cryptography:
+[14] J. Romero, J. P. Olson, and A. Aspuru-Guzik, Quantum              Public key distribution and coin tossing, Proceedings of
+     autoencoders for efficient compression of quantum data,           IEEE International Conference on Computers, Systems
+     Quantum Science and Technology 2, 045001 (2017).                  and Signal Processing , 175 (1984).
+[15] R. Martínez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini,     [29] B. Cossins and J. Phang, Post quantum cryptogra-
+     and M. C. Soriano, Information processing capacity of             phy with chua’s circuit-based reservoir computing, arXiv
+     spin-based quantum reservoir computing systems, Cog-              preprint (2024), arXiv:2406.12948, 2406.12948.
+     nitive Computation 15, 1440 (2023).                          [30] National Institute of Standards and Technology, FIPS
+[16] Y. Liu et al., You only measure once: Quantum com-                203: Module-lattice-based key-encapsulation mecha-
+     putation on a single time slice, arXiv preprint (2025),           nism standard, Federal Information Processing Stan-
+     arXiv:2509.20090v1, 2509.20090.                                   dards Publication (2024), released August 2024.
+[17] M. Hénon, A two-dimensional mapping with a strange           [31] P. W. Shor, Polynomial-time algorithms for prime factor-
+     attractor, Communications in Mathematical Physics 50,             ization and discrete logarithms on a quantum computer,
+                                                                       SIAM Journal on Computing 26, 1484 (1997).
+

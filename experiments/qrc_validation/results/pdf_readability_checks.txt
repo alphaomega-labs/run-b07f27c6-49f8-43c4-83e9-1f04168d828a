@@ -1,0 +1,4 @@
+checked_pdf:paper/figures/fig_robust_gap_surface.pdf
+checked_pdf:paper/figures/fig_entanglement_frontier.pdf
+checked_pdf:paper/figures/fig_rho_noise_frontier.pdf
+checked_pdf:paper/figures/fig_counterexample_stress.pdf

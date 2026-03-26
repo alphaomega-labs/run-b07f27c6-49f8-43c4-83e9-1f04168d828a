@@ -1,0 +1,1372 @@
+                                             QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+                                                                  Abdallah Aaraba                                                   Soumaya Cherkaoui
+                                                           abdallah.aaraba@usherbrooke.ca                                          Polytechnique Montréal
+                                                               Université de Sherbrook                                            Montréal, Québec, Canada
+                                                             Sherbrooke, Québec, Canada
+
+                                                                      Ola Ahmad                                                        Shengrui Wang
+                                                                Thales cortAIx Labs                                                Université de Sherbrook
+                                                              Montréal, Québec, Canada                                           Sherbrooke, Québec, Canada
+                                         Abstract                                                                     Quantum reservoir computing (QRC) extends this paradigm by
+arXiv:2602.13531v1 [cs.LG] 14 Feb 2026
+
+
+
+
+                                         Quantum reservoir computing offers a promising route for time            leveraging quantum dynamics to generate features for sequential in-
+                                         series learning by modelling sequential data via rich quantum dy-        puts [5, 6, 12]. By injecting temporal data into a quantum system and
+                                         namics while the only training required happens at the level of          subsequently learning a classical readout, QRC proposes a princi-
+                                         a lightweight classical readout. However, studies featuring effi-        pled way of representing time series with potentially rich, compact
+                                         cient and implementable quantum reservoir architectures along            internal quantum states. However, there are two obstacles that limit
+                                         with model learning guarantees remain scarce in the literature. To       the adoption of this approach as a reliable data mining tool. The
+                                         close this gap, we introduce QuaRK, an end-to-end framework that         first concerns the fact that existing designs are either inconvenient
+                                         couples a hardware-realistic quantum reservoir featurizer with a         to implement faithfully on hardware or rely on expensive measure-
+                                         kernel-based readout scheme. Given a sequence of sample points,          ment schemes [33, 43]. The second is that works on the subject
+                                         the reservoir injects the points one after the other to yield a com-     often lack end-to-end frameworks that connect concrete, efficiently
+                                         pact feature vector from efficiently measured 𝑘-local observables        implementable QRC architectures to explicit learning-theoretic
+                                         using classical shadow tomography, after which a classical kernel-       guarantees on the generalization capacity of such methods [7, 34].
+                                         based readout learns the target mapping with explicit regulariza-            To reduce this gap, we propose in this work an implementable
+                                         tion and fast optimization. The resulting pipeline exposes clear         QRC architecture called QuaRK that is systematically designed
+                                         computational knobs—circuit width and depth as well as the mea-          with scalability in mind. First, a Johnson–Lindenstrauss (JL) [29]
+                                         surement budget—while preserving the flexibility of kernel meth-         projection decouples the quantum resources (quantum circuit width
+                                         ods to model nonlinear temporal functionals and being scalable           and depth) from the original data dimension, enabling the model to
+                                         to high-dimensional data. We further provide learning-theoretic          remain practical even in the case of high-dimensional inputs. Each
+                                         generalization guarantees for dependent temporal data, linking           time series point is projected to this dimension, yielding a different
+                                         design and resource choices to finite-sample performance, thereby        representation of the initial series with dimensionality matching
+                                         offering principled guidance for building reliable temporal learners.    the number of qubits of the chosen quantum system. Second, the
+                                         Empirical experiments validate QuaRK and illustrate the predicted        projected coordinates are sequentially injected into the quantum
+                                         interpolation and generalization behaviours on synthetic 𝛽-mixing        system through simple parameterized rotations followed by a fixed,
+                                         time series tasks.                                                       hardware-friendly entangling layer. Third, using the classical shad-
+                                                                                                                  ows strategy [20], the quantum reservoir is probed by simultane-
+                                                                                                                  ously estimating expectation values of 𝑘-local observables. Finally,
+                                         Keywords                                                                 following a projected quantum kernel [19] philosophy for time
+                                         Quantum Reservoir Computing, Quantum Kernels, Time Series                series [1], the reservoir readout is learned within the reproducing
+                                                                                                                  kernel Hilbert space (RKHS) of a classical kernel function applied
+                                                                                                                  to the space of features generated by the quantum featurizer.
+                                         1    Introduction                                                            Model capacity is explicitly characterized in a probably approxi-
+                                         Time series learning is a cornerstone in numerous modern data min-       mately correct (PAC) fashion [29, 38]. In particular, we show that
+                                         ing pipelines where related tasks involve forecasting, classification,   with a number of qubits lower-bounded by the data dimension
+                                         anomaly detection, and decision-making in dynamical environ-             (number of samples and desired time series length), one can per-
+                                         ments [2, 4, 11]. The main challenge is not only fitting nonlinear       fectly learn a dataset constructed out of window subsequences of
+                                         temporal dependencies, but also doing so under practical limitations     the studied time series. We follow this with an analysis of the gen-
+                                         such as limited labeled data, computational budgets, and the need        eralization capacity of the model conducted on weakly dependent
+                                         for stable representations when the underlying process exhibits          data. In this context, we show that the model exhibits good gen-
+                                         dependence and nonstationary effects. In this direction, reservoir       eralization on unseen data as we increase the number of dataset
+                                         computing [15, 21] has been an attractive modeling approach as it        samples. This learning-theoretic analysis is further validated em-
+                                         delegates most of the representational burden to a rich dynamical        pirically, showing that the theory matches the empirical results. In
+                                         system, while restricting training to a lightweight readout, which       summary, our main contributions are as follows:
+                                         yields a favourable trade-off between expressivity and optimization
+                                         cost.
+                                                                                                 Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+    (1) We introduce an end-to-end quantum reservoir kernel learner                  Y ⊂ R some bounded measurable real-valued output set satisfying
+        (QuaRK) that couples a hardware-realistic quantum reser-                     sup𝑦 ∈ Y |𝑦| ≤ Υ𝑌 . We distinguish between the stochastic process
+        voir featurizer with an RKHS kernel readout for temporal                     and its realizations: the input/output process IO is a random object
+        learning, while decoupling quantum resources from the                        defined on a fixed probability space, while a (finite) time series cor-
+        data dimension to enable scalability.                                        responds to a single observed trajectory of this process, from which
+    (2) We adopt an RKHS-based readout (kernel ridge regression-                     we construct windows for learning. We consider the supervised
+        style) that enables fast closed-form training and interpretable              learning problem where the task is to learn the data generating
+        regularization control, applied to a feature space generated                 process (DGP) functional (map) 𝐻 ★ that assigns 𝑌0 to the process
+        via efficient measurement of the quantum reservoir featur-                   X = (𝑋𝑡 : 𝑡 ∈ Z− ): 𝑌0 = 𝐻 ★ (X), where the process IO is distributed
+        izer using classical shadows.                                                according to some unknown distribution 𝑃 [7, 14]. This problem
+    (3) We provide learning-theoretic guarantees for dependent                       is rooted in real-life processes (e.g., weather data) where we only
+        temporal data that relate resource/design choices (projec-                   have access to data up to date (with the most recent index being
+        tion dimension, reservoir size, multiplexing, measurement                    𝑡 = 0) and we’d like to make a prediction 𝑌0 from such historical
+        budget, and regularization) to finite-sample performance.                    data (e.g., tomorrow’s temperature, after a one-step shift of the time
+        This is further validated empirically on representative tem-                 index).
+        poral learning tasks.                                                            As is central to machine learning, approximating the unknown
+   In what follows, Section 2 introduces the learning setup and                      DGP functional 𝐻 ★ follows from a risk minimization procedure. The
+background on temporal processes and quantum reservoirs, Sec-                        (statistical) risk, or generalization error, associated with a functional
+tion 3 presents the QuaRK architecture and theoretical analysis,                     𝐻 is defined with respect to a fixed 𝐿-Lipschitz (𝐿 > 0) loss function
+Section 4 reports empirical validation on 𝛽-mixing time series tasks,                ℓ : R × R −→ R (e.g. squared error) as
+and Section 5 discusses conclusions and future directions.
+                                                                                                               𝑅(𝐻 ) := E𝑃 [ℓ (𝐻 (X), 𝑌0 )].                           (1)
+2 Framework and background.                                                          We are interested in learning 𝐻 ★ from the family F of functionals
+2.1 Notation                                                                         satisfying the fading memory property (FMP) [32]. Intuitively, this
+                                                                                     property implies that if two time series x, x′ ∈ (I) Z− are similar
+We denote by Z− := {. . . , −2, −1, 0} the set of non-positive inte-
+                                                                                     in their recent past (i.e., have similar values 𝑥𝑡 and 𝑥𝑡′ for times
+gers, by N the non-negative integers, and for 𝑚 ∈ N∗ we write
+                                                                                     𝑡 > 𝑡 ∗ for some past time point 𝑡 ∗ ∈ Z− ), then their outputs 𝐻 ★ (x)
+[𝑚] := {1, . . . , 𝑚}; for any set A, |A| denotes its cardinality. Ran-
+                                                                                     and 𝐻 ★ (x′ ) will be close, even if x is very different from x′ in the
+dom objects are written in uppercase (e.g. 𝑋𝑡 , 𝑌𝑡 ) and processes
+                                                                                     distant past (𝑡 < 𝑡 ∗ ).
+in bold roman (e.g. X = (𝑋𝑡 : 𝑡 ∈ Z− ), IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈
+                                                                                        Given a hypothesis class of functionals C ⊂ F , the ultimate goal
+Z− )), while a (finite) observed trajectory is written in bold low-
+                                                                                     of the learning procedure consists in determining the functional
+ercase, x = (𝑥𝑡 : 𝑡 ∈ Z− ) ∈ (I) Z− with 𝑥𝑡 ∈ I ⊂ R𝑑 and
+                                                                                     𝐻 C that exhibits minimal risk by solving
+𝑦𝑡 ∈ Y ⊂ R; a length-𝑤 window ending at time 𝜏 is 𝑋𝜏𝑤 :=
+(𝑋𝜏 −𝑤+1, . . . , 𝑋𝜏 ) ∈ (I) 𝑤 with realization x𝜏𝑤 = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ),                                     𝐻 C = arg min 𝑅(𝐻 ).                                 (2)
+and a windows dataset is D = {(x𝑖 , 𝑦𝑖 )}𝑖=1 𝑁 (we use E [·] and Pr(·)                                                       𝐻∈C
+                                                         𝑃
+for expectation/probability under the law 𝑃). For an 𝑛-qubit register,               It is worth mentioning that the broader the class C is, the more
+          𝑛
+H := C2 , S(H ) is the space of density operators, and B (H ) is                     accurate the learning can be, hence the need for a rich (expressive)
+the space of bounded operators on H ; we use Dirac notation, set                     hypothesis class. Since the risk 𝑅(𝐻 ) depends on an unknown
+|+⟩⟨+| ⊗𝑛 := ⊗𝑖=1  𝑛 |+⟩⟨+|, and write ⟨𝑂⟩ := Tr [𝑂𝜌] for the expec-
+                                            𝜌                                        distribution 𝑃 as well as on a semi-finite time series process X, it is
+tation of an observable 𝑂. We write ∥·∥ 2 for the Euclidean norm,                    generally infeasible to solve the optimization in Eq. (2). To this end,
+and ∥·∥ HS , ∥·∥ 1 , and ~·~∞ for the Hilbert–Schmidt, trace, and oper-              one must come up with an empirical risk 𝑅ˆ that does not deviate
+ator norms, respectively. For spatial multiplexing with 𝑅 ≥ 1 sub-                   significantly from the true risk2 , i.e., a quantity |𝑅(𝐻 ) − 𝑅(𝐻ˆ )|
+reservoirs we work on H ⊗𝑅 := 𝑟 =1 H and B (H ) 𝑅 := B (H ⊗𝑅 );
+                                    Ë𝑅
+                                                                                     that is controllable and can be computed efficiently. The learning
+with a mild abuse of notation, S(H ) 𝑅 denotes the corresponding                     procedure then becomes minimization of the empirical risk, i.e.
+                                                                 (𝑟 ) with                         ˆ ).
+                                                       Ë𝑅
+state space and, in particular, the product states        𝑟 =1 𝜌                     arg min𝐻 ∈ C 𝑅(𝐻
+       (𝑟 )
+each 𝜌 ∈ S(H ). Finally, O denotes the set of measured 𝑘-local
+observables, 𝑚 : S(H ) 𝑅 → R𝑅 | O | the moment map producing                         2.3     Quantum reservoir computers.
+features Φ = 𝑚 ◦ 𝐻 𝑇 , and 𝜅 is the Matérn kernel with RKHS H𝜅                       Crucial to reservoir computers (RCs) [22] is the state-space evolu-
+and norm ∥·∥𝜅 ; 𝐾 denotes the associated Gram matrix and 𝜆reg the                    tion described as
+Tikhonov regularization parameter.
+                                                                                                          𝜌𝑡 = 𝑇 (𝜌𝑡 −1, 𝑥𝑡 ),     for all 𝑡 ∈ Z− ,                    (3)
+2.2     Learning temporal data processes.
+                                                                                     where 𝑇 : S × I −→ S is called the evolution map, and S ⊂ B is
+Let IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ), where 𝑋𝑡 ∈ I and 𝑌𝑡 ∈ Y, be a semi-                 the state space of some normed space (B, ∥·∥). Quantum reservoir
+infinite input/output stochastic process1 , with I ⊂ R𝑑 being some                   computers (QRCs) are an important class of RCs that leverage the
+bounded measurable input set such that sup𝑥 ∈ I ∥𝑥 ∥ 2 ≤ Υ𝑋 , and
+1 The probability space (Ω, A, P) is fixed for all random variables and processes.   2 Having a controllable |𝑅 (𝐻 ) − 𝑅ˆ (𝐻 ) | is what we mean by a good generalization.
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+state spaces of quantum systems [6]. Indeed, QRCs have as state               feature vectors and how these are lifted into an RKHS for learn-
+space the set of quantum states described by the convex subset                ing. Section 3.3 describes how the resulting kernel-based readout
+              S(H ) = { 𝜌 ∈ B (H ) : Tr [𝜌] = 1, 𝜌 ⪰ 0 } ,              (4)   is classically trained. Finally, Section 3.4 analyzes, in a PAC-style
+                                                                              fashion, the link between design/resource choices and finite-sample
+where B (H ) is the space of bounded linear operators on the Hilbert          performance on weakly dependent data.
+                 𝑛
+space H = C2 of an 𝑛-qubit quantum system. Unless otherwise
+stated, we mainly consider the  √︃ Hilbert–Schmidt    (HS) norm (i.e.,        3.1    Quantum reservoir embedding
+the Schatten-2 norm) ∥Ψ∥ HS = Tr Ψ† Ψ , Ψ ∈ B (H ) as the norm
+                                          
+                                                                              Although we described the machine learning problem in Section 2.2
+on B (H ). Furthermore, at each time step, the state of a QRC is              as that concerning learning the mapping 𝐻 ★ : X ↦→ 𝑌0 , in real-
+represented by a quantum state, while the quantum dynamics of                 ity we do not have a dataset of time series samples x ∈ (I) Z− to
+the reservoir are described by a time-evolution map on the same               train on. All we have is a single time series, i.e. a single realiza-
+quantum system (see [16] for details). Time-evolution maps on a               tion of the process X, which we must leverage to approximate the
+quantum system are linear maps that are completely positive and               unknown 𝐻 ★. To this end, we adopt the windows-based learning
+trace-preserving (CPTP). For each fixed input 𝑥𝑡 ∈ R𝑑 , the induced           approach discussed in [14] to form an (artificial) windows dataset
+map 𝑇 (·, 𝑥𝑡 ) : S(H ) −→ S(H ) is CPTP, and the state evolution is           D = {(x1, 𝑦1 ), . . . , (x𝑁 , 𝑦𝑁 )}, where each window is a lookback
+given by 𝜌𝑡 = 𝑇 (𝜌𝑡 −1, 𝑥𝑡 ).                                                 sequence x of the form x = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ) ∈ (I) 𝑤 along with
+   A QRC induces an inner filter, an inner-reservoir functional, and          its label 𝑦 = 𝑦𝜏 for some 𝜏 ∈ Z− . We override the definition of the
+an outer-reservoir functional, defined respectively as                        functional 𝐻 𝑇 (·), which was initially defined to accept semi-infinite
+                                                                             inputs, with a definition of 𝐻 𝑇 (x) for a given window x that starts
+  𝑈 𝑇 : (I) Z− −→ (S(H ))𝑍 − ,      x ↦−→ 𝑇 (𝑠𝑡 −1, 𝑥𝑡 ) : 𝑡 ∈ Z−
+                                                                              from an initial state 𝜌𝜏 −𝑤 , evolves the reservoir with respect to
+    𝐻 𝑇 : (I) Z− −→ (S(H )),            x ↦−→ 𝑈 𝑇 (x)0                  (5)   inputs 𝑥𝑡 ∈ x, and returns the output state 𝜌𝜏 at the end of the
+    𝐻ℎ𝑇 : (I) Z− −→ R,                                𝑇
+                                        x ↦−→ ℎ ◦ 𝐻 (x),                      evolution.
+
+where ℎ : S(H ) → R is some readout function that combines a                  3.1.1 Projection. Let 𝑛 ∈ N be the number of qubits chosen by the
+measurement scheme conducted on the quantum system with some                  user and let x ∈ D. To make our model parameters independent of
+classical post-processing.                                                    the data dimension, which is a key property for allowing scalability
+   There are two properties that are crucial in reservoir computing:          with potentially high dimensions 𝑑, we first project each input 𝑥 ∈ x
+the echo state property (ESP) and the fading memory property                  into another representation 𝑧 ∈ R𝑛 using a Johnson–Lindenstrauss
+(FMP). The first, ESP, is satisfied when for every sequence x ∈ (I) Z−        (JL) data projection with a linear projection matrix Π ∈ R𝑛×𝑑 so
+there exists a sequence of states (𝜌𝑡 : 𝑡 ∈ Z− ) that satisfies the           that 𝑧 = Π𝑥. We use a random matrix projection Π distributed
+relation in Eq. (3) for each 𝑡 ∈ Z− , and such a solution is unique.          according to the Gaussian JL distribution [8]
+The ESP has attracted a lot of attention in the literature on reservoir                   Π = Π𝑖 𝑗 𝑖,𝑗 ∈ R𝑛×𝑑 ,
+                                                                                                                        i.i.d.
+                                                                                                                   Π𝑖 𝑗 ∼ N 0, 𝑛1 .
+                                                                                                                                     
+                                                                                                                                                 (7)
+computing [22] because it gives the system a function-like definition
+where, for each input sequence, there is a single output sequence.            Such a projection is deliberately chosen to yield low-distortion
+The second property, on the other hand, states that a reservoir               embeddings, so that the (Euclidean) distances between all points
+                                                                                                               Ð𝑁
+computer satisfies the FMP when its functional 𝐻ℎ𝑇 satisfies it in the        in the dataset—i.e. the set P := 𝑖=1    x𝑖 ⊂ R𝑑 of cardinality at most
+sense described in the second paragraph of Section 2.2. Combined              𝑤 𝑁 —are nearly preserved. Importantly, one can        show that if the
+together, these properties imply that a state 𝜌𝑡 at time 𝑡 depends less       number of qubits satisfies 𝑛 = Ω 𝜀 pr    −2 log 𝑤𝑁
+                                                                                                                                𝛿       for some error
+and less on earlier states 𝜌𝑡 −𝑤 as we increase 𝑤. We will leverage           tolerance and failure probability 𝜀 pr, 𝛿 ∈ (0, 1), then for all 𝑢, 𝑣 ∈ P,
+this to show that the reservoir’s initial state becomes increasingly          we have
+irrelevant to the output as the reservoir processes more and more                    (1 − 𝜀 pr ) ∥𝑢 − 𝑣 ∥ 22 ≤ ∥Π𝑢 − Π𝑣 ∥ 22 ≤ (1 + 𝜀 pr ) ∥𝑢 − 𝑣 ∥ 22 ,   (8)
+time points.
+   An interesting family of reservoir computers is that of evolution          with probability at least 1−𝛿 by the standard JL lemma (see Theorem
+maps 𝑇 that are strictly contractive in their first argument:                 2.1 in [41]). This observation is later leveraged to show effective
+                                                                              learning with our reservoir computer (see Section 3.4.1).
+        ∥𝑇 (𝜌, 𝑥) − 𝑇 (𝜌 ′, 𝑥) ∥ ≤ 𝜆 ∥𝜌 − 𝜌 ′ ∥ , for all 𝜌, 𝜌 ′ ∈ S,   (6)
+                                                                              3.1.2 Quantum reservoir architecture. For the QR architecture, we
+where 𝜆 ∈ (0, 1). This is of interest because any reservoir of this           adopt a design that adheres to the family of quantum reservoirs
+form automatically satisfies both the ESP and the FMP [15, 32]. Sub-          called contracted-encoding quantum channels (CEQC) as intro-
+sequently, in Section 3.1, we propose a design of quantum reservoirs          duced in [26]. Such a design is interesting for numerous reasons,
+satisfying this condition, which leads to a principled hypothesis             the main one being its automatic satisfaction of the FMP and ESP.
+class C𝑅 of functionals that we leverage to approximate an unknown            These channels are defined as CPTP maps 𝑇 : S(H ) × I → S(H )
+DGP functional 𝐻 ★ ∈ F .                                                      that lead to state-space transformations of the form
+3     Methodology                                                                               𝜌𝑡 = 𝑇 (𝜌𝑡 −1, 𝑥𝑡 ) := E ◦ J (𝜌𝑡 −1, 𝑥𝑡 ),                 (9)
+In this section, we present the end-to-end QuaRK pipeline. In Sec-            where E : S(H ) → S(H ) is a strictly contractive map, and
+tion 3.1, we introduce our quantum reservoir embedding pipeline.              J : S(H ) × I → S(H ) is a CPTP map that encodes the input in-
+Section 3.2 outlines how the reservoir is read out efficiently to form        formation. It is worth mentioning that quantum reservoirs defined
+                                                                                                          Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+                                                                                           𝜌               𝑞1
+ 𝑞1           𝑅 𝑦 (𝜃 (𝑧 1 ))                                    𝑅𝑧 (𝜗𝑧1 )   𝑅𝑥 (𝜗𝑥1 )
+                                                                                                           𝑞2
+                                     12 )
+                                𝑍𝑍 (𝜗𝑧𝑧                                                                    𝑞3
+ 𝑞2           𝑅 𝑦 (𝜃 (𝑧 2 ))
+                                                         31 )
+                                                                𝑅𝑧 (𝜗𝑧2 )   𝑅𝑥 (𝜗𝑥2 )
+                                                    𝑍𝑍 (𝜗𝑧𝑧                                                𝑎1          |0⟩          𝐻
+                                           23 )
+                                      𝑍𝑍 (𝜗𝑧𝑧
+ 𝑞3           𝑅 𝑦 (𝜃 (𝑧 3 ))                                    𝑅𝑧 (𝜗𝑧3 )   𝑅𝑥 (𝜗𝑥3 )
+                                                                                                           𝑎2          |0⟩          𝐻
+                                                      Ising-like 𝑊
+
+                                        Unitary 𝑉 (𝑥)                                                      𝑎3          |0⟩          𝐻
+
+Figure 1: Circuit for the unitary evolution block 𝑉 (𝑥 ) on three                                            𝑐         |0⟩       𝑅 𝑦 (𝜃 𝜆 )
+qubits with ring connectivity. First, classical features are encoded
+via single-qubit angle encoding 𝑅 𝑦 (𝜃 (𝑧 𝑗 ) ) on each 𝑞 𝑗 . Then the Ising-
+like unitary 𝑊 ( Eq. (11)) is shown as ZZ couplings on the edges (1, 2),                                                     Contractive channel 𝐸𝜆
+(2, 3), and (3, 1), followed by local rotations 𝑅𝑧 (𝜗𝑧 ) and 𝑅𝑥 (𝜗𝑥 ).
+                                                                                               Figure 2: SWAP-dilation realization of the contractive channel 𝐸𝜆
+                                                                                               acting on a 3-qubit reservoir state 𝜌 (top wires). The ancilla register
+by CPTP maps of this form encompass numerous architectures in                                  (middle wires) is reset to |0⟩ and prepared in |+⟩ ⊗3 via Hadamards.
+the QRC literature, such as quantum circuits with noise [24, 39],                              A coin qubit (bottom wire) is reset and rotated by 𝑅 𝑦 (𝜃 𝜆 ), where
+                                                                                                             √
+reset-rate channels [6, 31], mid-circuit measurements [18, 42], and                            𝜃 𝜆 = 2 arcsin 1 − 𝜆 so that Pr[𝑐 = 1] = 1 − 𝜆 and Pr[𝑐 = 0] = 𝜆.
+compositions of a dissipative channel with an amplitude encoding                               Conditioned on 𝑐 = 1, controlled-SWAPs exchange each reservoir
+map [35]. The following paragraphs present our design for both                                 qubit 𝑞𝑖 with its corresponding ancilla qubit 𝑎𝑖 .
+channels J and E.
+   Unitary evolution. After projecting an input 𝑥 into 𝑧 = Π𝑥,
+we inject each component 𝑧 𝑗 of 𝑧 into the circuit using 𝑅 𝑦 gates                             the coin 𝑐 becomes superposed with probability 1 − 𝜆 of being in
+parametrized by angles 𝜃 (𝑧 𝑗 ) = 𝜋 · tanh(𝑧 𝑗 ) ∈ [−𝜋, 𝜋], followed by                        state |1⟩. In what follows, we combine parameters 𝜗 • and 𝜆 into a
+a global fixed unitary 𝑊 , which realizes the evolution J (𝜌, 𝑥) =                             single vector 𝜗.
+𝑉 (𝑥)𝜌𝑉 (𝑥) † , where                                                                             Quantum embedding of a window. Let x = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ) be a
+                                  Ì𝑛
+                                                                                              window of our time series. A consequence of using the reset-rate
+                      𝑉 (𝑥) := 𝑊       𝑅 𝑦 𝜃 (𝑧 𝑗 )                (10)                        channel E𝜆 is that, provided 𝑤 is large enough, the state at which
+                                              𝑗=1
+                                                                                               our quantum reservoir is initialized at time 𝜏 − 𝑤 matters little to
+as illustrated in Figure 1. Furthermore, given our quantum hardware                            the output state 𝜌𝜏 (see the third paragraph of Section 2.3). Hence,
+topology (𝑉 , 𝐸), where the vertices are our 𝑛 qubits and 𝐸 contains                           by convention, we fix 𝜌𝜏 −𝑤 = |+⟩⟨+| ⊗𝑛 as the initial state of the
+available edges between qubits of the form (𝑖, 𝑗), we realize the                              reservoir at time 𝜏 − 𝑤, and we process the inputs 𝑥𝑡 step by step
+unitary 𝑊 following the Ising-like, hardware-friendly design                                   until reaching the output state 𝜌𝜏 , realizing the following reservoir
+                                                                                               evolution:
+                    Ö            Ö           Ö
+             𝑊 =       𝑅𝑥 (𝜗𝑥𝑗 )   𝑅𝑧 (𝜗𝑧𝑗 )          𝑖𝑗
+                                                𝑅𝑧𝑧 (𝜗𝑧𝑧 ),     (11)
+                         𝑗 ∈𝑉          𝑗 ∈𝑉               (𝑖,𝑗 ) ∈𝐸                                        𝑇 (·, 𝑥𝜏 −𝑤+1 )           𝑇 (·, 𝑥𝜏 −𝑤+2 )      𝑇 (·, 𝑥𝜏 )
+                                                                                                    𝜌𝜏 −𝑤 −−−−−−−−−−→ 𝜌𝜏 −𝑤+1 −−−−−−−−−−→ · · · −−−−−−→ 𝜌𝜏 .                 (14)
+where all parameters 𝜗 • are sampled i.i.d. uniformly from (−𝜋, 𝜋).
+                                                                                               We refer to such a window embedding as 𝐻 𝑇 (x) ∈ S(H ), which
+   Contractive quantum channel E. Let 𝜆 ∈ (0, 1) be a contraction                              maps the window x to 𝜌𝜏 .
+factor. We design the channel E as the reset-rate channel
+                                                                                               3.1.3 Increased expressivity via spatial multiplexing. As introduced
+      E𝜆 : S(H ) −→ S(H ),                  𝜌 ↦−→ 𝜆𝜌 + (1 − 𝜆) |+⟩⟨+| ⊗𝑛 .              (12)
+                                                                                               in [36] and revised in [5, 6], we adopt the idea of spatial multi-
+As it is easy to check (with E𝜆 (𝜌 ′ ) in the first line below) that                           plexing to increase model expressivity. The idea is that, instead
+                           ∥E𝜆 (𝜌) − E𝜆 (𝜌)∥ HS ≤ 𝜆 ∥𝜌 − 𝜌 ′ ∥ HS                              of using a single reservoir computer, we can use a set of 𝑅 ≥ 1
+                                                                                        (13)   sub-reservoirs with the same architecture but different parameters.
+                 and ∥J (𝜌, 𝑥) − J (𝜌 ′, 𝑥) ∥ ≤ ∥𝜌 − 𝜌 ′ ∥ ,
+                                                                                               These sub-reservoirs are evolved independently (e.g., by running
+we have ∥𝑇 (𝜌, 𝑥) − 𝑇 (𝜌 ′, 𝑥) ∥ HS ≤ 𝜆 ∥𝜌 − 𝜌 ′ ∥ HS . Hence, we adhere                       different quantum circuits with different parameters 𝜗), so that for
+to the condition in the last paragraph of Section 2.3, thereby making                          a single window x we obtain a set of 𝑅 different quantum states,
+our reservoir computer satisfy both the ESP and FMP3 . Figure 2                                thereby increasing the feature vector size and expressivity. We
+illustrates how we realize such a reset-rate channel on our quantum                            mathematically represent the resulting spatially multiplexed (SM)
+circuit, where, controlled on a coin qubit 𝑐 rotated by 𝑅 𝑦 (𝜃 𝜆 ) with                        window embedding using the compact equivalent form
+               √
+𝜃 𝜆 = 2 arcsin 1 − 𝜆, we swap reservoir qubits with ancilla ones all
+                                                                                                                                         𝑅
+initialized to |+⟩. The convex formula in Eq. (12) is thus realized, as                                                                  Ì
+                                                                                                  𝐻 𝑇 : x = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ) ↦−→          𝐻 𝑇𝑟 (x) := 𝜌𝜏(𝑟 ) ∈ S(H ) 𝑅 ,
+3 Notice also that our map 𝑇 = E
+                                𝜆 ◦ J is by definition non-unital, i.e., 𝑇 (𝐼, 𝑥 ) ≠ 𝐼 ,                                                 𝑟 =1
+hence we ensure a non-pathological, non-trivial filter as discussed in Theorem 1 of [25].                                                                                    (15)
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+with 𝑇𝑟 being the evolution map of sub-reservoir 𝑟 ∈ [𝑅]. In ad-                            i.e., H𝜅 := H𝜅(0) . We equip such an√︁RKHS space with the norm
+dition, the parameters 𝜗𝑟 are all sampled independently. Working                            defined for each ℎ ∈ H𝜅 as ∥ℎ∥𝜅 := ⟨ℎ, ℎ⟩𝜅 , with ⟨·, ·⟩𝜅 being the
+with different contraction values 𝜆𝑟 is beneficial, as it yields dif-                       RKHS’s inner-product [17].
+ferent sub-functionals 𝐻 𝑇𝑟 each with a different fading-memory                                 This readout scheme adheres to the principle of projected quan-
+structure, thereby enriching model expressivity with respect to                             tum kernels [19], consisting of first measuring and then applying
+modeled memories4 .                                                                         a kernel wrapper to the resulting feature vectors. Hence, our ap-
+                                                                                            proach is a legitimate quantum kernel method applied to time
+3.2      Reading out the reservoir                                                          series data. Additionally, we choose a Matérn profile because its
+In this section, we describe the readout module. We first present                           RKHS exhibits a polynomial algebraic structure, which is required
+an efficient classical shadows measurement scheme to form feature                           to preserve the polynomial-algebra structure induced by the spatial
+vectors from the reservoir state, then explain how a kernel-based                           multiplexing design used to increase model expressivity [32].
+RKHS readout is trained on these features.
+3.2.1 Efficient measurement scheme. At the end of the reservoir,
+                                                                                            3.3     Readout training with empirical risk
+we read out each sub-reservoir state 𝜌𝜏 by measuring a set of 𝑘-                                    minimization
+local observables denoted by O—in our experiments in Section 4,                             Given a fixed quantum channel 𝑇 , i.e. after sampling parameters 𝜗,
+we set O to be the set of 2-local Pauli observables5 . Such a choice                        and fixing the number of qubits 𝑛 and the number of sub-reservoirs
+is deliberately made so that measuring the sub-reservoirs can be                            𝑅, we now show how the kernel-based readout ℎ is trained. Let
+efficiently realized. Indeed, we make use of the classical-shadow                           𝜑 be a Matérn profile, as described in Eq. (17), parameterized by
+estimator [20], which states that one can simultaneously and effi-                          hyperparameters 𝜈 and 𝜉. Suppose we have a (training) dataset of
+ciently estimate all moments [⟨𝑂⟩ 𝜌𝜏 : 𝑂 ∈ O] up to error tolerance                         windows D = {(x1, 𝑦1 ), . . . , (x𝑁 , 𝑦𝑁 )} that contains window sam-
+𝜀 cs ∈ (0, 1) using only a number of circuit runs (classical snapshots)                     ples x𝑖 along with their labels 𝑦𝑖 ∈ R, obtained from some unknown
+scaling as 𝑂 32 𝜀 cs
+                   𝑘 −2           
+                          log(|O|) by employing random single-qubit                         functional 𝐻 ★. We learn the best readout ℎ ∈ H𝜅 following an em-
+Pauli basis measurements [20].                                                              pirical risk minimization scheme, where we minimize the empirical
+    The moments are estimated using the median-of-means algo-                               risk 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) with respect to the dataset D given by
+rithm, as introduced in the seminal paper on classical shadows [20],                                                              𝑁
+                                                                                                                               1 ∑︁  𝑇            
+which is more resistant to statistical fluctuations. In the end, our                                             𝑅ˆ𝑁 (𝐻ℎ𝑇 ) :=       ℓ 𝐻ℎ (x𝑖 ), 𝑦𝑖 ,            (20)
+measurement scheme for the sub-reservoirs 𝑚 : S(H ) 𝑅 → R𝑅 | O |                                                               𝑁 𝑖=1
+produces the feature vector                                                                 with ℓ being the squared loss function6 ℓ (𝑦,
+                                                                                                                                       ˆ 𝑦) := (𝑦ˆ − 𝑦) 2 .
+                                                      i⊤
+                                                                                               The bias-variance tradeoff of the model is controlled by restrict-
+                          h
+   Φ(x) = 𝑚 𝐻 𝑇 (x) := ⟨𝑂⟩ 𝜌 (𝑟 ) : 𝑂 ∈ O, 𝑟 ∈ [𝑅] ∈ R𝑅 | O | , (16)
+                                 𝜏                                                          ing the RKHS readout. Concretely, ℎ is learned by minimizing the
+                                                                                            empirical risk while enforcing a norm budget ∥ℎ∥𝜅 ≤ Λ. Such a
+                     Ë (𝑟 )
+where 𝐻 (x) =
+           𝑇
+                        𝑟 𝜌𝜏 . Subsequently, feature vectors of this
+kind form the inputs to the classical Matérn kernel we use in the                           constrained problem admits an equivalent Tikhonov-regularized
+following section.                                                                          formulation [37] where there exists a 𝜆𝜆 ≥ 0 (a Lagrange multi-
+                                                                                            plier for the constraint ∥ℎ∥𝜅 ≤ Λ) for which the solution of the
+3.2.2 RKHS readout. Let 𝜑 be a (unit-variance) Matérn covariance                            norm-constrained empirical risk minimization satisfies
+with smoothness and lengthscale parameters 𝜈 > 1 and 𝜉 > 0,
+respectively, defined as                                                                                arg min 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) = arg min 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) + 𝜆𝜆 ∥ℎ∥𝜅2 ,     (21)
+                                                                                                        ℎ∈ H𝜅 (Λ)                  ℎ∈ H𝜅
+                        21−𝜈 √ 𝑠           √ 𝑠
+                                   𝜈          
+               𝜑 (𝑠) :=        2𝜈      𝐾𝜈 2𝜈       ,         (17)                           where H𝜅 (Λ) is the RKHS ball of radius Λ defined as
+                        Γ(𝜈)      𝜉            𝜉
+                                                                                                                    H𝜅 (Λ) := {ℎ ∈ H𝜅 : ∥ℎ∥𝜅 ≤ Λ}                (22)
+where Γ is the gamma function, and 𝐾𝜈 is the modified Bessel
+function of the second kind [13]. We then define our kernel function                        By the representer theorem [17], theoptimal readout admits the
+                                                                                                          Í𝑁
+𝜅 on S(H ) 𝑅 as                                                                             form ℎ(·) = 𝑖=1    𝛼𝑖 𝜅 𝐻 𝑇 (x𝑖 ), 𝐻 𝑇 (·) . Training thus reduces to
+           S(H ) 𝑅 × S(H ) 𝑅          −→       R                                           kernel ridge regression, where we solve a finite-dimensional linear
+    𝜅:                                                                             (18)    system in 𝜶 . The closed-form solution is given by
+                          (𝜌, 𝜌 ′ )   ↦−→      𝜑 ∥𝑚(𝜌) − 𝑚(𝜌 ′ )∥ 2 .
+                                                                                                                          𝜶 = (𝐾 + 𝑁 𝜆𝐼 ) −1 𝒚,                  (23)
+Finally, the classical readout functions ℎ we use are drawn from the                                                                                                 
+reproducing kernel Hilbert space (RKHS) H𝜅 of 𝜅 defined as the                              where 𝐾 is the Gram matrix with elements 𝐾𝑖 𝑗 := 𝜅 𝐻 𝑇 (x𝑖 ), 𝐻 𝑇 (x 𝑗 )
+                                                                                                                                                              ⊤
+                                                                                            for the different windows x𝑖 , x 𝑗 ∈ D, and 𝒚 := (𝑦1, . . . , 𝑦𝑁 ) is the
+closure (inclusion of limit points) of the set of functions [17]
+             (      𝑠ℎ
+                                                                  )                         label vector.
+                   ∑︁
+     (0)
+   H𝜅 := ℎ =            𝛼𝑖 𝜅 (𝜌𝑖 , ·) : 𝛼𝑖 ∈ R, 𝜌𝑖 ∈ S(H ), 𝑠ℎ ∈ N ,
+                       𝑖=1
+                                                                                            3.4     Learning theoretic analysis
+                                                                                    (19)    3.4.1 Effective task learning. In this section, we show that we
+4 It has been shown that the family of QRCs is universal in that of the functionals with    can effectively learn the task functional under mild conditions
+the FMP [36].                                                                               on the quantum resources used. Let our dataset of windows be
+5 A Pauli observable 𝑃 = 𝜎 ⊗ · · · ⊗ 𝜎 , with 𝜎 ∈ {𝐼, 𝑋 , 𝑌 , 𝑍 }, is called 𝑘 -local (or
+                            1          𝑛          𝑖
+weight ≤ 𝑘 ) if the index set {𝑖 ∈ [𝑛] : 𝜎𝑖 ≠ 𝐼 } has cardinality ≤ 𝑘 .                     6 Other Lipschitz losses may be used as discussed in Section 2.2.
+                                                                                         Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+D = {(𝒙 1, 𝑦1 ), . . . , (𝒙 𝑁 , 𝑦𝑁 )}. We argue as follows that, upon using    process IO (see Section 2.2 for details). Then, a window x𝑖 is con-
+a quantum reservoir computer with a number of qubits as low as                 structed as the realization of the sub-process (𝑋𝑡𝑖 −𝑤+1, . . . , 𝑋𝑡𝑖 )
+𝑛 = Ω(log(𝑤 𝑁 )), we can, with high probability, achieve effective             and is assigned a label 𝑦𝑖 , the realization of 𝑌𝑡𝑖 . When windows
+empirical learning. In this setting, we show in the following theo-            overlap, dependence arises; hence, we instead select indices with
+rem that, in an idealized noiseless setting (as opposed to the noisy           stride 𝑠 = 𝑤 + 𝑔, where 𝑔 is a controllable gap. Increasing 𝑔 in-
+feature maps of Section 3.2.1), we obtain effective learning of the            creases, in turn, the independence between windows for our 𝛽-
+task at hand. The proof of such result can be found in Appendix A.1.           mixing process. Sampling 𝑁 windows while respecting stride 𝑠
+                                                                               between consecutive windows is how we construct our dataset
+Theorem 1 (Effective learning). Suppose a design of a quantum                  D = {(x1, 𝑦1 ), . . . , (x𝑁 , 𝑦𝑁 )}, where we assume 𝑡 1 > 𝑡 2 > · · · > 𝑡 𝑁
+reservoir as described in Section 3.1 with a number of 𝑅 ≥ 1 sub-              with 𝑡𝑖 − 𝑡𝑖+1 = 𝑠. We now present our generalization result for the
+reservoirs, and let our readout scheme follow the kernel-based one             𝛽-mixing case the proof of which can be found in Appendix A.3.3.
+described in Section 3.2. Let 𝜀 pr, 𝛿 pr ∈ (0, 1) be, respectively, an error
+tolerance and a failure probability                                            Theorem 2 (Generalization on weakly-dependent data). Consider
+                                        parameter.
+                                                    Then, with a number
+                                                                               IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡) as a stationary 𝛽-mixing process with bounded
+of qubits as low as 𝑛 = Ω 𝜀 pr−2 log    𝑤𝑁
+                                                , with probability at least
+                                        𝛿 pr                                   outputs |𝑌𝑡 | ≤ Υ𝑌 . Fix a window length 𝑤 and a gap 𝑔, and construct
+       , there exists a value Λ★
+1 − 𝛿 pr                             > 0 such that for any constraint          a strided windows dataset D = {(x𝑖 , 𝑦𝑖 )}𝑖=1𝑁 with stride 𝑠 = 𝑤 + 𝑔 (as
+Λ ≤ Λ★, we have                                                                in the paragraph above). Assume 𝑁 is even and write 𝑁 = 2𝜇. Let
+                                                        2                   𝑇 be a QR featurizer composed of 𝑅 sub-reservoirs with contraction
+                    min 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) = 𝑂         1 − ΛΛ★         .       (24)    values {𝜆𝑟 }𝑟𝑅=1 , and let 𝜅 be the unit-variance Matérn kernel used in
+                  ℎ∈ H𝜅 (Λ)
+                                                                               Section 3.2 (with parameters 𝜈 > 1 and 𝜉 > 0). Let O be the set of
+   Theorem 1 can be read as a capacity statement for the end-to-               measured 𝑘-local observables. Define 𝜆★ := max𝑟 ∈ [𝑅 ] 𝜆𝑟 .
+end functional 𝐻ℎ𝑇 : for a fixed quantum featurizer, enlarging the                Fix any 𝛿 ∈ (0, 1) such that
+RKHS norm constraint decreases the achievable training loss. This
+                                                                                   𝛿 > 4(𝜇 − 1)𝛽 IO (𝑔),        𝛿 ′ := 𝛿 − 4(𝜇 − 1)𝛽 IO (𝑔) > 0.             (25)
+is made explicit in Eq. (24) by exhibiting a budget threshold (which
+depends on the Gram matrix) such that, once Λ is relaxed enough                Then, with probability at least 1 − 𝛿, the following holds simultane-
+to approach Λ★, the empirical risk can be driven arbitrarily close             ously for all ℎ ∈ H𝜅 (Λ):
+to zero. Therefore, under the stated qubit scaling (which leads to
+                                                                                                                                        √︁
+                                                                                                         √ Λ(Λ + Υ𝑌 )                            ′
+                                                                                                                                       2 log(4/𝛿 )
+a JL projection preserving the finite window set’s geometry with
+                                                                                    𝑇     ˆ      𝑇
+                                                                                𝑅(𝐻ℎ ) − 𝑅𝑁 (𝐻ℎ ) ≤ 4 2         √         + 3(Λ + Υ𝑌 )      √
+high probability), the kernel readout becomes expressive enough                                                   𝑁                           𝑁
+                                                                                                       |      {z       }     |         {z         }
+to interpolate the dataset under sufficiently weak regularization.                                         (Rademacher term)              (mixing penalty)
+The interpretation of this result should be solely that there exists                                                    √︂
+                                                                                                             4Λ(Λ + Υ𝑌 ) 𝜈𝑅|O| 𝑤
+an effective interpolation regime.                                                                         +                   𝜆 .
+                                                                                                                 𝜉         𝜈 −1 ★
+3.4.2 Generalization analysis on weakly-dependent data. Though
+                                                                                                             |         {z       }
+                                                                                                              (window truncation via contraction)
+Theorem 1 shows that empirical fit is achievable with modest quan-                                                                                           (26)
+tum resources, it says nothing about how the empirical risk de-
+viates from the true risk 𝑅(𝐻ℎ𝑇 ) as defined in Eq. (1), i.e., general-           Theorem 2 provides a uniform high-probability bound on the
+ization is not guaranteed. Characterizing the generalization gap               generalization gap |𝑅(𝐻ℎ𝑇 ) − 𝑅ˆ𝑁 (𝐻ℎ𝑇 )| for all readouts ℎ within
+ 𝑅(𝐻ℎ𝑇 ) − 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) is, in general, a non-trivial endeavour for time         the RKHS ball H𝜅 (Λ) trained on a strided windows dataset. The
+series data, as we do not necessarily have the required i.i.d. prop-           bound decomposes into three√terms. First, a standard Rademacher
+erty for the window samples of our hookups dataset D (between-                 complexity term of order 1/ 𝑁 , which penalizes√model richness.
+window dependence may occur), which is often assumed by stan-                  Second, a dependence penalty that is also 𝑂 (1/ 𝑁 ) but whose
+dard learning-theoretic analyses.                                              confidence level is effectively reduced by temporal dependence
+   In our treatment, we provide a generalization characterization for          through 𝛿 ′ = 𝛿 − 4(𝜇 − 1)𝛽 IO (𝑔); hence the need to choose a gap 𝑔
+the case where our data are weakly dependent and are sampled from              large enough to reduce 𝛽 IO (𝑔). Third, a fading-memory remainder
+a 𝛽-mixing process IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ). In essence, a 𝛽-mixing         that decays geometrically with 𝜆★𝑤 , which penalizes the fact that
+process means that the “far past” of the sequence and the “far future”         the reservoir forgets information beyond the window horizon. Con-
+become more and more independent as we increase the temporal                   sequently, for a fixed design, increasing the number of windows
+gap (formal definitions can be found in Appendix A.2). This property           𝑁 drives the first two terms to zero, while choosing 𝑤 moder-
+can be leveraged to enable coupling/blocking arguments that lead               ately large (or ensuring stronger contraction) makes the truncation
+to generalization bounds similar to the i.i.d. case, with an explicit          term negligible. In practice, the gap 𝑔 controls statistical depen-
+dependence-related penalty [28]. It is worth mentioning that this              dence between windows, while 𝑤 controls the approximation to
+weak-dependence assumption encompasses a broad class of time                   the reservoir’s infinite-memory dynamics, thereby yielding a clear
+series models used in practice, which are 𝛽-mixing under verifiable            bias–dependence–variance tradeoff.
+stability/ergodicity conditions, making our analysis applicable well
+beyond the i.i.d. setting [3, 9, 10].                                          4    Empirical validation
+   We now describe how we construct a dataset that leads to our                In this section, we provide empirical validation of our end-to-end
+generalization guarantee. We observe a stationary input/output                 QuaRK model. The goal is to empirically support our two key
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+                                                                                                                              Regularization sweep (train)
+learning-theoretic guarantees outlined in our theoretical analysis.
+                                                                                                               Single step forecasting
+First, we study the capacity of our model to effectively learn the                                     1.2     Exponential fading
+                                                                                                               Voltera
+selected tasks by showing that the training mean-squared error
+                                                                                                       1.0
+decreases smoothly and reaches zero beyond a finite threshold as
+we sweep the readout complexity, thereby corroborating the exis-                                       0.8
+tence of an interpolation regime for our method. Second, we study
+
+
+
+
+                                                                                                 MSE
+                                                                                                       0.6
+our model’s generalization capacity. Once trained in this effective-
+learning regime, we evaluate the out-of-sample performance of the                                      0.4
+model and demonstrate that the test error decreases as we increase
+                                                                                                       0.2
+the number of training windows, which aligns with the scaling sug-
+gested by our generalization bound. In order to keep the empirical                                     0.0
+study compact and highly interpretable, we focus on a synthetic                                              10 11   10 9     10 7       10 5   10 3   10 1   101   103   105
+                                                                                                                                                reg
+𝛽-mixing vector autoregressive moving average (VARMA) family
+and representative DGP functionals with varying complexity. The
+experiments were conducted using Qiskit [23], and the quantum                              Figure 3: Training MSE versus the readout regularization 𝜆reg for the
+circuits were simulated on a simulator using a machine with two                            three functionals, featuring a sharp transition into the interpolation
+                                                                                           regime around 𝜆reg ≈ 10−1 , where the curves reach numerical zero.
+Nvidia A100 GPUs. Code available here https://github.com/abdo-
+aary/quark.
+                                                                                           4.2    Learning theory validation
+4.1     Empirical set up                                                                   We used 𝑛 = 5 qubits per sub-reservoir to align the empirical study
+For all the experiments, we generate a multivariate input process                          with the projection-dimension guideline proposed in Section 3.1.1.
+X = (𝑋𝑡 )𝑡 ≤0 ∈ (I) Z− , with I := (−1, 1)𝑑 and 𝑑 = 3, from a                              This matches the prescribed scaling 𝑛 ≈ log(𝑤 𝑁 ) for the JL projec-
+VARMA(𝑝, 𝑞) recursion with 𝑝 = 𝑞 = 3 (to allow multistep depen-                            tion dimension, with 𝑤 = 25 and a maximum number of training
+dencies), given as                                                                         windows of 𝑁 = 8000. This choice is made for the two experiments
+           𝑝
+          ∑︁                              𝑞
+                                         ∑︁                                                below in order to fix the quantum featurizer complexity while
+   𝑍𝑡 =         Φ𝑖 𝑍𝑡 −𝑖 + Θ0𝜖𝑡 +              Θ 𝑗 𝜖𝑡 − 𝑗 ,   𝑋𝑡 := tanh(𝑍𝑡 ),      (27)   probing the emergence of an interpolation regime by sweeping
+          𝑖=1                            𝑗=1                                               the readout norm budget and testing the generalization bound’s
+                                                                                           sample-size behavior by varying the number of training windows
+where (𝜖𝑡 ) are i.i.d. centered innovations, and the AR part satisfies                     up to 𝑁 = 8000.
+the usual stability conditions to allow the 𝛽-mixing property (see                             Embeddings 𝐻 𝑇 (X) are probed following the classical-shadows
+Appendix B.1.1 for details). From a trajectory, we form supervised                         measurement strategy on the 2-local Pauli observable set. We per-
+examples by sliding windows of length 𝑤, X𝑡 := (𝑋𝑡 −𝑤+1, . . . , 𝑋𝑡 ),                     form 1000 measurement shots (classical snapshots) per circuit to
+along with a scalar label 𝑌𝑡 ∈ R, with 𝑤 = 25 and a stride 𝑠 = 100                         construct the feature vector 𝑚 ◦ 𝐻 𝑇 (X). A number of 𝑅 = 3 inde-
+(i.e. gap 𝑔 = 75). Labels are generated by fixed ground-truth fading-                      pendent sub-reservoirs are used to obtain a rich representational
+memory functionals 𝐻 ★ : (I) Z− → R, whose window-truncated                                capacity. Throughout all the experiments, the architecture of each
+versions 𝐻 𝑤★ are used so that 𝑌 = 𝐻 ★ (X ).
+                                    𝑡   𝑤    𝑡                                             sub-reservoir is fixed to be the ring architecture and unitary pattern
+    We consider three functionals (tasks) chosen with varying diffi-                       illustrated in Figure 1.
+culty. The first and easiest task is a one-step forecasting functional
+   ★ (𝑿 ) := 𝑢 ⊤ 𝑋                                                                         4.2.1 Effective learning validation. The first experiment validates
+                    𝑡 +1 , with 𝑢 ∈ R defining a fixed projection, which
+𝐻 fore                                𝑑
+         𝑡
+depends linearly only on the immediate future. The second, more                            the effective-learning prediction of our theoretical analysis in Sec-
+difficult task is an exponentially fading linear functional, which                         tion 3.4.1 by isolating a single control parameter: the readout com-
+involves decaying memory over many lags in a linear fashion,                               plexity. Concretely, we fix all experimental choices, including the
+                                                                                           quantum featurizer, and we perform a sweep over the regularization
+                                                                    𝑤−1
+                 ∑︁                                                 ∑︁                     parameter 𝜆reg (equivalently, a sweep over the RKHS norm budget
+  ★
+𝐻 exp (𝑿𝑡 ) :=          𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 ,             ★
+                                           𝑌𝑡 := 𝐻 exp,𝑤 (𝑿𝑡 ) :=         𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 ,
+                                                                                           Λ). Figure 3 reports the training MSE for each of the three tasks
+                 𝑘 ≥0                                               𝑘=0
+                                                                      (28)                 as a function of the regularization parameter. The key observation
+with 𝛼 ∈ (0, 1), thereby requiring the learning model to aggre-                            in this figure is the existence of a clear transition point into an
+gate information across the whole window while capturing the                               interpolation regime, where, as we relax the constraint, the training
+decaying importance. The final and most difficult task is related                          error decreases and eventually reaches numerical zero in a smooth
+to a Volterra-type functional of order two, which adds quadratic                           fashion. This is precisely what is predicted by Theorem 1: beyond a
+cross-lag interactions to the fading memory term in Eq. (28),                              finite threshold, the readout hypothesis class becomes rich enough
+                                                                                           to push the empirical risk to zero. Furthermore, Figure 4 illustrates
+                ∑︁                  1 ∑︁ ∑︁ 𝑘+ℓ ⊤
+    ★
+  𝐻 vol (𝑿𝑡 ) =      𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 +             𝛼 (𝑣 𝑋𝑡 −𝑘 )(𝑣 ⊤𝑋𝑡 −ℓ ),                   the fit on a subset of training windows in the interpolation regime,
+                                    2        ≥0                                            where we visualize predictions against ground-truth labels. This
+                𝑘 ≥0                  𝑘 ≥0 ℓ
+                                                                      (29)                 shows perfect fitting of the training dataset and highlights that the
+with 𝑣 ∈ R𝑑 defining a fixed projection, and where 𝐻 vol,𝑤
+                                                       ★     is obtained                   low training loss reported in Figure 3 is not merely an artifact of
+by truncating 𝑘, ℓ ∈ {0, . . . , 𝑤 − 1}.                                                   averaging.
+                                                                                                                                Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+              Single step forecasting (train) MSE=8e-14              Exponential fading (train) MSE=1e-12           10 1
+                                                                                                                                      Single step forecasting                           Exponential fading
+                                                                   true                                                                                           test         7×10 1                        test
+    1.0                                                            pred
+                                                               1
+    0.5
+                                                                                                                                                                               6×10 1
+    0.0                                                        0
+
+
+
+
+                                                                                                              MSE
+
+
+
+
+                                                                                                                                                                         MSE
+y
+
+
+
+
+    0.5                                                        1                                                    10 2
+                                                                                                                                                                               5×10 1
+    1.0       true
+              pred                                             2
+                      Volterra (train) MSE=1e-12                                                                                             Volterra
+     2                                                                                                                                                            test
+                                                                                                                  9×10 1
+
+     1
+                                                                                                                  8×10 1
+
+
+
+
+                                                                                                            MSE
+y
+
+
+
+
+     0
+                                                                                                                  7×10 1
+     1        true
+              pred
+          0          10      20         30         40     50                                                               0   1000 2000 3000 4000 5000 6000 7000 8000
+                             window index                                                                                                       Ntr
+
+Figure 4: Predicted vs true labels on a subset of training windows                                          Figure 5: Test MSE vs training-set size 𝑁 reported for the three
+for the three functionals from the interpolation regime. Numerical                                          tasks, obtained by sweeping 𝑁 while keeping the other experimental
+errors reach values of MSE ∈ [10 −14 , 10−12 ] confirming perfect task                                      choices, and reported for a same held-out test split.
+learning.
+
+
+                                                                                                                On the learning-theoretic side, we connected these design choices
+                                                                                                            to finite-sample performance under weak dependence. We estab-
+                                                                                                            lished an effective interpolation regime, showing that once the
+4.2.2 Generalization guarantee validation. In this second experi-                                           embedding preserves enough geometry (via the prescribed projec-
+ment, we experimentally validate the claim made in Theorem 2. We                                            tion/qubit scaling), relaxing the RKHS constraint yields a class rich
+first fix all modeling choices to a single configuration: same kernel,                                      enough to drive the empirical risk to (numerically) zero. We then
+same quantum featurizer, and a single fixed readout regularization                                          provided a PAC-style generalization result for strided windows
+𝜆reg chosen to be sufficiently relaxed. Then, we sweep the number                                           extracted from a stationary 𝛽-mixing process, recovering i.i.d.-like
+of training windows 𝑁 from 100 to 8 · 103 , where for each value of                                         rates up to an explicit dependence penalty; empirically, our syn-
+𝑁 , we train the same kernel readout on the corresponding training                                          thetic 𝛽-mixing VARMA benchmarks confirm the interpolation
+subset and record the out-of-sample MSE on a fixed held-out test                                            transition and the expected test-error decay when sweeping the
+set. Figure 5 illustrates that the test error decreases as 𝑁 increases                                      number of training windows with a fixed featurizer and kernel.
+across the three tasks, which aligns with the scaling predicted by                                              Several directions remain to further consolidate QuaRK as a
+the bound in Eq. (26). Importantly, the decay of the three curves                                           practical and hardware-relevant methodology. A natural next step
+follows the same √1 shape (up to additional constants), thereby                                             is to sharpen the analysis under realistic noise and finite-shot effects,
+                      𝑁
+validating the prediction made in Section 3.4.2. Furthermore, the                                           and to make the tradeoffs between measurement budget, observable
+ranking of the obtained test MSE values reflects the relative hard-                                         locality 𝑘, multiplexing, and accuracy more explicit. Finally, more
+ness of the functionals: the single-step forecasting functional yields                                      systematic tuning of the design choices (projection dimension/qubit
+the lowest values, followed by the exponential-fading and Volterra                                          count, sub-reservoir count, observable families, and Matérn hyper-
+functionals.                                                                                                parameters) and validation on higher-dimensional, longer-memory,
+                                                                                                            and nonstationary real-world time series will clarify when each
+5         Conclusion                                                                                        component of the pipeline (projection, contraction, multiplexing,
+                                                                                                            and kernel readout) yields the strongest gains.
+In this paper, we introduced QuaRK, an end-to-end quantum–
+classical learner for time-series prediction that couples a contrac-
+tive quantum reservoir featurizer with a kernel-based RKHS read-
+                                                                                                            References
+                                                                                                             [1] Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, Jean-Frédéric Laprade,
+out. Our pipeline operates on windowed inputs and leverages a                                                    Olivier Nahman-Lévesque, Alexis Vieloszynski, and Shengrui Wang.
+Johnson–Lindenstrauss projection to decouple the required quan-                                                  2024. QuaCK-TSF: Quantum-Classical Kernelized Time Series Forecast-
+                                                                                                                 ing. 1628–1638 pages. doi:10.1109/qce60285.2024.00190
+tum resources from the ambient data dimension. To enhance ex-
+                                                                                                             [2] Abdallah Aaraba, Shengrui Wang, and Jean-Marc Patenaude. 2024. FR3 LS: A
+pressiveness while keeping the quantum component hardware-                                                       Forecasting Model with Robust and Reduced Redundancy Latent Series. In Pacific-
+realistic, QuaRK relies on spatial multiplexing through multiple                                                 Asia Conference on Knowledge Discovery and Data Mining. Springer, 3–15. doi:10.
+                                                                                                                 1007/978-981-97-2266-2_1
+sub-reservoirs, and forms compact feature vectors by estimating                                              [3] Marine Carrasco and Xiaohong Chen. 2002. Mixing and Moment Properties of
+families of 𝑘-local Pauli observables using classical-shadow tomog-                                              Various GARCH and Stochastic Volatility Models. Econometric Theory 18, 1 (Feb.
+raphy; these features are then learned with kernel ridge regression,                                             2002), 17–39. doi:10.1017/s0266466602181023
+                                                                                                             [4] Varun Chandola, Arindam Banerjee, and Vipin Kumar. 2009. Anomaly detection:
+where regularization provides an explicit and interpretable control                                              A survey. Comput. Surveys 41, 3, Article 15 (July 2009), 58 pages. doi:10.1145/
+of readout complexity.                                                                                           1541880.1541882
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+ [5] Jiayin Chen and Hendra I. Nurdin. 2019. Learning nonlinear input–output maps          [30] Abdelkader Mokkadem. 1988. Mixing properties of ARMA processes. Stochastic
+     with dissipative quantum systems. Quantum Information Processing 18, 7 (May                Processes and their Applications 29, 2 (1988), 309–315. doi:10.1016/0304-4149(88)
+     2019). doi:10.1007/s11128-019-2311-9                                                       90045-2
+ [6] Jiayin Chen, Hendra I. Nurdin, and Naoki Yamamoto. 2020. Temporal Information         [31] Riccardo Molteni, Claudio Destri, and Enrico Prati. 2023. Optimization of the
+     Processing on Noisy Quantum Computers. Physical Review Applied 14, 2 (Aug.                 memory reset rate of a quantum echo-state network for time sequential tasks.
+     2020). doi:10.1103/physrevapplied.14.024065                                                Physics Letters A 465 (March 2023), 128713. doi:10.1016/j.physleta.2023.128713
+ [7] Naomi Mona Chmielewski, Nina Amini, and Joseph Mikael. 2025. Quantum                  [32] Francesco Monzani and Enrico Prati. 2025. Universality conditions of unified
+     Reservoir Computing and Risk Bounds. doi:10.48550/ARXIV.2501.08640                         classical and quantum reservoir computing. Neurocomputing 643 (Aug. 2025),
+ [8] Sanjoy Dasgupta and Anupam Gupta. 2002. An elementary proof of a theorem                   130391. doi:10.1016/j.neucom.2025.130391
+     of Johnson and Lindenstrauss. Random Structures & Algorithms 22, 1 (Nov. 2002),       [33] Pere Mujal, Rodrigo Martínez-Peña, Gian Luca Giorgi, Miguel C. Soriano, and
+     60–65. doi:10.1002/rsa.10073                                                               Roberta Zambrini. 2023. Time-series quantum reservoir computing with weak
+ [9] Jérôme Dedecker, Paul Doukhan, Gabriel Lang, León R. José Rafael, Sana Louhichi,           and projective measurements. npj Quantum Information 9 (2023), 16. doi:10.1038/
+     and Clémentine Prieur. 2007. Weak Dependence: With Examples and Applications.              s41534-023-00682-z
+     Springer New York. doi:10.1007/978-0-387-69952-3                                      [34] Pere Mujal, Rodrigo Martínez-Peña, Johannes Nokkala, Jorge García-Beni,
+[10] Paul Doukhan. 1994. Mixing. Springer New York. doi:10.1007/978-1-4612-2642-0               Gian Luca Giorgi, Miguel C. Soriano, and Roberta Zambrini. 2021. Opportunities
+[11] Philippe Esling and Carlos Agon. 2012. Time-series data mining. Comput. Surveys            in Quantum Reservoir Computing and Extreme Learning Machines. Advanced
+     45, 1, Article 12 (Dec. 2012), 34 pages. doi:10.1145/2379776.2379788                       Quantum Technologies 4, 8 (2021). doi:10.1002/qute.202100027
+[12] Keisuke Fujii and Kohei Nakajima. 2017. Harnessing Disordered-Ensemble                [35] Pere Mujal, Rodrigo Martínez-Peña, Gian Luca Giorgi, Miguel C. Soriano, and
+     Quantum Dynamics for Machine Learning. Physical Review Applied 8, 2 (Aug.                  Roberta Zambrini. 2023. Time-series quantum reservoir computing with weak
+     2017). doi:10.1103/physrevapplied.8.024030                                                 and projective measurements. npj Quantum Information 9, 1 (Feb. 2023). doi:10.
+[13] Marc G Genton. 2001. Classes of kernels for machine learning: a statistics                 1038/s41534-023-00682-z
+     perspective. Journal of machine learning research 2, Dec (2001), 299–312. https:      [36] Kohei Nakajima, Keisuke Fujii, Makoto Negoro, Kosuke Mitarai, and Masahiro
+     //jmlr.org/papers/v2/genton01a.html                                                        Kitagawa. 2019. Boosting Computational Power through Spatial Multiplexing
+[14] Lukas Gonon, Lyudmila Grigoryeva, and Juan-Pablo Ortega. 2020. Risk Bounds                 in Quantum Reservoir Computing. Physical Review Applied 11, 3 (March 2019).
+     for Reservoir Computing. Journal of Machine Learning Research 21, 240 (2020),              doi:10.1103/physrevapplied.11.034021
+     1–61. http://jmlr.org/papers/v21/19-902.html                                          [37] Bernhard Schölkopf and Alexander J. Smola. 2001. Learning with Kernels: Support
+[15] Lyudmila Grigoryeva and Juan-Pablo Ortega. 2018. Echo state networks are                   Vector Machines, Regularization, Optimization, and Beyond. The MIT Press,
+     universal. Neural Networks 108 (Dec. 2018), 495–508. doi:10.1016/j.neunet.2018.            Cambridge, MA. doi:10.7551/mitpress/4175.001.0001
+     08.025                                                                                [38] Shai Shalev-Shwartz and Shai Ben-David. 2014. Understanding Machine Learn-
+[16] Masahito Hayashi, Satoshi Ishizaka, Akinori Kawachi, Gen Kimura, and Tomo-                 ing: From Theory to Algorithms. Cambridge University Press. doi:10.1017/
+     hiro Ogawa. 2015. Introduction to Quantum Information Science. Springer Berlin             cbo9781107298019
+     Heidelberg. doi:10.1007/978-3-662-43502-1                                             [39] Yudai Suzuki, Qi Gao, Ken C. Pradel, Kenji Yasuoka, and Naoki Yamamoto. 2022.
+[17] Thomas Hofmann, Bernhard Schölkopf, and Alexander J. Smola. 2008. Kernel                   Natural quantum reservoir computing for temporal information processing.
+     methods in machine learning. The Annals of Statistics 36, 3 (june 2008). doi:10.           Scientific Reports 12, 1 (Jan. 2022). doi:10.1038/s41598-022-05061-w
+     1214/009053607000000677                                                               [40] V. A. Volkonskii and Yu. A. Rozanov. 1959. Some Limit Theorems for Ran-
+[18] Fangjun Hu, Saeed A. Khan, Nicholas T. Bronn, Gerasimos Angelatos, Graham E.               dom Functions. I. Theory of Probability & Its Applications 4, 2 (1959), 178–197.
+     Rowlands, Guilhem J. Ribeill, and Hakan E. Türeci. 2024. Overcoming the                    arXiv:https://doi.org/10.1137/1104015 doi:10.1137/1104015
+     coherence time barrier in quantum machine learning on temporal data. Nature           [41] David P Woodruff et al. 2014. Sketching as a tool for numerical linear alge-
+     Communications 15, 1 (Aug. 2024). doi:10.1038/s41467-024-51162-7                           bra. Foundations and Trends® in Theoretical Computer Science 10, 1–2 (2014), 1–
+[19] Hsin-Yuan Huang, Michael Broughton, Masoud Mohseni, Ryan Babbush, Sergio                   157. https://docslib.org/doc/8200120/sketching-as-a-tool-for-numerical-linear-
+     Boixo, Hartmut Neven, and Jarrod R. McClean. 2021. Power of data in quantum                algebra
+     machine learning. Nature Communications 12, 1 (May 2021). doi:10.1038/s41467-         [42] Toshiki Yasuda, Yudai Suzuki, Tomoyuki Kubota, Kohei Nakajima, Qi Gao, Wen-
+     021-22539-9                                                                                long Zhang, Satoshi Shimono, Hendra I. Nurdin, and Naoki Yamamoto. 2023.
+[20] Hsin-Yuan (Robert) Huang, Richard Kueng, and John Preskill. 2020. Predicting               Quantum reservoir computing with repeated measurements on superconducting
+     Many Properties of a Quantum System from Very Few Measurements. Nature                     devices. ArXiv (2023). doi:10.48550/ARXIV.2310.06706
+     Physics 16, 10 (2020), 1050–1057. doi:10.1038/s41567-020-0932-7                       [43] Chuanzhou Zhu, Peter J. Ehlers, Hendra I. Nurdin, and Daniel Soh. 2025. Min-
+[21] Herbert Jaeger. 2001. The “echo state” approach to analysing and training recurrent        imalistic and scalable quantum reservoir computing enhanced with feedback.
+     neural networks. Technical Report GMD Report 148. GMD—German National                      npj Quantum Information 11 (2025). doi:10.1038/s41534-025-01144-4
+     Research Center for Information Technology, Bonn, Germany.
+[22] Herbert Jaeger. 2001. The "echo state" approach to analysing and training re-
+     current neural networks. GMD Report 148. German National Research Cen-
+     ter for Information Technology (GMD), Sankt Augustin, Germany. https:
+                                                                                           A  Material related to learning-theoretic
+     //www.ai.rug.nl/minds/uploads/EchoStatesTechRep.pdf Corrected version dated              analysis
+     2010-01-26.
+[23] Ali Javadi-Abhari, Matthew Treinish, Kevin Krsulich, Christopher J Wood,              A.1 Proof of Theorem 1
+     Jake Lishman, Julien Gacon, Simon Martiel, Paul D Nation, Lev S Bishop, An-
+     drew W Cross, et al. 2024. Quantum computing with Qiskit. arXiv preprint              Before we provide the proof of this theorem, we first describe in
+     arXiv:2405.08810 (2024). https://doi.org/10.48550/arXiv.2405.08810                    Section A.1.1 how a state 𝑈 𝑇 (x)𝑡 =: 𝜌𝑡 depends on previous states
+[24] Tomoyuki Kubota, Yudai Suzuki, Shumpei Kobayashi, Quoc Hoan Tran, Naoki
+     Yamamoto, and Kohei Nakajima. 2023. Temporal information processing induced
+                                                                                           in Claim 1, followed by a set-injectivity result in Proposition 1 that
+     by quantum noise. Physical Review Research 5, 2 (April 2023). doi:10.1103/            we leverage to establish the proof of Theorem 1.
+     physrevresearch.5.023057
+[25] Rodrigo Martínez-Peña and Juan-Pablo Ortega. 2023. Quantum reservoir com-             A.1.1    Useful results.
+     puting in finite dimensions. Physical Review E 107, 3 (March 2023). doi:10.1103/
+     physreve.107.035306
+[26] Rodrigo Martínez-Peña and Juan-Pablo Ortega. 2025. Input-dependence in                Claim 1 (Closed form reservoir recursion). Let 𝜌 + = |+⟩⟨+| ⊗𝑛
+     quantum reservoir computing. Physical Review E 111, 6 (june 2025). doi:10.1103/       and define the input-dependent channel J𝑥𝑡 (𝜌) := J (𝜌, 𝑥𝑡 ) for ele-
+     3775-4hfd
+[27] Boris S. Mityagin. 2015.         The Zero Set of a Real Analytic Function.            ments 𝑥𝑡 of a window x = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ). Then the CEQC recursion
+     arXiv:1512.07276 [math.CA] doi:10.48550/arXiv.1512.07276                              of Eq. (9) can be written as
+[28] Mehryar Mohri and Afshin Rostamizadeh. 2008. Rademacher complexity
+     bounds for non-iid processes. Advances in neural information processing sys-
+     tems 21 (2008). https://proceedings.neurips.cc/paper_files/paper/2008/hash/
+                                                                                                                  𝜌𝑡 = 𝜆J𝑥𝑡 (𝜌𝑡 −1 ) + (1 − 𝜆)𝜌 + .
+     7eacb532570ff6858afd2723755ff790-Abstract.html
+[29] Mehryar Mohri, Afshin Rostamizadeh, and Ameet Talwalkar. 2018. Foundations            Define for 𝑘 ≥ 1 the backward composition operator
+     of Machine Learning (2 ed.). The MIT Press, Cambridge, MA. https://mitpress.
+     mit.edu/9780262039406/foundations-of-machine-learning/                                             ←
+                                                                                                        −
+                                                                                                        J 𝑡(𝑘 ) (𝜌 |x) := J𝑥𝑡 ◦ J𝑥𝑡 −1 ◦ · · · ◦ J𝑥𝑡 −𝑘+1 (𝜌),
+                                                                                                                                                         
+                                                                                                      Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+               ←
+               −
+and for 𝑘 = 0, J 𝑡(𝑘 ) (𝜌 |x) := 𝜌. Then the reservoir’s state after con-                     Consider the scalar function
+suming inputs (𝑥𝜏 −𝑤+1, . . . , 𝑥𝑡 ) becomes
+                                                                                                              𝑔x,x′ (𝜗) := ∥Φ𝜗 (x) − Φ𝜗 (x′ ) ∥ 22 .
+                                                      𝑚−1
+                    ←
+                    −                                 ∑︁          ←
+                                                                  −                                                                   
+ 𝜌𝑡 = 𝑈 𝑇 (x)𝑡 = 𝜆𝑚 J 𝑡(𝑚) (𝜌𝜏 −𝑤 |x) + (1 − 𝜆)                𝜆𝑘 J 𝑡(𝑘 ) (𝜌 + |x), (30)   Each feature coordinate Tr 𝑂 𝐻 𝑇𝜗 (x) is obtained by composing
+                                                       𝑘=0                                 finitely many maps that depend real-analytically on 𝜗 (products of
+with 𝑚 being the number of applications of the evolution 𝑇 : 𝑚 =                           single-/two-qubit rotations) with affine linear CPTP maps, and then
+𝑡 − (𝜏 − 𝑤) ∈ {1, . . . , 𝑤 }.                                                             taking a trace against a fixed observable. Hence Φ𝜗 (x) and therefore
+                                                                                           𝑔x,x′ (𝜗) = ∥Φ𝜗 (x) − Φ𝜗 (x′ )∥ 22 are real-analytic in 𝜗. Therefore, if
+   Proof. By induction on 𝑚. The case 𝑚 = 1 is Eq. (9). Assuming                           we show a parameter choice 𝜗 ★ such that 𝑔x,x′ (𝜗 ★) > 0, it follows
+the formula holds at time 𝑡 − 1, substitute it into 𝜌𝑡 = 𝜆J𝑥𝑡 (𝜌𝑡 −1 ) +                   from real-analyticity of 𝑔x,x′ that the set {𝜗 : 𝑔x,x′ (𝜗) = 0} has
+                                     ←−
+(1 − 𝜆)𝜌 + and use the definition of J 𝑡(𝑘 ) to obtain Eq. (30).                           Lebesgue measure zero (as can be found in Proposition 0 of [27]).
+                                                                                           We argue in what follows the existence of such a witness.
+Proposition 1 (Set-injectivity). Let D = {x1, . . . , x𝑁 } be a dataset                       Let 𝜗 •★ = 0. Then we have
+of windows. Suppose our quantum featurizer (initialized at 𝜌 −𝑤 :=                                                                             !
+|+⟩⟨+| ⊗𝑛 ) contains 𝑅 ≥ 1 sub-reservoirs that follow the design de-                                                        Ì 𝑛
+
+scribed in Section 3.1. Let our readout scheme follow the kernel-based                                           𝑉 (𝑥) =         𝑅 𝑦 (𝜃 (𝑧 𝑗 )) .
+                                                                                                                                𝑗=1
+one described in Section 3.2. Let 𝜀 pr, 𝛿 pr ∈ (0, 1) be, respectively, a tol-
+erance and a failure                                                                       As each injection qubit undergoes only 𝑌 -rotations, if the two
+                   probability
+                                choice. Then, with a number of qubits
+as low as 𝑛 = Ω pr  𝜀 −2 log   𝑤𝑁
+                                      , we have 𝑚 ◦ 𝐻 𝑇 (x) ≠ 𝑚 ◦ 𝐻 𝑇 (x′ )                windows differ at the latest time 𝑡★ and projected coordinate 𝑗★,
+                               𝛿 pr
+                                                                                           then the injected angles differ by
+for any pair of windows x ≠ x′ ∈ D with probability at least 1 − 𝛿 pr .
+                                                                                                            Δ𝜃 = 𝜃 (𝑧𝑡★ ) 𝑗★ − 𝜃 (𝑧𝑡′★ ) 𝑗★ ≠ 0.
+                                                                                                                                          
+    Proof. In this proof, we only treat the case 𝑅 = 1, as the cases                                             | {z } | {z }
+𝑅 > 1 follow directly.                                                                                                    𝛼𝑡★           𝛼𝑡′★
+              Ð𝑁
+    Let P = 𝑖=1   x𝑖 ⊂ R𝑑 be the set that contains all points that
+                                                                                           Since 𝑡★ is the latest lag at which the windows differ, we have
+appear inside any window, which has cardinality at most |P | ≤ 𝑤 𝑁 .
+                                                                                           𝛼𝑡 = 𝛼𝑡′ for all 𝑡 > 𝑡★, hence the accumulated angle 𝜙 := 𝑡0★ +1 𝛼𝑡 =
+                                                                                                                                                        Í
+As described in Section 3.1.1, the event EJL that describes that, for                      Í0        ′
+all 𝑢, 𝑣 ∈ P,                                                                                 𝑡★ +1 𝛼𝑡 . Consider the 1-local observables 𝑋 𝑗★ and 𝑍 𝑗★ at the level
+                                                                                           of qubit 𝑗★ (these belong to the feature vector since the measured
+       (1 − 𝜀 pr ) ∥𝑢 − 𝑣 ∥ 22 ≤ ∥Π𝑢 − Π𝑣 ∥ 22 ≤ (1 + 𝜀 pr ) ∥𝑢 − 𝑣 ∥ 22 ,                 set of 𝑘-local observables O contains all 1-local Paulis as discussed
+has probability Pr(EJL ) ≥ 1 − 𝛿 pr when Π follows a Gaussian                              in Section 3.2.1). Denote the sub-vectors
+Johnson–Lindenstrauss       distribution as stated in Eq. (7) and 𝑛 =                                                                                      
+                                                                                       𝜇 (x) := 𝑋 𝑗★ x , 𝑍 𝑗★ x ∈ R2, 𝜇 (x′ ) := 𝑋 𝑗★ x′ , 𝑍 𝑗★ x′ ∈ R2 .
+Ω 𝜀 pr log 𝛿pr , where the probability is over Π. Therefore, on
+     −2      𝑤𝑁
+
+the event EJL , the map 𝑢 ↦→ Π𝑢 is injective on the set P. From now                        Since
+on, condition on EJL .                                                                               ∥𝜇 (x) − 𝜇 (x′ )∥ 2 ≠ 0 =⇒ ∥Φ𝜗 (x) − Φ𝜗 (x′ )∥ 2 ≠ 0,
+   Let x = (𝑥𝜏 −𝑤+1, . . . , 𝑥𝜏 ) and x′ = (𝑥𝜏′ ′ −𝑤+1, . . . , 𝑥𝜏′ ′ ) be two
+distinct windows from the dataset D. To alleviate clutter, we use                          showing a witness 𝜆★ ∈ (0, 1) for which 𝜇 (x) −𝜇 (x′ ) ≠ 0 establishes
+the re-indexing by relative lag 𝑡 ∈ {−𝑤 + 1, . . . , 0}:                                   the proof of the proposition. This is precisely what we show in what
+                                                                                           follows.
+                       𝑥𝑡 := 𝑥𝜏+𝑡 ,        𝑥𝑡′ := 𝑥𝜏′ ′ +𝑡 .
+                                                                                              Leveraging the CEQC recursion defined in Claim 1, the output
+Since x and x′ are distinct, let 𝑡★ be the latest lag where they differ:                   state 𝐻 𝑇 (x) at lag 0 admits the expansion
+              𝑡★ := max{𝑡 ∈ {−𝑤 + 1, . . . , 0} : 𝑥𝑡 ≠ 𝑥𝑡′ }.                                                    ←
+                                                                                                                 −
+                                                                                                                                               𝑤−1
+                                                                                                                                            ∑︁ ← −
+                                                                                                   𝐻 𝑇 (x) = 𝜆 𝑤 J 0(𝑤) (𝜌 −𝑤 |x) + (1 − 𝜆)   𝜆𝑘 J 0(𝑘 ) (𝜌 + |x),
+Then for all 𝑡 > 𝑡★, we have 𝑥𝑡 = 𝑥𝑡′ . On the event EJL , Π is injective
+on P, hence 𝑧𝑡★ ≠ 𝑧𝑡′★ , where 𝑧𝑡 := Π𝑥𝑡 and 𝑧𝑡′ := Π𝑥𝑡′ . In particular,
+                                                                                                                                               𝑘=0
+                                                                                                  ←
+                                                                                                  −
+there exists at least one coordinate 𝑗★ such that (𝑧𝑡★ ) 𝑗★ ≠ (𝑧𝑡′★ ) 𝑗★ .                 where J 0(𝑘 ) (·|x) applies the last 𝑘 encoding steps (from lags −𝑘 + 1
+Additionally, injectivity of the nonlinearity  𝜃 (𝑢) = 𝜋 tanh(𝑢) pre-                     up to 0) starting from state 𝜌. Define 𝑖★ := −𝑡★ + 1. Because x and
+serves this difference, so that 𝜃 (𝑧𝑡★ ) 𝑗★ ≠ 𝜃 (𝑧𝑡′★ ) 𝑗★ .
+                                           
+                                                                                           x′ coincide for all lags 𝑡 > 𝑡★, it follows that for all 𝑘 ≤ 𝑖★ − 1,
+   Let 𝜗 collect all random angles in the Ising unitary as well as                                               ←−                  ←
+                                                                                                                                     −
+the parameter 𝜆 in Eq. (12). Define the “collision” condition for this                                            J 0(𝑘 ) (𝜌 + |x) = J 0(𝑘 ) (𝜌 + |x′ ).
+window pair (x, x′ ) as                                                                    Hence the final state difference Δ𝜌 0 := 𝐻 𝑇 (x) − 𝐻 𝑇 (x′ ) can be
+      Bx,x′ := {𝜗 : Φ𝜗 (x) = Φ𝜗 (x )}, ′
+                                                Φ𝜗 (x) := 𝑚 ◦ 𝐻         𝑇𝜗
+                                                                             (x).          written as
+                                                                                                         ←−                ←−                 
+All that is left in the proof is to show that for each fixed pair x ≠ x′ ,                    Δ𝜌 0 = 𝜆 𝑤 J 0(𝑤) (𝜌 −𝑤 |x) − J 0(𝑤) (𝜌 −𝑤 |x′ )
+the set Bx,x′ has Lebesgue measure zero. A finite union argument                                                    ←−                  ←
+                                                                                                                                         −                 
+                                                                                                      + (1 − 𝜆)𝜆𝑖★ J 0(𝑖★ ) (𝜌 + |x) − J 0(𝑖★ ) (𝜌 + |x′ )
+                                                
+then yields that the union of Bx,x′ over all 𝑁2 pairs is still a measure-
+                                                                                                                                                                   (31)
+zero set; hence, with probability 1 over 𝜗 (since 𝜗 is absolutely con-                                            𝑤−1      ←
+tinuous with respect to. the Lebesgue measure under i.i.d. uniform
+                                                                                                                  ∑︁         −                 ←−               
+                                                                                                      + (1 − 𝜆)         𝜆𝑘 J 0(𝑘 ) (𝜌 + |x) − J 0(𝑘 ) (𝜌 + |x′ ) .
+sampling), no collisions occur on D on the event EJL .                                                             𝑘=𝑖★ +1
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+                                                                                       label vector 𝒚 := (𝑦1, ..., 𝑦𝑁 ) ⊤ , set 𝜶 ★ := 𝐾 −1𝒚, and consider the
+                                                
+Applying the linear map 𝜎 ↦→ (Tr 𝑋 𝑗★ 𝜎 , Tr 𝑍 𝑗★ 𝜎 ) to Eq. (31)
+and using linearity of the trace yields                                                representer
+                                                                𝑤−1
+                                                                ∑︁                                                   𝑁
+                                                                                                                    ∑︁                          
+𝜇 (x) − 𝜇 (x′ ) = 𝜆 𝑤 Δ𝜇 𝜌(𝑤−𝑤) + (1−𝜆)𝜆𝑖★ Δ𝜇+(𝑖★ ) + (1−𝜆)             𝜆𝑘 Δ𝜇+(𝑘 ) ,                 ℎ★ (·) :=            𝛼𝑖★𝜅 𝐻 𝑇 (x𝑖 ), 𝐻 𝑇 (·) ∈ H𝜅 .
+                                                              𝑘=𝑖★ +1                                               𝑖=1
+                                                                               (32)
+                                                                                       Then we have ℎ★ (𝐻 𝑇 (x𝑖 )) = (𝐾𝜶 ★)𝑖 = 𝑦𝑖 for all 𝑖, hence 𝑅ˆ𝑁 (𝐻ℎ𝑇★ ) =
+where, for any 𝑘 ≥ 0 and any starting state 𝜌,                                                                       2
+                 h ←                                                                  0. Additionally, we use ℎ★ = (𝜶 ★) ⊤ 𝐾𝜶 ★ = 𝒚 ⊤ 𝐾 −1𝒚 to define
+                         −             i     h ←  −               i                                                   𝜅
+     Δ𝜇 𝜌(𝑘 ) := Tr 𝑋 𝑗★ J 0(𝑘 ) (𝜌 |x) − Tr 𝑋 𝑗★ J 0(𝑘 ) (𝜌 |x′ ) ,                   the threshold Λ★ := ℎ★ 𝜅 = 𝒚 ⊤ 𝐾 −1𝒚 > 0.
+                                                                                                                      √︁
+                   h ←   −             i    h ←   −               i                      Fix any Λ ≤ Λ★ and let ℎ Λ be the scaled function ℎ Λ := ΛΛ★ ℎ★,
+                 Tr 𝑍 𝑗★ J 0(𝑘 ) (𝜌 |x) − Tr 𝑍 𝑗★ J 0(𝑘 ) (𝜌 |x′ ) .
+                                                                                       which yields ∥ℎ Λ ∥𝜅 = Λ. Using the squared loss ℓ (𝑦, 𝑦 ′ ) = (𝑦 − 𝑦 ′ ) 2
+   As for the witness 𝜗 •★ = 0, we have 𝑊 = I and J𝑥𝑡 (𝜌) =                            in Eq. (20) we get
+                                                    (𝑗)
+𝑉 (𝑥𝑡 )𝜌𝑉 (𝑥𝑡 ) † with 𝑉 (𝑥𝑡 ) =
+                                   Ë𝑛
+                                      𝑗=1 𝑅 𝑦 (𝛼𝑡 ). On qubit 𝑗★ , starting
+                                                                                                                                               2
+                                                                                                                                           Λ
+                                                                                                           𝑁                      2 
+                                                                                                     1 ∑︁                                        1
+from 𝜌 + we have                                                                         𝑅ˆ𝑁 𝐻ℎ𝑇Λ =           ℎ Λ (𝐻 𝑇 (x𝑖 )) − 𝑦𝑖 = 1 − ★             ∥𝒚∥ 22 .
+                                                                                                       𝑁 𝑖=1                               Λ        𝑁
+ h ←        −            i    h ←   −               i
+  Tr 𝑋 𝑗★ J 0(𝑘 ) (𝜌 + |x) , Tr 𝑍 𝑗★ J 0(𝑘 ) (𝜌 + |x) = (cos(𝜙+𝛼𝑡★ ), sin(𝜙+𝛼𝑡★ )),Since ℎ Λ is feasible for the norm-constrained problem, we get that
+                                                                                                                     2                        2!
+and similarly with 𝛼𝑡′★ for x′ . Hence we have                                                                     Λ                       Λ
+                                                                                                                                     
+                                                                                                  ˆ     𝑇               1      2
+                                                                                          min 𝑅𝑁 (𝐻ℎ ) ≤ 1 − ★             ∥𝒚∥ 2 = 𝑂 1 − ★         ,
+                                                                                       ℎ∈ H𝜅 (Λ)                   Λ    𝑁                  Λ
+ Δ𝜇 +(𝑖★ ) 2 = (cos(𝜙 +𝛼𝑡★ ), sin(𝜙 +𝛼𝑡★ )) − (cos(𝜙 + 𝛼𝑡′★ ), sin(𝜙 + 𝛼𝑡′★ )) 2
+             = 2 sin(Δ𝜃 /2) > 0.                                                   since, as assumed in Section 2.2, the labels are bounded.
+                                                                        (33)          Hence, with probability at least 1 − 𝛿 pr (that of realization of
+                                                       
+   For any state 𝜎, | Tr 𝑋 𝑗★ 𝜎 | ≤ 1 and | Tr 𝑍 𝑗★ 𝜎 | ≤ 1; therefore             the event ENC ), the above inequality holds, thereby completing the
+     (𝑘 )        √                                                                 proof.
+∥Δ𝜇 𝜌 ∥ 2 ≤ 2 2 for all 𝑘 and all 𝜌. Using Eq. (32) and the triangle
+inequality gives, for 𝑖★ ≤ 𝑤 − 1,
+        ∥𝜇 (x) − 𝜇 (x′ )∥ 2 ≥ (1 − 𝜆)𝜆𝑖★ · 2| sin(Δ𝜃 /2)|                              A.2     Weakly-dependent data
+                                    √        √                𝑤−1
+                                                              ∑︁                       In this section, we provide a quick background on 𝛽-mixing pro-
+                                 − 2 2𝜆 𝑤 − 2 2(1 − 𝜆)                 𝜆𝑘 .            cesses and outline some results that we use in our proof of Theo-
+                                                             𝑘=𝑖★ +1                   rem 2.
+                            𝜆𝑘 ≤ 𝜆𝑖★ +1 − 𝜆 𝑤 , we obtain
+                Í𝑤−1
+Since (1 − 𝜆)     𝑘=𝑖★ +1                                                              A.2.1 𝛽-mixing processes. Let (Ω, A, P) be a probability space. For
+                                                         √                             two sub-𝜎-algebras U, V ⊂ A, the 𝛽-coefficient (absolute regular-
+      ∥𝜇 (x) − 𝜇 (x′ )∥ 2 ≥ 2(1 − 𝜆)𝜆𝑖★ | sin(Δ𝜃 /2)| − 2 2𝜆𝑖★ +1 .                    ity coefficient) [40] is defined as
+Choosing 𝜆★ ∈ (0, 1/2] small enough so that                                                                     ( 𝐼 𝐽                               )
+                                                                                                         1       ∑︁ ∑︁
+                               | sin(Δ𝜃 /2)|                                               𝛽 (U, V) := sup                P(𝑈𝑖 ∩ 𝑉𝑗 ) − P(𝑈𝑖 )P(𝑉𝑗 ) , (34)
+                        𝜆★ < √                  ,                                                        2        𝑖=1 𝑗=1
+                              2 + | sin(Δ𝜃 /2)|
+                                                                                       where the supremum is taken over all finite measurable partitions
+yields 𝜇 (x) ≠ 𝜇 (x′ ). (If 𝑖★ = 𝑤, i.e. 𝑡★ = −𝑤 + 1, the same com-                    (𝑈𝑖 )𝑖 of Ω from U and (𝑉𝑗 ) 𝑗 from V. Equivalently, 𝛽 can be ex-
+putation applies with the leading contribution coming from the                         pressed in terms of a norm in total variation [9]
+𝜆 𝑤 Δ𝜇 𝜌(𝑤−𝑤) term.) This concludes the proof.
+                                                                                                       𝛽 (U, V) = ∥P U⊗ V − P U ⊗ P V ∥𝑇𝑉 ,
+                                                                                       where P U , P V denote restrictions of P to 𝜎-fields U, V and P U⊗V
+A.1.2 Proof of Theorem 1. Recall the setup of the K-read training                      is a law on the product 𝜎-field defined on rectangles by
+in Section 3.2 where, for a fixed reservoir channel 𝑇 , we learn a
+readout ℎ ∈ H𝜅 by minimizing the empirical risk 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) under an                                           P U⊗ V (𝑈 , 𝑉 ) = P(𝑈 ∩ 𝑉 ).
+RKHS norm constraint ∥ℎ∥𝜅 ≤ Λ, yielding an optimizer admitting a                          For a stationary random process X = (𝑋𝑡 )𝑡 ∈Z− , the mixing coef-
+representer depending      on the Gram matrix 𝐾 with elements 𝐾𝑖 𝑗 =                  ficients are obtained as
+𝜅 𝐻 𝑇 (x𝑖 ), 𝐻 𝑇 (x 𝑗 ) for windows x𝑖 , x 𝑗 ∈ D.                                                                                                     
+   Since the conditions of the theorem satisfy those of Proposition 1,                          𝛽 X (𝑘) = sup 𝛽 𝜎 (𝑋𝑡 : 𝑡 ≤ 𝑡 ∗ − 𝑘), 𝜎 (𝑋𝑡 : 𝑡 ≥ 𝑡 ∗ ) ,
+                                                                                                         𝑡 ∗ ∈Z −
+the non-collision event ENC , which represents “for any windows
+x ≠ x′ ∈ D, the feature vectors 𝑚 ◦ 𝐻 𝑇 (x) and 𝑚 ◦ 𝐻 𝑇 (x′ ) do not                   where 𝜎 (𝑋𝑡 : 𝑡) denotes the 𝜎-field generated by the random pro-
+                                                                                                                                                      𝑘→∞
+collide”, happens with probability at least 1 − 𝛿 pr . Condition on this               cess (𝑋𝑡 : 𝑡). We say that X is 𝛽-mixing if 𝛽 X (𝑘) −−−−→ 0, which
+event from now on.                                                                     means that past–future dependence (regularly) converges to 0 as
+   As on ENC , the vectors 𝑚 ◦ 𝐻 𝑇 (x𝑖 ) are pairwise distinct and                     we increase the gap 𝑘 ∈ N. Furthermore, X is called geometrically
+the Matérn kernel is strictly positive definite on distinct inputs,                    𝛽-mixing if 𝛽 X (𝑘) ≤ 𝛽 0𝑒 −𝛽1𝑘 , and it is called algebraically 𝛽-mixing
+the Gram matrix 𝐾 is positive definite, hence invertible. Let the                      if 𝛽 X (𝑘) ≤ 𝛽 0𝑘 −𝛽1 for some 𝛽 0, 𝛽 1 > 0.
+                                                                                       Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+A.2.2 𝛽-mixing of the window process. Let 𝑤 ∈ N be a window                 be an even number with 𝜇 ∈ N★. Define the total windows sample set
+size, 𝑠 = 𝑤 + 𝑔 for some gap 𝑔 ∈ N, and IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ) be      𝑆 𝑁 and odd-indexed windows set 𝑆 𝜇 ⊂ 𝑆 𝑁 resp. as
+a stationary 𝛽-mixing  process. Define the windows process W :=             𝑆 𝑁 := {w−𝑁 𝑠 , . . . w−2𝑠 , w−𝑠 },   𝑆 𝜇 := {w− (2𝜇−1)𝑠 , . . . w−3𝑠 , w−𝑠 }.
+ (X𝜏𝑤 , 𝑌𝜏 ) : 𝜏 ∈ 𝑠Z− , with 𝑠Z− := {..., −2𝑠, −𝑠, 0}, which consists of
+dividing the process IO into 𝑤-sized windows                                Let the statistical risk and empirical risk of a hypothesis 𝑓 ∈ C be
+               X𝜏𝑤 := (𝑋𝜏 −𝑤+1, . . . , 𝑋𝜏 ) ∈ W := (I) 𝑤 ,                 defined resp. as
+                                                                                                                                  𝑁
+with indexing jumping by 𝑠.                                                                                                    1 ∑︁
+                                                                                      𝑅(𝑓 ) := E[𝑓 (𝑊0 )],         𝑅ˆ𝑁 (𝑓 ) :=       𝑓 (w−𝑖𝑠 ).
+    The following result shows that the mixing coefficient 𝛽 W (𝑘)                                                             𝑁 𝑖=1
+of the windows process W is no larger than the mixing coefficient
+𝛽 IO (𝑘𝑠 − 𝑤) of the I/O process IO, which we use later on.                 Let 𝛿 ∈ (0, 1) be such that 𝛿 > 4(𝜇 − 1)𝛽 W (1) and set
+
+Claim 2 (𝛽-mixing property of the windows process). Let IO =                                         𝛿 ′ := 𝛿 − 4(𝜇 − 1)𝛽 W (1).
+                                                                       
+((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ) be the I/O process and W = (X𝜏𝑤 , 𝑌𝜏 ) : 𝜏 ∈ 𝑠Z− ,   Then, with probability at least 1 − 𝛿 (over the draw of 𝑆 𝑁 ), we have
+with 𝑠 = 𝑤 + 𝑔, for 𝑔 ∈ N∗ . Then we have                                   the following holding simultaneously for all 𝑓 ∈ C:
+                        𝛽 W (𝑘) ≤ 𝛽 IO (𝑘𝑠 − 𝑤).                    (35)                                                 √︂
+                                                                                                ˆ                           log(4/𝛿 ′ )
+                                                                                        𝑅(𝑓 ) ≤ 𝑅𝑁 (𝑓 ) + ℜ𝑁 /2 (C) + 3Υ
+                                                                                                          b                             ,      (36)
+   Proof. Let W := (𝑊𝜏 : 𝜏 ∈ 𝑠Z− ) where 𝑊𝜏 := (X𝜏𝑤 , 𝑌𝜏 ). Let                                                                 𝑁
+𝜏 ★ ∈ 𝑠Z− and define the past/future 𝜎−fields for the windows               where ℜ b𝑁 /2 (C) is the empirical Rademacher complexity on the subset
+process respectively as                                                     𝑆 𝜇 defined as
+     F − := 𝜎 𝑊𝜏 : 𝜏 ≤ 𝜏 ★ − 𝑘𝑠 ,   F + := 𝜎 𝑊𝜏 : 𝜏 ≥ 𝜏 ★ .
+                                                        
+                                                                                                                            
+                                                                              b𝑁 /2 (C) := E𝜖  sup 2
+                                                                                                            ∑︁                        i.i.d.
+As each random window 𝑊𝜏 is measurable with respect to.                       ℜ                                    𝜖𝑖 𝑓 (w)  ,     𝜖𝑖 ∼ Unif {±1}.
+                                                                                              𝑓 ∈ C 𝜇
+                                                                                              
+                                                                                                             w∈𝑆 𝜇           
+                  𝜎 (𝐼𝑂𝑡 : 𝑡 ∈ {𝜏 − 𝑤 + 1, . . . , 𝜏 }) ,                                                                   
+with elements 𝐼𝑂𝑡 := (𝑋𝑡 , 𝑌𝑡 ), we get                                     A.3     Proof of Theorem 2
+ F − ⊂ 𝜎 𝐼𝑂𝑡 : 𝑡 ≤ 𝜏 ★ − 𝑘𝑠 ,        F + ⊂ 𝜎 𝐼𝑂𝑡 : 𝑡 ≥ 𝜏 ★ − 𝑤 + 1          The proof of Theorem 2 proceeds as follows.
+                                                                  
+                                                              
+                                         ⊂ 𝜎 𝐼𝑂𝑡 : 𝑡 ≥ 𝜏 ★ − 𝑤 .                (1) Bound the deviation between the window risk and the em-
+                                                                                    pirical risk, 𝑅 𝑤 (𝐻ℎ𝑇 ) − 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) , where 𝑅 𝑤 (𝐻ℎ𝑇 ) is the win-
+We use monotonicity of 𝛽 (·, ·) of Eq. (34) under increasing 𝜎−fields               dow risk given by
+(i.e., if U ⊂ U ′ and V ⊂ V ′ , then 𝛽 (U, V) ≤ 𝛽 (U ′, V ′ ), to                                               h              i
+deduce that                                                                                    𝑅 𝑤 (𝐻ℎ𝑇 ) := E ℓ 𝐻ℎ𝑇 (X𝑤 ), 𝑌 ,                     (37)
+                                                                 
+    𝛽 (F − , F + ) ≤ 𝛽 𝜎 𝐼𝑂𝑡 : 𝑡 ≤ 𝜏 ★ − 𝑘𝑠 , 𝜎 𝐼𝑂𝑡 : 𝑡 ≥ 𝜏 ★ − 𝑤
+                                           
+                                                                                    and where (X𝑤 , 𝑌 ) is a random pair consisting of an input
+Setting 𝑡 ★ := 𝜏 ★ − 𝑤 we get 𝜏 ★ − 𝑘𝑠 = 𝑡 ★ − (𝑘𝑠 − 𝑤). Hence, we get              window of size 𝑤 and its label.
+                                                                               (2) Bound the deviation between the true risk and the window
+  𝛽 (F − , F + ) ≤ 𝛽 𝜎 𝐼𝑂𝑡 : 𝑡 ≤ 𝑡 ★ − (𝑘𝑠 − 𝑤) , 𝜎 𝐼𝑂𝑡 : 𝑡 ≥ 𝑡 ★ )                 risk, 𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) .
+                                                                
+                                                                                (3) Finally, combine the two bounds via the triangle inequality
+               ≤ 𝛽 IO (𝑘𝑠 − 𝑤),
+                                                                                    to obtain
+where the last inequality holds by definition of the 𝛽−mixing coeffi-
+                                                                             𝑅(𝐻ℎ𝑇 ) − 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) ≤ 𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) + 𝑅 𝑤 (𝐻ℎ𝑇 ) − 𝑅ˆ𝑁 (𝐻ℎ𝑇 ) .
+cients of IO. A supremum taken over 𝑡 ★ yields 𝛽 W (𝑘) ≤ 𝛽 IO (𝑘𝑠 −𝑤)
+as claimed.                                                                 A.3.1 Bounding the deviation of the window risk from the empirical
+                                                                            one. Below we show how this deviation behaves as a direct corollary
+A.2.3 Non-i.i.d. Rademacher generalization bound. As our windows            of Theorem 3.
+dataset is built from a single realization of the underlying I/O pro-
+cess, the samples {(x𝑖 , 𝑦𝑖 )}𝑖=1
+                              𝑁 (equivalently {𝑊 }) are in general
+                                                   𝜏                        Corollary 1 (Non-i.i.d. generalization for MSE and RKHS-ball read-
+dependent. A tractable and standard way to account for such depen-          outs). Let IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ) be stationary and 𝛽-mixing,
+dence is through the 𝛽−mixing coefficients of the window process            and let 𝑠 = 𝑤 + 𝑔 with 𝑤, 𝑔 ∈ N∗ . Construct a strided windows
+W = (𝑊𝜏 : 𝜏 ∈ 𝑠Z− ), as this mixing coefficient captures how                dataset D = {(x𝑖 , 𝑦𝑖 )}𝑖=1  𝑁 with 𝑁 = 2𝜇 even by choosing indices
+
+quickly far-apart windows appear nearly independent. Non-i.i.d.             𝑡 1 > 𝑡 2 > · · · > 𝑡 𝑁 such that 𝑡𝑖 − 𝑡𝑖+1 = 𝑠. Fix a reservoir em-
+Rademacher complexity bounds are specifically used for this con-            bedding 𝐻 𝑇 and a kernel 𝜅 as in Eq. (18), and consider the RKHS
+text to characterize generalization under such setting. We provide          ball H𝜅 (Λ) = {ℎ ∈ H𝜅 : ∥ℎ∥𝜅 ≤ Λ}. Let ℓ be the squared loss
+below an adaptation of Theorem 2 of [28] to our window process                  ˆ 𝑦) := (𝑦ˆ − 𝑦) 2 . Assume the labels are bounded |𝑌𝑡 | ≤ Υ𝑌 and that
+                                                                            ℓ (𝑦,
+W.                                                                          the kernel is normalized so that 𝜅 (𝜌, 𝜌) ≤ 1 for all 𝜌 (respected by
+                                                                            the Matérn profile, 𝜅 (𝜌, 𝜌) = 1). Let the window risk 𝑅 𝑤 (𝐻ℎ𝑇 ) be as
+Theorem 3 (Mohri–Rostamizadeh [28]). Assume that W = (𝑊𝜏 :
+                                                                            defined in Eq. (37). If 𝛿 ∈ (0, 1) satisfies
+𝜏 ∈ 𝑠𝑍 − ) is stationary and 𝛽−mixing with coefficients (𝛽 W (𝑘))𝑘 ≥1 .
+Let C be a class of measurable functions 𝑓 : W → [0, Υ]. Let 𝑁 = 2𝜇                  𝛿 > 4(𝜇 − 1) 𝛽 IO (𝑔),         𝛿 ′ := 𝛿 − 4(𝜇 − 1) 𝛽 IO (𝑔),
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+then with probability at least 1−𝛿, the following holds simultaneously                together with Cauchy–Schwarz, satisfies
+for all ℎ ∈ H𝜅 (Λ):                                                                                                    " 𝜇                        #
+                                                                                                                2Λ       ∑︁
+                                                                                               ℜ𝑁 /2 (H𝜅 (Λ)) ≤
+                                                                                               b                   E𝜖        𝜖𝑖 𝜅 (𝜌 2𝑖 −1, ·)
+                                                                                                                 𝜇
+    𝑅 𝑤 (𝐻ℎ𝑇 ) − 𝑅b𝑁 (𝐻ℎ𝑇 ) ≤ ℜ
+                              b𝑁 /2 (ℓ ◦ H𝜅 (Λ)) + 𝑀 (𝑁 , 𝑤, 𝑔).               (38)                                      𝑖=1                    𝜅
+                                                                                                                   v
+                                                                                                                                                  2
+                                                                                                                   u
+                                                                                                                   t       𝜇
+                                                                                                                2Λ        ∑︁
+where ℜb𝑁 /2 (ℓ ◦H𝜅 (Λ)) denotes the empirical Rademacher complexity                                          ≤       E𝜖      𝜖𝑖 𝜅 (𝜌 2𝑖 −1, ·)
+                                                                                                                 𝜇        𝑖=1
+of the loss-composed class ℓ ◦ H𝜅 (Λ) given by                                                                                                    𝜅
+                                                                                                                2Λ √︁                  2Λ  √︁
+                                                                                                              =      E𝜖 [𝝐 ⊤ 𝐾𝝐] =             Tr [𝐾],
+      b𝑁 /2 (ℓ ◦ H𝜅 (Λ)) := 4Λ(Λ√+ Υ𝑌 ) = 4 2 Λ(Λ√+ Υ𝑌 ) ,
+                                           √                                                                     𝜇                      𝜇
+      ℜ                                                                        (39)
+                                 𝜇                𝑁                                   where 𝝐 := (𝜖1, ..., 𝜖 𝜇 ) ⊤ ∈ {±1} 𝜇 , 𝐾 is the Gram matrix
+
+and the mixing penalty 𝑀 (𝑁 , 𝑤, 𝑔) is given by                                                              𝐾 = (𝜅 (𝜌 2𝑖 −1, 𝜌 2𝑗 −1 ))𝑖,𝑗 ,
+
+                                                  √︂                                  and the equality E𝝐 [𝝐 ⊤ 𝐾𝝐] = Tr [𝐾] follows from independence
+                                                       log(4/𝛿 ′ )                    and E[𝜖𝑖 𝜖 𝑗 ] = 𝛿𝑖 𝑗 . Again, as 𝜅 is norm-diagonal, we have Tr [𝐾] ≤ 𝜇,
+                   𝑀 (𝑁 , 𝑤, 𝑔) := 3(Λ + Υ𝑌 ) 2                      .         (40)         b𝑁 /2 (H𝜅 (Λ)) ≤ √2Λ , which yields in turn
+                                                           𝑁                          hence ℜ                        𝜇
+
+
+   Proof. Let the hypothesis class C := {𝑓ℎ : ℎ ∈ H𝜅 (Λ)}. By the                                           b𝑁 /2 (C) ≤ 4Λ(Λ√+ Υ𝑌 ) .
+                                                                                                            ℜ
+                                                                                                                             𝜇
+reproducing property and the diagonal bound 𝜅 (𝜌, 𝜌) ≤ 1, we have
+for all (x, 𝑦) ∈ D
+                                                                                      A.3.2 Bounding the deviation of the window risk from the statistical
+                   ℎ(𝐻 𝑇 (x)) ≤ ∥ℎ∥𝜅 𝜅 (𝐻 𝑇 (x), ·) 𝜅 ≤ Λ.
+                                                                                      one. Before stating a bound for such a deviation, we first show a
+                                                                                      geometric decaying of the dependence of the reservoir output on
+Since |𝑦| ≤ Υ𝑌 , it follows that 0 ≤ 𝑓ℎ (x, 𝑦) ≤ (Λ + Υ𝑌 ) 2 for all (x, 𝑦),
+                                                                                      the far past, which is related to the exponentially fading memory
+hence C ⊆ [0, Υ] W×R with Υ := (Λ + Υ𝑌 ) 2 .
+                                                                                      property of our reservoir.
+    Since 𝑡𝑖 − 𝑡𝑖+1 = 𝑠, the sequence (w𝑖 )𝑖=1  𝑁 := ((x , 𝑦 )) 𝑁 is a
+                                                            𝑖 𝑖 𝑖=1
+length-𝑁 consecutive segment of the stationary window process                         Proposition 2 (Geometric decay of dependence of reservoir out-
+W = (𝑊𝜏 : 𝜏 ∈ 𝑠Z− ) (up to a deterministic time shift). Therefore,                    puts on inputs). Let x = (𝑥𝑡 : 𝑡 ∈ Z− ) ∈ (I) Z− be a time series, and
+Theorem 3 applies directly to the class C with mixing coefficient                     let x𝑤 := (𝑥 −𝑤+1, ..., 𝑥 0 ) ∈ (I) 𝑤 be its last truncated window. Let 𝐻ℎ𝑇
+𝛽 W (1). Using Claim 2, we upper bound 𝛽 W (1) ≤ 𝛽 IO (𝑔), hence                      be a QuaRK reservoir as described in Section 3 where 𝐻 𝑇 is composed
+𝛿 ′ = 𝛿 − 4(𝜇 − 1)𝛽 IO (𝑔) and Eq. (36) yields the bound                              of 𝑅 ≥ 1 sub-reservoirs each of contraction factor 𝜆𝑟 , O are the 𝑘-local
+                                                          √︂                          observables measured per sub-reservoir, and ℎ ∈ H𝜅 (Λ), where 𝜅 is a
+             𝑤                                                 log(4/𝛿 ′ )            Matérn-based kernel as defined in Eq. (18) parameterized on 𝜈 > 1,
+         𝑅       (𝐻ℎ𝑇 ) ≤ 𝑅b𝑁 (𝐻ℎ𝑇 ) + ℜ
+                                       b𝑁 /2 (C) + 3Υ                      .
+                                                                   𝑁                  and 𝜉 > 0. Then we have
+                                                                                                                                     √︂
+It remains to upper bound the empirical Rademacher complexity                                           𝑇             𝑇   𝑤      2Λ 𝜈𝑅|O| 𝑤
+                                                                                                      𝐻ℎ (x) − 𝐻ℎ (x ) ≤                       𝜆 ,           (41)
+b𝑁 /2 (C) =: ℜ
+ℜ             b𝑁 /2 (ℓ ◦ H𝜅 (Λ)).                                                                                                 𝜉      𝜈 −1 ★
+    Let the odd-indexed sub-dataset be D odd := {(x2𝑖 −1, 𝑦2𝑖 −1 )}𝑖=1 .
+                                                                   𝜇
+                                                                                      where 𝜆★ := max𝑟 𝜆𝑟 , and the reservoir is initialized for the finite
+                                                                                                                          ′ ∈ S(H ) 𝑅 .
+By definition (Theorem 3), we have                                                    window case to an arbitrary state 𝜌 𝑤
+                          "              𝜇
+                                                                        #                Proof. Let the sequence of states produced by the reservoir
+                                      2 ∑︁                            2
+      b𝑁 /2 (C) =E𝜖
+      ℜ                       sup           𝜖𝑖 (ℎ(𝜌 2𝑖 −1 ) − 𝑦2𝑖 −1 ) ,              via consuming the full time series and the truncated window be
+                            ℎ∈ H𝜅 (Λ) 𝜇 𝑖=1                                           respectively
+                         i.i.d.
+                      𝜖𝑖 ∼ Unif {±1},                                                             𝑈 𝑇 (x) := (𝜌𝑡 ∈ S(H ) 𝑅 : 𝑡 ∈ Z− ),
+                                                                                                𝑈 𝑇 (x𝑤 ) := (𝜌𝑡′ ∈ S(H ) 𝑅 : 𝑡 ∈ {−𝑤 + 1, ..., 0}),
+where 𝜌 2𝑖 −1 := 𝐻 𝑇 (x2𝑖 −1 ). Notice that for each 𝑖, the map 𝜓𝑖 (𝑢) :=
+(𝑢 − 𝑦2𝑖 −1 ) 2 is 𝐿-Lipschitz on [−Λ, Λ] with 𝐿 := 2(Λ + Υ𝑌 ) as we                  where, by definition, the truncated evolution (𝑈 𝑇 (𝑥 𝑤 )) −𝑤 is initial-
+                                                                                                           ′
+have 𝜓𝑖′ (𝑢) = 2|𝑢 − 𝑦2𝑖 −1 | ≤ 2(Λ + Υ𝑌 ). By Talagrand’s lemma (see,                ized at some state 𝜌 −𝑤 ∈ S(H ) 𝑅 , and both 𝑈 𝑇 (𝑥) and 𝑈 𝑇 (𝑥 𝑤 ) are
+for example, Lemma 5.7 of [29]), we have                                              then driven by the same input sequence over the last 𝑤 time steps.
+                                                                                         Since the composed reservoir 𝑇 (𝜌, 𝑥) is 𝜆★−contractive with
+          b𝑁 /2 (C) ≤ 2(Λ + Υ𝑌 ) ℜ
+          ℜ                      b𝑁 /2 (H𝜅 (Λ)),                                      respect to. the trace norm ∥·∥ 1 , with 𝜆★ := max𝑟 𝜆𝑟 , we have
+                                                                                                      𝜌 0 − 𝜌 0′ 1 ≤ 𝜆★ 𝜌 −1 − 𝜌 −1
+                                                                                                                                 ′
+                               "              𝜇
+                                                               #
+                                          2 ∑︁                                                                                      1
+    where ℜ𝑁 /2 (H𝜅 (Λ)) := E𝜖    sup            𝜖𝑖 ℎ(𝜌 2𝑖 −1 ) .                                                                ′
+                                                                                                                  ≤ 𝜆★2 𝜌 −2 − 𝜌 −2
+          b
+                                ℎ∈ H𝜅 (Λ) 𝜇 𝑖=1                                                                                     1
+                                                                                                                   ..                                       (42)
+b𝑁 /2 (H𝜅 (Λ)) is the empirical Rademacher complexity of the RKHS
+ℜ                                                                                                                   .
+                                                                                                                                 ′
+ball H𝜅 (Λ) which, by the reproducing property of the kernel 𝜅                                                    ≤ 𝜆★𝑤 𝜌 −𝑤 − 𝜌 −𝑤 1
+                                                                                                                                      ≤ 2𝜆★𝑤 ,
+                                                                                                         Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+                                                                                                                      √
+where the last inequality leverages the fact that the diameter of the                            Furthermore, let 𝑧 := 2𝜈 𝑠/𝜉 so that the Matérn profile (defined
+space of density operators is 2 with respect to. the trace norm.                              in Eq. (17)) becomes
+  We now account for the readout. By definition, we have
+                                                                                                                                     21−𝜈 𝜈
+                                                                                                                         𝜑 (𝑠) =          𝑧 𝐾𝜈 (𝑧).
+                    𝐻ℎ𝑇 (x) − 𝐻ℎ𝑇 (x𝑤 )        = ℎ(𝜌 0 ) − ℎ(𝜌 0′ ) .                                                                Γ(𝜈)
+
+Using the reproducing property in H𝜅 we get                                                   For 𝜈 > 1, the small-𝑧 expansion of 𝐾𝜈 gives
+                                                                                                                                 𝑧2
+                                                                                                                                                 
+               ℎ(𝜌 0 ) − ℎ(𝜌 0′ ) = ℎ, 𝜅 (𝜌 0, ·) − 𝜅 (𝜌 0′ , ·) 𝜅                                𝑧 𝜈 𝐾𝜈 (𝑧) = 2𝜈 −1 Γ(𝜈) 1 +          + O (𝑧 4 )             (𝑧 → 0).
+                                                                                       (43)                                   4(1 − 𝜈)
+                                     ≤ ∥ℎ∥𝜅 𝜅 (𝜌 0, ·) − 𝜅 (𝜌 0′ , ·) 𝜅 ,
+                                                                                              Substituting into the definition of 𝜑 yields
+with ⟨·, ·⟩𝜅 being the RKHS inner product. Furthermore, we have                                                    1                              𝜈
+                                                                                                  𝜑 (𝑠) = 1 −            𝑧 2 + O (𝑧 4 ) = 1 −             𝑠 2 + O (𝑠 4 ).
+                              2                                                                                 4(𝜈 − 1)                      2(𝜈 − 1)𝜉 2
+    𝜅 (𝜌 0, ·) − 𝜅 (𝜌 0′ , ·) 𝜅 = 𝜅 (𝜌 0, 𝜌 0 ) + 𝜅 (𝜌 0′ , 𝜌 0′ ) − 2𝜅 (𝜌 0, 𝜌 0′ )
+                                                                                   (44)   Hence 𝜑 ′′ (0) = − (𝜈 −1)𝜉
+                                                                                                                     𝜈
+                                                                                                                         2 , i.e.,
+                                 = 2 𝜑 (0) − 𝜑 𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2 ,
+                                                                                                                                1 𝜈
+                                                                                                                          −𝜑 ′′ (0) =    .
+where Eq. (18) was used. Define the constant                                                                                    𝜉2 𝜈 − 1
+                                                                                              Therefore, from Eq. (46) we get 𝐿𝜅 ≤ 𝜉1 𝜈 𝜈−1 , and hence, combin-
+                                  √︁                                                                                                  √︁
+                                    2 (𝜑 (0) − 𝜑 (𝑠))
+                      𝐿𝜅 := sup                       .                                       ing Eq. (43) and Eq. (44), we get
+                              𝑠>0          𝑠
+                                               √︁
+We show in the next paragraph that 𝐿𝜅 ≤ −𝜑 ′′ (0), where 𝜑 ′′ (0) is                                ℎ(𝜌 0 ) − ℎ(𝜌 0′ ) ≤ ∥ℎ∥𝜅 𝜅 (𝜌 0, ·) − 𝜅 (𝜌 0′ , ·) 𝜅
+the second derivative of 𝜑 at the origin, which exists for the Matérn                                                  ≤ ∥ℎ∥𝜅 𝐿𝜅 𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2
+                                                                                                                                                                         (47)
+profile 𝜑 as 𝜈 > 1 (i.e.,√︁𝜑 ∈ 𝐶 2 at 0).                                                                                       √︂
+                                                                                                                              1    𝜈
+   To show that 𝐿𝜅 ≤ −𝜑 ′′ (0), we use the standard Bochner [17]                                                       ≤ ∥ℎ∥𝜅            𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2 .
+                                                                                                                              𝜉 𝜈 −1
+result stating that for stationary covariance (kernel) functions such
+                                                                                                                                                          |O|
+as 𝜓 (𝜂) := 𝜑 (∥𝜂 ∥ 2 ), there exists a finite nonnegative symmetric                              Finally, for the moment map 𝑚(𝜌) = (Tr[𝑂 ℓ 𝜌]) 𝑅ℓ=1         , where 𝑅|O|
+spectral measure 𝛾 such that                                                                  is the number of observables measured across all sub-reservoirs, and
+                   ∫
+                             ⊤
+                                          ∫                                                   where each 𝑂 ℓ is formed from a 𝑘-local observable (from O) padded
+           𝜓 (𝜂) =       𝑒 𝑖𝜔 𝜂 𝑑𝛾 (𝜔) =      cos(𝜔 ⊤𝜂)𝑑𝛾 (𝜔),                                by identities to act on the full space S(H ) 𝑅 (this does not change
+                         R𝑑                          R𝑑
+                                                                                              the operator norm), we have for each ℓ by Hölder’s inequality for
+where the last equality holds as 𝜓 is real and even. Hence we have                            Schatten norms
+                                                                                                               Tr 𝑂 ℓ (𝜌 0 − 𝜌 0′ ) ≤ ∥𝑂 ℓ ∥ ∞ 𝜌 0 − 𝜌 0′ 1 .
+                                        ∫                                                                                         
+                                                                                                                                                                       (48)
+                                            1 − cos(𝜔 ⊤𝜂) 𝑑𝛾 (𝜔).
+                                                         
+  𝜑 (0) − 𝜑 (∥𝜂 ∥ 2 ) = 𝜓 (0) − 𝜓 (𝜂) =
+                                                     R𝑑                                       As the operator norm of a Pauli string satisfies ∥𝑂 ℓ ∥ ∞ = 1, we get
+Using the elementary inequality 1 − cos 𝑡 ≤ 𝑡 2 /2 (valid for all 𝑡)                                                   |O|
+                                                                                                                     𝑅∑︁
+                                                                                                                                                  ! 1/2
+yields                                                                                                       ′                             ′
+                                                                                                                                               2       √︁
+                                                                                                                                                      ≤ 𝑅|O| 𝜌 0 − 𝜌 0′ 1 .
+                                                                                                                             
+                                                                                               𝑚(𝜌 0 ) − 𝑚(𝜌 0 ) 2 =       Tr 𝑂 ℓ (𝜌 0 − 𝜌 0 )
+                            ∫
+                          1                                                                                             ℓ=1
+    𝜑 (0) − 𝜑 (∥𝜂 ∥ 2 ) ≤         (𝜔 ⊤𝜂) 2𝑑𝛾 (𝜔)                                                                                                               (49)
+                          2 R𝑑
+                                                                (45)                          Combining Eqs. (42), (47), and (49), along with the fact that ∥ℎ∥𝜅 ≤
+                          ∥𝜂 ∥ 22
+                                  ∫
+                        ≤               ⊤ 2               𝜂
+                                      (𝜔 𝑒) 𝑑𝛾 (𝜔), 𝑒 := ∥𝜂 ∥ .                               Λ, we get the claimed bound
+                            2      R𝑑                        2                                                                                        √︂
+                                                                                                                  Λ
+                                                                                                                    √︂
+                                                                                                            ′          𝜈    √︁
+                                                                                                                                            ′      2Λ 𝜈𝑅|O| 𝑤
+Consider the 1D restriction 𝑔(𝑡) = 𝜓 (𝑡𝑒) = 𝜑 (|𝑡 |). Differentiating                         ℎ(𝜌 0 ) − ℎ(𝜌 0 ) ≤          · 𝑅|O| 𝜌 0 − 𝜌 0 1 ≤                𝜆 .
+                                                                                                                  𝜉 𝜈 −1                            𝜉    𝜈 −1 ★
+the spectral representation twice at point 𝑡 = 0 (legitimate as 𝜑 ′′ (0)
+exists), we get
+          𝑑2
+              ∫                            ∫
+                                                                                                 We now provide the bound on the deviation 𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) .
+𝑔′′ (0) = 2      cos(𝑡𝜔 ⊤𝑒)𝑑𝛾 (𝜔)      = − (𝜔 ⊤𝑒) 2𝑑𝛾 (𝜔) = −𝜑 ′′ (0),
+          𝑑𝑡                      𝑡 =0                                                        Corollary 2 (Deviation of the window risk from the statistical
+where the last equality holds as 𝑔′′ (0) = 𝜑 ′′ (0). The last inequality                      one). Let the conditions of Proposition 2 apply, with the additional
+of Eq. (45) therefore yields 2(𝜑 (0) − 𝜑 (𝑠)) ≤ −𝜑 ′′ (0)𝑠 2 , which                          assumption that the considered time series is drawn from the station-
+directly leads to                                                                             ary process IO = ((𝑋𝑡 , 𝑌𝑡 ) : 𝑡 ∈ Z− ) and that the outputs satisfy
+                               √︁
+                          𝐿𝜅 ≤ −𝜑 ′′ (0).                           (46)                      |𝑌𝑡 | ≤ Υ𝑌 . Then we have
+                                                                                                                                            √︂
+Hence setting 𝑠 = 𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2 yields                                                                  𝑇     𝑤   𝑇      4Λ(Λ + Υ𝑌 ) 𝜈𝑅|O| 𝑤
+                                                                                                           𝑅(𝐻ℎ ) − 𝑅 (𝐻ℎ ) ≤                        𝜆 .       (50)
+√︂                                                                                                                                  𝜉         𝜈 −1 ★
+                                  
+  2 𝜑 (0) − 𝜑         𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2         ≤ 𝐿𝜅 𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2                     Proof. We have
+                                                                          √︁                                            h            i  h               i
+                                                   ≤ 𝑚(𝜌 0 ) − 𝑚(𝜌 0′ ) 2 −𝜑 ′′ (0).            𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) = E ℓ 𝐻ℎ𝑇 (X), 𝑌0 − E ℓ 𝐻ℎ𝑇 (X0𝑤 ), 𝑌0 ,
+QuaRK: A Quantum Reservoir Kernel for Time Series Learning
+
+
+where by stationarity we write X = (. . . , 𝑋 −𝑤−1, 𝑋 −𝑤 , X0𝑤 ). Hence       then the model in Eq. (51) is Φ(𝐿)𝑋𝑡 = Θ(𝐿)𝜖𝑡 . It is shown in [30]
+we get                                                                        that if the innovations (𝜖𝑡 )𝑡 ∈Z− are i.i.d. with a distribution abso-
+                             h                                 i          lutely continuous with respect to the Lebesgue measure on R𝑑 (i.e.
+    𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) = E ℓ 𝐻ℎ𝑇 (X), 𝑌0 − ℓ 𝐻ℎ𝑇 (X0𝑤 ), 𝑌0                 admitting a density), and if the AR polynomial is stable (i.e. the
+                            h                                  i          VARMA is causal), namely
+                         ≤ E ℓ 𝐻ℎ𝑇 (X), 𝑌0 − ℓ 𝐻ℎ𝑇 (X0𝑤 ), 𝑌0
+                                                                                                  𝑝
+                                                                                                    ∑︁      
+                         ≤ E 𝐿 𝐻ℎ𝑇 (X) − 𝐻ℎ𝑇 (X0𝑤 )                                        det 𝐼𝑑 −    Φ𝑖 𝑧𝑖 ≠ 0,                ∀𝑧 ∈ C, |𝑧| ≤ 1,       (52)
+                               √︂                                                                     𝑖=1
+                            2Λ 𝜈𝑅|O| 𝑤
+                         ≤𝐿             𝜆 ,                                   together with the non-degeneracy condition of det(Θ0 ) ≠ 0, then
+                             𝜉    𝜈 −1 ★
+                                                                              the strictly stationary unique solution of Eq. (51) is (in fact geomet-
+where the last inequality uses that the squared loss is 𝐿-Lipschitz on
+                                                                              rically) 𝛽-mixing.
+[−Λ, Λ] × [−Υ𝑌 , Υ𝑌 ], with 𝐿 := 2(Λ + Υ𝑌 ) (see the third paragraph
+of the proof of Corollary 1), together with Proposition 2.                       Experimental setting (stable VARMA(𝑝, 𝑞) family). Fix (𝑑, 𝑝, 𝑞) ∈
+                                                                              N∗ × N∗ × N and choose a stability budget 𝛾 ∈ (0, 1) (which con-
+    We finally are now ready to provide proof of Theorem 2.                   trols the dependence strength: larger 𝛾 yields slower mixing). We
+A.3.3 Proof of Theorem 2. Since conditions of Theorem 2 satisfy               generate a random stable VAR part as follows. Draw i.i.d. matrices
+                                                                               Φ𝑖 )𝑖=1 with entries ∼ N (0, 1) and define the normalized directions
+                                                                                   𝑝
+both conditions of Corollary 1 and Corollary 2, and from                      (e
+                                                                              𝑈𝑖 := eΦ𝑖 /∥ e
+                                                                                           Φ𝑖 ∥ 2 . Draw i.i.d. positive weights 𝑤𝑖 ∼ Unif (0, 1) and set
+ 𝑅(𝐻ℎ𝑇 ) − 𝑅𝑁 (𝐻ℎ𝑇 ) ≤ 𝑅(𝐻ℎ𝑇 ) − 𝑅 𝑤 (𝐻ℎ𝑇 ) + 𝑅 𝑤 (𝐻ℎ𝑇 ) − 𝑅𝑁 (𝐻ℎ𝑇 ) ,                     Í𝑝                    Í𝑝
+                                                                              𝑎𝑖 := 𝛾 𝑤𝑖 / 𝑘=1 𝑤𝑘 , so that 𝑖=1 𝑎𝑖 = 𝛾. Finally set
+we conclude that
+                                                                                                     Φ𝑖 := 𝑎𝑖 𝑈𝑖 ,        𝑖 = 1, . . . , 𝑝,
+                      b𝑁 /2 (ℓ ◦H𝜅 (Λ)) +𝑀 (𝑁 , 𝑤, 𝑔, 𝛿 ′ ) +𝐺 (ℎ, Λ,𝑇 )
+𝑅(𝐻ℎ𝑇 ) − 𝑅𝑁 (𝐻ℎ𝑇 ) ≤ ℜ                                                                         Í𝑝
+                                                                              which ensures 𝑖=1 ∥Φ𝑖 ∥ 2 = 𝛾 < 1 and therefore the AR-stability
+where ℜb𝑁 /2 (ℓ ◦ H𝜅 (Λ)) denotes the empirical Rademacher com-               (causality) condition
+plexity of the loss-composed class ℓ ◦ H𝜅 (Λ) given by                                                    𝑝
+                                                                                                         ∑︁
+                b𝑁 /2 (ℓ ◦ H𝜅 (Λ)) := 4 2 Λ(Λ√+ Υ𝑌 ) ,
+                                       √                                                      det(𝐼𝑑 −         Φ𝑖 𝑧𝑖 ) ≠ 0,      for all |𝑧| ≤ 1.
+                ℜ
+                                              𝑁                                                          𝑖=1
+
+the mixing penalty 𝑀 (𝑁 , 𝑤, 𝑔) given by                                          For the MA part, we take Θ0 := 𝐼𝑑 (hence nonsingular) and
+                                        √︂                                    generate Θ 𝑗 := 𝑏 𝑗 𝑉𝑗 for 𝑗 = 1, . . . , 𝑞, where 𝑉𝑗 := Θ
+                                                                                                                                       e 𝑗 /∥ Θ
+                                                                                                                                              e 𝑗 ∥ 2 with Θ
+                                                                                                                                                           e𝑗
+                                        log(4/𝛿 ′ )                                                                          𝑞
+                                                                              i.i.d. Gaussian matrices and where (𝑏 𝑗 ) 𝑗=1 are decaying amplitudes,
+                𝑀 (𝑁 , 𝑤, 𝑔) := 3(Λ + Υ𝑌 ) 2
+                                            𝑁                                 e.g. 𝑏 𝑗 := 𝜂 𝜌 𝑗 −1 with 𝜂 > 0 and 𝜌 ∈ (0, 1). The innovations
+and the window truncation geometrically decaying penalty given                (𝜖𝑡 )𝑡 ∈Z− are i.i.d. with a Lebesgue density on R𝑑 , for instance 𝜖𝑡 ∼
+by                                                                            N (0, 𝜎 2 𝐼𝑑 ).
+                                     √︂
+                          4Λ(Λ + Υ𝑌 ) 𝜈𝑅|O| 𝑤                                     We simulate the (unbounded) VARMA recursion
+            𝔊(𝜅, Λ,𝑇 ) :=                     𝜆 .
+                              𝜉          𝜈 −1 ★                                                        𝑝
+                                                                                                      ∑︁                            𝑞
+                                                                                                                                   ∑︁
+                                                                                               𝑍𝑡 =         Φ𝑖 𝑍𝑡 −𝑖 + Θ0𝜖𝑡 +            Θ 𝑗 𝜖𝑡 − 𝑗
+                                                                                                      𝑖=1                          𝑗=1
+
+B       Additional details for numerical validation                           with a burn-in 𝐵 ≫ 1 and retain the last 𝑇 samples. To match the
+In this appendix, we provide further details on the data generation           bounded input set I = (−1, 1)𝑑 used in the main experiments, we
+process and target functionals used in the numerical experiments.             finally set
+
+B.1      Data generation.                                                                𝑋𝑡 := tanh(𝑍𝑡 ) ∈ (−1, 1)𝑑           (componentwise).
+B.1.1    Input VARMA process.                                                 Since 𝑋𝑡 is a measurable transformation of 𝑍𝑡 , it inherits the (geo-
+                                                                              metric) 𝛽-mixing property of the VARMA process.
+    Definition. Let X := (𝑋𝑡 : 𝑡 ∈ Z− ) be a (strictly) stationary
+VARMA(𝑝, 𝑞) process (sometimes called VARMA for vector VARMA),
+                                                                              B.2     Output processes (functionals)
+i.e.,
+                     𝑝
+                    ∑︁                      𝑞
+                                           ∑︁                                 To obtain scalar labels 𝑌𝑡 ∈ R from vector inputs 𝑋𝑡 ∈ (−1, 1)𝑑 ,
+              𝑋𝑡 =      Φ𝑖 𝑋𝑡 −𝑖 + Θ0 𝜖𝑡 +    Θ 𝑗 𝜖𝑡 − 𝑗 ,     (51)           we consider three real-valued fading-memory functionals 𝐻 ★ :
+                       𝑖=1                        𝑗=1                         (I) Z− → R evaluated on the past orbit 𝑿𝑡 := (𝑋𝑡 −𝑘 )𝑘 ≥0 . Through-
+where (𝜖𝑡 )𝑡 ∈Z− are i.i.d. centred innovations with E[∥𝜖𝑡 ∥ 22 ] < ∞,        out, we fix a window size 𝑤 ∈ N∗ and use the window-truncated
+                                                                              evaluation 𝐻 𝑤★ (𝑿 ), obtained by restricting 𝑘 ∈ {0, . . . , 𝑤 − 1}.
+and Φ𝑖 , Θ 𝑗 are 𝑑 × 𝑑 matrices, with Θ0 non singular. Define the lag                           𝑡
+operator 𝐿𝑋𝑡 := 𝑋𝑡 −1 , and set the matrix polynomials                        Random projection vectors. We generate a random unit vector
+                          𝑝                               𝑞
+                                                                              𝑢 ∈ R𝑑 by drawing 𝑔 ∼ N (0, 𝐼𝑑 ) and setting
+                         ∑︁                              ∑︁
+          Φ(𝐿) := 𝐼𝑑 −         Φ𝑖 𝐿𝑖 ,   Θ(𝐿) := Θ0 +              Θ𝑗 𝐿 𝑗 ,                                     𝑢 :=
+                                                                                                                        𝑔
+                                                                                                                             .                          (53)
+                         𝑖=1                                 𝑗=1                                                       ∥𝑔∥ 2
+                                                                                                            Abdallah Aaraba, Soumaya Cherkaoui, Ola Ahmad, and Shengrui Wang
+
+
+When needed, we generate 𝑣 ∈ R𝑑 independently the same way                                         Objective (validation MSE). For candidate Matérn hyper-parameters
+and (optionally) orthogonalize it via                                                           (𝜉, 𝜈) (length-scale and smoothness), we evaluate the validation
+                                                                                                mean-squared error of kernel ridge regression (KRR). Concretely,
+                                                               𝑣˜
+                        𝑣˜ := 𝑣 − ⟨𝑣, 𝑢⟩𝑢,           𝑣 :=            .                (54)      we compute
+                                                             ∥𝑣˜ ∥ 2
+                                                                                                             𝑦bval = 𝐾val,tr 𝛼,           𝛼 = (𝐾tr,tr + 𝜆reg 𝐼 ) −1𝑦tr,
+This choice ensures 𝑢 (and 𝑣) are uniformly distributed on the unit
+                                                                                                where 𝐾tr,tr = [𝜅𝜉,𝜈 (𝑧𝑖 , 𝑧 𝑗 )] 𝑖,𝑗 ∈tr and 𝐾val,tr = [𝜅𝜉,𝜈 (𝑧𝑖 , 𝑧 𝑗 )] 𝑖 ∈val, 𝑗 ∈tr .
+sphere S𝑑 −1 .
+                                                                                                The objective is MSE(𝑦val, 𝑦bval ).
+(F1) Scalar one-step forecasting. Fix 𝑢 as in Eq. (53) and define
+the forecasting functional                                                                         Grid over 𝜈 and bounded search over 𝜉. We adopt the grid tuning
+                                                                                                strategy: we scan a small candidate set of smoothness values
+                   ★
+                 𝐻 fore (𝑿𝑡 ) := 𝑢 ⊤𝑋𝑡 +1,                   ★
+                                                     𝑌𝑡 := 𝐻 fore (𝑿𝑡 ).              (55)
+                                                                                                                            𝜈 ∈ {0.5, 1.5, 2.5, 5.0},
+(F2) Exponentially fading linear functional. Fix 𝑢 as in Eq. (53)                               and, for each fixed 𝜈, we solve the one-dimensional problem
+and a decay 𝛼 ∈ (0, 1). Define
+                                                                                                                   𝜉 ★ (𝜈) ∈ arg          min             MSEval (𝜉, 𝜈),
+                  ∞
+                 ∑︁                                                      𝑤−1
+                                                                         ∑︁                                                          𝜉 ∈ [10 −3 , 103 ]
+  ★
+𝐻 exp (𝑿𝑡 ) :=         𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 ,                  ★
+                                               𝑌𝑡 := 𝐻 exp,𝑤 (𝑿𝑡 ) :=          𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 .   using bounded optimization in log(𝜉) (maximum xi_maxiter=80
+                 𝑘=0                                                     𝑘=0                    iterations). We then select the final pair as
+                                                                (56)
+(F3) Truncated Volterra fading-memory functional (order 2).                                                     (𝜉 ★, 𝜈 ★) ∈ arg        min           MSEval (𝜉 ★ (𝜈), 𝜈),
+                                                                                                                                     (𝜉 ★ (𝜈 ), 𝜈 )
+Fix 𝑢, 𝑣 as in Eq. (53)–Eq. (54) and a decay 𝛼 ∈ (0, 1). We define a
+(causal) Volterra functional of order 2 with exponentially decaying                             and store (𝜉 ★, 𝜈 ★) as the task-level Matérn kernel configuration.
+kernels,
+                     ∞
+                    ∑︁                            ∞ ∑︁
+                                                 ∑︁  ∞
+     ★
+   𝐻 vol (𝑿𝑡 ) :=         ℎ 1 (𝑘) ⊤𝑋𝑡 −𝑘 +                 𝑋𝑡⊤−𝑘 𝐻 2 (𝑘, ℓ) 𝑋𝑡 −ℓ ,   (57)
+                    𝑘=0                          𝑘=0 ℓ=0
+
+where we take the rank-one fading kernels
+                                                           1
+                 ℎ 1 (𝑘) := 𝛼 𝑘 𝑢,            𝐻 2 (𝑘, ℓ) := 𝛼 𝑘+ℓ 𝑣𝑣 ⊤,               (58)
+                                                           2
+so that
+                   ∞                             ∞   ∞
+                  ∑︁          1 ∑︁ ∑︁ 𝑘+ℓ ⊤
+   ★
+ 𝐻 vol (𝑿𝑡 ) =         𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘 +   𝛼  (𝑣 𝑋𝑡 −𝑘 )(𝑣 ⊤𝑋𝑡 −ℓ ).
+                              2     ℓ=0
+            𝑘=0                 𝑘=0
+                                                             (59)
+In experiments, we use the window-truncated version
+                               𝑤−1
+                               ∑︁
+           ★
+   𝑌𝑡 := 𝐻 vol,𝑤 (𝑿𝑡 ) :=            𝛼 𝑘 𝑢 ⊤𝑋𝑡 −𝑘
+                               𝑘=0
+                                                                                      (60)
+                                        𝑤−1 𝑤−1
+                                 1 ∑︁ ∑︁ 𝑘+ℓ ⊤
+                               +          𝛼 (𝑣 𝑋𝑡 −𝑘 )(𝑣 ⊤𝑋𝑡 −ℓ ).
+                                 2    ℓ=0
+                                        𝑘=0
+
+Since 𝑋𝑡 ∈ (−1, 1)𝑑 and 𝛼 ∈ (0, 1), all targets are bounded.
+
+B.3       Kernel hyper-parameters tuning
+For each task, we select the Matérn kernel hyper-parameters once
+using a lightweight train/validation procedure, and then keep them
+fixed across all reported runs for that task. The tuner is intentionally
+simple (single split and basic optimizers) to keep the overhead
+minimal compared to the cost of quantum feature.
+
+   Setup. Given a dataset of quantum features and targets {(𝑧𝑖 , 𝑦𝑖 )}𝑖=1
+                                                                      𝑁
+
+with 𝑍 ∈ R𝑁 ×𝐷 and 𝑦 ∈ R𝑁 , we create a validation split by shuffling
+indices with a fixed seed and allocating a fraction val_ratio = 0.2
+to validation. During hyper-parameter tuning, we fix a small ridge
+term 𝜆reg = 10−6 to stabilize the Gram-matrix inversion while fo-
+cusing the search on the kernel shape.
+

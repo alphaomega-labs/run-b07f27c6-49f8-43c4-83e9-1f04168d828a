@@ -1,0 +1,9 @@
+label_shuffle_pct,pca_leakage_mode,false_advantage_rate,parity_violation_count,claim_falsification_trigger_count,tau_boundary_ci_overlap,rho_undefined_fraction
+0,train_fold_only,0.01,0,0,True,0.02
+0,intentional_leak_test,0.21000000000000002,1,0,True,0.02
+10,train_fold_only,0.05,0,0,True,0.02
+10,intentional_leak_test,0.25,1,0,True,0.02
+50,train_fold_only,0.21000000000000002,0,1,True,0.15
+50,intentional_leak_test,0.41000000000000003,1,1,True,0.15
+100,train_fold_only,0.41000000000000003,0,1,True,0.15
+100,intentional_leak_test,0.6100000000000001,1,1,True,0.15

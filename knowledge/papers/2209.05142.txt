@@ -1,0 +1,675 @@
+                                              The role of entanglement for enhancing the efficiency of quantum kernels towards classification
+
+                                                                                        Diksha Sharma1 , Parvinder Singh2 ,∗ Atul Kumar1†
+                                                                                  1
+                                                                                      Indian Institute of Technology Jodhpur, Rajasthan-342037, India
+                                                                                      2
+                                                                                        Central University of Punjab Bathinda, Punjab-151001, India
+                                                                                                            (Dated: April 4, 2023)
+                                                               Quantum kernels are considered as potential resources to illustrate benefits of quantum computing in ma-
+                                                            chine learning. Considering the impact of hyperparameters on the performance of a classical machine learning
+                                                            model, it is imperative to identify promising hyperparameters using quantum kernel methods in order to achieve
+                                                            quantum advantages. In this work, we analyse and classify sentiments of textual data using a new quantum ker-
+                                                            nel based on linear and full entangled circuits as hyperparameters for controlling the correlation among words.
+                                                            We also find that the use of linear and full entanglement further controls the expressivity of the Quantum Sup-
+                                                            port Vector Machine (QSVM). In addition, we also compare the efficiency of the proposed circuit with other
+                                                            quantum circuits and classical machine learning algorithms. Our results show that the proposed fully entangled
+arXiv:2209.05142v2 [quant-ph] 1 Apr 2023
+
+
+
+
+                                                            circuit outperforms all other fully or linearly entangled circuits in addition to classical algorithms for most of
+                                                            the features. In fact, as the feature increases the efficiency of our proposed fully entangled model also increases
+                                                            significantly.
+                                                            Keywords: Quantum Entanglement, SVM, Supremacy, QSVM, Quantum Computing;
+
+
+                                                                   I.   INTRODUCTION                                    entanglement and non-classical correlations being established
+                                                                                                                        as the reasons for several potential applications in quantum in-
+                                              Machine learning is a branch of artificial intelligence that              formation and computation [17, 18], quantum machine learn-
+                                           efficiently uses the underlying data to generate insightful clas-            ing algorithms are conceived to be much more powerful and
+                                           sifications and predictions with the help of algorithms- while               effective as compared to their classical counterparts.
+                                           gradually improving the accuracy using historical data or                       In addition to the quantum machine learning algorithms,
+                                           information [1]. Machine learning algorithms evolve from                     data is also an important factor to achieve the desired accuracy
+                                           mathematical models reinforcing the prognosis associated                     [19, 20]. Among various types of data, text data plays a key
+                                           with the dataset which in-turn further facilitates the informed              role in daily life, e.g., placing an online order, booking tickets
+                                           decision process. Such algorithms help a machine to work ef-                 or buying food online, reviews of movies or stores etc. With
+                                           ficiently even for analysing massive quantity of data. With the              the advent of e-commerce, one of the most desirable require-
+                                           impact of machine learning algorithms on science and tech-                   ments is the availability of reviews or compact surveys for
+                                           nology, it is imperative to develop and analyse new machine                  every product before placing an order. Therefore, analysing
+                                           learning algorithms. In fact, the last two decades have wit-                 the available data as positive or negative without any error
+                                           nessed an enormous transformation in terms of algorithms and                 or biasedness is extremely important and challenging. The
+                                           the area has become a leading research area across academia                  classification or analysis of textual data is therefore known as
+                                           and industry. Another area that has impacted academic and                    sentiment analysis or opinion mining. Sentiment analysis not
+                                           industrial progress is quantum information and computation.                  only helps users to classify the opinion but also the industry
+                                           Quantum algorithms- based on the fundamental laws of quan-                   to improve as per the market requirements. In this article, we
+                                           tum mechanics- have shown optimal assurance to offer effi-                   revisit sentiment analysis by proposing new quantum circuits
+                                           cient applications to material science [2, 3], computational                 to classify the data and to compare the efficiencies of our cir-
+                                           chemistry [4], cryptography [5, 6], traffic navigation [7, 8],               cuits with classical machine learning algorithms in addition to
+                                           security [9, 10], finance [11], biology [12] and machine learn-              quantum circuits as proposed in [21, 22].
+                                           ing [13]. Both, machine learning and quantum computing,
+                                           deal with large-scale networks to effectively address critical
+                                           problems, therefore, a natural question is to analyse the poten-                                       A.   Motivation
+                                           tials of quantum computing in the realms of machine learning,
+                                           i.e., quantum machine learning. Quantum computing, in com-                      Machine learning algorithms are historically considered to
+                                           parison to classical computation, is believed to assist machine              be effective in classifying text data as positive or negative sen-
+                                           learning algorithms in enumerating distance or similarity be-                timents. Whether a statement is positive or negative can be
+                                           tween data-points with an adequate speedup [14, 15]. The                     effectively predicted by examining correlations among words
+                                           advantage can be translated in terms of time and space com-                  which can be better analyzed using entanglement and non-
+                                           plexity or can be obtained using adiabatic quantum computing                 local correlations that are fundamental features of quantum
+                                           for attaining optimum results [16]. Moreover, with the role of               computing. Therefore, quantum machine learning algorithms
+                                                                                                                        have been developed for efficient classification of data- these
+                                                                                                                        algorithms have further shown modest expressibility com-
+                                                                                                                        pared to classical algorithms [23, 24]. Although quantum ma-
+                                           ∗ parvinder.singh@cup.edu.in
+                                                                                                                        chine learning algorithms have shown a promising path to ef-
+                                           † atulk@iitj.ac.in
+                                                                                                                        ficiently classify data, recent quantum kernel algorithms have
+                                                                                                                                   2
+
+shown a decreasing trend in accuracy as the number of qubits       damental characteristic of these evaluation metrics is the con-
+increase [22, 24]. In view of the available noisy intermediate-    fusion matrix which can be used to record the classification
+scale quantum computers, the performance of quantum ker-           and misclassification. Fig. 1 demonstrates a confusion matrix
+nel algorithms depends on feature map circuits, optimization       containing correct classifications and misclassifications in the
+and accuracy of circuit depth. Here, we have further anal-         form of four important values, i.e., TP - True Positive, FP -
+ysed another factor, i.e. correlation between features as an       False Positive, FN - False Negative and TN - True Negative
+important hyperparameter for studying efficiency of quantum        [36]. Mathematically, different evaluation metrics are repre-
+kernels. Analogous to classical machine learning algorithms,
+these variables or hyperparameters need to be tuned for real-
+izing a quantum advantage.
+   In this paper, we readdress the problem of classifying data
+using our proposed quantum circuits considering circuit depth
+and entanglement between features. For analysing the effi-
+ciency of quantum kernels, we use linear as well as fully en-
+tangled circuits. Interestingly, our results show a much bet-
+ter accuracy, precision, recall and F1-score in comparison to
+classical algorithms including classical support vector ma-
+chine and quantum circuits proposed in [21, 22]. In order
+to compare the efficacy of our results, we also modify cir-
+cuits proposed in [21, 22] using linear and full entanglement.      FIG. 1: Confusion matrix for performance evaluation for a
+We show that our fully entangled circuit succeeds in outper-                     problem involving two classes
+forming quantum circuits proposed in [21, 22] for different
+evaluation metrics. Moreover, our fully entangled circuit also     sented as
+results in accomplishing better efficiency for classification in
+                                                                                                  TP + TN
+comparison to the classical support vector machine. Surpris-                    Accuracy =                                       (1)
+ingly, with increasing number of features, our proposed circuit                              TP + FP + FN + TN
+leads to significant increase in efficiency in comparison to all
+classical and quantum models analyzed here. The modified                                               TP
+                                                                                    P recision(P ) =
+fully entangled circuits using [21, 22] show better efficacy in                                      TP + FP
+comparison to the modified linearly entangled circuits using                                           TN
+[21, 22] for maximum number of features, however in both                            P recision(N ) =                             (2)
+                                                                                                     TN + FN
+cases, accuracy and precision are less than the one obtained
+using classical support vector machine.                                                             TP
+   In addition to the IMDb review data, we also validate our                          Recall(P ) =
+                                                                                                  TP + FN
+circuits using the benchmarked Iris data [25] confirming the
+                                                                                                    TN
+proposed fully entangled circuit as the most efficient circuit                       Recall(N ) =                                (3)
+in comparison to other linearly or fully entangled circuits and                                   TN + FP
+Classical SVM.                                                                                                           
+                                                                                                    P recision ∗ Recall
+                                                                           F 1 − Score = 2 ∗                                     (4)
+                                                                                                    P recision + Recall
+        II.   PRELIMINARY AND FUNDAMENTALS
+                                                                                                           TP
+   Sentiments are opinions, thoughts, or feelings of an author                 T rueP ositiveRate(T P R) =
+                                                                                                         TP + FN
+towards an object, an entity, or an event. Sentiment analysis                                              FP
+or document level sentiment classification- used in social me-              F alseP ositiveRate(F P R) =                         (5)
+dia monitoring, recommendation system, customer service,                                                 TN + FP
+brand monitoring, stock market prediction, product analysis        In the next subsection, we briefly describe fundamental con-
+to name a few [26–29]- classifies a sentence by considering        cepts of quantum computing and quantum machine learning
+that sentence as a single information unit which includes pos-     to facilitate the discussions on results obtained in this article.
+itive, negative, or neutral statements [30]. Sentiment anal-
+ysis, also known as text classification, uses well established
+supervised learning models such as support vector machine            A.   Quantum Computing and Quantum Machine Learning
+(SVM), gradient boosting classifier (GBC) and decision tree                              Algorithms
+(DT) [31–35].
+   Evaluating a classification model is an essential step to         The statistical nature of quantum theory puzzled many
+measure its performance using an unknown data. In general,         physicist including Einstein which further prompted him and
+the performance of the classification model is evaluated in        couple of his colleagues to raise questions on foundations of
+terms of accuracy, precision, recall, and F1- score. The fun-      quantum mechanics, now known as Einstein-Podolsky-Rosen
+                                                                                                                                              3
+
+(EPR) paradox [37]. However, J. S. Bell proposed another                    2.    Quantum Support Vector Machine (QSVM)
+thought experiment by designing an inequality - the Bell in-
+equality - whose violation confirms the presence of correla-          Supervised quantum models are summarised as kernel
+tions between subsystems of a composite system contradict-         methods where classification of the data is performed in a high
+ing the very assumptions of locality and realism as advocated      dimensional Hilbert space accessible through inner products
+by EPR [38]. The fundamental debate has now been trans-            [55]. Quantum support vector machine represents a quantum-
+lated to the practical implementation of a fault tolerant quan-    classical hybrid approach where kernel value is computed us-
+tum computer which can utilize nonlocal aspects of quantum         ing a quantum computer and the classification process is per-
+theory to perform efficient tasks which are either not possi-      formed using a classical computer. For computing kernel val-
+ble using classical resources or may require exponential time      ues, classical data must be converted into quantum states.
+and memory. The technological developments have ensured            Therefore, first the classical data points are transformed to
+a rapid advancements towards realization of a quantum com-         quantum states using feature mapping techniques, and then
+puter, at least with more than 100 qubits. Even with intricate     the kernel values are estimated. In fact, the kernel is anal-
+challenges of controlling, measuring, and accessing quantum        ogous to calculating inner products between quantum states
+information, the future of quantum computation to address          [21] such that
+large-scale computational issues is highly promising. Quan-
+tum computing has the capability to embrace machine learn-                                                                    2
+                                                                                       K(x~i , x~j ) =        ψx~i ψx~j                      (6)
+ing by strengthening the analysis through quantum machine
+learning algorithms. In this subsection, we briefly discuss                                                               2
+                                                                   where x~i , x~j ∈ dataset and            ψx~i ψx~j         can be further de-
+foundational aspects of quantum computing and quantum ma-
+                                                                   fined as
+chine learning algorithms.
+                                                                                               2                                     2
+                                                                                                            †
+                                                                                 ψx~i ψx~j         = h0n | Uψ(                 n
+                                                                                                              x~i ) Uψ(x~j ) |0 i            (7)
+
+                                                                   From Eq. (7), one clearly see that kernel values can be prac-
+                                                                   tically computed using quantum circuits by first evolving the
+                                                                   initial state |0i under the influence of a unitary operator Uψ(x)
+                    1.   Quantum Computing                         and then finally measuring the state in computational basis.
+                                                                   Eventually, the computed kernel value is passed to the Classi-
+                                                                   cal SVM for classification, i.e.,
+   Quantum computation uses fundamental aspects of quan-                                                                  !
+tum theory for the paradigm shift in computing from classical                                    X
+to quantum regime [39]. For a two-level system, the funda-                      class = sign         yi αi K(x~i , ~z) + b       (8)
+mental unit is termed as a qubit which can be represented as                                            i
+an arbitrary linear superposition of two orthogonal basis vec-
+                                                                   where b represents offset. Here, if the sign of Classical SVM
+tors. To be precise, a qubit- using computational basis states
+                                                                   is positive then the state belongs to a positive class and if the
+|0i and |1i- can be described as |ψi = α |0i + β |1i where α,
+                2      2                                           sign of Classical SVM is negative then the state belongs to a
+β ∈ C and |α| + |β| = 1. For multiple qubits, the inherent         negative class [56]. In this work, we have propose new quan-
+nature of superposition leads to another interesting quantum       tum circuits to compute kernel values and compare the per-
+mechanical phenomena known as entanglement [40]. For two           formance of proposed circuits with classical machine learning
+qubit pure entangled systems, the four maximally entangled         algorithms and quantum circuits in [21, 22]. The composition
+Bell states are extensively used for optimal communication         of proposed circuits will be discussed in Sec. IV B.
+and computational tasks [41–44]. For more than two qubit
+systems, there exist multiple classes of entangled states due to
+the complex nature of multiqubit entanglement [45, 46]. The                             III.       RELATED WORK
+entangled systems violating the Bell or Bell-type inequalities
+exhibit nonlocal correlations with no classical analogues. The
+nonclassical correlations are not limited to entangled systems        The fusion of machine learning with quantum computing
+only, but can be extended to separable ones as well [47, 48]. It   promises several new and exciting algorithms- including the
+has been well established now that entanglement and nonclas-       variational algorithms- for optimal speed-up to large-scale
+sical correlations offer efficient advantages to quantum com-      data driven tasks [13, 57, 58]. In this section, we briefly dis-
+putation over classical resources [49–53].                         cuss some of the algorithms developed in the field of quantum
+                                                                   machine learning.
+   For circuit based implementations- analogous to classical          Quantum computing benefits classical supervised and un-
+circuits- quantum circuits also comprise of wires and quan-        supervised machine learning algorithms. Rebentrost et al.
+tum gates. However, the only constraint quantum gates need         have shown quantum version of the support vector machine
+to satisfy is that the operator representing the gate must be a    using phase estimation and quantum matrix inversion algo-
+unitary operator- unlike classical gates quantum gates are re-     rithm for maximizing the speed [59]. Another significant
+versible [39, 54].                                                 quantum support vector machine was proposed by Havelick
+                                                                                                                                 4
+
+
+
+
+                                    FIG. 2: The proposed pipeline for analysis of the text data
+
+
+et al. which was implemented on IBMQ open-source soft-             idea to discuss a practical approach of using quantum com-
+ware [21]. The proposal was based on evaluating the kernel of      puting in neural networks [73]. In order to obtain the quan-
+classical support vector machine quantum mechanically, anal-       tum inspired neural network, they first trained a number of
+ogous to computing the inner product of quantum states. Lu         neural networks and then evaluated the superposition of these
+et al. [60] demonstrated the construction of a quantum deci-       networks. Ventura and Martinez further proposed a method
+sion tree where the von-Neumann entropy determines the split       for quantum associative memory based on Grover’s algorithm
+over the node and fidelity measures the distance between two       [74] and demonstrated an exponential storage capacity of as-
+quantum states. On the experimental front, the efficient use       sociative memory [75]. Based on the results of Ventura and
+of quantum computing in classifying high-dimensional vec-          Martinez, Zhou et al. developed a model for the quantum
+tors and mathematical routines was further established using       associative neural network to generate a quantum binary deci-
+an entanglement based classification [61]. Schuld et al. intro-    sion for quantum array to store patterns [76]. Further, in order
+duced a quantum pattern classification algorithm based on k-       to improve the performance of neural networks and conven-
+nearest neighbours where the distance between states is mea-       tional neural networks, quantum-inspired neurons, and acti-
+sured using the Hamming distance [62]. Moreover, they also         vation functions have also been designed [77, 78]. These im-
+utilized the proposed algorithm for classifying Modified Na-       proved versions of different deep learning algorithms can be
+tional Institute of Standards and Technology (MNIST) dataset       useful in crucial fields like medical imaging.
+[62]. The results facilitated Ruan et al. to design a quantum
+k-nearest neighbour algorithm for calculating the Hamming             Evidently, in all quantum and classical algorithms, dataset
+distance between training inputs and the testing state [63].       plays a crucial role. The performance of algorithms always
+On similar lines, Wiebe et al. also presented a quantum al-        depend on the type of data points, dimension of the dataset,
+gorithm for nearest neighbour and k-means clustering algo-         outliers etc. In view of this, Huang et al. [22] further es-
+rithm, evolving quantum computing into the realms of unsu-         tablished the power of data by considering different quantum
+pervised machine learning [64]. For this, they have proposed       kernels, and advantages of quantum algorithms in comparison
+two methods for calculating the distance between vectors us-       to classical algorithms when the geometric difference is very
+ing a quantum computer, namely, inner product and euclidean        high. In order to capture the distinct sentiment information,
+method. Another hybrid k-means clustering algorithm was            Zhang et al. proposed a quantum-inspired sentiment repre-
+proposed by Sarma et al. for finding k-subsets having less         sentation model [79]. This model extracts sentiment phrases
+dissimilarity among its members [65]. In this case, euclidean      and represents sentiment information rooted in phrases as a
+distance was evaluated using quantum circuits and classifica-      collection of projectors. Considering feature selection to play
+tion of data points was executed classically. They further im-     a key role in improving the overall accuracy of machine learn-
+plemented their algorithm on the IBMQ open-source software         ing models, Chakraborthy et al. depicted a quantum mechan-
+and demonstrated its accuracy to be better then the classical k-   ical feature selection algorithm using a graph-theoretic ap-
+means algorithm. There are several other instances of signif-      proach [80]. They further demonstrated that their feature se-
+icant contributions to quantum machine learning algorithms         lection strategy outperformed many of the classical feature se-
+for supervised as well as unsupervised learning in comparison      lection strategies. Therefore, quantum-inspired classical ma-
+to classical algorithms [14, 66–71].                               chine learning algorithms are considered as an efficient ap-
+                                                                   proach to increase the efficiency and accuracy of such algo-
+   The first instance of understanding the neural networking       rithms. However, a very few instances can be found related
+of human brain using quantum computing was demonstrated            to classification and clustering of real-time classical data us-
+by Kak [72]. Menneer and Narayanan further developed the           ing quantum machine learning algorithms. Clearly, the per-
+                                                                                                                                   5
+
+
+
+
+                         FIG. 3: Pre-processing steps for useful feature extraction from the raw dataset
+
+
+formance of an algorithm can be analysed by testing it over       given as
+different types of real-valued datasets. The quantum support
+vector machine was originally tested over the ad-hoc numer-                               0     fj
+                                                                                         fj = qP                                  (9)
+ical data and the sentiment analysis of an unseen data using                                          d    2
+                                                                                                      j=1 fj
+quantum algorithms is still at a nascent stage. Therefore, in
+this study, we perform a comparative sentiment analysis using     Here, fj is the feature value, and d represents dimensions of
+quantum and classical algorithms based on different perfor-       the data.
+mance metrics. Depending on the number of features, our
+analysis quantifies the advantages of quantum machine learn-
+ing algorithms for classifying the IMDb review data.                                   A.    Feature Selection
+
+                                                                     For a better analysis of the text data, we specifically require
+IV.   BASIC STRUCTURE OF THE PROPOSED APPROACH                    features which are significant during classification to avoid
+                                                                  over-fitting. For feature selection, we first use the recursive
+    In the proposed approach, as depicted in Fig. 2, we analyse   feature elimination (RFE) method which recursively elimi-
+sentiments of textual data considering its applications in spam   nates features not contributing to the classification. As RFE
+filtering, intention mining, product analysis, and market re-     requires an estimator for assigning weights to features, we
+search etc. In this work, we analyse sentiments of textual data   employ Random Forest [82, 83] and further characterize these
+considering its applications in spam filtering, intention min-    features for their significance in classification using LASSO
+ing, product analysis and market research, to name a few. For     (Least Absolute Shrinkage and Selection Operator) which reg-
+this, we use the IMDb movie review dataset downloaded from        ularizes features by penalizing [84, 85]. For this, we use the
+Kaggle [81] in which reviews are stored in text format with       normalized data (xi , yi ) to approximately compute yi while
+40000 reviews and a single review containing 200 or more          minimizing the cost function C(w). As a key point, LASSO
+words. As the raw text data generally includes redundant in-      adds the sum of absolute value of a coefficient parameter to
+formation with no adequate contribution to the classification     the cost function given as
+process, Fig. 3 shows all pre-processing steps use in this work
+                                                                                                                 d
+and their effects on the text data.                                                                              X
+                                                                              wlasso = argmin[C(w) +                   λ|wj |]   (10)
+    In order to convert reviews into numerical form, the next
+                                                                                                                 j=1
+important step is to perform vectorization of the pre-processed
+text data. In the proposed strategy, we use CountVectorizer,      where
+also known as Bag of Words (BoW). For this, BoW creates a                                                             2
+set of words present in the whole dataset and computes the fre-                             n
+                                                                                            X             d
+                                                                                                          X
+quency for each token by analyzing the occurrence of words                      C(w) =            yi −         wj xij          (11)
+in a document. BoW produces a sparse matrix where some                                      i=1           j=1
+of the tokens acquire a large value and others do not. Hence,
+we further normalize the resulting dataset by dividing feature    Here C(w) is the cost function and w is the coefficient pa-
+values with the square root of the sum square of all features,    rameter which is determined by λ. Therefore, λ is further
+                                                                                                                                     6
+
+
+
+
+                                                                    FIG. 5: The feature map circuit used for linearly entangled
+                                                                    proposed circuit to embed classical data into the quantum
+                                                                                              state
+
+
+ FIG. 4: Analyzing significant features based on coefficient
+              values using RFE and LASSO
+
+
+optimized to attain best coefficient value corresponding to es-
+sential features.
+   Fig. 4 clearly indicates that RFE shows features to be either
+significant or not by analyzing 1 or 0 value corresponding to
+features; whereas LASSO shows the coefficient value for fea-          FIG. 6: The feature map circuit used for fully entangled
+tures. The figure further demonstrates that features attaining a     proposed circuit to embed classical data into the quantum
+0 value for RFE also get a coefficient value nearly equal to 0                                 state
+and therefore get the last preference while selecting features.
+ Finally, we construct the database using selected features and
+perform our analysis using classical and quantum machine           where φ(xj , xj 0 ) is a classical non-linear function which de-
+learning algorithms. In contrast to classical machine learn-       pends on feature values xj and xj 0 of a document associated
+ing algorithms, for the quantum machine learning algorithms,       with the dataset. The CNOT gates entangle a qubit with its
+we first construct a model for mapping classical features into     successor. In Fig. 6, UC gate is a combination of Rx and Ry
+quantum states. Therefore, we now proceed to discuss the           gates, where Rx is a rotation gate with a fixed angle and Ry is
+model for mapping classical data to quantum states in the fol-     a feature value (xj ) dependent gate. Using the circuit, Eq. 12
+lowing subsection.                                                 can be re-written as
+
+                                                                                                              d−1
+                                                                                                              O
+                     B.   Feature Mapping                                              |φ(x~i )i = Uφ(x~i )         H j 0j         (14)
+                                                                                                              j=0
+   Once the features are selected as per requirements of the
+near-term quantum computer, we proceed with the develop-           where Uφ(x~i ) is
+ment of a feature mapping model. For feature mapping,
+the classical data x~i ∈ Rn is embedded into quantum states                       
+                                                                                    d−1 X
+                                                                                        d−1                         d−1
+                                                                                                                                  
+|φ(x~i )i through the unitary transformation Uφ(~x) such that
+                                                                                   X                                X
+                                                                   Uφ(x~i ) = exp          Zj Zj 0 φ(xj , xj 0 ) +     U Cj (xj )
+                                                                                       j=0 j 0 =j+1                          j=0
+                                 d
+                                 O                                                                                           (15)
+                   |φ(x~i )i =         Uφ(~x) (xj )        (12)
+                                                                    We further consider two more feature map circuits inspired
+                                 j=1
+                                                                   by instantaneous quantum polynomial (IQP) and Hamiltonian
+ Fig. 6 represents the proposed circuit implementation for the     evolution circuit (HEC) or Hamiltonian circuit used in [21, 22]
+unitary transformation. We initiate the circuit with |0i states    where [21] shows that IQP circuit leads to comparable accu-
+and create a superposition state by applying Hadamard gates        racy with classical support vector machine. The unitary oper-
+on all qubits. The number of features determines the number        ators for computing kernel values using IQP and Hamiltonian
+of qubits used in the circuit. The superposition state is then     Circuit are given in Eqs. (15) and (16), respectively.
+evolved as shown in Fig. 5. Here ZZ gate is a combination of                                                                     
+CNOTs and rotation gates along Z axis such that the angle is                       Xd−1            d−1 X
+                                                                                                   X   d−1
+
+determined by a function given as                                  Uφ(x~i ) = exp      Zj (xj ) +         Zj Zj 0 (φ(xj , xj 0 ))
+                                                                                       j=0              j=0 j 0 =j+1
+               φ(xj , xj 0 ) = (π − xj )(π − xj 0 )        (13)                                                                    (16)
+                                                                                                                                      7
+
+
+
+
+   FIG. 7: Prediction accuracy for Hamiltonian, IQP and                    FIG. 8: Prediction accuracy for Hamiltonian, IQP and
+   proposed circuit with k-fold cross validation for linear                 proposed circuit with k-fold cross validation for full
+                       entanglement                                                            entanglement
+
+
+                  d−1 X
+                      d−1
+                  X                                                       Fig. 7 shows accuracy prediction for Hamiltonian, IQP and
+ Uφ(x~i ) = exp               (Xj Xj 0 + Yj Yj 0 + Zj Zj 0 )
+                                                                       proposed circuit with qubits being linearly entangled. Sim-
+                  j=0 j 0 =j+1
+                                                              ! (17)   ilarly, Fig. 8 demonstrates accuracy prediction as evaluated
+                                                                       for Hamiltonian, IQP and proposed circuit with qubits being
+                                            (φ(xj , xj 0 ))            fully entangled. Further, for a comparative analysis, we also
+                                                                       evaluate accuracy, precision, Recall and F1- score using Clas-
+                                                                       sical SVM, decision tree and gradient boosting classifier. Our
+Eventually, feature maps transform classical data points into
+                                                                       results for linearly entangled circuits show that IQP circuit is
+higher dimensional space (C2n -dimensions) and facilitate
+                                                                       more efficient in comparison to Hamiltonian and proposed cir-
+computing the kernel value for the quantum support vector
+                                                                       cuit for all evaluation metrics. However, the Classical SVM
+machine.
+                                                                       exceeds in accuracy, precision and recall in comparison to all
+                                                                       linearly entangled circuits and classical algorithms. We fur-
+                                                                       ther find that the predictions of IQP linearly entangled circuit
+                         V.   RESULTS                                  are very close to that of gradient boosting classifier. Inter-
+                                                                       estingly, for the fully entangled circuits, the proposed circuit
+   We now proceed to observe effects of entanglement on per-           performs exceedingly well in comparison to all algorithms in-
+formance of quantum circuits. For this, we have considered             cluding Classical SVM and the other two quantum circuits for
+two different forms of entanglement- first is linear entangle-         all evaluation metrics. The shift from linear to fully entangled
+ment where each qubit is entangled only with its successive            circuits results in increase in efficiencies for the proposed and
+qubit, and second is full entanglement where every qubit is            Hamiltonian circuits but surprisingly leads to the decreased
+entangled with all successive qubits. Figs. 5, and 6 represent         efficiency of IQP circuit.
+linear and full entanglement circuits, respectively. In addition,         As discussed above, the performance of a classification
+for evaluating efficiencies of these quantum kernel circuits,          model cannot be ascertained by analysing the accuracy only.
+we first use a five-qubit IBM quantum computer. For efficient          The factors such as precision and recall further play a sig-
+implementation of data over the available near-term quantum            nificant role in determining specificity and sensitivity of the
+computer, we perform our computation with a random subset              model. Fig. 9 demonstrates advantages of quantum sup-
+of the data with 150 samples. We further train and test the            port vector machine with full entanglement for evaluating ef-
+data multiple times using K-fold stratified cross-validation to        ficiencies of algorithms in terms of accuracy, precision, recall
+develop a generalized model. For our purpose, we use 10-fold           and F1-score with 10-fold cross validation. Among classical
+which samples the dataset 10-times into train and test data            models, Classical SVM is found to be the highest performing
+points.                                                                model in terms of accuracy, precision and recall which can
+                                                                                                                                  8
+
+
+
+
+                                                                  FIG. 11: Precision score with increase number of features for
+                                                                  all linear entangled circuits in comparison to Classical SVM
+  FIG. 9: Performance measures of classical and quantum
+               machine learning algorithms
+                                                                  crease number of features and to analyze our data using all
+                                                                  algorithms with 25% of data as test data and rest as train data.
+be used as a benchmark for classical algorithms used in this      The purpose is to study and compare efficiencies of algorithms
+article.                                                          with increasing number of features. Recently, Shaydulin and
+   We also evaluate the performance of models using ROC-          Wild [24] and Huang et al. [22] have shown that efficiency
+AUC values as depicted in Fig. 10 where AUC stands for            of their respective quantum models decreases with increase in
+area under ROC curve. The ROC curve represents a plot-            features. Here, we consider precision as the evaluation met-
+for best ROC-AUC value from 10-fold runs- for true positive       ric because of imbalanced positive and negative data points
+rate (TPR) versus false positive rate (FPR) where the TPR and     in data set. Figs. 11 and 12 demonstrate precision score of
+FPR are predicted probabilities for test data points by respec-   linear and full entangled circuits, respectively with increased
+tive models. Therefore, our results further suggest that the      number of features and further compare their performances
+proposed fully entangled quantum circuit will predict any un-     with classical support vector machine. Fig. 11 shows that
+seen instance as positive with the highest probability if that    the precision score of the proposed circuit is very close to the
+instance is actually positive.                                    Classical SVM if the number of features are 8, 9, 10 or 12.
+                                                                  However, Classical SVM performs the best in comparison to
+                                                                  all linearly entangled circuits including the proposed circuit
+                                                                  irrespective of number of features.
+                                                                     Similar to the 10-fold cross validation, the proposed fully
+                                                                  entangled circuit shows best precision score in most of the
+                                                                  cases except when number of features are 6, 9 and 10 where
+                                                                  the precision values are very close to the Classical SVM. As
+                                                                  the number of features increase, the precision score for our
+                                                                  proposed model is significantly more than any other quantum
+                                                                  or classical algorithms. Surprisingly when we use 9 features,
+                                                                  the linearly proposed circuit shows a better result than the pro-
+                                                                  posed fully entangled circuit. Clearly, the highest precision
+                                                                  score is obtained with 11 features for the proposed fully entan-
+                                                                  gled circuit. Similar to the 10-fold cross validation, the fully
+                                                                  entangled circuits offer a better perspective of analysis for pre-
+                                                                  cision score in comparison to the linearly entangled circuits.
+                                                                  The precision score for Classical SVM exceeds the precision
+                                                                  scores for linear and fully entangled IQP and Hamiltonian cir-
+FIG. 10: The ROC-curve between proposed fully entangled
+                                                                  cuits except when the number of features are 13 where the
+    and classical model at their best ROC-AUC values
+                                                                  precision score for Classical SVM and fully entangled IQP
+                                                                  circuit are the same. Our results suggest that for linear en-
+   With the 10-fold cross-validation, we demonstrated the im-     tanglement, the efficiency of quantum circuits decrease with
+portance of fully entangled circuit as against the linearly en-   increasing number of features. However, such a linear rela-
+tangled circuit and Classical SVM. We now proceed to in-          tionship between efficiency and number of features could not
+                                                                                                                                9
+
+                                                                                       VI.   CONCLUSION
+
+
+                                                                     In this article, we classify the text data of IMDb movie re-
+                                                                  views using our proposed quantum kernel based on linear and
+                                                                  fully entangled circuits. We have also compared our results
+                                                                  with classical machine learning algorithms and other quan-
+                                                                  tum circuits available in literature. Our analysis is based on
+                                                                  entanglement as a crucial hyper parameter for boosting the
+                                                                  expressiveness of quantum models. Our results have further
+                                                                  shown the significance of using different entanglement mod-
+                                                                  els to achieve optimum outcomes by capturing correlations
+                                                                  between features. For five features with 10-fold cross vali-
+                                                                  dation, we found the fully entangled proposed circuit to be
+                                                                  the most efficient in analysing the IMDb data- the proposed
+                                                                  model outperforms classical support vector machine, IQP cir-
+FIG. 12: Precision score with increase number of features for     cuit and Hamiltonian circuit in addition to other classical ma-
+ all fully entangled circuits in comparison to Classical SVM      chine learning algorithms used in this article for all evalua-
+                                                                  tion metrics. For a comprehensive analysis, we further use
+                                                                  classical support vector machine and quantum models with
+                                                                  increased number of features to evaluate efficiencies of dif-
+                                                                  ferent algorithms. The results obtained in this article clearly
+                                                                  demonstrate the advantages of using the proposed fully en-
+                                                                  tangled circuit for a large number of features in comparison
+                                                                  to Classical SVM and linearly entangled circuits. In fact, for
+                                                                  higher number of features the increase in efficiency is signif-
+                                                                  icantly large in comparison to other algorithms. However, in
+                                                                  comparison to linearly entangled circuits the use of Classi-
+                                                                  cal SVM is much more beneficial in predicting accuracy and
+                                                                  precision. For a set of features, the proposed linearly entan-
+                                                                  gled circuit also leads to precision score very close to Clas-
+                                                                  sical SVM. In order to validate the results obtained, we have
+                                                                  also analysed the Iris dataset using our proposed circuits in
+                                                                  addition to other quantum models and Classical SVM. The
+                                                                  proposed fully entangled circuit leads to the best efficiency in
+                                                                  terms of all evaluation metrics. For Iris data, Classical SVM
+                                                                  and fully entangled IQP circuit led to same results.
+                                                                     Our results suggest that the circuit depth of Hamiltonian
+  FIG. 13: Performance measures of classical and quantum          circuit is affecting its performance as against the IQP and the
+                 algorithms for iris dataset                      proposed circuit. Therefore, a particular problem of interest
+                                                                  would be to optimize the kernel to reduce the circuit depth
+                                                                  with an improved efficiency of algorithms. Similar to classical
+be observed for fully entangled circuits. In fact, for the pro-   machine learning algorithms where hyperparameters play a
+posed fully entangled circuit, the efficiency increases with an   crucial role towards efficiency of a model, we expect quantum
+increase in number of features. Therefore, our analysis sug-      kernel models to be optimised analogously. It would be highly
+gests the importance of entanglement in determining the ef-       interesting to optimize these hyperparameters- entanglement
+fectiveness of quantum kernel approaches and can potentially      in our case- to achieve an optimal efficiency in comparison to
+be used for a correlated dataset.                                 classical algorithms.
+   For generalizing the proposed quantum model, we further
+evaluate the performance for the benchmarked Iris dataset.
+Similar to the results for IMDb dataset, the fully entangled
+quantum circuits show better performance in comparison to                           ACKNOWLEDGEMENT
+linearly entangled circuits. Fig. 13 clearly shows the effi-
+ciency of the fully entangled proposed circuit in comparison         The authors acknowledge IBM for providing IBM Quan-
+to all other quantum models and Classical SVM, where fully        tum Systems. DS further acknowledges Department of Chem-
+entangled IQP circuit shows the same results as the Classical     istry and IDRP-QIC for providing research infrastructure, and
+SVM.                                                              MoE for providing the assistantship.
+                                                                                                                                          10
+
+
+
+
+ [1] Ryszard Stanislaw Michalski, Jaime Guillermo Carbonell, and        [18] Julia Kempe. Multiparticle entanglement and its applications to
+     Tom M Mitchell. Machine learning: An artificial intelligence            cryptography. Physical Review A, 60(2):910, 1999.
+     approach. Springer Science & Business Media, 2013.                 [19] Lukas Budach, Moritz Feuerpfeil, Nina Ihde, Andrea
+ [2] Panagiotis Kl Barkoutsos, Fotios Gkritsis, Pauline J Ollitrault,        Nathansen, Nele Noack, Hendrik Patzlaff, Hazar Harmouch,
+     Igor O Sokolov, Stefan Woerner, and Ivano Tavernelli. Quan-             and Felix Naumann. The effects of data quality on machine
+     tum algorithm for alchemical optimization in material design.           learning performance. arXiv preprint arXiv:2207.14529, 2022.
+     Chemical science, 12(12):4345–4352, 2021.                          [20] Alaa Sahl Gaafar, Jasim Mohammed Dahr, and Alaa Khalaf
+ [3] Bela Bauer, Sergey Bravyi, Mario Motta, and Garnet Kin-Lic              Hamoud. Comparative analysis of performance of deep learn-
+     Chan. Quantum algorithms for quantum chemistry and quan-                ing classification approach based on lstm-rnn for textual and
+     tum materials science. Chemical Reviews, 120(22):12685–                 image datasets. Informatica, 46(5), 2022.
+     12717, 2020.                                                       [21] Vojtěch Havlı́ček, Antonio D Córcoles, Kristan Temme,
+ [4] V Armaos, Dimitrios A Badounas, Paraskevas Deligiannis, and             Aram W Harrow, Abhinav Kandala, Jerry M Chow, and Jay M
+     Konstantinos Lianos. Computational chemistry on quantum                 Gambetta. Supervised learning with quantum-enhanced feature
+     computers. Applied Physics A, 126(8):1–7, 2020.                         spaces. Nature, 567(7747):209–212, 2019.
+ [5] Nicolas Gisin, Grégoire Ribordy, Wolfgang Tittel, and Hugo        [22] Hsin-Yuan Huang, Michael Broughton, Masoud Mohseni,
+     Zbinden. Quantum cryptography. Reviews of modern physics,               Ryan Babbush, Sergio Boixo, Hartmut Neven, and Jarrod R
+     74(1):145, 2002.                                                        McClean. Power of data in quantum machine learning. Na-
+ [6] Charles H Bennett, François Bessette, Gilles Brassard, Louis           ture communications, 12(1):1–9, 2021.
+     Salvail, and John Smolin. Experimental quantum cryptography.       [23] Shivani Saini, PK Khosla, Manjit Kaur, and Gurmohan Singh.
+     Journal of cryptology, 5(1):3–28, 1992.                                 Quantum driven machine learning. International Journal of
+ [7] Sheir Yarkoni, Florian Neukart, Eliane Moreno Gomez Tagle,              Theoretical Physics, 59(12):4013–4024, 2020.
+     Nicole Magiera, Bharat Mehta, Kunal Hire, Swapnil Narkhede,        [24] Ruslan Shaydulin and Stefan M Wild. Importance of kernel
+     and Martin Hofmann. Quantum shuttle: traffic navigation with            bandwidth in quantum machine learning. Physical Review A,
+     quantum computing. In Proceedings of the 1st ACM SIGSOFT                106(4):042407, 2022.
+     International Workshop on Architectures and Paradigms for          [25] Dheeru Dua and Casey Graff. UCI machine learning repository,
+     Engineering Quantum Software, pages 22–30, 2020.                        2017.
+ [8] Florian Neukart, Gabriele Compostella, Christian Seidel, David     [26] Satuluri Vanaja and Meena Belwal. Aspect-level sentiment
+     Von Dollen, Sheir Yarkoni, and Bob Parney. Traffic flow op-             analysis on e-commerce data. In 2018 International Conference
+     timization using a quantum annealer. Frontiers in ICT, 4:29,            on Inventive Research in Computing Applications (ICIRCA),
+     2017.                                                                   pages 1275–1279. IEEE, 2018.
+ [9] Song-Kong Chong and Tzonelih Hwang.              Quantum key       [27] Hsuanwei Michelle Chen and Patricia C Franks. Exploring gov-
+     agreement protocol based on bb84. Optics Communications,                ernment uses of social media through twitter sentiment analysis.
+     283(6):1192–1195, 2010.                                                 Journal of Digital Information Management, 14(5), 2016.
+[10] S. Pirandola, U. L. Andersen, L. Banchi, M. Berta, D. Bunan-       [28] Haruna Isah, Paul Trundle, and Daniel Neagu. Social media
+     dar, R. Colbeck, D. Englund, T. Gehring, C. Lupo, C. Ottaviani,         analysis for product safety using text mining and sentiment
+     J. L. Pereira, M. Razavi, J. Shamsul Shaari, M. Tomamichel,             analysis. In 2014 14th UK workshop on computational intel-
+     V. C. Usenko, G. Vallone, P. Villoresi, and P. Wallden.                 ligence (UKCI), pages 1–7. IEEE, 2014.
+     Advances in quantum cryptography.          Adv. Opt. Photon.,      [29] Zahra Abbasi-Moud, Hamed Vahdat-Nejad, and Javad Sadri.
+     12(4):1012–1236, Dec 2020.                                              Tourism recommendation system based on semantic cluster-
+[11] Patrick Rebentrost and Seth Lloyd. Quantum computational                ing and sentiment analysis. Expert Systems with Applications,
+     finance: quantum algorithm for portfolio optimization. arXiv            167:114324, 2021.
+     preprint arXiv:1811.03975, 2018.                                   [30] Bing Liu et al. Sentiment analysis and subjectivity. Handbook
+[12] AK Fedorov and MS Gelfand. Towards practical applications               of natural language processing, 2(2010):627–666, 2010.
+     in quantum computational biology. Nature Computational Sci-        [31] Qiang Ye, Ziqiong Zhang, and Rob Law. Sentiment classifica-
+     ence, 1(2):114–119, 2021.                                               tion of online reviews to travel destinations by supervised ma-
+[13] Jacob Biamonte, Peter Wittek, Nicola Pancotti, Patrick Reben-           chine learning approaches. Expert systems with applications,
+     trost, Nathan Wiebe, and Seth Lloyd. Quantum machine learn-             36(3):6527–6535, 2009.
+     ing. Nature, 549(7671):195–202, 2017.                              [32] Bo Pang, Lillian Lee, and Shivakumar Vaithyanathan. Thumbs
+[14] Esma Aı̈meur, Gilles Brassard, and Sébastien Gambs. Quantum            up? sentiment classification using machine learning techniques.
+     clustering algorithms. In Proceedings of the 24th international         arXiv preprint cs/0205070, 2002.
+     conference on machine learning, pages 1–8, 2007.                   [33] Alec Go, Richa Bhayani, and Lei Huang. Twitter sentiment
+[15] Nathan Wiebe, Ashish Kapoor, and Krysta M Svore. Quantum                classification using distant supervision. CS224N project report,
+     nearest-neighbor algorithms for machine learning. Quantum               Stanford, 1(12):2009, 2009.
+     Information and Computation, 15, 2015.                             [34] P Kalaivani and KL Shunmuganathan. Sentiment classifi-
+[16] Kristen L Pudenz and Daniel A Lidar. Quantum adiabatic ma-              cation of movie reviews by supervised machine learning ap-
+     chine learning. Quantum information processing, 12(5):2027–             proaches. Indian Journal of Computer Science and Engineer-
+     2070, 2013.                                                             ing, 4(4):285–292, 2013.
+[17] Anton Zeilinger. Quantum entanglement: a fundamental con-          [35] Vasileios Athanasiou and Manolis Maragoudakis. A novel, gra-
+     cept finding its applications. Physica Scripta, 1998(T76):203,          dient boosting framework for sentiment analysis in languages
+     1998.                                                                   where nlp resources are not plentiful: a case study for modern
+                                                                             greek. Algorithms, 10(1):34, 2017.
+                                                                                                                                          11
+
+[36] Steven A Hicks, Inga Strümke, Vajira Thambawita, Malek                 ing models. Quantum Science and Technology, 4(4):043001,
+     Hammou, Michael A Riegler, Pål Halvorsen, and Sravanthi                2019.
+     Parasa. On evaluation metrics for medical applications of ar-      [58] Gennaro De Luca. A survey of nisq era hybrid quantum-
+     tificial intelligence. Scientific Reports, 12(1):5979, 2022.            classical machine learning research. Journal of Artificial In-
+[37] Albert Einstein, Boris Podolsky, and Nathan Rosen. Can                  telligence and Technology, 2(1):9–15, 2022.
+     quantum-mechanical description of physical reality be consid-      [59] Patrick Rebentrost, Masoud Mohseni, and Seth Lloyd. Quan-
+     ered complete? Physical review, 47(10):777, 1935.                       tum support vector machine for big data classification. Physical
+[38] John S Bell. On the einstein podolsky rosen paradox. Physics            review letters, 113(13):130503, 2014.
+     Physique Fizika, 1(3):195, 1964.                                   [60] Songfeng Lu and Samuel L Braunstein. Quantum decision tree
+[39] Michael A Nielsen and Isaac Chuang. Quantum computation                 classifier. Quantum information processing, 13(3):757–770,
+     and quantum information, 2002.                                          2014.
+[40] Martin B Plenio and Shashank S Virmani. An introduction            [61] X-D Cai, Dian Wu, Z-E Su, M-C Chen, X-L Wang, Li Li,
+     to entanglement theory. Quantum information and coherence,              N-L Liu, C-Y Lu, and J-W Pan. Entanglement-based ma-
+     pages 173–209, 2014.                                                    chine learning on a quantum computer. Physical review letters,
+[41] Charles H Bennett, Gilles Brassard, Claude Crépeau, Richard            114(11):110504, 2015.
+     Jozsa, Asher Peres, and William K Wootters. Teleporting an un-     [62] Maria Schuld, Ilya Sinayskiy, and Francesco Petruccione.
+     known quantum state via dual classical and einstein-podolsky-           Quantum computing for pattern classification. In Pacific Rim
+     rosen channels. Physical review letters, 70(13):1895, 1993.             International Conference on Artificial Intelligence, pages 208–
+[42] Charles H Bennett and Stephen J Wiesner. Communication                  220. Springer, 2014.
+     via one-and two-particle operators on einstein-podolsky-rosen      [63] Yue Ruan, Xiling Xue, Heng Liu, Jianing Tan, and Xi Li. Quan-
+     states. Physical review letters, 69(20):2881, 1992.                     tum algorithm for k-nearest neighbors classification based on
+[43] Kaoru Shimizu and Nobuyuki Imoto. Communication channels                the metric of hamming distance. International Journal of The-
+     secured from eavesdropping via transmission of photonic bell            oretical Physics, 56(11):3496–3507, 2017.
+     states. Physical Review A, 60(1):157, 1999.                        [64] Nathan Wiebe, Ashish Kapoor, and Krysta Svore. Quantum al-
+[44] Chitra Shukla, Nasir Alam, and Anirban Pathak. Protocols                gorithms for nearest-neighbor methods for supervised and un-
+     of quantum key agreement solely using bell states and bell              supervised learning. arXiv preprint arXiv:1401.2142, 2014.
+     measurement. Quantum information processing, 13(11):2391–          [65] Abhijat Sarma, Rupak Chatterjee, Kaitlin Gili, and Ting Yu.
+     2405, 2014.                                                             Quantum unsupervised and supervised learning on supercon-
+[45] Wolfgang Dür, Guifre Vidal, and J Ignacio Cirac. Three qubits          ducting processors. arXiv preprint arXiv:1909.04226, 2019.
+     can be entangled in two inequivalent ways. Physical Review A,      [66] Esma Aı̈meur, Gilles Brassard, and Sébastien Gambs. Quan-
+     62(6):062314, 2000.                                                     tum speed-up for unsupervised learning. Machine Learning,
+[46] Carlos Sabı́n and Guillermo Garcı́a-Alcaine. A classification           90(2):261–287, 2013.
+     of entanglement in three-qubit systems. The european physical      [67] Esma Aı̈meur, Gilles Brassard, and Sébastien Gambs. Machine
+     journal D, 48(3):435–442, 2008.                                         learning in a quantum world. In Conference of the Canadian
+[47] Emanuel Knill and Raymond Laflamme. Power of one bit of                 Society for Computational Studies of Intelligence, pages 431–
+     quantum information. Physical Review Letters, 81(25):5672,              442. Springer, 2006.
+     1998.                                                              [68] Iordanis Kerenidis, Jonas Landman, Alessandro Luongo, and
+[48] Animesh Datta, Anil Shaji, and Carlton M Caves. Quantum                 Anupam Prakash. q-means: A quantum algorithm for unsu-
+     discord and the power of one qubit. Physical review letters,            pervised machine learning. Advances in Neural Information
+     100(5):050502, 2008.                                                    Processing Systems, 32, 2019.
+[49] David A Meyer. Sophisticated quantum search without entan-         [69] Johannes S Otterbach, Riccardo Manenti, Nasser Alidoust,
+     glement. Physical Review Letters, 85(9):2014, 2000.                     A Bestwick, M Block, B Bloom, S Caldwell, N Didier,
+[50] Dan Kenigsberg, Tal Mor, and Gil Ratsaby. Quantum advantage             E Schuyler Fried, S Hong, et al. Unsupervised machine
+     without entanglement. Quantum Inf. Comput., 6(7):606–615,               learning on a hybrid quantum computer. arXiv preprint
+     2006.                                                                   arXiv:1712.05771, 2017.
+[51] Parvinder Singh and Atul Kumar. Analysing nonlocality robust-      [70] Unai Alvarez-Rodriguez, Lucas Lamata, Pablo Escandell-
+     ness in multiqubit systems under noisy conditions and weak              Montero, José D Martı́n-Guerrero, and Enrique Solano. Su-
+     measurements. Quantum Information Processing, 17:1–33,                  pervised quantum learning without measurements. Scientific
+     2018.                                                                   reports, 7(1):1–9, 2017.
+[52] Hargeet Kaur and Atul Kumar. Nonlocality, entanglement, and        [71] Oleksandr Kyriienko and Einar B Magnusson. Unsupervised
+     randomness in different conflicting interest bayesian games.            quantum machine learning for fraud detection. arXiv preprint
+     Quantum Inf. Comput., 20(11&12):901–934, 2020.                          arXiv:2208.01203, 2022.
+[53] Jyoti Faujdar and Atul Kumar. A comparative study to analyze       [72] Subhash C Kak. Quantum neural computing. Advances in
+     efficiencies of (n+ 2)(n+ 2)-qubit partially entangled states in        imaging and electron physics, 94:259–313, 1995.
+     real conditions from the perspective of n controllers. Quantum     [73] Tammy Menneer and Ajit Narayanan. Quantum-inspired neural
+     Information Processing, 20:1–39, 2021.                                  networks. Tech. Rep. R329, 1995.
+[54] Colin P Williams. Quantum gates. In Explorations in Quantum        [74] Lov K Grover. Quantum search on structured problems. In
+     Computing, pages 51–122. Springer, 2011.                                NASA International Conference on Quantum Computing and
+[55] Maria Schuld. Supervised quantum machine learning models                Quantum Communications, pages 126–139. Springer, 1998.
+     are kernel methods. arXiv preprint arXiv:2101.11020, 2021.         [75] Dan Ventura and Tony Martinez. Quantum associative memory.
+[56] Corinna Cortes and Vladimir Vapnik. Support-vector networks.            Information Sciences, 124(1-4):273–296, 2000.
+     Machine learning, 20(3):273–297, 1995.                             [76] Rigui Zhou, Huian Wang, Qian Wu, and Yang Shi. Quantum as-
+[57] Marcello Benedetti, Erika Lloyd, Stefan Sack, and Mattia                sociative neural network with nonlinear search algorithm. Inter-
+     Fiorentini. Parameterized quantum circuits as machine learn-            national Journal of Theoretical Physics, 51(3):705–723, 2012.
+                                                                                                                                      12
+
+[77] Debanjan Konar, Siddhartha Bhattacharyya, Sandip Dey, and            selection algorithm using a quantum inspired graph theoretic
+     Bijaya Ketan Panigrahi. Optimized activation for quantum-            approach. Applied Intelligence, 50(6):1775–1793, 2020.
+     inspired self-supervised neural network based fully automated   [81] Ziqi Yuan Abdül Meral and Avnika Shah. Imdb movie review
+     brain lesion segmentation. Applied Intelligence, pages 1–30,         dataset.
+     2022.                                                           [82] Hyelynn Jeon and Sejong Oh. Hybrid-recursive feature elim-
+[78] Shangshang Shi, Zhimin Wang, Guolong Cui, Shengbin Wang,             ination for efficient feature selection.    Applied Sciences,
+     Ruimin Shang, Wendong Li, Zhiqiang Wei, and Yongjian Gu.             10(9):3211, 2020.
+     Quantum-inspired complex convolutional neural networks. Ap-     [83] Leo Breiman. Random forests. Machine learning, 45:5–32,
+     plied Intelligence, pages 1–10, 2022.                                2001.
+[79] Yazhou Zhang, Dawei Song, Peng Zhang, Xiang Li, and             [84] Robert Tibshirani. Regression shrinkage and selection via
+     Panpan Wang. A quantum-inspired sentiment representation             the lasso. Journal of the Royal Statistical Society: Series B
+     model for twitter sentiment analysis. Applied Intelligence,          (Methodological), 58(1):267–288, 1996.
+     49(8):3093–3108, 2019.                                          [85] Debashis Ghosh and Arul M Chinnaiyan. Classification and
+[80] Sanjay Chakraborty, Soharab Hossain Shaikh, Amlan                    selection of biomarkers in genomic data using lasso. Journal of
+     Chakrabarti, and Ranjan Ghosh. A hybrid quantum feature              Biomedicine and Biotechnology, 2005(2):147, 2005.
+

@@ -1,0 +1,1177 @@
+                                                         Harnessing Quantum Extreme Learning Machines
+                                                                     for image classification
+                                                A. De Lorenzis1, 2, * , M. P. Casado1, 3 , M. P. Estarellas2 , N. Lo Gullo4, 5 , T. Lux1 ,
+                                                                    F. Plastina4, 5 , A. Riera3 and J. Settino4, 5, 6
+                                            1 Institut de Fı́sica d’Altes Energies (IFAE) - The Barcelona Institute of Science and Technology (BIST), Campus UAB,
+
+                                                                                       08193 Bellaterra (Barcelona), Spain
+                                                             2 Qilimanjaro Quantum Tech S.L., Carrer de Veneçuela, 74, 08019 Barcelona, Spain
+                                                                        3 Departament de Fı́sica, Universitat Autònoma de Barcelona
+                                                          4 Dipartimento di Fisica, Università della Calabria, 87036 Arcavacata di Rende (CS), Italy
+                                                                 5 INFN, gruppo collegato di Cosenza, 87036 Arcavacata di Rende (CS), Italy
+                                                                                     6 ICAR-CNR, 87036 Rende (CS), Italy
+arXiv:2409.00998v3 [quant-ph] 10 Apr 2025
+
+
+
+
+                                                                                            * E-mail: adelorenzis@ifae.es,
+                                                                              All the authors, except for the first, are listed in alphabetic order.
+
+
+
+
+                                                                                                         Abstract
+                                                    Interest in quantum machine learning is increasingly growing due to its potential to offer more efficient
+                                                solutions for problems that are difficult to tackle with classical methods. In this context, the research
+                                                work presented here focuses on the use of quantum machine learning techniques for image classification
+                                                tasks. We exploit a quantum extreme learning machine by taking advantage of its rich feature map
+                                                provided by the quantum reservoir substrate. We systematically analyze different phases of the quantum
+                                                extreme learning machine process, from the dataset preparation to the image final classification. In
+                                                particular, we have tested different encodings, together with Principal Component Analysis, the use
+                                                of Auto-Encoders, as well as the dynamics of the model through the use of different Hamiltonians for
+                                                the quantum reservoir. Our results show that the introduction of a quantum reservoir systematically
+                                                improves the accuracy of the classifier. Additionally, our findings indicate that variations in encoding
+                                                methods can significantly influence performance and that Hamiltonians with distinct structures exhibit
+                                                the same discrimination rate, depending on how their eigenstates are related to the encoding and
+                                                measurement basis.
+
+
+
+
+                                            1   Introduction                                                        In this paper, we explore the Quantum Extreme
+                                                                                                                    Learning Machine (QELM) [20–27], a model that
+                                            Since the early 2000s, quantum computing                                utilizes quantum dynamics to perform complex
+                                            has steadily gained prominence, emerging as                             data transformations. The QELM builds on
+                                            a groundbreaking technology with the poten-                             the Extreme Learning Machine (ELM) [28–34]
+                                            tial to revolutionize various sectors, including                        framework, a classical machine learning model
+                                            chemistry, cryptography, finance, and artificial                        designed to streamline the training process
+                                            intelligence [1–4]. In recent years, significant                        by limiting learning to the output layer. In
+                                            technological advancements [5–8] have accelerated                       the QELM, this approach is extended into the
+                                            interest in this field, bringing quantum computing                      quantum realm, where a fixed-structure quantum
+                                            closer to practical applications.                                       reservoir processes input data and maps it into a
+                                            One particularly exciting and rapidly evolving                          high-dimensional space, yielding rich representa-
+                                            domain within quantum computing is quantum                              tions of the data.
+                                            machine learning (QML), which lies at the                               Unlike classical Extreme Learning Machines, the
+                                            intersection of quantum computing and machine                           QELM harnesses the vast state space of quantum
+                                            learning [9–13]. QML aims to leverage quantum                           systems, enabling it to handle complex datasets
+                                            algorithms and data structures to tackle com-                           with computational power and efficiency that
+                                            plex problems and achieve breakthroughs that                            surpasses traditional methods [16]. Additionally,
+                                            classical machine learning methods struggle to                          while classical ELMs are constrained by classical
+                                            address [14–19].
+linear algebra, the QELM exploits the high                   However, this memoryless nature simplifies the
+dimensionality of quantum systems, making                    model’s structure, enabling it to focus on instanta-
+it highly effective for pattern recognition and              neous data transformations, which is ideal for tasks
+classification tasks [9].                                    where temporal dependencies are not essential.
+The input data is first encoded into quantum                 Given its properties, the QELM is particularly
+states using specific encoding schemes, which                well-suited for classification, regression, and
+are then fed into a quantum reservoir. This                  pattern recognition tasks in domains that do
+reservoir (a system with fixed internal dynamics)            not rely on time-dependency. In fields such as
+transforms the input into higher-dimensional                 image recognition, fraud detection, and static
+representations where a larger distinguishability            data analysis, the ability to efficiently map input
+is possible. Importantly, the quantum reservoir              data to high-dimensional spaces using quantum
+operates without requiring optimization or train-            resources can lead to significant performance
+ing of its internal parameters, allowing complex             improvements [9, 16, 78–80]. Furthermore, the
+data transformations to occur naturally. Once                rapid training process of the QELM makes it an
+processed, the data is passed to the output layer,           attractive option for applications where time or
+where learning occurs. Only the weights of this              computational resources are limited.
+layer are optimized, which significantly reduces             Throughout this paper, we study the architecture
+training complexity and computational cost. One              and performance of QELM for image classification
+of the primary advantages of the QELM is its                 tasks. Due to the limitations arising from the
+efficiency in training. Unlike many machine                  reduced number of qubits available today and the
+learning models that rely on backpropagation                 small decoherence times of current noisy quantum
+and iterative adjustment of all parameters, the              devices [6, 81], typical datasets, characterized by a
+QELM confines learning to the output layer.                  large number of features, cannot be directly fed
+This approach greatly reduces computational                  to the quantum reservoirs and must necessarily
+overhead, resulting in faster training times and             be compressed into a lower-dimensional represen-
+lower resource consumption.                                  tation. In the context of QELM, this is usually
+Furthermore, the quantum reservoir’s ability                 achieved by linear reduction algorithms, such as
+to map input data into a vast Hilbert space,                 Principal Component Analysis (PCA).
+which grows exponentially with the number of                 In this work, we perform a step forward and
+quantum particles, allows the QELM to capture                exploit the more complex representation power
+intricate relationships within the data, revealing           of nonlinear neural network architectures such as
+patterns that classical methods might miss. This             the Auto-Encoders. In particular, we quantita-
+ability to handle complex, high-dimensional                  tively show that the reservoir performances are
+transformations is particularly valuable in domains          substantially improved when the Auto-Encoder,
+where feature extraction and pattern recognition             rather than PCA, is used to compress the number
+are key challenges.                                          of features.
+QELMs fall within the broader framework of                   Furthermore, since it is necessary to convert
+Quantum Reservoir Computing (QRC) [25, 35, 36],              classical information into quantum states that
+but operate without memory, i.e. the reservoir’s             the quantum system can process, we explore
+dynamics are reduced to a static, high-dimensional           various encoding methods, identifying those that
+input transformation [37]. While classical reservoir         work better. Finally, we compare the results
+computing has been extensively studied in the con-           obtained from different Hamiltonians that generate
+text of recurrent neural networks (RNNs) [38–44]             the natural dynamics of the reservoir, gaining
+and physical systems [45–48], several advances               some insights into the learning processes and
+have extended this framework to quantum sys-                 performances of the various reservoirs.
+tems [35, 49, 50]. In particular, spin chains [51–60],       The paper is structured as follows: Section 2
+fermionic and bosonic systems [61–67], quantum               provides a description of the model used. Sections
+oscillators [68, 69], and Rydberg atoms [24, 70, 71]         3 and 4 cover techniques for reducing data
+have been explored as quantum physical implemen-             complexity and methods for encoding classical
+tations. Furthermore, to enhance the memory of               input information, respectively. In Section 5, we
+previous input injections, hybrid approaches and             present different Hamiltonian models. Section 6
+feedback mechanisms have been proposed [72–77].              details the measurement process and the classical
+Since QELMs do not retain information from                   machine learning classifier. Finally, Section 7
+previous inputs, they are less suitable for tasks            discusses the model’s performance and results,
+requiring temporal dependencies or sequence                  followed by the conclusion.
+learning, such as time-series forecasting.                   To assess the performance of our algorithms,
+
+
+                                                         2
+we consider, as a simple classification task, the                • Classical classifier: the output of the measure-
+discrimination of the ten handwritten numbers in                   ment process is fed into a simple One-layer
+the MNIST dataset [82]. The latter consists of                     Neural Network (ONN) that is trained to per-
+70000 pictures of digits, between 0 and 9, stored                  form classification.
+into grayscale images of 28 × 28 pixels.
+                                                             3    Techniques for reducing data complexity
+To demonstrate that our findings are not limited
+to a specific dataset and are generally applicable,          Quantum machine learning holds promising poten-
+we also test our approach on the more complex                tial. However, one of the primary challenges in
+Fashion-MNIST dataset [83], for which the same               applying this technology is the limited availability
+general considerations hold.                                 of qubits. Additionally, most datasets of interest
+Furthermore, the accuracies obtained in our study            have a high number of features, necessitating the
+are comparable to or exceed those of other image             development of strategies and algorithms to reduce
+classification methods based on quantum machine              the dimensionality while preserving as much in-
+learning, such as Quantum Capsule Networks [13],             formation as possible of the original data, see for
+Quantum Convolutional Neural Networks [84],                  instance [92].
+the QRC proposed by [24], the Quantum Bayes                  In depth, we examine two distinct approaches for
+Classifiers proposed in [85] or the approaches               reducing the number of dimensions of the features:
+proposed in [86, 87].                                        the Principal Component Analysis (PCA) and the
+                                                             Auto-Encoder (AE).
+                                                             While the PCA is a statistical technique that trans-
+2    Overview of Quantum Extreme Learning                    forms a set of potentially correlated variables into
+     Machines                                                a subset of linearly uncorrelated ones, called prin-
+                                                             cipal components, selected according to their vari-
+We will explore a QELM model that combines a                 ance, the AE is a type of artificial neural network.
+classical Extreme Learning Machine framework, in             The latter is trained to map input data to itself
+which the training process is restricted to the out-         and it comprises two main components: the en-
+put layer only, with a quantum reservoir. As said            coder, which compresses the input into a lower-
+before, we feed the algorithm with an image dataset          dimensional latent-space representation, and the
+(MNIST) to implement an image classification task.           decoder, which reconstructs the input data from
+A schematic representation of the model is shown             the latent-space representation with the aim to
+in Fig.1 and its workflow can be summarized as               make the output as close to the original input as
+follows:                                                     possible.
+    • Feature reduction: the original data is com-           In particular, we used two different algorithms
+      pressed into a lower dimensional latent rep-           of auto-encoders that we name AE1 and AE2 .
+      resentation to match the limited number of             Both utilize in the encoder convolutional and max-
+      available qubits of the reservoir. This can be         pooling layers for feature extraction, while convo-
+      achieved using either linear Principal Com-            lutional and up-sampling layers are used in the
+      ponent Analysis (PCA) or a nonlinear Auto-             decoder for the reconstruction of the input data.
+      Encoder (AE) [88–91].                                  A fully-connected layer maps the aforementioned
+                                                             features into a latent-space representation which
+    • Encoding: the process involves transforming            is then fed to the quantum algorithm. The fully-
+      classical information into quantum states that         connected layer employs a sigmoid activation func-
+      can be processed by the quantum system. This           tion (the outputs of which are real values between
+      entails setting the initial states of the qubits       0 and 1) while the convolutional layers rely on
+      to be used for the subsequent quantum com-             the rectified linear unit. The two auto-encoders
+      putation.                                              mainly differ in their expressivity potential, with
+    • Quantum layer and time evolution: the quan-            AE1 characterized by a number of trainable pa-
+      tum system evolves in time according to the            rameters larger than the one in AE2 . More details
+      dynamics dictated by the Hamiltonian.                  on the architectures of AE1 and AE2 can be found
+                                                             in Appendix A.
+    • Measurement: the qubits of the system are
+      measured by performing projective measure-             4    Encoding strategies of classical data into
+      ments associated with specific operators, such              the QELM
+      as Pauli operators, or by executing a quantum
+      state tomography procedure requiring multiple          First of all, we remind the reader that the pure
+      runs.                                                  state of a qubit can be represented as a point on
+
+                                                         3
+                                                     M
+
+
+
+
+Figure 1: A schematic representation of the QELM. The workflow is as follows: feature reduction through PCA or
+AE; encoding of classical data into the quantum initial state; time evolution via the quantum layer; measurement
+of the evolved quantum state; classification with a classical One-layer Neural Network.
+
+
+the Bloch sphere                                                     This mapping is also called “angle encoding” and
+                                                                     has been used, for instance, in references [11,93–96].
+                      θ                θ
+            |ψ⟩ = cos( ) |0⟩ + eiϕ sin( ) |1⟩              (1)
+                      2                2
+                                                                     Uniform Bloch sphere encoding
+where θ ∈ [0, π] and ϕ ∈ [0, 2π], to which we will
+refer when we will describe the various encodings.                   Another similar encoding, called “uniform Bloch
+Encodings based on this representation can be eas-                   sphere encoding”, is given by the following repre-
+ily used to transform classical data into quantum                    sentation [37]
+states, through a mapping of the classical features                             ⌈M/2⌉ 
+into the angles (θ, ϕ) describing the position of a                             O         √                                      
+                                                                                              x2i−1 |0⟩ + eix2i
+                                                                                                                  p
+                                                                      |⃗x⟩ =                                       1 − x2i−1 |1⟩
+qubit on the Bloch sphere.
+                                                                                 i=1
+                                                                                                                        (4)
+Dense angle encoding                                                 where the features x2i−1 are normalized between
+                                                                     [0, 1], while the x2i , representing the phase ϕ, must
+The representation defined above can be fully ex-
+                                                                     be normalized in the interval [0, π], as explained
+ploited to map two features per qubit using the
+                                                                     above.
+polar angle and the relative phase between the two
+quantum states of each qubit. This is also dubbed
+“dense angle encoding” and it is explicitly given                    General encoding
+by [93]                                                              Among the so-called “general encodings” [93], we
+         ⌈M/2⌉                                                      further consider
+         O          x2i−1                     x2i−1      
+|⃗x⟩ =             cos(    ) |0⟩ + eix2i sin(       ) |1⟩                       ⌈M/2⌉
+        i=1
+                       2                        2                                O               1
+                                                                       |⃗x⟩ =                               (x2i−1 |0⟩ + x2i |1⟩) .
+                                                        (2)
+                                                                                        q
+                                                                                 i=1        x22i−1 + x22i
+where xi represents the elements of the feature
+vector ⃗x = [x1 , ..., xM ]T ∈ RM and N = ⌈M/2⌉                                                                        (5)
+is the number of qubits. We chose to normalize                       Here the pairs of features (x2i−1 , x2i ) take values
+each feature in the interval [0, π], thus effectively                between [0, 1].
+covering, for each qubit, half of the corresponding
+Bloch sphere [22], with the angles θ and ϕ identified                Amplitude encoding
+with pairs of features (x2i−1 , x2i ).
+                                                                     Finally, we considered the “amplitude encoding”
+                                                                     [93]
+Angle encoding                                                                                    2N
+                                                                                             1 X
+A simpler case is represented by a single qubit                                    |⃗x⟩ =             xi |i⟩     (6)
+                                                                                          ||⃗x||2 i=1
+encoding which maps each feature into one qubit
+(M = N ), without exploiting the relative phase,                     where xi is the ith feature of ⃗x and |i⟩ represents
+namely with ϕ = 0. In this case, the initial state is                a vector of the computational basis. Although this
+prepared according to                                                encoding is difficult to achieve as it would require
+                  M 
+                                                                     the ability to prepare a massively entangled state,
+                  O              xi             xi    
+                                                                     it has the advantage that it can reduce the demand
+         |⃗x⟩ =           cos(      ) |0⟩ + sin( ) |1⟩ .   (3)
+                  i=1
+                                 2              2                    for qubits.
+
+                                                                 4
+5   Hamiltonian models describing the quan-                                     J3 = −1, B3x = 0.7 and B3z = 1.5. For H3
+    tum layer                                                                   as well, the time evolution is performed using a
+                                                                                ∆t = 20 [23].
+In this section, with the aim of understanding                                  As a variation of the latter and as our fourth exam-
+the features of the dynamics that help to improve                               ple, we employ the Heisenberg XXZ model, whose
+the performances, we explore the influence of vari-                             Hamiltonian we dub H4 :
+ous Hamiltonians generating qualitatively different
+                                                                                                N
+dynamics of the qubit register. Specifically, we                                           1 X
+analyze six distinct Hamiltonians, which govern                                   H4 = −         J4x σx(i) σx(i+1) + J4y σy(i) σy(i+1)
+                                                                                           2 i=1
+the time evolution of the initial state containing                                                                                 
+the encoded features, on the classification accu-                                                + J4z σz(i) σz(i+1) + B4z σz(i) (10)
+racy. In particular, we consider the time-dependent
+Hamiltonian suggested in [22], alongside five time-                             where we set the parameters J4x = J4y = 2 and
+independent operators. Among the latter, two have                               J4z = B4z = 0.54 and the time evolution is per-
+the qubit lying on a fully connected graph, with all-                           formed using a ∆t = 20.
+to-all interactions, while three others model qubits                            In Ref. [53], the performance of QRC has been
+arranged in a linear configuration, with only near-                             related to the localization and ergodicity proper-
+est neighbor interactions.                                                      ties of the Hamiltonian eigenspectrum. With the
+In the first case, the quantum layer performs the                               aim of testing the role of locality/ergodicity (and
+temporal evolution of a quantum state under the                                 also of integrability) on the algorithm performance,
+periodic time-dependent Hamiltonian H1 [22]                                     we further explore two other kind of Hamiltonians;
+           (           PN −1 (i)                                                namely: a fully integrable model and the Hamil-
+              Ha = B1 i=0 σx       0 ≤ t < T1                                   tonian reported in Ref. [53], which, depending on
+H1 (t) =             PN −1 i,j (i) (j)
+              Hb = i,j=0 J1 σz σz       T1 ≤ t < T                              the values of its parameters, can display different
+                                                   (7)                          localization features.
+          (i)    (i)        (j)                                                 Thus, we consider the integrable and non-ergodic
+Here, σx , σz , and σz are the Pauli opera-
+tors acting on the site of the i,j-th qubit, while                              XX model, whose Hamiltonian describes (in the
+J1i,j = |i−j|
+           J0
+              α represents the long-range interaction
+                                                                                fermion language) just hopping between nearest
+between the i-th and j-th qubits. As in [22], the                               neighbours, H5 :
+scale of the interaction is set by J0 = 0.06 and is                                                 N
+damped for far-away qubits, with α = 1.51 con-                                                  1 X (i) (i+1)
+                                                                                        H5 =         (σ σ     + σy(i) σy(i+1) ).           (11)
+trolling the rate of damping. B1 = 3.05 and the                                                 2 i=1 x x
+time evolution is performed using a ∆t = 50T
+(T = 2T1 = 1, setting the units for both time and                               As our final example, we take the Hamiltonian H6
+inverse energy).                                                                reported in Ref. [53]:
+In the second case, we use the Hamiltonian H2                                           N                               N
+below, featuring interacting qubits in a transverse                                     X                             1X
+                                                                                 H6 =           J6i,j σx(i) σx(j) +         (B6 + Di )σz(i) (12)
+field, [81]                                                                             i>j=1
+                                                                                                                      2 i=1
+                N −1                          N −1
+                                                       (i)                      where J6i,j are randomly selected from a uniform dis-
+                X                             X
+       H2 =             J2i,j σz(i) σz(j) +          B2 σx(i) .     (8)
+                i,j=0                         i=0                               tribution in the interval [−0.5, 0.5], Di is randomly
+                                                 (i)
+                                                                                drawn from the uniform distribution [−W, W ]. In
+Here, the coefficients J2i,j and B2 are sampled                                 detail, we analyzed the reservoir dynamics gener-
+from the Gaussian distributions N (0.75, 0.1) and                               ated by H6 using three different set of parameters,
+N (1, 0.1), respectively. The time evolution is im-                             corresponding to non-ergodic regions described
+plemented with a time ∆t = 20. [81]                                             in [53]: a first one, where localization occurs (region
+In the third case, we consider a Ising-like model,                              III in Ref. [53]) with B6 = W = 2 ∗ 10−2 , a second
+with only nearest neighbor interaction, including                               one, laying in between non-ergodic and ergodic
+both longitudinal and transverse fields, as used                                regions, with B6 = 0.03 and W = 1 and a third
+in [23],                                                                        set of parameters lying in the many-body-localized
+          N −2                          N −1                 N −1               region (region I of Ref. [53]), with B6 = 0.03 and
+          X                             X                    X
+H3 = J3          σz(i) σz(i+1) +B3z            σz(i) +B3x           σx(i)       W = 60.
+          i=0                           i=0                   i=0               Moreover, to help the comparison we have also
+                                                                    (9)         taken into account the Hamiltonian H2 with J2 = 0,
+                                                                                as this choice represents a system where there are
+where we set the parameters in the chaotic regime:                              no interactions between the spins.
+
+                                                                            5
+The evolution generated by all of these Hamiltoni-          As naively expected, the simpler linear PCA shows
+ans, implemented using the QuTiP package [97,98],           a lower accuracy compared to the neural-network-
+is taken for a time ∆t = 20.                                based algorithms, AE1 and AE2 , and AE1 per-
+                                                            forms better than AE2 due to its higher capacity.
+6     Measurement and machine learning clas-                We notice that, after a fast initial growth, the ac-
+      sifier                                                curacy starts to saturate around N = 9 qubits to
+                                                            ∼ 98% for the test set and slightly higher for the
+After the quantum system evolves in time, following         training set. As the number of qubits increases, the
+the dynamics governed by the chosen Hamiltonian,            differences among the classification performances of
+we measure the output state in the computational            the three algorithms get reduced. This behaviour
+basis. This allow us to extract the classical in-           can be ascribed to the corresponding increase in
+formation consisting in the population density of           the dimension of the latent representation, com-
+the wave function of the final state. In a real ex-         bined with the relative simplicity of the MNIST
+periment, we can statistically gather this data by          dataset. As such, we expect the gap between the
+repeating the procedure multiple times. In this             autoencoders and the PCA to persist even for large
+way we obtain 2N real values for each image which           N for more complex datasets. As an example, we
+will be then fed to the machine learning classifier.        considered the Fashion-MNIST dataset and con-
+The latter consists of a fully-connected single-layer       firmed the presence of the gap. The corresponding
+neural network with a softmax activation function.          results are provided in Appendix B.
+The structure of the layer is completely fixed by the
+number of qubits used in the quantum layer and by           7.2   Encodings
+the number of different classes in the input dataset.
+The model is trained by minimising the categorical          In Fig. 3 we explore the discriminating power of
+cross entropy using the Adam optimiser.                     the quantum classifier for the different encodings
+For the numerical implementation, we used the               explained in Sec. 4, namely, the dense angle encod-
+Keras framework [99].                                       ing (red line), the uniform Bloch sphere encoding
+                                                            (purple line) as well as the angle (green), general
+7     Results                                               (blue) and amplitude (orange) encodings. For this
+                                                            analysis, we used, as baseline, the AE1 autoen-
+We defined as baseline configuration the case of            coder and the H1 Hamiltonian, and we trained the
+using autoencoder AE1 , dense angle encoding, and           algorithm using an increasing number of qubits,
+Hamiltonian H1 . Afterward, we varied each com-             from 5 up to 12.
+ponent of the workflow individually while keeping           We recall that for all the explored encodings but
+the baseline choice for the other components and            the amplitude encoding, the mapping of the fea-
+studied the performance in the form of the achieved         tures is performed separately on each qubit, one
+accuracy as a function of a number of qubits or fea-        feature per qubit in the “angle encoding” case and
+tures. Due to the computational resources needed            two features per qubit in all the other cases.
+to simulate quantum computers with a large num-             For the amplitude encoding, instead, the features
+ber of qubits, we had to limit the study to systems         are spanned over the computational basis, allowing
+with up to 12 qubits. The findings are summarized           us to encode up to 2N − 1 features. However for
+in the following subsections.                               the sake of comparison, the dimension of latent
+                                                            space in the autoencoder is set to 2N , see Tab. 1
+7.1    PCA vs Autoencoders
+                                                            for details.
+                                                            It is clear from both the training and testing ac-
+In the two plots in Fig. 2 we show the accuracy             curacy, on left and right panels in the plots, re-
+evaluated on the training and test sets as a function       spectively, that the dense angle and the uniform
+of the number of qubits of the quantum layer for            Bloch sphere encodings provide comparably the
+three different setups.                                     best performance over all the setups, especially for
+In particular, we have explored the architecture            larger quantum reservoirs. The main implementa-
+performance with respect to the feature-reduction           tion difference between the two resides in how the
+strategies, namely, a PCA and two autoencoders.             features are distributed along the polar direction
+We fixed, instead, the encoding algorithm to the            in the Bloch sphere.
+“dense angle encoding”, as detailed in Eq. 2, and           Among the “angle-like” encoding strategies, there
+the Hamiltonian to the time-dependent H1 in Eq.             is a clear accuracy gap between the two encodings
+7. The dimension of the latent space scales as 2N           that spread the features over the two angle direc-
+as shown in Tab. 1.                                         tions of the Bloch sphere (two features per qubit)
+
+                                                        6
+                                         AEs vs PCA (Training)                                                        AEs vs PCA (Testing)
+                                                                                                   1.00
+                      1.00
+                                                                                                   0.98
+                      0.98
+                      0.96                                                                         0.96
+
+                      0.94                                                                         0.94
+                                                                                                   0.92
+      Accuracy rate
+
+
+
+
+                                                                                   Accuracy rate
+                      0.92
+                      0.90                                                                         0.90
+                      0.88                                                                         0.88
+                      0.86                                                                         0.86
+                      0.84                                               AE1                       0.84                                                AE1
+                      0.82                                               AE2                       0.82                                                AE2
+                                                                         PCA                                                                           PCA
+                      0.80                                                                         0.80
+                             5   6   7        8        9       10   11   12                               5   6   7       8        9         10   11   12
+                                            Number of qubits                                                            Number of qubits
+
+                                                (a)                                                                         (b)
+
+
+Figure 2: Training (left panel) and testing (right panel) accuracy as a function of the number of qubits for
+different feature reduction schemes: PCA (blue) and two autoencoders (AE1 and AE2 , green and red curves
+respectively). The time evolution and the encoding have been performed with the Hamiltonian H1 and the dense
+angle, respectively.
+
+
+and the one in which only one angle is employed                                    parameters in the non-ergodic and transition re-
+(one feature per qubit).                                                           gion. The accuracy rapidly grows with increasing
+The worst performance is achieved by the gen-                                      the number of qubits and reaches a plateau around
+eral encoding setup, which is particularly poor for                                N = 10.
+small quantum layers. This is expected since, by                                   This lack of sensitivity can be attributed to the
+construction, pairs of different but proportional                                  complex nature of the dynamics generated by these
+features are mapped to equivalent quantum states.                                  Hamiltonians, it spreads the information from the
+In the amplitude encoding case, the initial state is                               local states (where the encoding occurs) to the
+prepared by mapping the features onto the compu-                                   computational basis, combining the different pieces
+tational basis, thus taking advantage of a bigger                                  of information encoded in different qubits. When
+portion of the Hilbert space. For this reason, one                                 the probability of the outcomes is measured, the
+can afford much larger latent spaces (or, equiva-                                  recombined information is extracted, allowing the
+lently, reduce the demand of qubits) that can be                                   device to learn from the process.
+exploited to better identify the different classes in                              This, however, does not occur, for instance, when
+the original dataset. As such, one expects the am-                                 Hamiltonians that induce localization are used. We
+plitude encoding to outperform the other methods                                   show in Fig. 6 the performance accuracy as func-
+for a sufficiently large number of features and fixed                              tion of the number of qubits for the Hamiltoni-
+and small number of qubits. We show in Fig.4 the                                   ans H6 in localizations areas (region I and III of
+accuracy of the quantum classifier with the ampli-                                 Ref. [53]) and for transverse-field Ising Hamilto-
+tude encoding as a function of the dimension of the                                nian H2 when J2 = 0, that is where there are no
+latent space. For definiteness, we fix the number of                               interactions among the spins. In the Fig. 6, we
+qubits to N = 7 and we show, for comparison, the                                   have included H2 again, as a reference for the bet-
+performances achieved with the other encodings.                                    ter performance of the Hamiltonians, and here we
+                                                                                   can notice how H6 and H2 (J2 = 0) have worse
+7.3           Hamiltonians                                                         performance.
+                                                                                   For comparison, in Fig. 5 and Fig. 6, we also show
+Finally, we fix the feature reduction strategy and
+                                                                                   the classification accuracy obtained after stripping
+the encoding method and investigate the perfor-
+                                                                                   off the autoencoder and the quantum layer; namely,
+mance of the quantum classifier by comparing the
+                                                                                   by a purely classical ONN which is fed with the
+different Hamiltonians introduced in Sec.5. In de-
+                                                                                   full image information (the 784 pixel values). The
+tail, we can see in Fig.5 similar and good accu-
+                                                                                   classical and quantum classifiers achieve similar re-
+racy performance as function of the number of
+                                                                                   sults for N = 6, but the latter clearly outperforms
+qubits for the time-dependent Hamiltonian H1 ,
+                                                                                   if more qubits are employed.
+the transverse-field Ising Hamiltonians H2 and H3 ,
+                                                                                   Additionally, in Fig. 5 we present a further classi-
+the Heisenberg XXZ model H4 , the integrable and
+                                                                                   cal comparison with an ONN directly fed with the
+non-ergodic XX H5 and the Hamiltonian H6 with
+
+                                                                               7
+                                                          Training                                                                                                       Testing
+                                                                                                                                  1.00
+                      1.00
+
+                                                                                                                                  0.95
+                      0.95
+
+                                                                                                                                  0.90
+      Accuracy rate
+
+
+
+
+                                                                                                                  Accuracy rate
+                      0.90
+
+
+                      0.85                                                                                                        0.85
+
+                                                                                Dense angle                                       0.80                                                       Dense angle
+                      0.80                                                      Uniform Bloch sphere                                                                                         Uniform Bloch sphere
+                                                                                Angle                                                                                                        Angle
+                                                                                General                                                                                                      General
+                                                                                Amplitude                                                                                                    Amplitude
+                      0.75                                                                                                        0.75
+                                 5       6        7      8        9        10         11        12                                           5       6           7     8        9       10         11        12
+                                                       Number of qubits                                                                                              Number of qubits
+
+                                                           (a)                                                                                                          (b)
+
+
+Figure 3: Training (left panel) and testing (right panel) accuracy as a function of the number of qubits for
+different encoding strategies: dense angle (red), uniform Bloch sphere (purple), angle (green), general (blue) and
+amplitude (orange) encodings. The feature reduction has been performed with the autoencoder AE1 and the time
+evolution with the Hamiltonian H1 .
+
+
+
+
+                                                                          N° of qubits
+                                                                                                       5        6                        7       8           9       10       11        12
+                                              Encoding
+                                                         Angle                                         5        6                    7           8        9          10       11        12
+                                                       Dense angle                                     10       12                   14          16       18         20       22        24
+                                                  Uniform Bloch sphere                                 10       12                   14          16       18         20       22        24
+                                                        General                                        10       12                   14          16       18         20       22        24
+                                                       Amplitude                                       10       12                   14          16       18         20       22        24
+
+                                     Table 1: Dimension of the latent space for different number of qubits and encodings.
+
+
+
+
+                                                          Training                                                                                                      Testing
+                      1.00                                                                                                        1.00
+                                      Amplitude                                                                                                  Amplitude
+                                                                          Uniform Bloch sphere                                                                                          Uniform Bloch sphere
+                      0.95                                                        Dense angle                                     0.95                                                          Dense angle
+                                                                                         Angle                                                                                                         Angle
+    Accuracy rate
+
+
+
+
+                                                                                                                Accuracy rate
+
+
+
+
+                      0.90                                                                                                        0.90
+
+
+                      0.85                                                                                                        0.85
+                                                                                           General                                                                                                      General
+                             0           25          50           75           100              125                                      0           25          50           75           100               125
+                                              Number of features in latent space                                                                          Number of features in latent space
+
+                                                           (a)                                                                                                          (b)
+
+
+Figure 4: Training (left panel) and testing (right panel) accuracy as a function of the number of features in the
+latent space obtained with the amplitude encoding with N = 7. The feature reduction has been performed with
+the autoencoder AE1 and the time evolution with the Hamiltonian H1 . Dashed horizontal lines represent the
+accuracy achieved with the other encoding schemes with the same number of qubits, N = 7.
+
+
+
+
+                                                                                                            8
+features reduced by the autoencoder AE1 (with a            8   Conclusions
+latent space dimension given by 2N ). Also in this
+case, after N = 6, the quantum classifier outper-
+                                                           In this work, we have explored several implementa-
+forms the classical one.
+                                                           tional aspects of quantum machine learning tech-
+The accuracy obtained with the ONN using the               niques for image classification problems. We went
+raw 784 data is in general greater than, or compa-         through the full quantum machine learning pipeline,
+rable with, the one achieved with the compressed           from the preparation of the classical data to the
+features (coral line), the latter slightly exceeding       final classification task.
+the former when N = 11 for the train set and
+                                                           To demonstrate our methodology in a concrete man-
+N = 8 for the test set. This suggests that, for
+                                                           ner and identify the most promising approaches in a
+a straightforward comparison with the quantum              controlled setting, we employed the MNIST hand-
+model, the ONN with the raw data represents a              written digits dataset for a multilabel classifica-
+simple and viable choice, at least for the range of        tion problem. Moreover, our experiments with the
+N analyzed in this work.                                   Fashion-MNIST dataset confirm that this model
+Furthermore, it is important to emphasize that the
+                                                           can be readily extended to more complex and real-
+task of the autoencoder is not the classification          istic scenarios.
+itself, but rather the reduction of the amount of          The first step in the workflow consists of the re-
+available information. While in some cases this            duction of the features of the original data into
+may help to remove the noise, in general it leads to       a compressed representation. This is an essential
+a loss of data. The use of the AE in the quantum           step to comply with the limited number of qubits
+model is not a strategic advantage over the classi-
+                                                           available/simulable with the current technology.
+cal model in the classification task, but rather a         We compared the final performance of the quan-
+necessity due to the current limitations of quantum        tum machine learning algorithms applied to two
+hardware, which can only handle a limited number           different schemes for data reduction: one using
+of qubits.                                                 a (linear) PCA and another exploiting non-linear
+To further investigate the role of the autoencoder
+                                                           autoencoders. As expected, the great expressive
+and, more generally, of a compressed representation,
+                                                           capabilities of a neural network-based architecture
+one could devise in principle a quantum algorithm          outperform the linear techniques, even for a simple
+to which the raw and uncompressed data is directly         dataset such as the MNIST. We expect that the
+provided as input. While this cannot be achieved           advantage of the usage of an autoencoder becomes
+using the QELM architectures developed in our              even more critical for more complex datasets.
+work, due to the aforementioned computational
+                                                           Classical data must be converted into quantum
+limitations, the importance of the compressed rep-
+                                                           states that can be later processed by quantum cir-
+resentations, as compared to the uncompressed              cuits. This operation is usually dubbed “encoding”.
+one, can still be highlighted. Indeed, we are able         We inspected five different encoding strategies typ-
+to encode the full data using the amplitude encod-         ically considered in the literature. Four of them
+ing, provided that N ≥ 10 (the other encodings             operate on each qubit separately, while another
+would require at least N = 392 qubits to store the
+                                                           one spans the whole Hilbert space. We found that,
+entire image). In this case, the accuracy on the
+                                                           among the former, the dense angle and the uniform
+test sets, using H1 as an example, is found to be          Bloch sphere encodings provide the best perfor-
+≃ 0.968 for N = 10, 0.975 for N = 11 and 0.976             mance and, in contrast to the amplitude encoding,
+for N = 12. These accuracies are smaller than              enjoy the easiest practical implementation on real
+those obtained, using the same number of qubits            quantum circuits. This result is particularly en-
+(N = 10, 11, 12), with the dense angle encoding, for
+                                                           couraging, as it naturally maximizes the trade-off
+which the compressed representation of the dataset
+                                                           between performance and feasibility.
+is strictly necessary (see for instance Fig. 5(b)).        On the other hand, although amplitude encoding
+Besides the actual performance of the algorithms,          may be difficult to realize on real hardware, it maps
+we want to emphasize once more, that the use of            more features compared to the single-qubit meth-
+the compressed representation is way more efficient        ods and, therefore, can provide better accuracies if
+as it requires less resources while preserving as
+                                                           the number of qubits is small.
+much information as possible of the original data.
+                                                           Finally, we studied the time evolution governed by
+Finally, Fig. 5(a) and Fig. 5(b) clearly show that         six different Hamiltonians. The first one is char-
+the larger accuracies obtained with the quantum            acterized by an explicit time dependence, while
+algorithm are not due to the dimensionality re-            the other five are time-independent. Of the lat-
+duction, but to the presence of the quantum layer.         ter, two are characterized by a system of qubits
+                                                           with all-to-all interactions, while others involve in-
+
+                                                       9
+                                           Training                                                                                  Testing
+                                                                                                              1.00
+                    1.00
+
+                                                                                                              0.98
+                    0.98
+
+                    0.96                                                                                      0.96
+
+
+                    0.94                                                                                      0.94
+    Accuracy rate
+
+
+
+
+                                                                                              Accuracy rate
+                    0.92                                                                                      0.92
+
+                    0.90                                                                                      0.90
+                                                                H1                                                                                        H1
+                                                                H2                                                                                        H2
+                    0.88                                        H3                                                                                        H3
+                                                                H4                                            0.88                                        H4
+                                                                H5                                                                                        H5
+                    0.86                                        H6 (III < region < II)                                                                    H6 (III < region < II)
+                                                                AE1+ONN                                       0.86                                        AE1+ONN
+                                                                784+ONN                                                                                   784+ONN
+                           5   6   7    8           9     10   11               12                                   5   6   7    8           9     10   11               12
+                                       Number of qubits                                                                          Number of qubits
+
+                                       (a)                                                                                       (b)
+
+
+Figure 5: Training (left panel) and testing (right panel) accuracy as a function of the number of qubits for six
+different Hamiltonians. The feature reduction and the encoding have been performed with the autoencoder AE1
+and the dense angle encoding, respectively. The horizontal line represents the accuracy obtained with a ONN fed
+with all the pixel values of the images. Instead, the coral line represents a ONN fed directly with the 2N features
+extracted by the AE1 .
+
+
+
+
+                                          Training                                                                                   Testing
+                                                                                                              1.0
+                    1.0
+
+
+
+                    0.9                                                                                       0.9
+
+
+
+                    0.8                                                                                       0.8
+    Accuracy rate
+
+
+
+
+                                                                                              Accuracy rate
+
+
+
+
+                    0.7                                                                                       0.7
+
+
+
+                    0.6                                                                                       0.6
+                                                                       H2                                                                                        H2
+                                                                       H6 (region III)                                                                           H6 (region III)
+                                                                       H6 (region I)                                                                             H6 (region I)
+                                                                       H2 ( J2 = 0 )                                                                             H2 ( J2 = 0 )
+                                                                       784+ONN                                                                                   784+ONN
+                    0.5                                                                                       0.5
+                           5   6   7    8           9     10   11               12                                   5   6   7    8           9     10   11               12
+                                       Number of qubits                                                                          Number of qubits
+
+                                       (a)                                                                                       (b)
+
+
+Figure 6: Training (left panel) and testing (right panel) accuracy as a function of the number of qubits for other
+different Hamiltonians. The feature reduction and the encoding have been performed with the autoencoder AE1
+and the dense angle encoding, respectively. The horizontal line represents the accuracy obtained with a ONN fed
+with all the pixel values of the images.
+
+
+
+
+                                                                                         10
+teractions effective only among closest neighbors.          and the number of trainable parameters. The au-
+Moreover, among them, there are Hamiltonians                toencoder consists of two parts, an encoder which
+we have tested to explore the role of ergodicity,           compresses the input data into a lower-dimensional
+integrability, and spin-spin interaction in the per-        latent space representation, and a decoder, the
+formance of the QELM.                                       purpose of which is to reconstruct the original in-
+We found that integrability and ergodicity do not           formation. The structure of the encoder is char-
+play a distinguishing role in themselves; rather, it        acterised by convolutional layers followed by max
+seems that a key factor is the spread of information        pooling layers which downsize the image during
+from the initial local states to the final measure-         the feed-forward pass. The encoder ends with a
+ment states in the computational bases, passing             fully-connected layer that ultimately maps the fea-
+through the eigenstates of the Hamiltonian. This            tures into the latent space. The decoder, instead,
+does not work well, for example, in the case of             is given by a sequence of convolutional layers and
+localization.                                               upsampling layers that gradually recover the origi-
+Remarkably, the classification performance is ef-           nal image size. For the activation functions of the
+fectively the same for the different Hamiltonians,          convolutional layers we chose the rectified linear
+thus suggesting that we could safely opt for the            unit, while for the fully-connected layer in the last
+one that is easier to implement without affecting           part of the encoder we employed a sigmoid func-
+the final gain.                                             tion.
+For the final classification task, we used a single-        The autoencoders have been trained with the Adam
+layer fully-connected neural network, in line with          optimiser for 50 epochs and with a binary-cross
+the extreme learning machine prescription.                  entropy for the loss function.
+The present analysis could be extended in several
+directions. For instance, one could define several
+                                                            B     Appendix
+performance metrics (e.g., classification accuracy,
+time complexity, energy consumption, etc., and/or
+                                                            To assess the robustness of our QELM algorithm,
+combinations of them) to compare the QELM al-
+                                                            we also tested it on a more complex dataset,
+gorithms against different classical models. This
+                                                            Fashion-MNIST. This dataset contains 70000
+could be useful to quantify the quantum advan-
+                                                            28x28 grayscale images of 10 different fashion
+tage. Moreover, one could explore the actual im-
+                                                            categories, including clothing items such as
+plementability of the models with real hardware.
+                                                            t-shirts, shoes, and dresses.
+                                                            We reduced the images using either the
+Acknowledgments                                             autoencoder AE1 or PCA and fed them into our
+                                                            algorithm for image classification. The conclusions
+The results have received funds from the pro-               that can be drawn from the results in Fig. 8 are
+gram Plan de Doctorados Industriales of the                 consistent with those found for the MNIST
+Research and Universities Department of the                 dataset and the gap between the accuracies of
+Catalan Government (2022 DI 011). The re-                   AE1 (green line) and PCA (red line) persists in
+search leading to these results has received                the range of qubits studied in this work.
+funding from the Spanish Ministry of Sci-
+ence and Innovation PID2022-136297NB-I00
+/AEI/10.13039/501100011033/ FEDER, UE. IFAE                 References
+is partially funded by the CERCA program of
+the Generalitat de Catalunya. JS acknowledges                   [1] R.P. Feynman, Simulating physics with
+the contribution from PRIN (Progetti di Rile-                       computers, International journal of
+vante Interesse Nazionale) TURBIMECS - Tur-                         theoretical physics 21 (1982) 467.
+bulence in Mediterranean cyclonic events, grant
+                                                                [2] P.W. Shor, Polynomial-time algorithms for
+n. 2022S3RSCT CUP H53D23001630006, CUP
+                                                                    prime factorization and discrete logarithms
+Master B53D23007500006. FP and NL aknowledge
+                                                                    on a quantum computer, SIAM Journal on
+support by the PNRR MUR Project N. PE0000023-
+                                                                    Computing 26 (1997) 1484.
+NQSTI.
+                                                                [3] A. Montanaro, Quantum algorithms: an
+A   Appendix                                                        overview, npj Quantum Information 2
+                                                                    (2016).
+In Fig. 7 we show the details of the architecture of
+the two autoencoders explored in this work. The                 [4] M.A. Nielsen and I.L. Chuang, Quantum
+main difference between them resides in the depth                   Computation and Quantum Information:
+
+
+                                                       11
+    _________________________________________________________________                _________________________________________________________________
+    Layer (type)                 Output Shape              Param #                   Layer (type)                 Output Shape              Param #
+    =================================================================                =================================================================
+    input_1 (InputLayer)         (None, 28, 28, 1)         0                         input_1 (InputLayer)         (None, 28, 28, 1)         0
+    _________________________________________________________________                _________________________________________________________________
+    zero_padding2d (ZeroPadding2 (None, 36, 36, 1)         0                         conv2d (Conv2D)              (None, 28, 28, 16)        160
+    _________________________________________________________________                _________________________________________________________________
+    conv2d (Conv2D)              (None, 36, 36, 64)        640                       max_pooling2d (MaxPooling2D) (None, 14, 14, 16)        0
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_1 (Conv2D)            (None, 36, 36, 32)        18464                     conv2d_1 (Conv2D)            (None, 14, 14, 8)         1160
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_2 (Conv2D)            (None, 36, 36, 16)        4624                      max_pooling2d_1 (MaxPooling2 (None, 7, 7, 8)           0
+    _________________________________________________________________                _________________________________________________________________
+    max_pooling2d (MaxPooling2D) (None, 18, 18, 16)        0                         conv2d_2 (Conv2D)            (None, 7, 7, 8)           584
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_3 (Conv2D)            (None, 18, 18, 8)         1160                      max_pooling2d_2 (MaxPooling2 (None, 4, 4, 8)           0
+    _________________________________________________________________                _________________________________________________________________
+    max_pooling2d_1 (MaxPooling2 (None, 9, 9, 8)           0                         flatten (Flatten)            (None, 128)               0
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_4 (Conv2D)            (None, 9, 9, 8)           584                       dense (Dense)                (None, 20)                2580
+    _________________________________________________________________                _________________________________________________________________
+    max_pooling2d_2 (MaxPooling2 (None, 5, 5, 8)           0                         dense_1 (Dense)              (None, 128)               2688
+    _________________________________________________________________                _________________________________________________________________
+    flatten (Flatten)            (None, 200)               0                         reshape (Reshape)            (None, 4, 4, 8)           0
+    _________________________________________________________________                _________________________________________________________________
+    dense (Dense)                (None, 20)                4020                      conv2d_3 (Conv2D)            (None, 4, 4, 8)           584
+    _________________________________________________________________                _________________________________________________________________
+    dense_1 (Dense)              (None, 128)               2688                      up_sampling2d (UpSampling2D) (None, 8, 8, 8)           0
+    _________________________________________________________________                _________________________________________________________________
+    reshape (Reshape)            (None, 4, 4, 8)           0                         conv2d_4 (Conv2D)            (None, 8, 8, 8)           584
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_5 (Conv2D)            (None, 4, 4, 8)           584                       up_sampling2d_1 (UpSampling2 (None, 16, 16, 8)         0
+    _________________________________________________________________                _________________________________________________________________
+    up_sampling2d (UpSampling2D) (None, 8, 8, 8)           0                         conv2d_5 (Conv2D)            (None, 14, 14, 16)        1168
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_6 (Conv2D)            (None, 8, 8, 8)           584                       up_sampling2d_2 (UpSampling2 (None, 28, 28, 16)        0
+    _________________________________________________________________                _________________________________________________________________
+    up_sampling2d_1 (UpSampling2 (None, 16, 16, 8)         0                         conv2d_6 (Conv2D)            (None, 28, 28, 1)         145
+    _________________________________________________________________                =================================================================
+    conv2d_7 (Conv2D)            (None, 16, 16, 16)        1168                      Total params: 9,653
+    _________________________________________________________________                Trainable params: 9,653
+    conv2d_8 (Conv2D)            (None, 16, 16, 32)        4640                      Non-trainable params: 0
+    _________________________________________________________________                _________________________________________________________________
+    conv2d_9 (Conv2D)            (None, 14, 14, 64)        18496
+    _________________________________________________________________
+    up_sampling2d_2 (UpSampling2 (None, 28, 28, 64)        0
+    _________________________________________________________________
+    conv2d_10 (Conv2D)           (None, 28, 28, 1)         577
+    =================================================================
+    Total params: 58,229
+    Trainable params: 58,229
+    Non-trainable params: 0
+    _________________________________________________________________
+
+
+
+
+                                   (a) AE1                                                                           (b) AE2
+
+
+         Figure 7: Details of the architecture of the two autoencoders explored in the present analysis.
+
+
+
+
+                                                                        AEs vs PCA (Fashion-MNIST)
+                                                   0.92
+
+                                                   0.90
+
+                                                   0.88
+                                   Accuracy rate
+
+
+
+
+                                                   0.86
+
+                                                   0.84
+
+                                                   0.82
+
+                                                   0.80
+                                                                                                                AE1 training
+                                                                                                                AE1 testing
+                                                   0.78                                                         PCA training
+                                                                                                                PCA testing
+                                                   0.76
+                                                          5   6     7       8        9       10       11        12        13
+                                                                            Number of qubits
+
+Figure 8: Training (solid line) and testing (dashed line) accuracy as a function of the number of qubits for
+different feature reduction schemes for the Fashion-MNIST dataset: PCA (red) and autoencoder AE1 (green).
+The time evolution and the encoding have been performed with the Hamiltonian H1 and the dense angle encoding,
+respectively.
+
+
+
+
+                                                                                12
+    10th Anniversary Edition, Cambridge                  [17] C. Mastroianni, F. Plastina, L. Scarcello,
+    University Press (2010).                                  J. Settino and A. Vinci, Assessing quantum
+                                                              computing performance for energy
+ [5] F. Arute, K. Arya, R. Babbush, D. Bacon,                 optimization in a prosumer community,
+     J. Bardin, R. Barends, R. Biswas, S. Boixo,              IEEE Transactions on Smart Grid 15
+     F. Brandao, D. Buell et al., Quantum                     (2023) 444.
+     supremacy using a programmable
+     superconducting processor, Nature 574               [18] C. Mastroianni, F. Plastina, J. Settino and
+     (2019) 505–510.                                          A. Vinci, Variational quantum algorithms
+                                                              for the allocation of resources in a
+ [6] J. Preskill, Quantum Computing in the                    cloud/edge architecture, IEEE Transactions
+     NISQ era and beyond, Quantum 2 (2018) 79.                on Quantum Engineering 5 (2024) 1.
+ [7] H. Y. Huang, M. Broughton, J. Cotler,               [19] M. Consiglio, J. Settino, A. Giordano,
+     S. Chen, J. Li, M. Mohseni, H. Neven,                    C. Mastroianni, F. Plastina, S. Lorenzo,
+     R. Babbush, R. Kueng and J. Preskill et al.,             S. Maniscalco, J. Goold and T.J. Apollaro,
+     Quantum advantage in learning from                       Variational gibbs state preparation on noisy
+     experiments, Science 376 (2022) abn7293.                 intermediate-scale quantum devices, Physical
+ [8] H. S. Zhong, H. Wang, Y. H. Deng,                        Review A 110 (2024) 012445.
+     M. C. Chen, L. C. Peng, Y. H. Luo, J. Qin,          [20] P. Mujal, R. Martı́nez-Peña, J. Nokkala,
+     D. Wu, X. Ding and Y. Hu et al., Quantum                 J. Garcı́a-Beni, G. Giorgi, M. Soriano and
+     computational advantage using photons,                   R. Zambrini, Opportunities in quantum
+     Science 370 (2020) 1460 .                                reservoir computing and extreme learning
+ [9] J. Biamonte, P. Wittek, N. Pancotti,                     machines, Advanced Quantum Technologies
+     P. Rebentrost, N. Wiebe and S. Lloyd,                    4 (2021) .
+     Quantum machine learning, Nature 549                [21] L. Innocenti, S. Lorenzo, I. Palmisano,
+     (2017) 195 .                                             A. Ferraro, M. Paternostro and G.M. Palma,
+[10] M. Schuld and F. Petruccione, Machine                    Potential and limitations of quantum
+     Learning with Quantum Computers, Springer                extreme learning machines, Communications
+     (01, 2021), 10.1007/978-3-030-83098-4.                   Physics 6 (2023) 118.
+
+[11] M. Schuld and F. Petruccione, Supervised            [22] A. Sakurai, M.P. Estarellas, W.J. Munro
+     Learning with Quantum Computers,                         and K. Nemoto, Quantum Extreme
+     Quantum Science and Technology, Springer                 Reservoir Computation Utilizing Scale-Free
+     (2018), 10.1007/978-3-319-96424-9.                       Networks, Phys. Rev. Applied 17 (2022)
+                                                              064044.
+[12] I. Cong, S. Choi and M. Lukin, Quantum
+     convolutional neural networks, Nature               [23] W. Xiong, G. Facelli, M. Sahebi, O. Agnel,
+     Physics 15 (2019) 1.                                     T. Chotibut, S. Thanasilp and Z. Holmes,
+                                                              On fundamental aspects of quantum extreme
+[13] Z. Liu, P.-X. Shen, W. Li, L.M. Duan and                 learning machines, Quantum Machine
+     D.-L. Deng, Quantum capsule networks,                    Intelligence 7 (2025) no.1, 20
+     Quantum Sci. Technol. 8 (2023) 015016.
+                                                         [24] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz,
+[14] V. Havlicek, A.D. Córcoles, K. Temme,                   P. Weinberg, M. Hamdan, A. Zhdanov,
+     A.W. Harrow, A. Kandala, J.M. Chow and                   S.H. Cantu, H. Zhou, R.A. Bravo et al.,
+     J.M. Gambetta, Supervised learning with                  Large-scale quantum reservoir learning with
+     quantum-enhanced feature spaces, Nature                  an analog quantum computer,
+     567 (2019) 209.                                          2407.02553v1.
+
+[15] S. Lloyd, M. Mohseni and P. Rebentrost,             [25] J. Chen, H.I. Nurdin and N. Yamamoto,
+     Quantum algorithms for supervised and                    Temporal information processing on noisy
+     unsupervised machine learning, 1307.0411.                quantum computers, Phys. Rev. Appl. 14
+                                                              (2020) 024065.
+[16] M. Schuld, I. Sinayskiy and F. Petruccione,
+     The quest for a quantum neural network,             [26] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo,
+     Quantum Information Processing 13 (2014).                V. Cimini, T. Giordani, I. Palmisano,
+
+                                                    13
+    E. Polino, N. Spagnolo, F. Sciarrino et al.,        [37] P. Mujal, J. Nokkala, R. Martı́nez-Peña,
+    Experimental property reconstruction in a                G.L. Giorgi, M.C. Soriano and R. Zambrini,
+    photonic quantum extreme learning machine,               Analytical evidence of nonlinearity in qubits
+    Phys. Rev. Lett. 132 (2024) 160802.                      and continuous-variable quantum reservoir
+                                                             computing, Journal of Physics: Complexity
+[27] M. Vetrano, G. Lo Monaco, L. Innocenti,                 2 (2021) 045008.
+     S. Lorenzo and G.M. Palma, State
+     estimation with quantum extreme learning           [38] H. Jaeger and H. Haas, Harnessing
+     machines beyond the scrambling time, npj                nonlinearity: Predicting chaotic systems and
+     Quantum Inf. 11 (2025) no.1, 20 [erratum:               saving energy in wireless communication,
+     npj Quantum Inf. 11 (2025) no.1, 35]                    Science 304 (2004) 78.
+
+[28] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew,             [39] W. Maass, T. Natschläger and H. Markram,
+     Extreme learning machine: a new learning                Real-time computing without stable states: A
+     scheme of feedforward neural networks, in               new framework for neural computation based
+     2004 IEEE International Joint Conference                on perturbations, Neural Computation 14
+     on Neural Networks (IEEE Cat.                           (2002) 2531.
+     No.04CH37541), vol. 2, pp. 985–990 vol.2,
+                                                        [40] R. Ma, Q. Dai, H. Li and J. Yang, Dynamics
+     2004, DOI.
+                                                             reconstruction in the presence of bistability
+[29] S. Ding, H. Zhao, Y. Zhang, X. Xu and                   by using reservoir computer, Chaos, Solitons
+     R. Nie, Extreme learning machine:                       & Fractals 172 (2023) 113523.
+     algorithm, theory and applications, Artif.         [41] D.J. Gauthier, E. Bollt, A. Griffith and
+     Intell. Rev. 44 (2015) 103–115.                         W.A.S. Barbosa, Next generation reservoir
+[30] G. Huang, G.-B. Huang, S. Song and                      computing, Nature Communications 12
+     K. You, Trends in extreme learning                      (2021) 5564.
+     machines: A review, Neural Networks 61             [42] R. Xiao, L.-W. Kong, Z.-K. Sun and
+     (2015) 32.                                              Y.-C. Lai, Predicting amplitude death with
+                                                             machine learning, Physical Review E 104
+[31] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew,
+                                                             (2021) 014205.
+     Extreme learning machine: Theory and
+     applications, Neurocomputing 70 (2006) 489.        [43] M. Lukoševičius and H. Jaeger, Reservoir
+                                                             computing approaches to recurrent neural
+[32] G.-B. Huang, D. Wang and Y. Lan, Extreme                network training, Computer Science Review
+     learning machines: a survey. int j mach                 3 (2009) 127.
+     learn cybern, International Journal of
+     Machine Learning and Cybernetics 2 (2011)          [44] H. Jaeger, The “echo state” approach to
+     107.                                                    analysing and training recurrent neural
+                                                             networks-with an erratum note, Bonn,
+[33] J. Wang, S. Lu, S.-H. Wang and                          Germany: German National Research
+     Y.-D. Zhang, A review on extreme learning               Center for Information Technology GMD
+     machine, Multimedia Tools and Applications              Technical Report 148 (2001) 13.
+     81 (2022) 41611.
+                                                        [45] L. Appeltant, M.C. Soriano, G. Van der
+[34] U. Markowska-Kaczmar and M. Kosturek,                   Sande, J. Danckaert, S. Massar, J. Dambre,
+     Extreme learning machine versus classical               B. Schrauwen, C.R. Mirasso and I. Fischer,
+     feedforward network, Neural Comput &                    Information processing using a single
+     Applic 33 (2021) 15121.                                 dynamical node as complex system, Nature
+                                                             Communications 2 (2011) 1.
+[35] K. Fujii and K. Nakajima, Harnessing
+     disordered-ensemble quantum dynamics for           [46] G. Van der Sande, D. Brunner and
+     machine learning, Physical Review Applied 8             M.C. Soriano, Advances in photonic
+     (2017) 024030.                                          reservoir computing, Nanophotonics 6 (2017)
+                                                             561.
+[36] G. Angelatos, S.A. Khan and H.E. Türeci,
+     Reservoir computing approach to quantum            [47] J. Torrejon, M. Riou, F.A. Araujo,
+     state measurement, Phys. Rev. X 11 (2021)               S. Tsunegi, G. Khalsa, D. Querlioz,
+     041062.                                                 P. Bortolotti, V. Cros, K. Yakushiji,
+
+                                                   14
+    A. Fukushima et al., Neuromorphic                    [58] J. Chen and H.I. Nurdin, Learning
+    computing with nanoscale spintronic                       nonlinear input–output maps with dissipative
+    oscillators, Nature 547 (2017) 428.                       quantum systems, Quantum Information
+                                                              Processing 18 (2019) 198.
+[48] G. Tanaka, T. Yamane, J.B. Héroux,
+     R. Nakane, N. Kanazawa, S. Takeda,                  [59] Q.H. Tran and K. Nakajima, Higher-order
+     H. Numata, D. Nakano and A. Hirose,                      quantum reservoir computing,
+     Recent advances in physical reservoir                    arXiv:2006.08999.
+     computing: A review, Neural Networks
+     (2019) .                                            [60] R. Martı́nez-Peña, J. Nokkala, G.L. Giorgi,
+                                                              R. Zambrini and M.C. Soriano, Information
+[49] P. Mujal, R. Martı́nez-Peña, J. Nokkala,                processing capacity of spin-based quantum
+     J. Garcı́a-Beni, G.L. Giorgi, M.C. Soriano               reservoir computing systems, Cognitive
+     and R. Zambrini, Opportunities in quantum                Computation (2020) 1.
+     reservoir computing and extreme learning
+     machines, Advanced Quantum Technologies             [61] S. Ghosh, A. Opala, M. Matuszewski,
+     4 (2021) 2100027.                                        T. Paterek and T.C.H. Liew, Quantum
+                                                              reservoir processing, npj Quantum
+[50] S. Ghosh, K. Nakajima, T. Krisnanda,                     Information 5 (2019) 35.
+     K. Fujii and T.C. Liew, Quantum
+     neuromorphic computing with reservoir               [62] Q.H. Tran, S. Ghosh and K. Nakajima,
+     computing networks, Advanced Quantum                     Quantum-classical hybrid information
+     Technologies 4 (2021) 2100053.                           processing via a single quantum system,
+                                                              Physical Review Research 5 (2023) 43127.
+[51] W. Xia, J. Zou, X. Qiu, F. Chen, B. Zhu,
+     C. Li, D.-L. Deng and X. Li, Configured             [63] G. Llodrà, C. Charalambous, G.L. Giorgi
+     quantum reservoir computing for multi-task               and R. Zambrini, Benchmarking the role of
+     machine learning, Science Bulletin 68 (2023)             particle statistics in quantum reservoir
+     2321.                                                    computing, Advanced Quantum Technologies
+                                                              6 (2023) 2200100.
+[52] A. Sannia, R. Martı́nez-Peña, M.C. Soriano,
+     G.L. Giorgi and R. Zambrini, Dissipation as         [64] S. Ghosh, T. Krisnanda, T. Paterek and
+     a resource for quantum reservoir computing,              T.C.H. Liew, Realising and compressing
+     Quantum 8 (2024) 1291.                                   quantum circuits with quantum reservoir
+                                                              computing, Communications Physics 4
+[53] R. Martı́nez-Peña, G.L. Giorgi, J. Nokkala,             (2021) 105.
+     M.C. Soriano and R. Zambrini, Dynamical
+     phase transitions in quantum reservoir              [65] S. Ghosh, T. Paterek and T.C.H. Liew,
+     computing, Physical Review Letters 127                   Quantum neuromorphic platform for
+     (2021) 100502.                                           quantum state preparation, Phys. Rev. Lett.
+                                                              123 (2019) 260404.
+[54] N. Götting, F. Lohof and C. Gies, Exploring
+     quantum mechanical advantage for reservoir          [66] J. Nokkala, R. Martı́nez-Peña, G.L. Giorgi,
+     computing, Physical Review A 108 (2023) .                V. Parigi, M.C. Soriano and R. Zambrini,
+                                                              Gaussian states of continuous-variable
+[55] R. Martı́nez-Peña, J. Nokkala, G.L. Giorgi,             quantum systems provide universal and
+     R. Zambrini and M.C. Soriano, Information                versatile reservoir computing,
+     processing capacity of spin-based quantum                Communications Physics 4 (2021) 53.
+     reservoir computing systems, Cognitive
+     Computation 15 (2023) 1440.                         [67] L.C.G. Govia, G.J. Ribeill, G.E. Rowlands,
+                                                              H.K. Krovi and T.A. Ohki, Quantum
+[56] P. Mujal, Quantum reservoir computing for                reservoir computing with a single nonlinear
+     speckle disorder potentials, Condensed                   oscillator, Phys. Rev. Research 3 (2021)
+     Matter 7 (2022) 17.                                      013077.
+[57] K. Nakajima, K. Fujii, M. Negoro,                   [68] L.C. Govia, G.J. Ribeill, G.E. Rowlands,
+     K. Mitarai and M. Kitagawa, Boosting                     H.K. Krovi and T.A. Ohki, Quantum
+     computational power through spatial                      reservoir computing with a single nonlinear
+     multiplexing in quantum reservoir computing,             oscillator, Physical Review Research 3
+     Physical Review Applied 11 (2019) 034021.                (2021) 013077.
+
+
+                                                    15
+[69] J. Dudas, B. Carles, E. Plouet, F.A. Mizrahi,        [80] V. Vapnik and A. Chervonenkis, Theory of
+     J. Grollier and D. Marković, Quantum                     Pattern Recognition [in Russian], Nauka,
+     reservoir computing implementation on                     Moscow (1974).
+     coherently coupled quantum oscillators, npj
+     Quantum Information 2023 9:1 9 (2023) 1.             [81] L. Domingo, G. Carlo and F. Borondo,
+                                                               Optimal quantum reservoir computing for
+[70] L. Henriet, L. Beguin, A. Signoles,                       the noisy intermediate-scale quantum era,
+     T. Lahaye, A. Browaeys, G.-O. Reymond                     Phys. Rev. E 106 (2022) L043301.
+     and C. Jurczak, Quantum computing with
+     neutral atoms, Quantum 4 (2020) 327.                 [82] Y. Lecun, C. Cortes and C.J. Burges,
+                                                              “Mnist handwritten digit database.” ATT
+[71] R.A. Bravo, K. Najafi, X. Gao and
+                                                               Labs [Online]. Available:
+     S.F. Yelin, Quantum reservoir computing
+                                                               http: // yann. lecun. com/ exdb/ mnist ,
+     using arrays of rydberg atoms, PRX
+                                                               2010.
+     Quantum 3 (2022) 030325.
+[72] J. Settino, L. Salatino, L. Mariani,                 [83] H. Xiao, K. Rasul and R. Vollgraf,
+     M. Channab, L. Bozzolo, S. Vallisa,                       Fashion-mnist: a novel image dataset for
+     P. Barillà, A. Policicchio, N.L. Gullo,                  benchmarking machine learning algorithms,
+     A. Giordano et al., Memory-augmented                      1708.07747.
+     hybrid quantum reservoir computing,
+                                                          [84] T. Hur, L. Kim and D.K. Park, Quantum
+     2409.09886v2.
+                                                               convolutional neural network for classical
+[73] P. Pfeffer, F. Heyder and J. Schumacher,                  data classification, Quantum Machine
+     Hybrid quantum-classical reservoir                        Intelligence 4 (2022) 3.
+     computing of thermal convection flow,
+     Physical Review Research 4 (2022) 033176.            [85] M.-M. Wang and X.-Y. Zhang, Quantum
+                                                               Bayes classifiers and their application in
+[74] F. Wudarski, D. O‘Connor, S. Geaney,                      image classification, Phys. Rev. A 110
+     A.A. Asanjan, M. Wilson, E. Strbac,                       (2024) 012433.
+     P.A. Lott and D. Venturelli, Hybrid
+     quantum-classical reservoir computing for            [86] D. Slabbert and F. Petruccione, Hybrid
+     simulating chaotic systems, arXiv (2023)                  Quantum-Classical Feature Extraction
+     [2311.14105].                                             approach for Image Classification using
+                                                               Autoencoders and Quantum SVMs,
+[75] O. Ahmed, F. Tennie and L. Magri,                         2410.18814.
+     Prediction of chaotic dynamics and extreme
+     events: A recurrence-free quantum reservoir          [87] P.S.S. Sein, M. Cañizo and R. Orús, Image
+     computing approach, Phys. Rev. Res. 6                     classification with rotation-invariant
+     (2024) no.4, 043082.                                      variational quantum circuits, Phys. Rev. Res.
+                                                               7 (2025) 013082.
+[76] O. Ahmed, F. Tennie and L. Magri, Optimal
+     training of finitely-sampled quantum                 [88] M. Kramer, Autoassociative neural networks,
+     reservoir computers for forecasting of                    Computers & Chemical Engineering 16
+     chaotic dynamics, Quantum Machine                         (1992) 313.
+     Intelligence 7 (2024) (2025) no.1, 31.
+                                                          [89] G.E. Hinton and R.S. Zemel, Autoencoders,
+[77] K. Kobayashi, K. Fujii and N. Yamamoto,
+                                                               minimum description length and helmholtz
+     Feedback-driven quantum reservoir
+                                                               free energy, 1993, Neural Information
+     computing for time-series analysis, PRX
+                                                               Processing Systems 6 (1993).
+     Quantum 5 (2024) (2025) no.4, 040325.
+[78] A. Sedykh, A. Sagingalieva, B. Kyriacou              [90] D.E. Rumelhart, G.E. Hinton and
+     and A. Melnikov, Quantum machine                          R.J. Williams, Learning representations by
+     learning for image classification, Machine                back-propagating errors, Nature 323 (1986)
+     Learning: Science and Technology 5 (2024) .               533.
+
+[79] E. Farhi and H. Neven, Classification with           [91] G.E. Hinton and R.R. Salakhutdinov,
+     Quantum Neural Networks on Near Term                      Reducing the dimensionality of data with
+     Processors, 1802.06002.                                   neural networks, Science 313 (2006) 504.
+
+
+                                                     16
+[92] L.-H. Gong, J.-J. Pei, T.-F. Zhang and
+     N.-R. Zhou, Quantum convolutional neural
+     network based on variational quantum
+     circuits, Optics Communications 550 (2024)
+     129993.
+[93] R. LaRose and B. Coyle, Robust data
+     encodings for quantum classifiers, Phys. Rev.
+     A 102 (2020) 032420.
+
+[94] E. Grant, M. Benedetti, S. Cao, A. Hallam,
+     J. Lockhart, V. Stojevic, A.G. Green and
+     S. Severini, Hierarchical quantum classifiers,
+     npj Quantum Inf. 4 (2018) 65.
+[95] E.M. Stoudenmire and D.J. Schwab,
+     Supervised learning with tensor networks,
+     Neural Information Processing Systems 29
+     (2016).
+[96] S. Cao, L. Wossnig, B. Vlastakis, P. Leek
+     and E. Grant, Cost-function embedding and
+     dataset encoding for machine learning with
+     parametrized quantum circuits, Phys. Rev. A
+     101 (2020) 052309.
+[97] J. Johansson, P. Nation and F. Nori, Qutip
+     2: A python framework for the dynamics of
+     open quantum systems, Computer Physics
+     Communications 184 (2013) 1234.
+[98] J. Johansson, P. Nation and F. Nori, Qutip:
+     An open-source python framework for the
+     dynamics of open quantum systems,
+     Computer Physics Communications 183
+     (2012) 1760.
+[99] F. Chollet, “Keras.” https://keras.io,
+     2015.
+
+
+
+
+                                                      17
+

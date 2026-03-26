@@ -1,0 +1,1430 @@
+                                                Kernel-based optimization of measurement operators for quantum
+                                                                      reservoir computers
+
+                                                                           Markus Gross1, ∗ and Hans-Martin Rieser1
+                                                            1
+                                                                Institute for AI Safety and Security, German Aerospace Center (DLR),
+                                                                                  Sankt Augustin and Ulm, Germany
+                                                                                        (Dated: March 13, 2026)
+                                                  Finding optimal measurement operators is crucial for the performance of quantum reservoir com-
+                                               puters (QRCs), since they employ a fixed quantum feature map. We formulate the training of both
+arXiv:2602.14677v2 [quant-ph] 11 Mar 2026
+
+
+
+
+                                               stateless (quantum extreme learning machines, QELMs) and stateful (memory dependent) QRCs
+                                               in the framework of kernel ridge regression. We thus extend the kernel viewpoint of supervised
+                                               quantum models to recurrent QRCs by deriving an exact Hilbert–Schmidt kernel representation of
+                                               the optimal readout observable on history space. This approach renders an optimal measurement
+                                               operator that minimizes prediction error for a given reservoir and training dataset. For large qubit
+                                               numbers, this method is more efficient than the conventional training of QRCs. We discuss effi-
+                                               ciency and practical implementation strategies, including Pauli basis decomposition and operator
+                                               diagonalization, to adapt the optimal observable to hardware constraints. To demonstrate the effec-
+                                               tiveness of this approach, we present numerical experiments on image classification and time series
+                                               prediction tasks, including chaotic and strongly non-Markovian systems. The developed method
+                                               can also be applied to other quantum machine learning models.
+
+
+
+
+                                                                                     I.   INTRODUCTION
+
+                                               Since quantum systems are inherently disturbed by measurements, finding efficient and optimal
+                                            ways to extract information is a crucial part of any quantum machine learning (QML) model, and
+                                            numerous studies have addressed this problem [1–14]. For variational QML models, measurement
+                                            operators are often chosen based on hardware constraints or heuristics. Due to the training of
+                                            the internal layers, this usually does not pose a severe problem for the accuracy of the model.
+                                            However, in the case of QRCs, training happens only at the readout and thus depends crucially on
+                                            the information extracted by the measurement operator. Finding optimal measurement operators
+                                            is thus a key challenge in QRC design [15–19].
+                                               In [20], the notion of an optimal measurement operator has been introduced based on the equiva-
+                                            lence between supervised quantum ML models and quantum kernel methods [20–23]. Such optimal
+                                            measurement operators have subsequently been identified in a number of quantum ML studies [24–
+                                            26], including a recent discussion of double descent in QELM-like models, which employ a fixed
+                                            quantum feature map [27]. The measurement problem for QELMs from a more general quantum-
+                                            information perspective has been addressed in [17]. On the side of classical reservoir computing,
+                                            various methods have been proposed to construct equivalent kernel representations [28–31]. Besides
+                                            this, no systematic study of optimal measurement operators for QRCs has been performed.
+                                               In the present work, we discuss the problem of determining an optimal measurement operator
+                                            for QRCs using kernel-based methods. QRCs have been introduced as a hardware efficient and
+                                            noise-resilient quantum ML approach [32–35], and have been successfully applied in tasks such as
+
+
+
+                                            ∗ markus.gross@dlr.de
+                                                                                                       2
+
+                     Symbol Meaning
+                     H         Hilbert space
+                     M(H) Space of Hermitian operators on H
+                     N         Total number of qubits
+                     NI , NA Number of input/ancilla qubits
+                     D         Hilbert space dimension (D = 2N )
+                     d         Input data dimension (x ∈ Rd )⋆
+                                                                 ′
+                       ′
+                     d         Time series dimension (zt ∈ Rd )⋆
+                     P         Number of training samples
+                     L         QRC memory length
+                     T         Time series length
+                     m         Number of measurement operators
+                     x         Input vector ⋆
+                     zt        Time series value at time t ⋆
+                     y         Target vector
+                     ρ(x)      Density matrix of the quantum state (feature map)
+                     ρ(xt )    D.m. after evolving over the input history [Eq. (2.3)]
+                     ηI , ηM D.m. of the input and memory states
+                     f (x)     Classical readout function
+                     Mk        Measurement operators
+                     wk        Readout weights
+                     K(x, x′ ) Quantum kernel
+                     α∗        Optimal kernel coefficients
+                         ∗
+                     M         Optimal measurement operator
+                     Pk        N -qubit Pauli operators
+                     σj        Pauli matrices (j ∈ {0, x, y, z})
+
+Table I. Summary of notation used in this work. ⋆ For QELMs, x = zt and d = d′ , while for stateful QRCs,
+the identification in Eq. (2.3) is necessary.
+
+
+
+
+image classification [36, 37] and time series prediction [16, 32, 38]. We demonstrate that using
+an optimal measurement operator enables systematic improvements of QRC performance in these
+tasks. Besides considering QELMs, which employ a memoryless quantum feature map and are thus
+close to untrained conventional quantum ML models [39], we show that our method can also be
+applied to recurrent QRCs with internal memory. The latter systems are typically used for time
+series processing [32, 33] and we show that the kernel framework underlying supervised quantum
+models naturally extends to the recurrent setting by constructing an exact Hilbert–Schmidt kernel
+on history space.
+                                                                                                         3
+
+                                             II.     THEORY
+
+                                                A.       Model
+
+   We consider an N -qubit model, with dimension D = 2N of its Hilbert space H, described by the
+feature map
+                                                   x 7→ ρ(x),                                        (2.1)
+                                  d
+which encodes input data x ∈ R into a quantum state represented by a density matrix ρ(x). The
+density matrix is an element of the (D2 = 4N )-dimensional space M(H) of Hermitian operators
+acting on H and can include the action of various quantum channels (such as unitary time evolution
+or noise) on some initial state ρ0 (see Section III for specific examples). The classical output of a
+QRC is given by
+                                                   m
+                                                   X
+                                       f (x) =           wk tr[Mk ρ(x)],                             (2.2)
+                                                   k=1
+
+where {Mk } are a set of chosen measurement operators (total number m) and wk are trainable
+weights. We discuss the optimization problem in detail in the next section.
+  Importantly, for the present purpose, the feature map (2.1) is assumed to be stateless in the sense
+that the state ρ is always fully determined by the input vector x. Such a model is naturally realized
+by a quantum extreme learning machine (QELM) [33, 34, 36]. This seems at first to preclude QRCs
+with internal memory, as commonly used for time series processing [32–34], because their current
+state ρ(t) would not only depend on the present input, but also on the inputs preceding it. To
+                                                                                     ′
+address this issue, let {z0 , z1 , . . . , zT } be a time series (T + 1 samples in Rd ) and assume that the
+QRC has a memory of length L. This approximation is typically warranted due to the echo state
+property of a QRC. Then, an effective input xt at time t ≥ L can be defined as
+                                          xt := (zt−L , . . . , zt ).                                (2.3)
+This quantity can be understood as an ordered set of L+1 samples zt−L , . . . , zt such that processing
+these samples through the QRC is sufficient to obtain the unique state ρ(t) associated with xt .
+Accordingly, the QRC output is fully determined by any of the P = T − L unordered effective
+              −1
+inputs {xt }Tt=L and can thus be considered stateless in this setting [40]. Prescriptions like (2.3)
+to define truncated input histories are also used in kernelization of classical reservoir computing
+models [30, 31].
+
+
+                             B.    Measurement operator optimization
+
+  When training a RC-type model, there are in principle three formalisms available: (A) constrained
+primal optimization, (B) unconstrained primal optimization, and (C) dual space optimization [41].
+Method (C) seems not to have been discussed previously in the context of QRCs.
+  Constrained primal optimization. The conventional way of training a QELM like in Eq. (2.2)
+consists in selecting a set of measurement operators {Mk } and optimizing the weights wk via
+regression on a training data set {(xi , yi )}P
+                                              i=1 of P samples:
+                                 P         m
+                                                                   !
+                                X         X                          λ
+                           min      L          wk tr[Mk ρ(xi )], yi + ∥w∥22 ,                  (2.4)
+                          w∈Rm
+                                i=1
+                                                                     2
+                                          k=1
+                                                                                                                          4
+
+                        (A) Fixed measurements (con- (B) Free observable (uncon- (C) Kernel form (dual of B)
+                        strained primal)             strained primal)
+Given data              {(xi , yi )}P
+                                    i=1 , reservoir states ρi := ρ(xi ) ∈ M(H)
+
+Trainable object        w ∈ Rm                                M ∈ M(H)                             α ∈ RP
+                              Pm
+                                                                                                   M= P
+                                                                                                         P
+Allowed observables     M = k=1 wk Mk                         any M ∈ M(H)                                 i=1 αi ρi (representer form)
+                        ∈ S := span{Mk }
+                        f (x) = m                                                                  f (x) = P
+                                 P                                                                        P
+Prediction                         k=1 wk tr(Mk ρ(x))         f (x) = tr(M ρ(x))                             i=1 αi K(xi , x)
+                                 P         m
+                             1X          X                2                                 2        1                λ
+                                              wk tr(Mk ρi ) + minM 12 P                          + min ∥y − Kα∥22 + α⊤ Kα
+                                                                       P
+Training objective      min          yi −                                  i=1 yi − tr(M ρi )
+                         w 2                                                                        α   2                2
+                               i=1        k=1                 λ
+                                                              2
+                                                                 tr(M 2 )
+                        λ
+                           ∥w∥22
+                        2
+Matrices                Φik := tr(Mk ρi )                     Kij := tr(ρi ρj )                    Kij := tr(ρi ρj )
+                        w⋆ = (Φ⊤ Φ + λI)−1 Φ⊤ y               M⋆ = P           ⋆
+                                                                                                   α⋆ = (K + λI)−1 y
+                                                                     P
+Solution                                                                     α
+                                                                         i=1 i i ρ
+Corresponding kernel    Kmeas (x, x′ )   =      φ(x)⊤ φ(x′ ), K(x, x′ ) = tr(ρ(x)ρ(x′ ))            K(x, x′ ) = tr(ρ(x)ρ(x′ ))
+                        φk (x) = tr(Mk ρ(x))
+Equivalence statement not equivalent to (B)/(C) unless S exactly equivalent to (C) (same ob- exactly equivalent to (B) (same ob-
+                      is complete on the data manifold jective, different parametrization) jective, different parametrization)
+                      (no information loss)
+Meaning of “optimal”    minimizer over M ∈ S (best within minimizer over all M ∈ M(H) (best minimizer in RKHS induced by K
+                        chosen measurement family)        linear readout)                   (same solution as B)
+
+             Table II. Three training formulations for a QRC. The training objective and solution are specialized here to
+             the case of least-squares loss and assuming an orthonormal operator basis. For other kinds of losses, usually
+             no analytic expressions for the weights w∗ exist. If the QRC carries an internal memory state, the above
+             formulations remain intact but the data xi ≡xˆ t represents an input history [see Eq. (2.3)] and ρ(x)≡ρ(x
+                                                                                                                   ˆ    t)
+             is the state resulting by sequentially processing that history (see Sections III A and F).
+
+
+
+             where L is a loss function and λ is a regularization parameter. For regression and time-series
+             prediction tasks, one typically uses the least-squares loss L(ŷ, y) = 12 (ŷ − y)2 , in which case the
+             optimal weights are given by
+
+                                        w∗ = (Φ⊤ Φ + λ1)−1 Φ⊤ y,             Φik = tr(Mk ρ(xi )),                     (2.5)
+
+             where y ∈ RP is the sample vector of target values and φk (x) = tr(Mk ρ(x)) can be considered as
+             the feature map. For classification tasks, one often uses the hinge loss Lhinge (ŷ, y) = max(0, 1 − y ŷ)
+             (with y ∈ {−1, +1}), in which case the resulting optimal weights then generally do not have a
+             closed-form expression. For multi-class classification with C classes, a common strategy is to train
+             C separate readouts (one-vs-rest), i.e., solve Eq. (2.4) for each class c = 1, . . . , C with targets
+              (c)
+             yi ∈ {−1, +1} and separate weights w(c) .
+                Unconstrained primal optimization. Crucially, unless the {Mk } span the full operator space
+             M(H), the optimization in Eq. (2.4) does not guarantee that all relevant information encoded
+             in the quantum state ρ can actually be accessed. The resulting trained QRC may thus perform
+             poorly on the given data set. In variational QML, this issue is addressed by training parametrized
+             unitaries acting on ρ before performing the measurement. Alternatively, and specifically for QRCs,
+             we can exploit the freedom in the choice of measurement operators and hence optimize over the full
+                                                                                                      5
+
+Hermitian operator space M(H):
+
+                                        P
+                                        X                   λ
+                                min      L tr[M ρ(xi )], yi + tr(M 2 )                             (2.6)
+                             M ∈M(H)
+                                     i=1
+                                                             2
+
+with the same loss function L as in Eq. (2.4). In practice, this optimization over M(H) can be
+achieved by using in (2.4) as observables {Mk } a complete orthonormal m = D2 -dimensional basis
+of M(H) (e.g., the normalized Pauli basis {2−N/2 Pk }). The associated optimal weights wk∗ are
+given formally by the same expression as in Eq. (2.5), and yield the optimal observable
+                                                        2
+                                                      D
+                                                      X
+                                                 ∗
+                                               M =           wk∗ Mk .                              (2.7)
+                                                      k=1
+
+For the least-squares loss, the solution weights wk∗ are given by Eq. (2.5).
+  Dual optimization. The above unconstrained optimization procedure becomes especially natural
+in its dual formulation, resting on the connection between supervised quantum ML models and
+quantum kernels [20]. Identifying the unconstrained feature map as ϕ(x) = ρ(x) allows one to define
+the kernel K(x, x′ ) = tr(ρ(x)ρ(x′ )), which induces a reproducing kernel Hilbert space (RKHS) [42].
+The representer theorem implies that the optimizer M ∗ (optimal measurement operator ) of the
+problem (2.6) is of the form (see also Section A)
+
+                                                     P
+                                                     X
+                                              M∗ =          αj∗ ρ(xj ),                            (2.8)
+                                                     j=1
+
+
+i.e., it necessarily sits in the span of the training features [20, 42]. In terms of the representer
+coefficients α ∈ RP , the corresponding dual problem reads
+                                        P
+                                        X                 λ
+                                  min        L (Kα)i , yi + α⊤ Kα.                                 (2.9)
+                                 α∈RP
+                                         i=1
+                                                           2
+
+For the least-squares loss, the canonical solution coefficients are available in closed form as
+
+                           α∗ = (K + λ1)−1 y,                Kij = tr(ρ(xi )ρ(xj )).              (2.10)
+
+For other loss functions, the solution coefficients must typically be computed numerically. Indepen-
+dently of the loss function L, an optimally trained QELM [Eq. (2.2)] admits the kernel form
+
+                                        P
+                                        X
+                              f (x) =         αj∗ tr(ρ(xj )ρ(x)) = tr(M ∗ ρ(x))                   (2.11)
+                                        j=1
+
+
+The generalization to multi-dimensional target values yi ∈ RC (i = 1, . . . , P ) is straightforward and
+requires a separate kernel construction like in Eq. (2.11) for each class (this includes multi-class
+classification in a one-vs-rest scheme).
+   When the measurement operators {Mk } form a complete orthonormal basis (or at least span the
+relevant subspace containing M ∗ [17]), primal and dual formulations are equivalent and Eqs. (2.7)
+                                                                                                   6
+
+and (2.8) describe the same object. Expanding the optimal observable M ∗ in a complete orthogonal
+basis leads to a relation between the coefficients w∗ and α∗ via [cf. Eqs. (A11) and (E5)]
+                                                P
+                                             1 X ∗
+                                     wk∗ =         α tr(Mk ρ(xj )).                           (2.12)
+                                             gk j=1 j
+
+Here, tr(Mk Ml ) = gk δkl with gk = 2N for the orthogonal Pauli basis. The optimization formulations
+are summarized in Table II.
+   Remarks. (i) Neither the primal nor the dual optimization methods assume uncorrelated sam-
+ples. Both are therefore compatible with the sliding window construction (2.3). (ii) Global conju-
+gation ρ(x) 7→ U ρ(x) U † leaves the expression (2.11) unchanged and only transforms the optimal
+observable as M ∗ 7→ U M ∗ U † . (iii) The constrained primal formulation can be “dualized”, too, by
+using the kernel induced by the constrained feature map (see Table II). While this does not render
+a lower training error, it may offer computational benefits.
+
+
+                        C.   Enhancements and practical considerations
+
+  Using the Hermitian 2N ×2N matrix M ∗ directly as a measurement operator can be infeasible in a
+practical setting with large qubit numbers N . After addressing below the computational efficiencies
+of the primal vs. dual method, we consider possible approaches to reducing the implementation
+complexity.
+
+
+                             1.   Efficiency of primal vs. dual optimization
+
+  When taking the complete m = D2 = 4N -dimensional basis of measurement operators {Mk } in
+Eq. (2.2), the primal method is equivalent to the dual one, and the preference for either method
+becomes a matter of computational efficiency:
+
+   • The primal formulation requires solving for m weights, involving the inversion of a m × m
+     matrix (covariance matrix) with time complexity O(m3 ) and memory complexity O(m2 ). In
+     the case of a complete operator basis, m = D2 = 4N , leading to a scaling of O(64N ) in time
+     and O(16N ) in memory.
+   • In contrast, the dual formulation solves for P coefficients by inverting the P ×P kernel matrix,
+     which scales as O(P 3 ) in time and O(P 2 ) in memory.
+
+Thus, the dual method is preferable when the number of samples is small compared to the feature
+space dimension (P ≪ m), which is typical for large qubit numbers N due to the exponential scaling
+of D. If one chooses to truncate the operator basis to m < D2 , the primal method can become
+more efficient, however at the expense of losing the optimality guarantee.
+   Note that the resulting optimal measurement operator M ∗ [Eq. (2.8)] is still a D × D matrix.
+Explicitly constructing and storing M ∗ requires O(D2 ) = O(4N ) memory, which eventually limits
+the feasibility of the full optimization for large N . Conversely, if the number of measurement
+operators is small (e.g., due to truncation) or the dataset is very large such that P ≫ m, the primal
+formulation becomes more efficient. Specialized classical and quantum algorithms for the inversion
+of large matrices exist that can mitigate the exponential scaling (see, e.g., [43]).
+                                                                                                    7
+
+  We finally remark that, in practice, one does not have to explicitly construct the samples as in
+Eq. (2.3) for the optimization in the stateful case. Instead, one can simply run the QRC over the
+                                                                                      −1
+time series zt and (after some equilibration period) collect the output states {ρt }Tt=L ={ρ(x
+                                                                                         ˆ         P
+                                                                                               j )}j=1
+or a subset of them. The sliding window construction is implicit in this procedure.
+
+
+                                      2.     Pauli basis projection
+
+  In this approach, the Hermitian operator M ∗ is expanded in the Pauli (or any other operator)
+basis,
+                                     N
+                                    4X −1
+                                ∗                               1
+                             M =            ck P k ,    ck =      tr(M ∗ Pk ),                 (2.13)
+                                                               2N
+                                     k=0
+
+where the Pk are all possible tensor products of N Pauli operators (including the identity opera-
+tor) and the coefficients ck follow from orthogonality of the Pauli basis. The absolute values |ck |
+indicate the importance of the observable Pk for the given prediction task. Selecting only the
+most relevant observables or restricting to a subset of a given maximum Pauli weight renders a
+                                     ∗
+set of implementable observables OPauli  = {Pk }K
+                                                k=1 . The resulting prediction error is discussed in
+Section D.
+                                                                     ∗
+   A problem with this approach is that the elements of the set OPauli    do not necessarily mutu-
+ally commute, requiring in principle multiple executions of the quantum circuit to obtain the full
+prediction. Moreover, the Pauli expansion is highly redundant, as we will see in the following.
+
+
+                                            3.   Diagonalization
+
+  Since M ∗ is Hermitian, it can be diagonalized via a unitary V as
+                                                      X
+                             M ∗ = V ΛV † ,    Λ=           λb |b⟩⟨b|,                         (2.14)
+                                                         b∈{0,1}N
+
+where {|b⟩}b∈{0,1}N is the computational basis and λb ∈ R are eigenvalues. For any state ρ(x),
+                                                    X
+                   tr(M ∗ ρ(x)) = tr Λ V † ρ(x)V =        λb ⟨b|V † ρ(x)V |b⟩.
+                                                
+                                                                                           (2.15)
+                                                         b∈{0,1}N
+
+The prediction is the weighted average of the observed bitstrings using the eigenvalues {λb }. Thus,
+the optimal observable can be implemented by a single basis rotation V † followed by a standard
+computational-basis measurement. This is equivalent to measuring all 2N distinct Pauli-Z strings
+{Zs }s∈{0,1}N , since (see Section C)
+                                                X
+                                        Λ=           βs Z s                                    (2.16)
+                                                  s∈{0,1}N
+
+with βs given by Eq. (C2).
+   The unitary V may be treated as part of the readout (applied once just before measurement)
+or absorbed into the reservoir by redefining the last layer as UR 7→ V † UR . This global conjuga-
+tion leaves the kernel K(x, x′ ) and the trained predictor unchanged (see Section II B) and only
+                                                                                                   8
+
+affects the hardware realization of the optimal measurement. While, strictly, a pre-rotation fol-
+lowed by computational-basis measurement is sufficient and equivalent to measuring the exact M ∗ ,
+we will include in our numerical experiments [Section IV] also the Pauli observable decomposition
+[Eq. (2.13)], as both approaches can lead to slight differences in numerical stability.
+
+
+                                      III.    QRC MODELS
+
+  The optimization methods described above are general and independent of the encoding scheme
+or other quantum channels acting on the readout state ρ. In order to test our methods in practice,
+we consider some specific QRC models.
+
+
+                                     A.      QRCs and QELMs
+
+   The standard (stateful) QRC model introduced in [32, 33] consists of a set of coherently evolving
+(memory/ancilla) qubits (NA ) periodically coupled to a set of input qubits (NI ). At time t, a
+                       ′
+classical input zt ∈ Rd is encoded into an input state with density matrix ηI (zt ). The joint state
+with the coherent ancilla state ηM (t) is formed and time-evolved by a unitary U :
+
+                                   η(t) = U (ηI (zt ) ⊗ ηM (t)) U † .                           (3.1)
+
+This η(t) represents the feature map ρ(xt ) on the input sequence defined by Eq. (2.3) [corresponding
+to the one in (2.1)]. Subsequently, the input is reset and discarded, and the memory alone is carried
+to the next step:
+
+                                       ηM (t + 1) = trI [η(t)] ,                                (3.2)
+
+where trI denotes partial trace over the input register I (see Section F for further details).
+   We assume the encoding state to be pure, ηI (z) = |ψ(z)⟩⟨ψ(z)|, with the state vector |ψ(z)⟩ ∈ HI
+(living in the NI -qubit input Hilbert space) given by
+
+                                          |ψ(z)⟩ = S(z)|Φ0 ⟩                                    (3.3)
+
+in terms of the encoding unitary S(z) and the initial state |Φ0 ⟩ = |0⟩⊗NI . The reservoir unitary
+U is defined by gate operations or Hamiltonian time evolution, e.g., U (t) = exp(−itHR ) with
+a reservoir Hamiltonian HR . Specifically, we consider a transverse field Ising Hamiltonian with
+coupling parameters h and J:
+                                             N
+                                             X               N
+                                                             X −1
+                                 HR = −h           σjx − J          σjz σj+1
+                                                                         z
+                                                                             ,                  (3.4)
+                                             j=1             j=1
+
+
+as well as the variant with σ x and σ z exchanged. Here, σjp , p ∈ {0, x, y, z} (σj0 ≡ 1) denote
+single-qubit Pauli matrices acting on the j-th qubit.
+   For a QELM, the coherent qubits are absent (NA = 0) and Eq. (3.1) reduces to a stateless feature
+map
+
+                                     ρ(x) = η(x) = U ηI (x)U †                                  (3.5)
+                                                                                                       9
+
+without time evolution. The sliding window prescription (2.3) is not relevant in this case and one
+can take x = zt to process time series. Moreover, in this setting, any data-independent unitary
+drops out from the trained predictor in Eq. (2.11) as
+                                                                                      2
+              K(x, x′ ) = tr ρ(x)ρ(x′ ) = tr(ηI (x)ηI (x′ )) = ⟨Φ0 |S † (x)S(x′ )|Φ0 ⟩ .
+                                       
+                                                                                              (3.6)
+This does not hold for the QRC dynamics (3.2) with memory.
+
+
+                                       B.    Encoding schemes
+
+ The encoding S(z) is a crucial component of any quantum ML model. In our numerical experi-
+ments, we use parallel product state encodings of the form [44]
+                                                     NI
+                                                     O
+                                            S(z) =         Sj (zj ),                               (3.7)
+                                                     j=1
+
+with the unitary operator Sj encoding a single scalar zj (thus NI = d) and acting on the j-th qubit.
+We consider the following specific encoding schemes.
+  (1) Rotational encoding:
+                                         Sj (zj ) = Rpj (2πzj ),                                   (3.8)
+where
+                                                              
+                                        θ           θ             θ
+                         Rp (θ) ≡ exp −i σ p = cos     1 − i sin     σp                            (3.9)
+                                        2           2             2
+are standard rotation gates. We will mostly use RY encoding (p = y) for all qubits, which results
+in the state
+                          |ψrot (z)⟩ = RY (2πz)|0⟩ = cos(πz)|0⟩ + sin(πz)|1⟩.                     (3.10)
+This implies a useful data scale of z ∈ [0, 1], since z ∈ [1, 2] produces only an irrelevant global phase
+relative to z ∈ [0, 1]. An RX gate acts similarly, but introduces a complex phase, which is undesired
+and not needed for classical data processing. RZ gates alone are not suitable for encoding as they
+just shift the phase of the |0⟩ state. They can, however, be meaningfully combined with RY gates
+to encode two scalars into the same qubit (dense encoding):
+
+                                Sbj (zj , zj+1 ) = RZ (2πzj+1 )RY (2πzj ),                        (3.11)
+where now NI = d/2 [45, 46].
+  (2) Amplitude encoding: inputs are scaled to z ∈ [0, 1] and prepared as single-qubit states that
+traverse half a great circle on the Bloch sphere:
+                                               √      √
+                                   |ψamp (z)⟩ = z|0⟩ + 1 − z|1⟩.                            (3.12)
+A symmetric variant maps z ∈ [−1, 1] to the full great circle on the Bloch sphere:
+                                                     p
+                               |ψamp’ (z)⟩ = z|0⟩ + 1 − z 2 |1⟩.                                  (3.13)
+
+      √ that these encodings can be expressed in terms of single RY rotations, e.g., |ψamp’ (z)⟩ =
+We remark
+z|0⟩ + 1 − z 2 |1⟩ = RY (2 arccos z)|0⟩.
+                                                                                                           10
+
+                                      C.     Measurement readout
+
+  In practice, the measured expectation values in Eq. (2.2) can be augmented by nonlinear features
+in order to enhance the expressivity of the model [38, 47–49]. Defining the vector of measurement
+outcomes
+
+                       v(x) := (v1 (x), . . . , vm (x))⊤ ,       vk (x) = tr[Mk ρ(x)],                  (3.14)
+
+we construct a readout vector R(x) consisting of all distinct monomials in the
+                                                                            Pmcomponents of v(x)
+of total degree up to pmax . Introducing the multi-index α ∈ Nm
+                                                              0 with |α| :=    k=1 αk , we can write
+
+                                         m
+                                                     !
+                                        Y
+                                                  αk
+                              R(x) :=       vk (x)             ∈ Rmro ,                       (3.15)
+                                           k=1               1≤|α|≤pmax
+
+where any fixed ordering of the multi-indices α specifies  the components Rj of R. The number of
+                                             m+p−1
+                                                   
+distinct monomials of total degree p equals    p     , so that the total readout dimension is
+                                    pX
+                                     max                    
+                                             m+p−1    m + pmax
+                            mro =                  =             − 1.                                   (3.16)
+                                    p=1
+                                               p        pmax
+
+                                                                                          (1)   (C) ⊤
+Taking into account C possible output channels/classes with targets yi = (yi , . . . , yi         )     ∈ RC ,
+the complete QRC output function becomes
+
+                      f (x) = W⊤ R(x),           W = [w(1) , . . . , w(C) ] ∈ Rmro ×C .                 (3.17)
+
+Note that the measurement-operator optimization theory developed here applies only to the linear
+readout case.
+
+
+                              IV.     NUMERICAL EXPERIMENTS
+
+  In the following, we present numerical experiments on QRCs and QELMs trained using the kernel-
+based measurement operator optimization. We will typically show test accuracy as a function of
+the number of measurement operators kept after thresholding. The maximum number of opera-
+tors resulting from the diagonalization and Pauli projection methods [Sections II C 2 and II C 3] is
+mdiag = 2N × Dout and mpauli = 4N × Dout , respectively, where Dout is the output dimension. In
+the case of setups without reservoir unitaries, the effective maximum number can be lower, since
+expectation values involving Pauli-Y ’s vanish identically on states encoded via (3.10), (3.12), or
+(3.13) (see Section G). After having determined the optimal operator set, we generally re-fit the
+QRC using this set [alternatively, one may use Eq. (2.12)].
+
+
+                                    A.     Image classification task
+
+  We first consider the standard QELM task of classifying handwritten digits from the MNIST
+dataset [50], which contains about P ≃ 70 000 images of size 28×28 pixels [36, 51, 52]. We use a
+QELM with N = 5 qubits and dimensionally reduce the images to their 2N dominant principal
+                                                                                                           11
+
+
+
+
+Figure 1. Optimization of the measurement operator for a QELM trained on the MNIST (first 2N principal
+components) classification task (left) without and (right) with a reservoir unitary (transverse field Ising
+model). The dashed line represents the test accuracy obtained using the full operator M ∗ (i.e., one per digit
+class), while the connected symbols correspond to the Pauli decomposition and diagonalization approaches
+[Eqs. (2.13) and (2.14)]. The notation ord(k) and mon(p) refers to the observable order k and monomial
+order p in Eq. (3.15). The curve labeled ‘primal: Z,ZZ+mon(4)’ represents primal optimization using only
+the Pauli-Z and -ZZ observables enhanced by readout monomials up to 4th order, while CSVM refers to a
+classical SVM trained on (non-)linear features constructed from the principal components. Since there is
+no intrinsic randomness in the model, error bars arise only from the selection of samples and are negligible
+here. † Here, we optimized the kernel only over a single class (to limit combinatorial explosion in the number
+of readout terms), but used the resulting operator set to re-train the QELM for all classes.
+
+
+components, which we encode via RY -RZ rotation operators (allowing for two features per qubit).
+For the kernel-based optimization, we use a random subset of approximately 10 000 samples. For
+comparison to a classical model, we consider an SVM with polynomial features (up to degree 4)
+constructed from the principal components.
+   The prediction accuracy on a held-out test data set (Ptest = 0.2P ) is given by the ratio of correctly
+classified over total number of samples:
+                                      Ptest
+                                  1   X
+                           A=                 δyi ,ŷi ,   with ŷi = arg max fˆ(c) (xi ).              (4.1)
+                                 Ptest i=1                                  c
+
+
+Figure 1 shows the resulting test accuracies for the MNIST classification problem in the case without
+(left panel) and with (right panel) a reservoir unitary.
+   QELM without a reservoir. We find that the test accuracy of the classical SVM saturates at
+around ACSVM ≈ 93.5%, which appears to be also an upper limit for the QELM. This limit is
+reached when the QELM readout is enhanced by monomials up to order pmax = 2 [see Eq. (3.17)],
+both for the Pauli-decomposition and diagonalization approaches [Fig. 1(a)]. In this case, it suffices
+even to restrict the observables to weight-1 and -2 Pauli strings. Notably, without additional
+monomial features, the QELM test accuracy saturates at AQELM ≈ 92%, but requires a significantly
+larger number of observables. This quantum-to-classical performance gap exists because powers
+⟨σj ⟩q of expectation values of observables acting on the same qubit j cannot be represented in the
+operator basis for the present encoding.
+   QELM with a reservoir. Figure 1(b) shows the test accuracies for a QELM in the same setup
+as above, but with a reservoir unitary based on the TFIM (3.4) (with parameters th ≈ tJ ≈ 10).
+When optimizing via the primal route using only Z- and ZZ-Pauli observables enhanced with
+monomials up to order pmax = 4, we obtain a higher test accuracy in the case with than without
+                                                                                                   12
+
+a reservoir unitary. We explain this by the information scrambling property of the unitary, which
+makes information that sits in the Pauli-X- and Y -sectors accessible in the Z sector. In general, the
+results obtained for the QELM optimized via the kernel method are similar both with and without
+a reservoir unitary, demonstrating the robustness of the approach.
+   We summarize this section with some common findings: (i) Unless one uses a complete operator
+basis or techniques like temporal multiplexing [32], the primal optimization is generally inferior to
+the kernel-based approach: in the latter, it suffices to restrict the readout to Pauli-Z observables
+enhanced by 2nd-degree monomials to reach the classical SVM accuracy ACSVM . The fundamental
+reason is of course that the kernel-based method implicitly renders an optimized pre-rotation before
+measurement. (ii) Performing the kernel-based optimization only over a single class can significantly
+reduce the computational load without sacrificing accuracy, provided the QELM is retrained for all
+classes. (iii) Low order monomial in the readout (especially squares) are generally helpful to close
+the quantum-to-classical accuracy gap (depending on the specific encoding).
+
+
+                                    B.    Time series prediction
+
+   We turn to autoregressive prediction tasks [32, 34, 53], where, given a time series {zt }Tt=0 , the
+QRC is trained to predict the next step ẑt+1 = f (xt ) (with the prescription (2.3) where appropri-
+ate). A complete forecasted trajectory is generated by repeatedly applying the prediction function,
+i.e., ẑt+1 = f (x̂t ). As was the case for static data, enhancing the readout with monomials typ-
+ically improves forecasting capability [38, 49]. However, they obscure a clear assessment of the
+performance of the quantum parts of the model, and we therefore consider here only setups with-
+out hand-engineered features in the readout. As a performance measure, we consider, beside the
+                                            h P                      i1/2
+                                                   P −1
+root-mean-square training error Etrain = P1 t=0 ∥zt+1 − f (zt )∥2         , the forecast horizon
+
+                                  Tfch = inf {t : ∥z(t) − ẑ(t)∥ > σ}                            (4.2)
+              PP −1                                                             PP −1
+where σ 2 = P1 i=0 ∥z̄ − z(ti )∥2 is the variance of the trajectory and z̄ = P1 i=0 z(ti ) is its
+mean. In the case of chaotic systems, the forecast horizon is expressed in units of the Lyapunov
+time TL = 1/λ1 with largest Lyapunov exponent λ1 .
+
+
+                                   1.    Memoryless QRCs (QELMs)
+
+   Time series generated by Markovian dynamical systems can be learned using QELMs, i.e., mem-
+oryless QRCs (cf. [54–56] for similar minimal QRC approaches and [57] for a discussion within a
+classical RC framework). We can thus train the QRC directly on the individual samples of the time
+series, xt = zt and ignore the prescription (2.3). As a standard benchmark for reservoir computing
+prediction tasks, we take the (d = 3)-dimensional Lorenz-63 chaotic system, described by
+
+                                          ż1 = σ(z2 − z1 )
+                                          ż2 = z1 (ρ − z3 ) − z2                                (4.3)
+                                          ż3 = z1 z2 − βz3
+
+with parameters σ = 10, ρ = 28, β = 8/3 and largest Lyapunov exponent λ1 ≈ 0.89 [58]. The
+trajectory is numerically generated using a RK4 (Runge-Kutta) scheme with tolerances of 10−10 .
+                                                                                                           13
+
+
+
+
+Figure 2. Optimization of the measurement layer for a memoryless QRC without ancilla qubits (QELM), for
+the cases without and with a (TFIM-based) reservoir unitary. The QRC is trained on a 3-dimensional chaotic
+time series [Eq. (4.3)]. The error bars on the forecast horizon represent the standard deviation (not error of
+the mean) after averaging over different initial conditions. (Their magnitude is comparable to classical RC
+results for chaotic systems.) The dashed line represents the forecast horizon when using the kernel-based
+optimal measurement operator M ∗ directly, while the connected points correspond to decompositions into
+subsets of observables [Eqs. (2.13) and (2.14)]. The dash-dotted line gives the forecast horizon (with its
+standard deviation indicated by the gray area) for the primal optimization over the complete operator basis.
+Etrain denotes the (RMS) training error. The horizontal axis represents the number of observables ranked
+by their relevance (left = least relevant; maximum number = 64 × 3 = 192 for right panel).
+
+
+We use the amplitude encoding (3.12) with NI = 3 qubits. We find that the other tested encoding
+schemes yield similar training accuracy.
+  The resulting forecast horizons are illustrated in Fig. 2 for the case without (left) and with a
+reservoir unitary (right). Due to using an optimal measurement operator M ∗ , the presence of a
+reservoir unitary does not have a significant impact on the largest achievable forecast horizon. In-
+terestingly, both for the Pauli-decomposition and the diagonalization approach, the largest forecast
+horizon is reached for a slightly reduced number of observables. We explain this by the numerical
+conditioning effects and redundancy in the operator basis for the present dataset and encoding
+scheme.
+
+
+                                      2.   QRCs with internal memory
+
+   We now turn to a stateful QRC, obtained by extending the above QELM model by NA ≥ 1
+ancilla qubits, coupled via a TFIM unitary. The measurement operator acts on all N = NI + NA
+qubits and is optimized using the kernel-based approach. We first revisit the forecasting problem
+for the Lorenz-63 model and then consider two strongly non-Markovian time series: a harmonic
+signal and the Mackey-Glass system.
+   Lorenz-63 time series. Using memory states significantly enhances prediction accuracy both for
+the primal and dual optimization method (Fig. 3), yielding forecast horizons of Tfch /TL ≈ 10 (which
+is comparable to recent literature results [38]). Notably, using the optimal operator M ∗ directly
+leads in this case to a significantly lower forecast horizon and higher training error (Etrain ≈ 2×10−6 )
+compared to the Pauli decomposition or diagonalization methods (Etrain ≈ 4 × 10−8 ). This result
+appears to be specific to the current QRC setup or data, as we do not observe strong discrepancies
+in the other benchmarks (cf. Figs. 2 and 4).
+                                                                                                          14
+
+
+
+
+Figure 3. Optimization of the measurement operator for a QRC with internal memory (NA = 1 ancilla
+qubit coupled via a TFIM unitary to NI = 3 input qubits), trained to predict the Lorenz-63 time series
+[Eq. (4.3)] encoded via amplitude encoding [Eq. (3.12)]. The dashed line represents the forecast horizon
+using the optimal operator M ∗ directly, while the connected points correspond to decompositions into
+subsets of observables [Eqs. (2.13) and (2.14)]. The forecast horizon obtained from the primal optimization
+over the full operator basis is shown by the dashed-dotted line, with the gray area representing the standard
+deviation.
+
+
+
+  Harmonic time series.       A scalar harmonic time series consists of n frequencies with random
+amplitudes {ak , bk }:
+
+                                         n
+                                         X
+                                z(t) =         [ak cos(kω0 t) + bk sin(kω0 t)] .                       (4.4)
+                                         k=1
+
+
+
+Learning this time series with a classical linear autoregressive model requires a memory capacity of
+2n delays [59, 60]. Due to the nonlinearity generated by the encoding and the ancilla coupling of a
+QRC like Eq. (3.2), this bound is only an upper limit in terms of actual number of required linear
+encoding features. Specifically, the number of ancilla qubits NA required to store the delays is much
+less than 2n. While a detailed study will be presented elsewhere, we find here that NA = 3 and a
+well tuned memory capacity (via the TFIM parameters) suffices to learn n ∼ 10 frequencies. We
+use amplitude encoding [Eq. (3.13)] and a resolution ∆t = 0.2 to feed the time samples zn = z(n∆t)
+into the QRC. The valid region of ∆t follows from the requirements that (i) the fading memory
+window covers a full period and (ii) the sampling is rate larger than 2fmax (Nyquist criterion).
+   Figure 4(a) illustrates the forecast horizons obtained from the optimized QRC using either the
+single optimal measurement operator M ∗ (Eq. (2.8), dashed line) or decompositions into subsets
+of observables [Eqs. (2.13) and (2.14)]. Using the full M ∗ provides a stable forecast up to the
+maximum tested time, which is also reached when using all Pauli basis operators (dots). When
+using the Pauli Z-observables, the maximum forecast time is only reached for certain random seeds
+used in constructing the time series (reflected by the rather large error bars). The forecast can
+become unstable when using a small number of measurement operators, which essentially reflects
+numerical instabilities unrelated to the optimization process. These issues can, in principle, be
+alleviated by tuning the regularization parameter, input scale, or input noise (to be analyzed in
+detail elsewhere).
+                                                                                                             15
+
+
+
+
+Figure 4. Optimization of the measurement layer for a QRC with internal memory (NA = 3 ancilla qubits,
+coupled to NI = 1 input qubits via a TFIM-based unitary). In (a), the QRC is trained on a random
+harmonic signal [Eq. (4.4)] with n = 9 frequencies, encoded via amplitude encoding (3.13). In (b), the
+Mackey-Glass time series [Eq. (4.5)] is encoded via Eq. (3.12). The dashed line represents the forecast
+horizon (relative to the maximum tested time in (a)) using the optimal measurement operator M ∗ (as
+computed by the kernel-based optimization), while the connected points correspond to decompositions into
+subsets of observables (Eqs. (2.13) and (2.14), ranked by their relevance, along horizontal axis). The error
+bars on the forecast horizon represent the standard deviation after averaging over different initial conditions.
+The forecast horizon obtained from the primal optimization over the full operator basis is shown by the
+dashed-dotted line, with the gray area representing the standard deviation. Etrain denotes the (RMS)
+training error.
+
+
+  Mackey-Glass time series. This model has nonlinear and non-Markovian dynamics and is defined
+by the delay differential equation [61]
+
+                                                      z(t − θ)
+                                       ż(t) = β                 − γz(t)                                  (4.5)
+                                                   1 + z(t − θ)n
+
+with chaotic-regime parameters θ = 17, β = 0.2, γ = 0.1, n = 10. We evolve Eq. (4.5) numerically
+with a time step ∆t = 1. Samples zn = z(n∆t) are scaled to the interval [0, 0.3] and injected with
+the amplitude encoding variant of Eq. (3.12) into a QRC with TFIM-based unitary and NA = 3
+ancilla qubits. As seen in Fig. 4(b), the optimized QRC can forecast the Mackey-Glass time series
+up to ≥ 250 time steps. The Pauli-decomposition with slightly reduced observable count reaches
+even to ∼ 300 time steps, possibly due to numerical stabilization effects not present when using the
+full operator M ∗ or the Pauli-Z decomposition. Note that the forecast horizon is necessarily finite
+due to the intrinsic Lyapunov instability of the Mackey-Glass system, with Lyapunov exponents
+reported of λ1 ≃ 6 × 10−3 [62].
+
+
+                                             V.      SUMMARY
+
+  We have provided a framework, based on the connection between quantum kernel methods and
+supervised quantum ML models [20], to optimize the measurement operator in quantum reservoir
+computers (QRCs). This establishes a quantum kernel formulation on history space for recurrent
+QRCs, connecting the optimal readout observable to the kernel methods previously employed for
+memoryless quantum models. Our method is thus applicable to both stateless (QELM) and stateful
+                                                                                                                    16
+
+ Step                Stateless (QELM)                 Stateful (QRC)
+ 1. Data             Input pairs {(xi , yi )}P
+                                             i=1      Time series {zt }Tt=0 ; Targets yt = zt+1
+                                                      Effective inputs xt := (zt−L , . . . , zt )
+                                                                    −1
+                                                      {(xt , yt )}Tt=L can be treated as unordered samples
+ 2. Encoding         Map each xi to state:            To obtain ρ(xt ), evolve for τ = t − L, . . . , t:
+                     ρi ≡ ρ(xi )                      η(τ ) = U (ηI (zτ ) ⊗ ηM (τ ))U † , ηM (τ + 1) = trI η(τ );
+                                                      Then ρt ≡ ρ(xt ) = η(t)
+ 3. Kernel                                   Gram matrix: Kij = K(xi , xj ) = tr(ρi ρj )
+ 4. Training                       Solve for dual coefficients (least-squares): α∗ = (K + λ1)−1 y
+                                                          M∗ = P         ∗
+                                                                  P
+ 5. Optimal Ob-                                                     k=1 αk ρk
+ servable
+ 6. Prediction       For new input x̂:                For new input x̂t = (ẑt−L , . . . , ẑt ):
+                                    ∗
+                                                      f (x̂t ) = tr(M ∗ ρ(x̂t )) = t′ αt∗′ K(xt′ , x̂t )
+                                                                                  P
+                     f (x̂) = tr(M ρ(x̂))
+                     = i αi∗ K(xi , x̂)
+                        P
+
+
+Table III. Algorithm flow for the kernel-based (dual) optimization of the measurement operator in stateless
+(memoryless) and stateful (recurrent) QRCs. Note that y ∈ RP is the vector of target samples and the
+expression for the dual coefficients α∗ thus applies componentwise. In the stateful case, P = T − L is the
+number of time steps available for training. For details, see Sections A and F.
+
+
+
+models, as summarized by the algorithm flow chart in Table III. Since the essence of the method
+does not rely on the QRC-specific form (2.2) of the output function, insights gained from this work
+can be transferred to other quantum ML models with a well-defined (and already trained) feature
+map x 7→ ρ(x), enhancing previous discussions of primal-dual approaches in QML [23, 63].
+   Exact implementation of the optimal measurement operator M ∗ on an N -qubit system requires
+measuring all 2N Z-strings (or, equivalently, measuring in the computational basis) and a pre-
+measurement rotation of the quantum state by a global (training data-dependent) unitary. This
+unitary can be understood to capture the outcome otherwise achieved by training a parametrized
+QML model with fixed measurement operator. Empirically, we find that using operator subsets (e.g.,
+Pauli Z-strings) obtained from decomposing M ∗ can sometimes improve forecasting performance
+compared to using the single operator M ∗ directly. This could be related to the emergence of
+numerical instabilities or conditioning effects in certain QRC setups and should be investigated
+further.
+   Having determined an optimal measurement operator raises the question whether and to which
+extent the prediction performance of a QRC can be further improved. As will be further discussed
+elsewhere, in QML models with a time-independent initial-state encoding strategy, the available fea-
+tures are fully determined by the encoding and are subsequently linearly processed by the quantum
+channels [64]. This processing can manifest as information scrambling and reduce the prediction
+performance of QML models. In the case of stateless QELMs, the unitary associated with the
+optimal observable can undo this unitary scrambling [see Eq. (2.14)], which is reflected by the in-
+variance of the trained predictor (2.11) under global conjugation. Accordingly, for stateless QELMs
+with a unitary channel, optimization of the reservoir unitary can be traded against optimization
+                                                                                                     17
+
+of the measurement operator, up to the final measurement/readout parametrization. By contrast,
+for stateful QRCs with decoherence/reset, or generally for non-unitary channels, optimizing the
+reservoir dynamics can change the kernel and thus the attainable predictor class. Further mean-
+ingful optimizations pertain to the encoding, memory depth and possibly hand-engineered readout
+features. Alternatively to determining the optimal measurement operator, one may use temporal
+multiplexing [32, 33] or measuring over a complete measurement basis (full state tomography).
+   We have numerically demonstrated the feasibility of the optimization for QRCs with N ≲ 10
+qubits, noting that, for our considered datasets, it suffices to use a representative subset of the full
+training samples to evaluate the kernel matrix. Application to larger systems is instead bottlenecked
+by memory consumption of the 4N -dimensional operator matrix and requires further methodological
+developments. Another avenue for future work is a closer look into generalization capability entailed
+by the optimal measurement operator, since both primal and dual optimization methods provide
+only error bounds on the training set [12, 65, 66].
+
+
+                             Appendix A: QELM as a kernel method
+
+  In the following, we describe in detail the mapping between a QRC/QELM and a quantum kernel
+method and the ensuing measurement operator optimization. This builds on standard material of
+quantum ML [20, 27, 67–69], adapted specifically to the case of QRCs. In the following, we focus
+on the QELM formulation and discuss the stateful QRC separately in Section F below.
+  We consider an N -qubit system with Hilbert space dimension D = 2N , on which a density matrix
+acts as a feature map x 7→ ρ(x). On the real vector space of Hermitian operators M(H) we use the
+Hilbert–Schmidt inner product ⟨A, B⟩ = tr(AB) with induced norm (|A|HS )2 = tr(A2 ). A QELM
+with a linear readout layer specifies an observable M ∈ M(H) and predicts the output
+                                                           
+                                         fM (x) = tr M ρ(x) .                               (A1)
+                              P
+Given training data (xi , yi )i=1 , we optimize the measurement operator M using a Tikhonov-
+regularized loss function L
+                                  P
+                                  X                λ
+                           min      L fM (xi ), yi + (|M |HS )2 ,       λ > 0.                     (A2)
+                        M ∈M(H)
+                                i=1
+                                                    2
+
+Typical loss functions are the squared-error loss L(ŷ, y) = 12 (ŷ − y)2 (regression problem) and the
+hinge loss L(ŷ, y) = max(0, 1 − y ŷ) (classification problem).
+  The representer property holds directly in this operator space [20, 70]. Decompose any M as
+M = M∥ + M⊥ , where M∥ ∈ span{ρ(x1 ), . . . , ρ(xP )} and M⊥ is Hilbert–Schmidt orthogonal to this
+span. Then tr(M⊥ ρ(xi )) = 0 for all i, so the data-fit term in Eq. (A2) depends only on M∥ , while
+(|M |HS )2 = (|M∥ |HS )2 + (|M⊥ |HS )2 . Replacing M by M∥ strictly decreases the objective unless
+M⊥ = 0. Therefore, there exists an optimal observable M ∗ in the span of the training data, i.e.,
+                                                 P
+                                                 X
+                                          M∗ =         αi∗ ρ(xi ).                                 (A3)
+                                                 i=1
+
+  Substituting Eq. (A3) into Eq. (A2) produces an optimization over the coefficients α =
+(α1 , . . . , αP )⊤ . Define the Gram matrix K ∈ RP ×P with Kij = tr(ρ(xi )ρ(xj )) and the label
+                                                                                                        18
+
+vector y = (y1 , . . . , yP )⊤ . For each training point,
+                                             P
+                                            X                  XP
+                               fM (xi ) = tr   αj ρ(xj ) ρ(xi ) =   αj Kij ,                         (A4)
+                                                     j=1                       j=1
+
+and the Hilbert–Schmidt norm evaluates to
+                                     X            X          
+                      (|M |HS )2 = tr    αi ρ(xi )   αj ρ(xj ) = α⊤ Kα.                              (A5)
+                                                      i              j
+
+
+Hence, Eq. (A2) reduces to the convex optimization problem
+                                                 P
+                                                 X                λ
+                                          min        L [Kα]i , yi + α⊤ Kα.                           (A6)
+                                        α∈RP
+                                                 i=1
+                                                                   2
+
+For the squared-error loss, this is the kernel ridge regression objective
+
+                                                  1                      λ ⊤
+                                           min        ∥Kα − y∥22 +         α Kα,                     (A7)
+                                          α∈RP 2                         2
+
+which has a closed solution α∗ determined by the linear system (K + λ1) α∗ = y. For the hinge
+loss, this becomes equivalent to the dual “quadratic programming problem” [41]:
+                             P                   P
+                             X             1 X
+                      max          βi −            βi βj yi yj Kij       subject to    0 ≤ βi ≤ 1,   (A8)
+                      β∈RP
+                             i=1
+                                          2λ i,j=1
+
+with αi∗ = yi βi∗ /λ (and no bias). In this case, the solution coefficients α∗ are not available in closed
+form, but can be computed numerically.
+  For any loss function L in Eq. (A2), the optimal observable and predictor admit the kernel
+representation
+                             P
+                             X                                                    P
+                                                                                X
+                    M∗ =           αi∗ ρ(xi ),            f ∗ (x) = tr M ∗ ρ(x) =   αi∗ K(x, xi ),   (A9)
+                             i=1                                                     i=1
+
+with kernel
+
+                                             K(x, x′ ) = tr ρ(x)ρ(x′ ) .
+                                                                      
+                                                                                                     (A10)
+
+Thus, for the squared-error loss, measurement optimization for a QELM is exactly kernel ridge
+regression with kernel Eq. (A10), and the QELM predictor equals the kernel predictor on all inputs
+when the optimal observable Eq. (A3) is used.
+  ExpandingP  M ∗ in terms of an orthogonal operator basis {Mk } with Gkl ≡ tr(Mk Ml ) = gk δkl ,
+yields M ∗ = k wk Mk with
+
+                                                               P
+                                          1                1 X ∗
+                               wk∗ =         tr(Mk M ∗ ) =       α tr(Mk ρ(xi )).                    (A11)
+                                          gk               gk i=1 i
+                                                                                                           19
+
+For the Pauli basis, gk = 2N . Thus, taking
+
+                                           ϕk (x) = tr(Mk ρ(x))                                        (A12)
+
+as the feature map [71] and Φik = ϕk (xi ) as the feature matrix Φ ∈ RP ×m (with rows ϕ(xj )T ), the
+QELM predictor can be written in the form of a classical ELM [see Eqs. (E1) and (E5) below]:
+
+                               f ∗ (x) = ϕ(x)T w∗ ,     w∗ = G−1 ΦT α∗ .                       (A13)
+                                                         −1
+                                         P
+Using the HS completeness identity         k,l tr(Mk A)(G P)kl tr(Ml B) = tr(AB) for any Hermitian
+operators A, B, it is easy to see that, indeed, f (x) = i αi∗ K(x, xi ).
+                                                   ∗
+                                         m
+  Consider now the case whereP {Mk }k=1 is not a complete basis, i.e., one cannot generally assume
+that there exists a w with k wk Mk = M ∗ . The natural generalization       of Eq. (A11) is to find a
+                                                                             ∗ 2
+                                                                P                     P
+w that minimizes the (squared) Hilbert–Schmidt distance ∥ k wk Mk − M ∥HS = tr ( k wk Mk −
+M ∗ )2 . Solving this optimization problem yields w = G+ ΦT α∗ , or component-wise
+
+                                          m
+                                          X                 P
+                                                            X
+                                   wk =         (G+ )kl           αj∗ tr(Ml ρ(xj )).                   (A14)
+                                          l=1               j=1
+
+
+
+                     Appendix B: Generalization to multiple outputs/classes
+
+   Extension of the framework in Section A to multiple outputs/classes is straightforward. Consider
+first regression with squared-error loss: for C-dimensional targets yi ∈ RC , one assembles Y =
+[y1 , . . . , yP ]⊤ ∈ RP ×C , solves A∗ = (K + λ1)−1 Y, sets Mc∗ = i=1 αic
+                                                                      PP      ∗
+                                                                                ρ(xi ), and predicts fc∗ (x) =
+PP          ∗
+   i=1 αic K(x, xi ).
+   For multi-class classification with labels yi ∈ {1, . . . , C}, one can use one-hot targets and interpret
+the components fc∗ (x) as class scores, predicting ŷ(x) = arg maxc fc∗ (x) (or applying a softmax
+to obtain class scores). One thus replaces the single observable P          M by C observables {Mc }C      c=1
+                                               P ×C                       λ
+(equivalently a coefficient matrix A ∈ R            ) with regularizer 2 c (|Mc |HS )2 . The representer
+form then holds component-wise as Mc∗ =                  ∗
+                                                   P
+                                                      i αic ρ(xi ), and one-vs-rest hinge/logistic training
+reduces to C standard kernel problems with the same Gram matrix K.
+
+
+                                     Appendix C: Diagonalization
+
+  Because the computational basis is the joint eigenbasis of all single-qubit Z operators, any diag-
+onal operator admits an expansion in commuting Pauli-Z strings:
+
+                                        X                                  N
+                                                                           O
+                                Λ=               βs Z s ,          Zs :=         (σz )sj ,              (C1)
+                                     s∈{0,1}N                              j=1
+
+
+with coefficients given by a Walsh–Hadamard transform of the spectrum {λb } (see, e.g., [72, 73]),
+                                                    X
+                            βs = 2−N tr(ΛZs ) = 2−N       λb (−1)s·b .                        (C2)
+                                                                  b∈{0,1}N
+                                                                                              20
+
+Consequently, the optimal measurement operator M ∗ can be expanded in terms of Z-basis mea-
+surement operators Zs :
+                                              X
+                              M ∗ = V ΛV † =        βs V Z s V † .                     (C3)
+                                                   s∈{0,1}N
+
+
+After the pre-rotation V † , all Zs can be evaluated from the same computational-basis samples by
+taking products of single-qubit outcomes; combining these estimates with weights {βs } yields the
+same predictor as the eigenvalue-weighted average in Eq. (2.15). Both procedures use a single
+circuit per shot.
+
+
+                             Appendix D: Pauli basis truncation
+
+  Assume we measure only a subset of Pauli observables in the expansion of M ∗ [Eq. (2.13)]. Let
+                                              2
+P corresponding index set be S ⊂ {0, . . . , D − 1} and define the truncated observable Mtrunc∗ =
+the
+  k∈S ck Pk .  By Eq. (A1), the pointwise prediction error on any input x is ∆f (x) = tr (M −
+Mtrunc )ρ(x) . Using the Cauchy–Schwarz inequality in the Hilbert–Schmidt inner product yields
+|∆f (x)| ≤ |M ∗ − Mtrunc |HS |ρ(x)|HS . Since for any feature state |ρ(x)|HS ≤ 1, the worst-case
+prediction error is bounded by the magnitude of the omitted coefficients:
+                                                        X 1/2
+                         |∆f (x)| ≤ ∥M ∗ − Mtrunc ∥HS = 2N c2k  ,                           (D1)
+                                                                k∈S
+                                                                 /
+
+where we used orthogonality of the basis.
+
+
+                                  Appendix E: Classical ELM
+
+  It is instructive to review the classical extreme learning machine (ELM) [74] as a paradigmatic
+example for a kernel formulation. The ELM is essentially a generalized linear regression model
+[41, 75] with a set of m fixed features ϕ(x) ∈ Rm and trainable weights w ∈ Rm :
+
+                                         f (x) = ϕ(x)T w.                                   (E1)
+
+Recall that a QELM can be mapped to this form by identifying ϕk (x) = tr[Mk ρ(x)] for a set of m
+observables {Mk } [see Eq. (A13)]. Assuming a least-squares loss,
+                                               P
+                                             1X                  2 λ
+                           L({xj , yj }) =         [yj − f (xj )] + ∥w∥2 ,                  (E2)
+                                             2 j=1                 2
+
+and P samples, the optimal solution follows as
+
+                                     w∗ = (ΦT Φ + λ1)−1 ΦT y                                (E3)
+
+with the feature matrix Φ ∈ RP ×m (with rows ϕ(xj )T ) and sample vector y. From the feature
+vector ϕ(x), an associated kernel can be defined as [41, 75, 76]
+
+                                    k(x, x′ ) = ϕ(x)T ϕ(x′ ) ∈ R,                           (E4)
+                                                                                                            21
+
+which gives rise to the Gram matrix K ∈ RP ×P with Kij = k(xi , xj ) = (ΦΦT )ij . Noting that
+(ΦT Φ + λ1)−1 ΦT = ΦT (ΦΦT + λ1)−1 , the primal solution in Eq. (E3) can be rewritten as
+                                                             P
+                                                             X
+                                         ∗          ∗
+                                       w =Φ α = T
+                                                                   αj∗ ϕ(xj )                              (E5)
+                                                             j=1
+
+with the dual coefficients
+
+                                             α∗ = (K + λ1)−1 y.                                            (E6)
+
+Accordingly, the trained ELM predictor [Eq. (E1)] can be equivalently written as a kernel model:
+                                                            P
+                                                            X                        P
+                                                                                     X
+               f (x) = ϕ(x)T w∗ = ϕ(x)T ΦT α∗ =                   ϕ(x)T ϕ(xj )αj =         αj k(x, xj ).   (E7)
+                                                            j=1                      j=1
+
+The mapping (E5) shows that, even in a potentially infinite feature space, the representer theorem
+[67, 76] guarantees that the optimal solution can be expressed in terms of a finite number of samples.
+Primal and dual optimizations thus render the same set of functions. Note that the expressions
+(E3) and (E5) pertain to the least-squares loss (E2). For other loss functions, the solutions typically
+have to be determined numerically.
+
+
+                             Appendix F: QRC with stateful reservoir
+
+  We describe here in some more detail how the kernel-based optimization can be applied to the
+case of a QRC with internal memory, complementing Section A and demonstrating the viability of
+prescription Eq. (2.3). Let the input register of the QRC have NI qubits and the memory register
+                                                       ′
+NA qubits. At time t, a classical input zt ∈ Rd (typically d′ = NI ) is encoded via the density
+matrix ηI (zt ). The joint state ηI (zt ) ⊗ ηM (t) is time-evolved by a unitary U , giving
+
+                                     η(t) = U (ηI (zt ) ⊗ ηM (t)) U † .                                    (F1)
+
+Subsequently, the input is measured/reset and discarded, and the memory alone is carried to the
+next step, described by the CPTP map
+
+                                          ηM (t + 1) = trI [η(t)] .                                        (F2)
+
+  The stateful QRC dynamics above induces the quantum feature map
+
+                             (z0 , . . . , zt ) =: xt 7−→ ρ(xt ) = η(t) ∈ M(H),                            (F3)
+
+where ρ(xt ) is obtained after sequentially processing the {zt′ } via Eqs. (F1) and (F2). Due to the
+fading memory of the reservoir, the dependence on inputs earlier than time t − L is negligible. We
+assume that any transient associated with the reservoir initialization has already decayed before
+the observed sequence begins, e.g. by driving the reservoir for times t < 0. We therefore work,
+instead of (F3), with the effective input history (window)
+                                                        ′
+                       xt := (zt−L , . . . , zt ) ∈ (Rd )L+1 ,          t = L, . . . , T − 1,              (F4)
+                                                                                                       22
+
+and define P = T − L training samples. Let ρ(xt ) denote the reservoir state obtained from driving
+the reservoir with that history from some fixed initialization (the precise initialization is irrelevant
+by assumption). The corresponding readout is
+                                                            
+                                       fM (x) = tr M ρ(x) .                                         (F5)
+
+This exactly corresponds to Eq. (2.2), except that the state ρ(xt ) is to be determined by evolving
+the reservoir over the input sequence (zt−L , . . . , zt ).
+                     −1
+  For targets {yt }Tt=L , we consider the optimization problem
+                                       T −1
+                                    1X                  2 λ
+                              min      tr(M ρ(xt )) − yt + tr(M 2 ),                                 (F6)
+                            M ∈M(H) 2                      2
+                                        t=L
+
+which can be straightforwardly extended to other loss functions. By the representer theorem in
+(M(H), ⟨·, ·⟩HS ), there exists an optimal observable [67, 76],
+                                                    T
+                                                    X −1
+                                             M∗ =          αt∗ ρ(xt ),                               (F7)
+                                                    t=L
+
+which is the stateful analogue of Eq. (2.8). We now define the kernel on histories/windows
+
+                                     K(x, x′ ) := tr ρ(x)ρ(x′ ) ,
+                                                               
+                                                                                                     (F8)
+
+and the Gram matrix Ktt′ := K(xt , xt′ ). Then the coefficients satisfy
+
+                                             α∗ = (K + λI)−1 y,                                      (F9)
+                  −1                                  −1
+with α∗ = (αt∗ )Tt=L and the target vector y = (yt )Tt=L ∈ RP . For any test history/window x
+(obtained from any test sequence driven through the same reservoir),
+                                                    T
+                                                    X −1
+                                         ∗
+                                        f (x) =            αt∗ K(xt , x).                           (F10)
+                                                    t=L
+
+For a fixed driving sequence, one may write K(t, t′ ) as shorthand for K(xt , xt′ ). This is the direct
+stateful counterpart of the kernel representation in Eq. (2.11), with the feature map ρ(x) replaced
+by the stateful reservoir map (zt−L , . . . , zt ) =: xt 7→ ρ(xt ). For vector-valued targets yt ∈ RC (for
+example, when predicting all components of zt+1 ), one can apply the same construction component-
+wise, as in the stateless case discussed below Eq. (2.10).
+
+
+                    Appendix G: Product state encodings and measurements
+
+          NN               NN     pj
+  If ρ =    j=1 ρj and P =  j=1 σ    is a Pauli string, then the measurement on the N -qubit
+product state gives
+                                                     N
+                                                     Y
+                                        tr(P ρ) =           tr(σ pj ρj ).                           (G1)
+                                                     j=1
+                                                                                                           23
+
+Any single-qubit state can be expanded in the Pauli basis as
+                                     1                            
+                                        1+
+                                              X
+                                ρj =                tr(σ p ρj ) σ p .                                   (G2)
+                                     2
+                                                 p∈{x,y,z}
+
+For single-qubit rotational encoding (3.10) one has
+                                                                  !
+                                     cos2 (πz)     cos(πz) sin(πz)    1                               
+ρj (z) = |ψrot (z)⟩⟨ψrot (z)| =                                     =    1 +sin(2πz) σ x
+                                                                                         +cos(2πz) σ z
+                                                                                                         ,
+                                 cos(πz) sin(πz)      sin2 (πz)       2
+                                                                                                   (G3)
+while for amplitude encoding (3.12):
+                                      p          !
+                               z        z(1 − z)      1                                  
+                                                         1 + 2 z(1 − z) σx + (2z − 1) σz .
+                                                               p
+             ρj (z) = p                            =                                               (G4)
+                            z(1 − z)    1−z           2
+
+Table IV summarizes the single-qubit expectation values obtained for rotational and amplitude
+encoding.
+
+                                                   tr(σ p ρj )
+                                           p
+                                         σ rotational amplitude
+                                          I      1             1
+                                                          p
+                                         σ x sin(2πz) 2 z(1 − z)
+                                         σy      0             0
+                                         σ z cos(2πz)      2z − 1
+
+            Table IV. Single-qubit expectation values for rotational and amplitude encoding.
+
+   This implies, in particular, that measuring the above encoded product states with a Pauli string
+P containing a Y -factor will always yield zero [77]. Action of a unitary breaks Eq. (G1) as it
+typically spreads any σ p into a mixture of all other Paulis, such that measuring a Y then will result
+in nonzero contributions.
+
+
+
+
+ [1] J. Bae and L.-C. Kwek, Quantum state discrimination and its applications, J. Phys. A.: Math. Theor.
+     48, 083001 (2015), arXiv:1707.02571 [quant-ph].
+ [2] H.-Y. Huang, R. Kueng, and J. Preskill, Predicting many properties of a quantum system from very
+     few measurements, Nat. Phys. 16, 1050 (2020).
+ [3] G. Garcı́a-Pérez, M. A. Rossi, B. Sokolov, F. Tacchino, P. K. Barkoutsos, G. Mazzola, I. Tavernelli, and
+     S. Maniscalco, Learning to Measure: Adaptive Informationally Complete Generalized Measurements
+     for Quantum Algorithms, PRX Quantum 2, 040342 (2021).
+ [4] A. Glos, A. Nykänen, E.-M. Borrelli, S. Maniscalco, M. A. C. Rossi, Z. Zimborás, and G. Garcı́a-Pérez,
+     Adaptive POVM implementations and measurement error mitigation strategies for near-term quantum
+     devices (2022), arXiv:2208.07817 [quant-ph].
+ [5] R. Leporini and D. Pastorello, An efficient geometric approach to quantum-inspired classifications,
+     Scientific Reports 12, 8781 (2022).
+ [6] C. Gyurik, V. Dyon Vreumingen, and V. Dunjko, Structural risk minimization for quantum linear
+     classifiers, Quantum 7, 893 (2023).
+                                                                                                         24
+
+ [7] K. Nakaji, S. Endo, Y. Matsuzaki, and H. Hakoshima, Measurement optimization of variational quan-
+     tum simulation by classical shadow and derandomization, Quantum 7, 995 (2023).
+ [8] D. Lee, K. Baek, J. Huh, and D. K. Park, Variational quantum state discriminator for supervised
+     machine learning, Quantum Science and Technology 9, 015017 (2024), arXiv:2303.03588 [quant-ph].
+ [9] S. Y.-C. Chen, H.-H. Tseng, H.-Y. Lin, and S. Yoo, Learning to Program Quantum Measurements for
+     Machine Learning (2025), arXiv:2505.13525 [quant-ph].
+[10] S. Y.-C. Chen, H.-H. Tseng, H.-Y. Lin, and S. Yoo, Learning to Measure Quantum Neural Networks, in
+     2025 IEEE International Conference on Acoustics, Speech, and Signal Processing Workshops (ICAS-
+     SPW) (2025) pp. 1–5.
+[11] C.-Y. Liu, L. Placidi, K.-C. Chen, S. Y.-C. Chen, and G. Matos, You Only Measure Once: On Designing
+     Single-Shot Quantum Machine Learning Models (2025), arXiv:2509.20090 [cs].
+[12] A. Li, T. Li, and F. Li, Enhancing the performance of variational quantum models by optimizing
+     observable measurement based on generalization bounds, Quantum Information Processing 24, 265
+     (2025).
+[13] H.-Y. Lin, H.-H. Tseng, S. Y.-C. Chen, and S. Yoo, Adaptive Non-local Observable on Quantum Neural
+     Networks (2025), arXiv:2504.13414 [quant-ph].
+[14] M. Vetrano, G. Lo Monaco, L. Innocenti, S. Lorenzo, and G. M. Palma, State estimation with quantum
+     extreme learning machines beyond the scrambling time, npj Quantum Information 11, 20 (2025).
+[15] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and T. C. H. Liew, Quantum reservoir processing,
+     npj Quantum Information 5, 35 (2019).
+[16] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano, and R. Zambrini, Time Series Quantum
+     Reservoir Computing with Weak and Projective Measurements, npj Quantum Information 9, 16 (2023),
+     arXiv:2205.06809 [quant-ph].
+[17] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Paternostro, and G. M. Palma, Potential and
+     limitations of quantum extreme learning machines, Communications Physics 6, 118 (2023).
+[18] W. Xiong, G. Facelli, M. Sahebi, O. Agnel, T. Chotibut, S. Thanasilp, and Z. Holmes, On fundamental
+     aspects of quantum extreme learning machines (2023), arXiv:2312.15124 [quant-ph, stat].
+[19] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo, V. Cimini, T. Giordani, I. Palmisano, E. Polino, N. Spag-
+     nolo, F. Sciarrino, G. M. Palma, A. Ferraro, and M. Paternostro, Experimental Property Reconstruction
+     in a Photonic Quantum Extreme Learning Machine, Phys. Rev. Lett. 132, 160802 (2024).
+[20] M. Schuld, Supervised quantum machine learning models are kernel methods, Journal of Machine
+     Learning Research 10.1145/3451902.3451903 (2021).
+[21] M. Schuld and N. Killoran, Quantum machine learning in feature hilbert spaces, Phys. Rev. Lett. 122,
+     040504 (2019).
+[22] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Harrow, A. Kandala, J. M. Chow, and J. M. Gambetta,
+     Supervised learning with quantum-enhanced feature spaces, Nature 567, 209 (2019).
+[23] H.-Y. Huang, M. Broughton, M. Mohseni, et al., Power of data in quantum machine learning, Nature
+     10.1038/s41586-021-03391-3 (2021).
+[24] B. Y. Gan, D. Leykam, and S. Thanasilp, A Unified Framework for Trace-induced Quantum Kernels
+     (2023), arXiv:2311.13552 [quant-ph].
+[25] N. Polson, V. Sokolov, and J. Xu, Quantum Bayesian computation, Applied Stochastic Models in
+     Business and Industry 39, 869 (2023).
+[26] P. Rodriguez-Grasa, Y. Ban, and M. Sanz, Neural quantum kernels: Training quantum kernels with
+     quantum neural networks, Phys. Rev. Research 7, 023269 (2025).
+[27] M. Kempkes, A. Ijaz, E. Gil-Fuster, C. Bravo-Prieto, J. Spiegelberg, E. van Nieuwenburg, and V. Dun-
+     jko, Double descent in quantum kernel methods, PRX Quantum 7, 010312 (2026), arXiv:2501.10077
+     [quant-ph].
+[28] M. Hermans and B. Schrauwen, Recurrent Kernel Machines: Computing with Infinite Echo State
+     Networks, Neural Computation 24, 104 (2012).
+[29] J. Dong, R. Ohana, M. Rafayelyan, and F. Krzakala, Reservoir Computing meets Recurrent Kernels
+     and Structured Transforms (2020), arXiv:2006.07310 [stat].
+[30] L. Gonon, L. Grigoryeva, and J.-P. Ortega, Reservoir kernels and Volterra series (2022),
+     arXiv:2212.14641 [cs].
+                                                                                                             25
+
+[31] L. Grigoryeva, H. L. J. Ting, and J.-P. Ortega, Infinite-dimensional next-generation reservoir comput-
+     ing, Phys. Rev. E 111, 035305 (2025).
+[32] K. Fujii and K. Nakajima, Harnessing Disordered-Ensemble Quantum Dynamics for Machine Learning,
+     Phys. Rev. Applied 8, 024030 (2017).
+[33] K. Fujii and K. Nakajima, Quantum reservoir computing: A reservoir approach toward quantum
+     machine learning on near-term quantum devices (2020), arXiv:2011.04890 [quant-ph].
+[34] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni, G. L. Giorgi, M. C. Soriano, and R. Zambrini,
+     Opportunities in Quantum Reservoir Computing and Extreme Learning Machines, Advanced Quantum
+     Technologies 4, 2100027 (2021).
+[35] L. Domingo, G. Carlo, and F. Borondo, Taking advantage of noise in quantum reservoir computing
+     (2023), arXiv:2301.06814 [quant-ph].
+[36] A. Sakurai, M. P. Estarellas, W. J. Munro, and K. Nemoto, Quantum Extreme Reservoir Computation
+     Utilizing Scale-Free Networks, Phys. Rev. Applied 17, 064044 (2022).
+[37] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz, P. Weinberg, M. Hamdan, A. Zhdanov, S. H. Cantu,
+     H. Zhou, R. A. Bravo, K. Bagnall, J. I. Basham, J. Campo, A. Choukri, R. DeAngelo, P. Freder-
+     ick, D. Haines, J. Hammett, N. Hsu, M.-G. Hu, F. Huber, P. N. Jepsen, N. Jia, T. Karolyshyn,
+     M. Kwon, J. Long, J. Lopatin, A. Lukin, T. Macrı̀, O. Marković, L. A. Martı́nez-Martı́nez, X. Meng,
+     E. Ostroumov, D. Paquette, J. Robinson, P. S. Rodriguez, A. Singh, N. Sinha, H. Thoreen, N. Wan,
+     D. Waxman-Lenz, T. Wong, K.-H. Wu, P. L. S. Lopes, Y. Boger, N. Gemelke, T. Kitagawa, A. Keesling,
+     X. Gao, A. Bylinskii, S. F. Yelin, F. Liu, and S.-T. Wang, Large-scale quantum reservoir learning with
+     an analog quantum computer (2024), arXiv:2407.02553 [quant-ph].
+[38] J. Steinegger and C. Räth, Predicting three-dimensional chaotic systems with four qubit quantum
+     systems, Scientific Reports 15, 6201 (2025), arXiv:2501.15191 [quant-ph].
+[39] By “conventional”, we mean quantum ML models that have trainable internal layers instead of only a
+     final trainable classical regression layer.
+[40] In practice, an initial washout/equilibration time for the QRC must be considered, which, however,
+     does not affect the present theoretical framework.
+[41] C. M. Bishop, Pattern Recognition and Machine Learning (Springer, Berlin, Heidelberg, 2006).
+[42] B. Schölkopf, R. Herbrich, and A. J. Smola, A Generalized Representer Theorem, in Computational
+     Learning Theory, edited by D. Helmbold and B. Williamson (Springer, Berlin, Heidelberg, 2001) pp.
+     416–426.
+[43] K. Bükrü, S. Leger, M. L. Hickmann, H.-M. Rieser, R. Sturm, and T. Siefkes, A Hybrid Quantum
+     Solver for Gaussian Process Regression (2025), arXiv:2510.15486 [quant-ph].
+[44] M. Schuld, R. Sweke, and J. J. Meyer, Effect of data encoding on the expressive power of variational
+     quantum-machine-learning models, Phys. Rev. A 103, 032430 (2021).
+[45] R. LaRose and B. Coyle, Robust data encodings for quantum classifiers, Phys. Rev. A 102, 032420
+     (2020), arXiv:2003.01695 [quant-ph].
+[46] Y. Wang, Y. Wang, C. Chen, R. Jiang, and W. Huang, Development of variational quantum deep
+     neural networks for image recognition, Neurocomputing 501, 566 (2022).
+[47] C. Yang, J. Qiao, H. Han, and L. Wang, Design of polynomial echo state networks for time series
+     prediction, Neurocomputing 290, 148 (2018).
+[48] J. Pauwels, G. Van der Sande, G. Verschaffelt, and S. Massar, Photonic Reservoir Computer with
+     Output Expansion for Unsupervized Parameter Drift Compensation, Entropy 23, 955 (2021).
+[49] C. Zhu, P. J. Ehlers, H. I. Nurdin, and D. Soh, Minimalistic and Scalable Quantum Reservoir Com-
+     puting Enhanced with Feedback (2024), arXiv:2412.17817 [quant-ph].
+[50] Y. LeCun, B. Boser, J. Denker, D. Henderson, R. Howard, W. Hubbard, and L. Jackel, Handwritten
+     Digit Recognition with a Back-Propagation Network, in Advances in Neural Information Processing
+     Systems, Vol. 2 (Morgan-Kaufmann, 1989).
+[51] R. Kharsa, A. Bouridane, and A. Amira, Advances in Quantum Machine Learning and Deep Learning
+     for Image Classification: A Survey, Neurocomputing 560, 126843 (2023).
+[52] A. D. Lorenzis, M. P. Casado, M. P. Estarellas, N. L. Gullo, T. Lux, F. Plastina, A. Riera, and J. Settino,
+     Harnessing Quantum Extreme Learning Machines for image classification, Phys. Rev. Applied 23,
+     044024 (2025), arXiv:2409.00998 [quant-ph].
+                                                                                                          26
+
+[53] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. Soriano, and R. Zambrini, Dynamical Phase Tran-
+     sitions in Quantum Reservoir Computing, Phys. Rev. Lett. 127, 100502 (2021).
+[54] O. Ahmed, F. Tennie, and L. Magri, Optimal training of finitely-sampled quantum reservoir computers
+     for forecasting of chaotic dynamics (2024), arXiv:2409.01394 [quant-ph].
+[55] O. Ahmed, F. Tennie, and L. Magri, Prediction of chaotic dynamics and extreme events: A recurrence-
+     free quantum reservoir computing approach (2024), arXiv:2405.03390 [quant-ph].
+[56] G. McCaul, J. S. T. Gongora, W. Otieno, S. Savelev, A. Zagoskin, and A. G. Balanov, Minimal
+     Quantum Reservoirs with Hamiltonian Encoding (2025), arXiv:2505.22575 [quant-ph].
+[57] M. Gross, Flow Map Learning in Nonlinear Vector Autoregressive Models (2026).
+[58] J. C. Sprott, Elegant Chaos: Algebraically Simple Chaotic Flows (World Scientific, 2010).
+[59] H. So, K. W. Chan, Y. Chan, and K. Ho, Linear prediction approach for efficient frequency estimation
+     of multiple real sinusoids: Algorithms and analyses, IEEE Transactions on Signal Processing 53, 2290
+     (2005).
+[60] S. V. Vaseghi, Advanced Digital Signal Processing and Noise Reduction (Wiley, Chichester, U.K, 2008).
+[61] M. C. Mackey and L. Glass, Oscillation and Chaos in Physiological Control Systems, Science 197, 287
+     (1977).
+[62] A. Sadath, T. K. Uchida, and C. P. Vyasarayani, Approximating strange attractors and Lyapunov
+     exponents of delay differential equations using Galerkin projections (2018), arXiv:1810.01016 [physics].
+[63] S. Jerbi, L. J. Fiderer, H. Poulsen Nautrup, J. M. Kübler, H. J. Briegel, and V. Dunjko, Quantum
+     machine learning beyond kernel methods, Nature Communications 14, 517 (2023).
+[64] For the product encoding schemes considered in Section III B, the features are essentially polynomials
+     of certain basis functions (e.g., Fourier exponentials or monomials in the input data).
+[65] A. Canatar, E. Peters, C. Pehlevan, and S. Wild, Bandwidth enables generalization in quantum kernel
+     models, Trans. Mach. Learn. Res. 2023 (2022).
+[66] M. Gross, M. Lange, B. Bujnowski, and H.-M. Rieser, Expressivity vs. Generalization in Quantum Ker-
+     nel Methods, in 33rd European Symposium on Artificial Neural Networks, Computational Intelligence
+     and Machine Learning, ESANN 2025, edited by M. Verleysen (Ciaco - i6doc.com, Bruges, Belgium,
+     2025) pp. 543–548.
+[67] J. Shawe-Taylor and N. Cristianini, Kernel Methods for Pattern Analysis (Cambridge University Press,
+     2004).
+[68] M. A. Nielsen and I. L. Chuang, Quantum Computation and Quantum Information: 10th Anniversary
+     Edition (Cambridge University Press, Cambridge ; New York, 2010).
+[69] M. Schuld and F. Petruccione, Machine Learning with Quantum Computers (Springer, Cham, 2021).
+[70] J. Kübler, S. Buchholz, and B. Schölkopf, The Inductive Bias of Quantum Kernels, in Advances in
+     Neural Information Processing Systems, Vol. 34 (Curran Associates, Inc., 2021) pp. 12661–12673.
+[71] For a complete orthonormal operator basis, ϕk represents the expansion coefficients of the feature map
+     ρ(x) under the HS-inner product tr(·) and thus becomes identical to the constrained feature map φ
+     defined in Eq. (2.5) and Table II.
+[72] J. Welch, D. Greenbaum, S. Mostame, and A. Aspuru-Guzik, Efficient quantum circuits for diagonal
+     unitaries without ancillas, New. J. Phys. 16, 033040 (2014).
+[73] T. N. Georges, B. K. Berntson, C. Sünderhauf, and A. V. Ivanov, Pauli decomposition via the fast
+     Walsh-Hadamard transform, New. J. Phys. 27, 033004 (2025).
+[74] G.-B. Huang, Q.-Y. Zhu, and C.-K. Siew, Extreme learning machine: Theory and applications, Neu-
+     rocomputing Neural Networks, 70, 489 (2006).
+[75] K. P. Murphy, Probabilistic Machine Learning: An Introduction (The MIT Press, Cambridge, Mas-
+     sachusetts, 2022).
+[76] T. Hofmann, B. Schölkopf, and A. J. Smola, Kernel methods in machine learning, The Annals of
+     Statistics 36, 1171 (2008).
+[77] This does not apply to the dense encoding in Eq. (3.11).
+

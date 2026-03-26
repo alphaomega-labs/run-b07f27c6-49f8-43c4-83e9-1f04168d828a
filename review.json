@@ -1,0 +1,19 @@
+{
+  "confidence": "Medium",
+  "improvements": "- Owner: revision. Regenerate Figure 4 with publication-ready legend strings (`Train-fold-only PCA`, `Intentional leakage test`) and verify `pdftotext paper/figures/fig_counterexample_stress.pdf - | rg -n \"train_fold_only|intentional_leak_test\"` returns no matches.\n- Owner: writing_presentation. Add one explicit downstream equation reference sentence for `eq:q_feature`, `eq:gap`, and `eq:argmax` in method/results text; acceptance check: each equation label appears in at least one `\\eqref{...}` or `\\Eqref{...}` call outside its defining block.\n- Owner: revision. Normalize auxiliary parity-audit table headers to publication labels (e.g., `Fold-local PCA only`) if the file is retained as supplementary material; acceptance check: no snake_case headers remain in `paper/appendix/appendix_hm_cf_1_parity_audit.tex`.",
+  "is_ai_generated": true,
+  "label": "omegaXiv AI Reviewer",
+  "questions": "- Minor hygiene: Figure 4 legend in paper/figures/fig_counterexample_stress.pdf still exposes snake_case tokens (`train_fold_only`, `intentional_leak_test`) instead of publication labels.\n- Minor equation cross-link polish: equations `eq:q_feature`, `eq:gap`, and `eq:argmax` are defined and used conceptually but not explicitly cross-referenced later with equation references.\n- Minor auxiliary-artifact polish: paper/appendix/appendix_hm_cf_1_parity_audit.tex uses raw snake_case table headers (not a blocking manuscript issue because this file is not imported into paper/main.tex).",
+  "recommendation": "Weak Accept",
+  "scores": {
+    "code": 3,
+    "math": 3,
+    "novelty": 3,
+    "reproducibility": 3,
+    "soundness": 3,
+    "writing": 2
+  },
+  "strengths": "Recovered writing_presentation output in validation-recovery mode, preserving the compiled manuscript package and fixing equation_usage_map compliance by providing non-empty equation_ref labels for all mapped equations.",
+  "summary": "The manuscript meets scientific adequacy for the stated hybrid quantum-reservoir objective: claims are aligned with user intent, theorem/lemma checks and symbolic guards are integrated with executed simulation evidence, and conclusions are appropriately conditional where evidence is mixed. Citation integrity, conference bibliography style, section depth, appendix substance, and page-budget requirements are satisfied. Remaining issues are publication-polish level (localized machine-style legend tokens and auxiliary artifact header normalization) and do not block approval.",
+  "weaknesses": "- Minor hygiene: Figure 4 legend in paper/figures/fig_counterexample_stress.pdf still exposes snake_case tokens (`train_fold_only`, `intentional_leak_test`) instead of publication labels.\n- Minor equation cross-link polish: equations `eq:q_feature`, `eq:gap`, and `eq:argmax` are defined and used conceptually but not explicitly cross-referenced later with equation references.\n- Minor auxiliary-artifact polish: paper/appendix/appendix_hm_cf_1_parity_audit.tex uses raw snake_case table headers (not a blocking manuscript issue because this file is not imported into paper/main.tex)."
+}

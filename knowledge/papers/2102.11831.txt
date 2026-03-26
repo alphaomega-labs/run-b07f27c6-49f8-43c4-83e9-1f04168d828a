@@ -1,0 +1,1005 @@
+                                                Opportunities in Quantum Reservoir Computing
+                                                       and Extreme Learning Machines
+                                            Pere Mujal, Rodrigo Martı́nez-Peña, Johannes Nokkala, Jorge Garcı́a-Beni, Gian Luca Giorgi,
+                                            Miguel C. Soriano, Roberta Zambrini*
+                                            Dr. P. Mujal, R. Martı́nez-Peña, Dr. J. Nokkala, J. Garcı́a-Beni, Dr. G. L. Giorgi, Dr. M. C. Soriano, Prof. R.
+                                            Zambrini
+                                            IFISC, Instituto de Fı́sica Interdisciplinar y Sistemas Complejos (UIB-CSIC)
+                                            UIB Campus, E-07122 Palma de Mallorca, Spain
+                                            *Email Address: roberta@ifisc.uib-csic.es
+                                            Dr. J. Nokkala
+arXiv:2102.11831v2 [quant-ph] 10 Jul 2021
+
+
+
+
+                                            Turku Centre for Quantum Physics, Department for Physics and Astronomy,
+                                            University of Turku, FI-20014, Turun Yliopisto, Finland
+                                            Keywords: Quantum machine learning, unconventional computing, information processing, reservoir
+                                            computing, extreme learning machines, NISQ, neural networks.
+                                            Quantum reservoir computing (QRC) and quantum ex-                   siderations on their physical substrates, the analog prop-
+                                            treme learning machines (QELM) are two emerging ap-                 erties of physical systems come into focus [10]. Thanks to
+                                            proaches that have demonstrated their potential both                recent advances, artificial NN are envisioned to be run even
+                                            in classical and quantum machine learning tasks. They               on top of analog quantum computing devices [11–13], with
+                                            exploit the quantumness of physical systems combined                the possibility to exploit the advantages of superposition
+                                            with an easy training strategy, achieving an excellent
+                                                                                                                in quantum computing and the parallelism in neural com-
+                                            performance. The increasing interest in these uncon-
+                                            ventional computing approaches is fueled by the avail-
+                                                                                                                puting. The implications of combining machine learning
+                                            ability of diverse quantum platforms suitable for imple-            and quantum physics indeed represents a major avenue for
+                                            mentation and the theoretical progresses in the study               research in the coming years [14–19].
+                                            of complex quantum systems. In this review article, re-                 In this review article, we concentrate on the potential
+                                            cent proposals and first experiments displaying a broad             of quantum devices for reservoir computing (RC) and ex-
+                                            range of possibilities are reviewed when quantum in-                treme learning machines (ELM). RC and ELM are machine
+                                            puts, quantum physical substrates and quantum tasks                 learning paradigms that exploit the natural dynamics of
+                                            are considered. The main focus is the performance of                input-driven randomly connected NN for information pro-
+                                            these approaches, on the advantages with respect to
+                                                                                                                cessing [20, 21]. The main advantage of the RC and ELM
+                                            classical counterparts and opportunities.
+                                                                                                                concepts in the context of artificial NN is their minimal re-
+                                                                                                                quirements for learning (usually referred as training in the
+                                                                                                                machine learning literature) [22, 23]. Figure 1 illustrates
+                                            1    Introduction                                                   the three layers typical of RC and ELM, namely an input
+                                                                                                                layer, a hidden layer or substrate, and an output layer. In
+                                            In recent years, we are witnessing an explosion of uncon-           RC and ELM, one only needs to adjust the weights of the
+                                            ventional computing methods and systems [1, 2]. One of              output connections via, for example, linear regression (see
+                                            the driving motivations for these efforts on unconventional         Figure 1), while the rest of the connections can be initial-
+                                            computing is to go beyond von Neumann architectures,                ized with random weights and are not optimized. Despite
+                                            physically co-locating processing and memory operations             the simplicity in the training, these methods have been
+                                            [3, 4].                                                             successful in numerous practical applications [24–28]. Al-
+                                                 For the unconventional computing revolution to occur,          though RC and ELM are both random mapping architec-
+                                            computational models and computing substrates are to be             tures [23], a main difference resides in the fact that RC
+                                            considered as a whole. Neuromorphic, and more generally             exploits the natural dynamics of the substrate as an inter-
+                                            neuro-inspired, computing is one of such fields where the           nal memory of past input information while ELM does not.
+                                            computational paradigm goes hand in hand with the de-               Both RC and ELM are amenable to dedicated hardware im-
+                                            sign of the physical substrate, aiming at approaching the           plementations in, for example, digital electronics [29,30] or
+                                            computational power of the human brain [5].                         nonlinear analog systems [31, 32]. The quantum counter-
+                                                 Machine learning, and in particular the field of artifi-       parts of RC and ELM will be referred to in the following as
+                                            cial neural networks (NN), can similarly benefit from the           QRC and QELM, respectively. As common in the litera-
+                                            progress in neuro-inspired computing devices [6–8]. The             ture on these topics, we consider as quantum RC and ELM
+                                            potential to build systems that are orders of magnitude             if they are based on quantum substrates and this will be
+                                            more energy efficient than traditional ones is a major key          the main focus of this article. We note that this is a more
+                                            motivation [9]. As computing approaches get closer to con-          restrictive definition with respect to what is usually
+
+
+                                                                                                            1
+                                                              as to the classical (C) or quantum (Q) computing de-
+                                                              vices [53]. This classification in either CC, CQ, QC or QQ
+
+
+
+
+                                      TRAINING
+                                                              (data/device) is also useful to frame the recent advances
+      INPUT          SUBSTRATE                   OUTPUT       in QRC and QELM. Here we will further label the clas-
+                                                              sical or quantum nature of the computational task. This
+                                                              input/substrate/task classification will guide the discussion
+                                                              of existing approaches in this review article.
+                                                                  The rest of the article is organized as follows. In Sec-
+Figure 1: Schematic representation of the basic ingredients tion 2, we give a brief description of the mathematical for-
+for RC and ELM. The information from the input is fed malism for the full classical case and we comment on how to
+into the substrate, which acts as a hidden layer or reser- extend it to the quantum case. In Section 2.2 and 2.3, we
+voir. The response of the substrate, through a selection concentrate on the different input forms and their treat-
+of observables, is then used to produce the desired output ment in order to do a given computational task, respec-
+after optimization of the output connections by training.     tively. In Section 2.4, we analyze the substrates that have
+                                                              been proposed and their requirements. The performance
+                                                              of QRC and QELM in some exemplifying works is under-
+considered as quantum in machine learning (where either
+                                                              lined in Section 2.5 and 2.6. In Section 3, we point out
+data or computing device can be non-classical).
+                                                              the current challenges in both experimental and theoreti-
+    Quantum systems exhibit a large number of degrees of
+                                                              cal contexts. We end the article by highlighting potential
+freedom that can be exploited for QRC and QELM. Since
+                                                              opportunities for this research field.
+the pioneering proposal of networks of quantum spins as
+reservoir substrates [33], there have been a variety of works
+exploring the possibilities that quantum mechanics can of- 2        Quantum Resources for Uncon-
+fer to this research area. In particular, the spin-based im-
+plementation is the most analyzed platform for QRC at the           ventional Computing
+moment [34–42], with the continuous-variable systems be-
+coming another promising option [43–45]. In the context of 2.1 Reservoir Computing and Extreme
+QELM, both fermionic and bosonic setups have been pro-                Learning Machines
+posed for instance in entanglement detection [46] or light In this section, we provide an overall picture of the formal-
+field phase estimation [47]. Inspired by these neuromorphic ism behind RC and ELM before moving on to their quan-
+approaches other quantum tasks have been reported such as tum counterparts in the following sections. We will use
+quantum states preparation [48, 49] or reconstruction [50]. this general framework to assess previous works in QRC
+Proof-of-principle experiments are also ongoing [39, 51]. In and QELM and provide an umbrella for the classification
+particular, QELM has been reported in a NMR experi- of future works.
+ment [51], while QRC has been realized on the quantum             All possible situations regarding the classical (C) or
+computation platform of IBM [37–39].                          quantum (Q) character of the input, the substrate and the
+    Exploring extended quantum systems as substrates for task, respectively are summarized in Table 1. Traditional
+machine learning in QRC and QELM represents a timely RC and ELM fall into the first column of the table, whereas
+and potentially disruptive opportunity. First of all, given QRC and QELM correspond to the second one. For in-
+a substrate of N nodes, the exponential size of the Hilbert stance, the first proposal of QRC [33] belongs to the CQC
+space allows in principle for a substantially enlarged output class: a C input is fed into a Q substrate to do a C task. We
+when compared to classical ones [33]. The extent of this will elaborate on the content of Table 1 along the following
+advantage when accessing a large number of output degrees sections. The overview provided by the classification in the
+of freedom has been quantified for instance in QRC with table reflects the richness of possibilities and therefore of
+spin [40] as well as Gaussian networks [43]. While deco- opportunities in this research field.
+herence is a strong limiting factor in gate-based quantum
+computing, in principle QRC and QELM are well suited for
+                                                              2.1.1 Classical Reservoir Computing
+NISQ [52]. Furthermore quantum substrates can interact
+with quantum inputs and are naturally suited for quan- In general, RC deals with (physical or artificial) dynam-
+tum tasks, providing new avenues for edge computing in ical systems that can map a given input to their state
+quantum systems with increasing complexity. Beyond the space [20, 64]. Here we briefly review the RC definition in
+opportunities in the context of quantum technologies for the broadly studied CCC scenario. If the states are vectors
+computation with a quantum advantage, QRC and QELM of N real numbers, xk , and inputs sequential real scalars
+offer a new and original perspective to characterize quan- (for simplicity), {sk }, then the most general form of such
+tum physical systems in terms of their operation as sub- a map would be [55]
+strates [42].
+                                                                                     xk = f (sk , xk−1 ),                (1)
+    In the context of quantum machine learning, four ap-
+proaches are often identified referring to the different com- where f is a fixed function determined by, e.g., the system
+binations of classical (C) or quantum (Q) data as well itself and how the input is injected, and, in general, can
+
+
+                                                             2
+Table 1: All possible combinations of input, substrate and             of the substrate, xout
+                                                                                          k ,
+task being classical (C) or quantum (Q). The sub-index k
+labels each time step or instance. The sub-index i is asso-                                     yk = h(xout
+                                                                                                        k ),                    (2)
+ciated to the internal degrees of freedom of the substrate.
+                                                                       where xout  is a vector of L ≤ N states, i.e. all state vari-
+For the classical input, {sk } is a data sequence, e.g. a string                k
+                                                                       ables may not be accessible for the output, and the function
+of real numbers. In the quantum case, ρin   k is a density ma-
+                                                                       h contains free parameters that are optimized during the
+trix representing an input state. The state of the substrate
+                                                                       training process. The supervised learning is done by mini-
+at a given instant is defined by xk in the classical regime
+                                                                       mizing a cost function between the true target output, ȳk ,
+and by the density matrix ρR in the quantum one. For the
+                                                                       and the predicted one, yk . It is worth mentioning that the
+training process with a classical substrate, a selection of the
+                                                                       generalization of this framework to a vectorial input, {sk },
+substrate variables are used, xout k . With a quantum sub-
+                                                                       or output, {yk }, is straightforward [28, 66].
+strate, the readout for the training is obtained after a set
+                                                                           The overall objective of RC is to provide a high-
+of measurements, {Oiout }. We distinguish between classical
+                                                                       dimensional mapping of the input sk to xk , and ultimately
+tasks, TC , and quantum tasks, TQ .
+                                                                       approximate the desired output yk . To this end, the func-
+                                                                       tions f and h provide memory and usually define a non-
+                                                                       linear transformation from input to output. Memory and
+                Classical Substrate     Quantum Substrate
+                         xk                    ρS                      non-linearity resources play a key and distinct role in dif-
+                                                                       ferent tasks. A useful quantifier of the memory of a given
+                         CCC                      CQC                  system, used also in works considering quantum reservoirs
+   Classical
+                  {sk }, xout
+                          k   → TC        {sk }, {Oiout } → TC
+    Input
+                   [21, 23, 54–60]       [33–41, 43, 44, 47, 52]
+                                                                       as will be seen, is called information processing capacity
+                                                  CQQ                  (IPC) [67]. The IPC facilitates the analysis of what kind
+                         CCQ
+      sk                                  {sk }, {Oiout } → TQ         of linear and nonlinear memory functions a given system
+                   {sk }, xout
+                           k   → TQ
+                                                 [48, 49]              can approximate. Further details are provided in Ap-
+  Quantum               QCC                       QQC                  pendix A.3.
+   Input           {ρin    out
+                     k }, xk   → TC      {ρin       out
+                                            k }, {Oi } → TC
+                        QCQ                       QQQ
+      ρin
+       k           {ρin    out
+                     k }, xk   → TQ      {ρin       out
+                                            k }, {Oi } → TQ
+                          [61]               [46, 50, 62, 63]          2.1.2   Classical Extreme Learning Machines
+                                                                    The main difference between ELM and RC is that in an
+                                                                    ELM the state of the substrate, xl , is uniquely defined by
+                                                                    only its corresponding input, sl . Therefore, the map be-
+have linear and nonlinear contributions [20, 56, 65]. Notice tween the two is given by [21, 59, 60]
+that the state of the substrate at a given time, xk , depends
+also on past inputs. This is seen recurrently iterating Eq. 1,                                xl = f (sl ),                     (3)
+e.g. for three steps xk = f (sk , f (sk−1 , f (sk−2 , xk−3 ))) . As
+                                                                    where l denotes different instances of the input. In ELM,
+an illustration, the input might be a temporal signal such
+                                                                    temporal dependencies between different input instances
+as speech, and the corresponding task might be to interpret
+                                                                    are not captured and are irrelevant, so it specializes in a
+oral conversations into text in real time. As is typical for
+                                                                    different kind of tasks. The set of inputs, {sl }, is not given
+RC, in this example each desired output (words) depends
+                                                                    in any relevant order. For instance, in a classification prob-
+on multiple past inputs (recent sounds), i.e. the input his-
+                                                                    lem, in which we want to know if there is a car in a picture
+tory, si≤k , so the state of the system is used as memory.
+                                                                    or not, the presence of a car in the previous picture is not
+Additionally, the map f should be contracting such that xk
+                                                                    related to the current one. It should be stressed that a RC
+to a good approximation depends only on recent dynamics
+                                                                    can be used as an ELM by, e.g., simply re-initializing it be-
+and input history [56–58]; this ensures both convergence (so
+                                                                    tween inputs, and an ELM can be used as a RC provided
+that input sequences that coincide during some recent time
+                                                                    that f is contracting as described above and the state is al-
+lead to the same outputs, a property also known as fading
+                                                                    lowed to retain memory of past inputs. Indeed, situations
+memory) and independence of distant past such as the ini-
+                                                                    can be envisioned where the same physical system can be
+tial state of the system (echo state property). Finally, the
+                                                                    used for both [32].
+map should also guarantee separability [55], which implies
+                                                                        In the following sections, we analyze and discuss the ex-
+that the reservoir computer separates any pair of different
+                                                                    tension of the two approaches to the quantum domain, i.e.
+inputs into different outputs.
+                                                                    QRC and QELM, where the substrate is a quantum system.
+    RC builds on this simple approach to solve machine We start discussing how to encode the input information,
+learning tasks: the bulk of the processing is offloaded to which needs to trigger the substrate properly. We then
+a fixed complex system and desired input-output maps are discuss recent proposals of quantum tasks as well as some
+achieved by only adjusting how its state is post-processed— requirements of a physical system to be used as a substrate.
+this is how the output of such systems is trained and a com- Once the main elements of QRC and QELM have been in-
+mon feature of random mapping methods [23]. The output troduced, two relative examples of tasks –namely timer and
+sequence, {yk }, is obtained from some of the state variables classification– will be shown in Section 2.5. These tasks are
+
+
+                                                                   3
+common in the classical framework and we will show them times, while the system is reset between inputs, represent-
+for a quantum reservoir of spins and of harmonic oscillators, ing an example of QELM with time multiplexing.
+respectively.                                                       Some approaches inspired by QRC and QELM have also
+                                                                addressed problems where the input is quantum, being an
+                                                                ancilla mode in a quantum state. The dynamical evolution
+2.2 Input Encoding                                              of the density matrix of the coupled quantum substrate and
+Once we have a computational problem to be tackled with the quantum input modes enables different tasks [46, 50].
+the use of a classical or quantum substrate as a processing For instance, quantum input states can be classified when
+unit, the first issue to be addressed is how to introduce the encoded into an ancilla interacting with a fermionic net-
+input into the system and different strategies have been de- work [46]. Further, the input quantum state, either in
+vised. One possibility, as we explain in more detail below, finite dimension or in continuous variable, can be recon-
+is by directly accessing to all or a part of the substrate. Al- structed [50]. Recently, a quantum input has been also
+ternatively, an external system can serve as an ancilla and considered in classical RC. For instance, in continuously
+be used to encode the input, which is then coupled to the monitored superconducting qubits [61, 68], the information
+substrate. In both cases we can distinguish between clas- about the quantum state is carried by a microwave signal
+sical inputs and quantum ones, as consistently classified in resulting from the measurement process.
+Table 1, indicating them through a scalar or a quantum
+state.                                                                2.3    Computational Tasks
+    When the input is classical, the information is usually
+given as a series of real numbers, {sk }, with k = 0, 1, ... ,        In this section, we will describe recently proposed compu-
+as explained in Section 2.1. For QRC, each instance of the            tational tasks that are suitable for QRC and QELM. In the
+input is fed into the substrate at consecutive time steps,            first place, it is worth introducing a criterion to establish
+∆t, so that time is given by t = k∆t, whereas for a QELM              whether a given task is classical or quantum. We consider
+task, the time does not play a relevant role and k represents         a task to be quantum when it exploits the quantum infor-
+each instance.                                                        mation content of input and/or output states. Examples
+    In the first proposal of QRC [33], the designed algorithm         are the identification of quantum correlations or quantum
+is suited for processing classical temporal information, e.g.         state preparation. This definition is adopted in Table 1.
+given a sequential input {sk } the goal is to reproduce a             We notice that, classical, TC , and quantum, TQ , tasks can
+classical target output {yk }. In order to input the classical        be performed with both classical and quantum substrates.
+sequence into the quantum substrate (of interacting qubits)               Starting with classical tasks, there are several recent
+the input is first encoded in the quantum state through               studies about the performance of quantum reservoirs as
+one (or more) of the qubits. The state of this selected               substrates for (classical) time-series processing [33–44, 47,
+qubit is recurrently prepared in a different superposition            52], so they are in the CQC class. These include bench-
+of the basis states |0i and |1i. The value of the classi-             mark tasks commonly considered in classical RC such as
+cal input, sk ∈ [0, 1] for a normalized continuous variable,          the timer task (see Section 2.5.2), realizing nonlinear func-
+or sk ∈ √{0, 1} for a binary one, fixes the components, i.e.          tions of past inputs such as the nonlinear autoregressive
+                        √
+|ψk i = 1 − sk |0i + sk |1i. Subsequent works concern-                moving average (NARMA) [69], and chaotic time series
+ing time-series predictions have employed a similar input             prediction based on, e.g. the Mackey-Glass system [70].
+encoding procedure [35, 40] in pure states. An alternative            As for QELM, there are at present no attempts to apply
+way to encode the classical input is used in [34, 36–39, 52],         quantum reservoirs to classical tasks such as, for instance,
+where the input qubit is consecutively initialized in the gen-        classification of images [59]. Further examples of classifi-
+eral mixed state ρk = (1 − sk ) |0i h0| + sk |1i h1|. The state       cation tasks have been reported in other NN settings [71]
+is pure when sk = 0 or sk = 1, and is completely mixed for            as well as in recently reported quantum classifiers [72, 73].
+sk = 1/2. In continuous variable systems, the input can               This CQC framework corresponds to the extension of the
+be encoded, for instance, in coherent states amplitude, in            full classical approach [21, 23, 54–60] by replacing the clas-
+squeezing strength or phase, in thermal excitation. These             sical substrate with a quantum one. The main goal is the
+encodings have been analyzed in the case of single-mode               realization of similar classical tasks with an improved per-
+Gaussian states in harmonic networks in Ref. [43], where it           formance (Section 2.6).
+was shown that the encoding choice can display a signifi-                 There are also recent proposals of quantum tasks that
+cant effect on the QRC performance (see Section 2.6).                 can be considered as QELM or inspired by it. In Ref. [46]
+    Another less explored possibility to fed a classical input        the quantum task consists in the detection of entanglement
+into a quantum substrate is by driving the substrate with             and the computation of entanglement-related quantities,
+an external field, such as a light beam modeled by a time-            which are typically difficult to extract from experimental
+dependent parameter in the Hamiltonian that describes the             setups. The setup consists of a quantum input ancilla
+reservoir. As an example, the input of the anharmonic os-             coupled to a quantum network. Similarly, also quantum
+cillator processing system in Refs. [44, 47] is the phase of a        state tomography based on a quantum reservoir has been
+monochromatic light beam driving of the dynamics. Each                reported, another example of a QQQ protocol in a frame-
+phase instance is learned through measurements at different           work similar to QELM. Conventional quantum tomography
+
+
+                                                                  4
+schemes are challenging but, with the quantum reservoir                  (a)                             (b)
+approach in [50], the unknown density matrix of the input
+quantum state can be reconstructed after a single measure-
+ment on local observables of the reservoir nodes without the
+need of any correlation detection. The characterization of
+quantum state is indeed an important quantum task, also                     Nuclear magnetic resonance
+                                                                                                                     Trapped ions
+explored in other platforms, like for instance the quantum                         in molecules
+neuron proposed in Ref. [74].                                            (c)                             (d)
+    Beyond detection schemes, another example of a TQ
+is the preparation of desired quantum states [48, 49] in
+ancilla systems interacting with different quantum sub-
+strates. In [48], for instance anti-bunched and cat states
+have been reported while Ref. [49] addresses maximally en-                     Fermions or bosons
+                                                                                                            Superconducting qubits
+tangled states, NOON, W, cluster, and discorded states.                            in lattices
+The main difference with QRC and QELM frameworks is                      (e)                             (f) Input
+that in spite of the presence of an input signal in the sys-                                                            Non-linear
+                                                                                                                         medium
+
+tem, this is just driving it in a suitable operation regime                                                                          Output
+but it is not an information input: the classical input does
+not encode which is the target quantum state, being this
+independently imposed through the proper choice of a cost
+function. As no quantum resource is needed in the input,                         Quantum circuits              Photonic platforms
+in Table 1, these examples are listed in the CQQ category.
+As a note, a QQC protocol could be devised as the in-
+                                                                      Figure 2: (a)-(f) Various examples of platforms to be
+verse process to the previous one. For instance, given a
+                                                                      used as quantum substrates for information processing.
+generic (quantum) state of an ancilla system as input, the
+                                                                      Two suitable candidates to implement spin-network mod-
+task could be to find a classical control parameter in the
+                                                                      els [33–37, 40, 52] are (a) nuclear magnetic resonance in
+substrate Hamiltonian preserving that quantum state.
+                                                                      molecules [51], and (b) trapped ions [75]. (c) State-of-the-
+    A QELM approach has also been proposed for quan-                  art ultracold atomic setups in optical lattices with bosonic
+tum chemistry calculations in [63], being an example of               and fermionic species are well-suited for Bose-Hubbard
+the QQQ class. The first two excited molecular energies               and Fermi-Hubbard discrete models [46, 48–50, 62], respec-
+and transition dipole moments between the ground states               tively. Additionally, other physical implementations are
+and the corresponding excited states are predicted from the           possible, e.g. in arrays of quantum dots in semiconductor
+ground-state wavefunction of the molecule, which is given             devices, and in (d) coupled superconducting qubits [72].
+as an input to a quantum reservoir formed by a random                 (e) Quantum circuits [38,76] have been used as a substrate
+transverse-field Ising model, acting as an entangler circuit          in the IBM platform [39,41]. (f) Continuous-variable mod-
+of qubits.                                                            els [43,47,76] could be engineered in photonic experimental
+    As shown in [62], a quantum substrate can also provide            setups as well [77–79], i.e. by coupling different frequency
+a general framework for quantum computing, achieving a                modes in non-linear media.
+universal set of quantum gates and also non-unitary oper-
+ations, of interest to simulate open quantum systems. Al-
+though this is a prominent quantum task (QQQ) inspired                with a single qubit coupled to a superconducting cavity
+by extreme learning techniques, the model of Ref. [62] es-            whose output is fed into a recurrent NN (implemented in
+capes the basic three-layer scheme of Figure 1 with random            software) [68]. The NN was able to predict measurement
+or arbitrarily chosen input mappings. Indeed, in [62] the             outcome probabilities as well as to estimate the initial state
+weight optimization involves both the input-reservoir cou-            of the qubit and parameters such as Rabi frequency, de-
+pling and the reservoir-output links, given that the physical         phasing rate and measurement rate.
+input nodes coincide with the output ones. While this kind
+of mirror architecture is specific of the cited work, we notice       2.4      Quantum Substrates for Information
+that any task whose target is represented by a time series
+                                                                               Processing
+of density matrices would require some tuning of (part of)
+the Hamiltonian parameters.                                           In QRC and QELM, quantum dynamical systems amenable
+    QRC has also been considered in the context of quan-              to input driving and output extraction are exploited to
+tum state measurement, as a strategy for processing in-               solve the tasks at hand. The exponential growth of Hilbert
+formation coming from continuously monitored supercon-                space dimension obtained by increasing the number of
+ducting qubits coupled to a Kerr network acting as a reser-           quantum elements endows them with a large state space
+voir [61]. The substrate of Josephson parametric oscillators          that plays a determinant role in the performance [33]. Such
+is operating into a classical regime and then classified as           quantum substrates require several ingredients to solve
+QCQ in Table 1. We also mention a recent experiment                   computational tasks.
+
+
+                                                                  5
+    The first one is the need of a rich spatial and/or tempo-       from a numerical perspective, but efforts in the analyti-
+ral dynamical behavior, which is frequently achieved intro-         cal direction have also been made. One of the main the-
+ducing disorder in the interactions between different sys-          oretical problems in the field of machine learning is the
+tem components [31]. In fact, symmetries in the quan-               universal approximation property: the possibility to find
+tum substrate can cause the appearance of local conserved           examples of a class of systems that can approximate ele-
+quantities that would reduce the number of exploitable de-          ments of a given class of functions with arbitrary precision.
+grees of freedom, which are responsible for a richer dynam-         In Ref. [37], focusing on a setup of interacting spins similar
+ics [42]. The second one has to do with how the state of            to the proposal of [33], sufficient conditions for this kind of
+the substrate depends on the input. As in the classical             universality were reported. In particular, the convergence
+case, QRC requires contractiveness. Contraction of the dy-          property is guaranteed when the norm of the dynamical
+namics, i.e., the convergence of two different initial states       map is constrained. Recently, a similar definition of con-
+after repeated input injections, guarantees that the system         vergence was introduced in [36], where the sufficient condi-
+presents a fading memory and allows the proper learning             tion is provided by the eigenvalues of the dynamical map
+of temporal functions [58]. In this manner, initial condi-          and a quantum version of the echo state property is intro-
+tions of the quantum system are erased and the state of             duced. A different variation of the QRC spin system in
+the system only depends on the input history. At variance,          terms of quantum circuits, as depicted in Figure 2(e), was
+in QELM it is usually assumed that the substrate is ini-            envisioned in [38], being the precedent of the IBM experi-
+tialized into some fixed state before an input is processed.        mental implementation of [39]. In this last work, a family
+In this case, the state depends on the most recent input            of QRC circuit models has been identified where the univer-
+only. Finally, the state of the system should be nonlinear          sality property holds. The efforts to analyze and optimize
+in input to achieve nontrivial information processing with          the performance of the original spin model are still ongo-
+a simple—and consequently easy to train—readout [20].               ing [35, 40, 42]. Regarding QELM systems, the universal
+    With these requirements in mind, different systems and          approximation property of continuous functions has been
+models have been proposed that could be implemented in              studied in [80], where several scenarios where considered.
+several platforms. Figure 2 illustrates a selection of the
+                                                                        All the previously mentioned spin-based references fall
+physical platforms that are considered for QRC and QELM.
+                                                                    into the category of CQC in our classification of Table 1,
+Experimental implementations of such quantum substrates
+                                                                    focusing on solving classical temporal tasks in the QRC
+for QRC and QELM can be modeled as few-body systems.
+                                                                    framework. Going beyond classical tasks, discrete-variable
+                                                                    models of fermions, as depicted in Figure 2(c), have been
+2.4.1   Spin and Other Discrete Variable Reservoirs                 introduced to solve non-temporal quantum tasks [46,50,62].
+                                                                    The authors of [46] proposed a 2D Fermi-Hubbard model
+The first proposal for QRC was based on quantum spin net-           with nearest-neighbor couplings as a substrate, where each
+works [33]. The size of the Hilbert space of these spin-based       lattice site is pumped by incoherent excitations, while the
+systems grows as 2N , where N is the number of spins, but           input is written in two bosonic modes that are coupled
+the total number of degrees of freedom amounts to 4N − 1.           to the reservoir via the dissipative “cascaded formalism”.
+Then, NISQ technologies with tens of spins ensure a large           The whole system is modelled by a Lindblad master equa-
+state space. In this first work [33], the rich and complex          tion and the output is built as a function of the fermionic
+dynamics of the transverse-field Ising model is evaluated in        occupation numbers. This formalism allows the authors
+different numerical experiments and a competitive perfor-           to perform the task of recognizing entangled states and it
+mance is obtained by just using the single spin projections         is potentially useful for any estimation of nonlinear func-
+in the z direction hσjz i, while more and different observ-         tions of the input state. The same substrate is employed
+ables have been addressed in [40]. Such performance partly          in [50], harnessing the time multiplexing technique to in-
+comes from the exploitation of a technique called temporal          crease the number of output nodes for quantum state to-
+multiplexing, where a number of V evenly spaced snap-               mography and can be applied to reconstruct both fermionic
+shots of the dynamics are taken between two input injec-            and bosonic states. Finally, the Fermi-Hubbard model is
+tions, thus increasing the number of computational nodes            also employed in [62], where a quantum reservoir model is
+by a factor of V [33,40]. The spin-based approach has since         proposed such that a universal set of quantum gates can be
+been further refined. In [34], spatial multiplexing is intro-       realized. We point out variational quantum circuits con-
+duced, where multiple networks receive the same input and           sisting of coupled superconducting transmons, which are
+output is gathered from all of them in a single output layer.       depicted in Figure 2(d), as another promising candidate
+In [36], spatial multiplexing is combined with classical con-       for QELM, since fully trained variational quantum circuits
+nections between the networks to enable multidimensional            solving non-temporal tasks have already been implemented
+inputs. Nuclear magnetic resonance in molecules, as de-             on such platforms [72]. Elementary building blocks for a
+picted in Figure 2(a), and trapped ions, as depicted in Fig-        quantum counterpart of a network of spiking neurons in-
+ure 2(b), are potential platforms for spin-based QRC and            tended to process quantum input were proposed in [74]
+QELM systems.                                                       however, based on simple spin Hamiltonians that imple-
+    Most works on spin-based systems for QRC mainly ex-             ment the transformations under certain conditions involv-
+plore their applicability and computational performance             ing in particular the interaction time.
+
+
+                                                                6
+2.4.2   Continuous Variables                                        tions, such as hyperbolic lattices. The discussion in [77] also
+                                                                    points to the possibility of including interactions between
+We now move to discuss the substrates that are usually
+                                                                    photons by means of nonlinear materials, and of coupling
+modelled as continuous variables, as for instance optical
+                                                                    the resonators to superconducting qubits, ideal for QRC
+systems, already well-established versatile and powerful
+                                                                    and QELM.
+classical RC platforms [64]. As for machine learning with
+quantum continuous variables, proposals to realize either               A different scheme, based on a single Kerr nonlinear
+basic building blocks [81] or full scale quantum NN [76] us-        oscillator, for CQC was adopted in [47]. Although only a
+ing variational (i.e. parameterized) quantum circuits have          single observable is considered, the scheme allows for its
+recently been reported. In these proposals, linear trans-           continuous monitoring; the output signal was discretized
+formations and displacements of the input are achieved              to facilitate training with the usual methods, leading to a
+by Gaussian gates. Nonlinearity is introduced with non-             situation not unlike the temporal multiplexing mentioned
+Gaussian gates in [76]. Measurement-induced nonlinear-              earlier for the spin based approach. First considered for
+ity is proposed as an alternative to experimentally difficult       QELM [47], more recently, also temporal tasks have been
+non-Gaussian gates in [81], however no advantage over clas-         reported in this scheme [44]. Substrates that can be mod-
+sical perceptrons was observed. Although intended to be             elled using continuous variables have also been used to
+trained by adjusting the circuit parameters, these proposals        tackle quantum tasks. A random bosonic lattice of non-
+could be adapted to realize continuous-variable QELM or             linear nodes excited by a randomly distributed classical
+QRC by starting from a randomly initialized but fixed feed-         field has been proposed for a CQQ [48] scheme of QELM.
+forward or recurrent architecture, respectively, and training       Following the principles of ELMs and RCs, only the read-
+only the readout layer. A first proposal in this direction          out layer, i.e. the basis change implemented by the linear
+is the use of a Gaussian boson sampler as a QELM [13],              optics, is trained.
+where classical input could be encoded in, e.g., squeezing
+and quantum input directly injected and the output would
+be a function of the expected values of detected photons.
+Also for ELM, nonlinear waves substrates have been re-              2.5     Examples of Classification and Tempo-
+cently shown to display universal approximator properties                   ral Tasks
+under certain conditions [82], being attainable in nonlinear
+optical media and Bose-Einstein condensates.                        In Section 2.3, we described different computational tasks
+    As for QRC, the case of Gaussian states of random lin-          with a focus on their classical or quantum nature without
+ear networks to perform classical tasks, i.e. CQC in Ta-            making an explicit distinction between tasks that belong
+ble 1, was proposed in [43]. In this approach, nonlinearity         to QRC from those that are proper to QELM. Based on
+originates from the input and readout layers whereas the            the differences underlined in Section 2.1, we can find ex-
+network state provides memory. The input layer consists             amples of both approaches. In particular, several works
+of a generally nonlinear mapping of the classical input se-         reports on temporal tasks employing the memory of the
+quence into quantum states, which are then injected into            reservoir, a defining feature of QRC [33–44,52,61]. In con-
+the network with periodic state resets of one of the net-           trast, when the tasks that are performed do not require
+work oscillators. The observables of the rest of the os-            memory from past inputs to generate the output, we are
+cillators are combined with a trained function to match             dealing with a QELM [44, 46–51, 62]. Below, for the sake
+a desired output. Already with these minimal resources,             of concreteness, we present an example of squeezing clas-
+an improvement over purely classical resources was found            sification using QELM and an example of a temporal task
+(see Section 2.6 for more details), and the reservoir family        realized with QRC.
+was found to have the universal approximation property.
+Here, in contrast to spin-based models, the linear dynam-
+ical equations lead to a necessary and sufficient condition         2.5.1   QELM Classifier
+for convergence [43]. This approach is suited for realiza-
+tion in photonic devices, promising candidate platforms to          Dynamics of quantum systems that do not retain memory
+be used as substrates for information processing. The dif-          of past inputs can be used to solve non-temporal tasks such
+ferent frequency or temporal modes found in photonic sys-           as classification, where the inputs are categorized following
+tems, as depicted in Figure 2(f), could serve are reservoir         some given rule. In Figure 3, we show results of using the
+for QRC and QELM. For instance, it was recently pro-                harmonic oscillator network of Ref. [43] in such a fashion
+posed the generation of re-configurable complex networks            to classify squeezed states.
+in Ref. [78] based for instance on frequency combs [79] in-             Specifically, the input is a squeezed vacuum state with
+teracting through nonlinear media, as we represent in Fig-          squeezing magnitude r ≤ 2, which can take a finite number
+ure 2(f). As a further example, lattices of coplanar waveg-         of different values, and phase ϕ, which is either constant
+uide resonators have already been produced for photons in           or selected uniformly at random from the interval [0, π/4].
+the microwave regime, as in [77]. This kind of systems are          The different classes are simply the different values for r,
+experimentally flexible platforms where different geometric         and the oscillator network is trained to classify the states
+configurations are possible between the network connec-             accordingly.
+
+
+                                                                7
+                       Classification of squeezed states
+                                                                             (a)
+               1.0
+
+               0.8
+Success rate
+
+
+
+
+               0.6
+                                                                             (b)
+               0.4
+
+               0.2
+
+               0.0
+                       3           4           5       6
+                                 Number of classes          Figure 4: Timer task trajectories for a quantum spin net-
+                                                            work of N = 10 spins. In panel (a) the countdown time is
+Figure 3: Squeezed vacuum states with either a fixed (yel-
+                                                            τ = 5, whereas in panel (b) we used τ = 20. The input
+low, left bars) or a random (blue, right bars) phase are
+                                                            sequence {sk } (dashed line), the target {ȳk } (solid line),
+classified according to the magnitude of squeezing using a
+                                                            and outputs {yk } (symbols) are shown in both situations.
+QELM. 100 random realizations of both the states to be
+                                                            We used three different instances of the output layer with
+classified and of the oscillator network acting as QELM are
+                                                            different number of O observables in each instance, namely
+considered for each case. The columns and error bars indi-
+                                                            O = 10, squares, O = 30, triangles, and O = 75 circles (see
+cate the success rate and standard deviation, respectively.
+                                                            Appendix A.2 for more details).
+
+The network consists of N = 4 oscillators, initially in its
+                                                                     observables, see Appendix A.2 for further details. In both
+ground state. The input state is injected into the network
+                                                                     situations, O = 75 outperforms the smaller output layers,
+by setting the state of one of the oscillators to it. The net-
+                                                                     observing a drastic decrease of capabilities for O = 10 and
+work is then allowed to evolve for a fixed time before the
+                                                                     O = 30 when we extend the countdown time to τ = 20.
+output is extracted. The output, i.e. the class assigned to
+                                                                     These results are a simple but convincing evidence of the
+the input state, is a trained function of 6 of the network
+                                                                     positive influence on the system performance of using a
+observables. As can be seen, if the phase is constant the
+                                                                     larger number of observables [40]. The possibility to use a
+network succeeds in the task in all cases. With random
+                                                                     large number of observables relies on the large number of
+phase the success rate remains high for a small number of
+                                                                     exploitable degrees of freedom that quantum systems con-
+classes. This simple classification example displays the ver-
+                                                                     tain.
+satility of QRC platforms also serving for QELM: indeed
+the difference with the original model studied in Ref. [43]
+is merely that here we reset the state of the network to the         2.6    Performance of Quantum Substrates
+ground state between inputs and with the purpose of a clas-
+sification task. Further details are given in Appendix A.1.          A key motivation in considering quantum substrates in ma-
+                                                                     chine learning is the possible advantage these can represent
+                                                                     with respect to classical ones. In this section, we summarize
+2.5.2                QRC Timer
+                                                                     some recent results on the performance both in QELM and
+The natural dynamics of quantum systems can be employed              in QRC. Where available, we report on the performance of
+to solve temporal tasks. Here, we show the performance of            a quantum substrate and its classical counterpart on the
+the quantum spin model of Ref. [33] in one of the bench-             execution of the same task. A potential advantage of the
+mark tasks used to characterize the memory capacity of               extension of RC and ELM to the quantum domain is the
+reservoir computers: the timer task.                                 possibility of dealing with an exponentially large number of
+    The timer task is a relatively simple task that consists         degrees of freedom even for small networks of coupled units.
+in obtaining a response from the system after a countdown            The way these degrees of freedom can be computationally
+finishes. The indication to start the countdown is given             exploited will not only depend on the size of the Hilbert
+by the input sequence {sk } (dashed-grey line) going from            space of the reservoir, but also on the way information is
+zero to one, and the countdown finishes when the target              encoded in, processed by and extracted from the system.
+sequence {ȳk } shows a spike (black-solid line). Figure 4(a)           The study of the computational power in relation with
+and (b) account for different countdown times (5 and 20              the system size is indeed the target of several works on
+time steps, respectively), testing the limits of the memory          QRC. In the pioneering work of Ref. [33], a spin network
+capabilities of our system. Three instances of the output            was employed to solve problems such as the short-term
+layer were employed for a network of N = 10 spins, where             memory task and the parity check. These tasks serve
+O denotes the number of observables. These output layers             to estimate the capacity of the system to store the in-
+were constructed with different combinations of local                put sequence and to perform a nonlinear mapping, respec-
+
+
+                                                                 8
+tively. By tuning the input injection rate and the coupling          have been devised so far that are based on classical sub-
+strength, spin networks of a few qubits (N < 10) exhibit             strates (to the best of our knowledge, Ref. [61] is the only
+similar computational capabilities to echo state networks            example of a classical RC approach to a quantum problem).
+(ESN) of 100 − 500 nodes. The performance of a 500-node              In order to assess the usefulness and the advantage of the
+ESN can be matched by a spin network of only N = 7                   protocols proposed in Refs. [46, 48, 49], a comparison can
+qubits, for instance measuring at several times along the re-        be made with previous results on the same tasks that have
+sponse of each qubit. The possibility to extract additional          been obtained using more standard (fully-trained) classical
+information from the dynamics of each spin at different              NN architectures. As an example, the task of classifying,
+times emphasizes the role played by the hidden degrees of            through a NN, whether a (multipartite) state is entangled
+freedom of the system. In a similar spirit, the potential of         or not was addressed in Ref. [83]. There, the classification
+exploiting the large amount of computational nodes that              is limited to pure states and the extension to mixed ones
+are available in a quantum substrate was quantified in [40]          represents a nontrivial issue. In contrast, the simple model
+through the IPC, a tool well suited to assess the perfor-            of [46], based on a quantum substrate, works irrespective
+mance in RC (see Section 2.1.1). Taking as observables               of the mixedness of the state under study. As for quan-
+quantum correlations as well as spin projections, and con-           tum state preparation, the QELM of [48] does not require
+sidering time multiplexing techniques, it was demonstrated           any additional resource apart from the reservoir itself, in
+that the capacity of spin networks can be extended without           contrast with other NN proposals, which for instance rely
+indications of saturation. Moreover, it has been shown that          on number-resolved measurements [84], or conditional mea-
+different sets of observables may provide distinctive (linear        surements [85].
+and nonlinear) contributions to the capacity [40].                        The impact of noise has also been addressed in most of
+    Indeed, the total computational capability increases             the platforms for QRC and QELM. In qubit based reser-
+with the output size if we employ linearly independent ob-           voirs, both effects such as dephasing [33, 37] and additive
+servables [40]. In order to fully benefit from a large Hilbert       external noise in observables [33, 36, 50] have been consid-
+space, all of them must have access to the input either              ered. Ref. [37] compared effects of dephasing to (gener-
+directly or through the interconnections. Otherwise, satu-           alized) amplitude damping and found them to be similar,
+ration can occur. For the single-qudit reservoir system in           whereas Ref. [50] compared systematic and random noise,
+Ref. [44], although the quantum reservoir outperforms its            finding that the reservoir learns to compensate for the for-
+classical counterpart, the performance quickly saturates as          mer and tolerates the latter. Importantly, noise does not
+the number of considered levels grows. This indicates that           necessarily rule out universal QRC [39] and it has been
+richer dynamics should be considered to exploit the whole            suggested [41] that a small amount of noise can prevent
+Hilbert space [44] and to achieve an improved performance.           overfitting in NISQ systems, similarly to the classical neu-
+    The relevance of the state space size and encoding is also       ral networks case. Sometimes computation speed can be
+manifested in [43], where a network of quantum harmonic              sacrificed for better noise tolerance by simply increasing
+oscillators is compared with an ESN with the same number             the number of repetitions for the protocol: this approach
+of computational nodes, i.e., the same number of oscillators         was found to make nontrivial information processing possi-
+as the number of nodes in the ESN. The quantum system                ble even when the signal-to-noise ratio was low in an NMR
+possesses a larger state space even when restricted to Gaus-         experiment [51]. Additive external noise has also been con-
+sian states. Furthermore, the way in which the input is              sidered in continuous-variable systems [45, 47, 48, 76] and it
+encoded in the quantum network plays a determinant role              has been found that performance degrades gracefully. In
+in exploiting all degrees of freedom. Computing the IPC              particular, impact of external noise in observables can be
+for systems with N = 8 computational nodes (both for the             reduced if the memory of the reservoir can be tuned to be
+ESN and the quantum network), it was shown that encod-               close to the requirements of the task at hand [45]. Further-
+ing in the mean amplitude increases the total capacity only          more, simulations suggest that a quantum neural network
+by a factor of 2 respect to the ESN. In contrast, encoding           implemented in an optical platform can learn to compen-
+in the fluctuations of the input oscillator allows to access         sate for photon loss [76].
+to N 2 observables. In particular, squeezed vacuum encod-
+ing increases the nonlinear memory of the system, while
+classical thermal fluctuations only provide linear memory.           3    Experimental               and       Theoretical
+    As we have seen, in the case of classical tasks and out-              Challenges
+puts the performance achievable with quantum substrates
+is quantified using the same tools that have been devel-             Many opportunities arise when RC and ELM are extended
+oped for classical RC and ELM, and direct comparisons                into the quantum regime but still there are several open
+with classical substrates can be done. On the contrary,              challenges. One of the main drawbacks for experimen-
+for quantum tasks we have seen a broader spectrum of ap-             tal implementations of QRC and QELM comes from the
+proaches and anticipated some of their specific advantages           output extraction. In most cases, the readout data taken
+in Section 2.4. In the case of the quantum tasks mentioned           from the quantum substrates are typically expectation val-
+above (entanglement detection, quantum state tomogra-                ues of local node observables or their correlations. This
+phy, quantum state preparation) no RC or ELM protocols               implies that, due to the stochastic nature of quantum mea-
+
+
+                                                                 9
+surements, several copies of the system or multiple mea-           processing of temporal sequences of inputs that can bring
+surements are generally needed. Furthermore, in tempo-             information, for instance, about the stochastic source that
+ral tasks, the system output needs to be measured in a             generates them. For this class of problems, the measure-
+sequence of times. As measurements introduce a (even               ment back-action problem is in general less worrying than
+strong) back-action in the reservoir dynamics, their effect        in the time series processing protocols described so far. In-
+needs to be accounted for in on-line time series process-          deed, if information were encoded in the entire time series,
+ing. In order to avoid it, the protocol would have to be           the final state of the substrate would be determined by the
+repeated many times until each time step that one wishes           whole input injection process, so that an output could be
+to consider. Finally, the interaction with external degrees        built at the final computing stage after a single measure-
+of freedom of the quantum reservoir induces decoherence            ment. This class of problems is not necessarily limited to
+and dissipation in it. These issues are important when             processing of classical inputs, as it can also include quan-
+dealing with quantum substrates and become particularly            tum time series processing. For instance, one may want
+challenging for on-line time series processing as in QRC.          to determine whether a quantum channel is Markovian or
+    A way of dealing with the measurement problem con-             not, or whether noise in a multipartite quantum register
+sists in taking a large number of quantum substrates and           is correlated or uncorrelated. This family of cases would
+performing ensemble computing, as considered in the first          represent QRC tasks within the QQQ cell of Table 1.
+experimental implementation of QELM on NMR platforms                   Broadly speaking, a general theory for quantum tasks,
+[51], where the observable averages are taken over a large         TQ , is yet to be formulated. In this regard, a new concept
+number of identical molecules in a solid. Back-action effects      analog to the universal approximation property should be
+are negligible in those cases, as weak measurements are            defined. For instance, in the case of quantum state tomog-
+performed over the substrate [86]. Although promising, no          raphy [50], a universality property would ensure that any
+implementations of temporal data processing (QRC) have             arbitrary quantum state belonging to a given Hilbert space
+been reported on NMR platforms so far.                             can be reconstructed. Furthermore, there is still no theo-
+    NISQ schemes for QRC are also promising and have also          retical magnitude that can estimate the performance of a
+been experimentally implemented on current IBM quantum             given quantum substrate by computing how well it approxi-
+computers [39, 41]. The output of quantum computation              mates any arbitrary solution, similar to the IPC in classical
+on the IBM platform is so far obtained through projective          RC that provides an overall assessment of the linear and
+measurements, so the measurement back-action problem               nonlinear memory properties of the system [67]. A step
+discussed above represents a serious issue when compared           towards this direction has been recently reported in [13]
+with on-line processing in classical RC. For instance, the         where an information-theoretic quantifier of the memory of
+experimental implementation reported in Ref. [39] required         a quantum or classical learning machine processing quan-
+for each time a different ensemble of realizations, a rather       tum or classical inputs is introduced. Although its use for
+laborious procedure; the system needs be restarted from            such tasks is discussed, it has yet to be applied in this man-
+time 0 to be measured at time k∆t so the substrate retains         ner.
+memory from the past.                                                  Finally, in situations where the output is a quantum
+                                                                   state, training cannot be done with linear regression be-
+    Most theoretical proposals stand on the assumption
+                                                                   cause the readout layer might be, e.g., an interaction
+that it is possible to average over several identical realiza-
+                                                                   Hamiltonian [62], which also makes such class of protocols
+tions. The number of repetitions required to obtain a re-
+                                                                   highly unorthodox with respect to the standard definition
+liable estimation of expectation values will depend on the
+                                                                   of reservoir computing. There might also be additional
+system as well as on the observable considered. For in-
+                                                                   restrictions for the trained parameters to be admissible.
+stance, the estimation of variances in continuous variables
+                                                                   Although in such situations general purpose optimization
+of quantum vacuum states will require, in general, more ef-
+                                                                   methods, such as the Nelder-Mead algorithm, have been
+fort than the estimation of a mean quadrature of an intense
+                                                                   successfully used to train the system [62], it could be won-
+mode with small quantum fluctuations [47]. Depending on
+                                                                   dered if theoretical work on the optimal training method
+the specific features of each platform, different strategies for
+                                                                   could further improve results in these cases.
+output extraction and measurement can be devised and this
+represents an almost completely unexplored field. Alterna-
+tive implementations in which statistics can be performed          4    Conclusions & Outlook
+over a single realization would be a significant advance in
+the field. In the case of QRC, experimental platform pro-          This review article on QRC and QELM covers the state-of-
+posals allowing on-line data processing are also desirable.        the-art and provides an outlook of future research avenues
+These frameworks could be based on sequential measure-             in this emerging field. We have introduced a classification
+ments of the substrate, implemented in a way in which the          of the current literature in terms of the classical or quan-
+reservoir does not completely lose all information about           tum nature of the input, substrate and task, respectively,
+past inputs after each detection. This would most likely           that provides a general overview and points out unexplored
+yield back-action effects on the dynamics of the substrate,        directions. Recent works have shown that several classical
+which should also be taken into account.                           and quantum tasks can be successfully performed. A rele-
+    A field so far unexplored in QRC is represented by the         vant feature of QRC and QELM is the combination of the
+
+
+                                                               10
+benefits of simple training requirements, compared to other    sity of the Balearic Islands through a “Ramon y Cajal” Fel-
+machine learning methods, with the potential of improved       lowship (RYC-2015-18140). GLG is funded by the Spanish
+performance of quantum substrates. Several platforms are       Ministerio de Educación y Formación Profesional / Minis-
+good candidates to be used as quantum substrates and fa-       terio de Universidades and co-funded by the University of
+cilitate the practical implementation in currently available   the Balearic Islands through the Beatriz Galindo program
+NISQ devices. An additional envisioned advantage of the        (BG20/00085).
+QRC framework applied to NISQ devices is to bypass the
+strict requirements of quantum error correction or error
+mitigation techniques, since time-invariant readout errors     Conflict of Interest
+can be learned during training and are compensated for
+by the output layer [39]. Further opportunities remain to      The authors declare no conflict of interest.
+be explored including photonic platforms, particularly suc-
+cessful for classical RC [64].
+     We note that quantum substrates allow one to tackle       A      Appendix
+problems that are incompatible with their classical counter-
+parts. Nowadays, conventional classical machine-learning
+algorithms are being used for tasks related to assisting
+                                                               A.1     Details on the QELM Classifier
+quantum experimental realizations. Tasks include e.g.          The classification task of Figure 3 is defined by
+quantum state preparation, quantum state tomography,
+calculation of entanglement-related quantities from acces-                           ρin = |r, ϕi hr, ϕ| ,
+sible observables, and continuous monitoring of systems.                                                                   (4)
+                                                                                       ȳ = r,
+QRC and QELM proposals widen the opportunities as can
+be more naturally adapted to interact with quantum inputs      where the input state, ρin , is a single-mode Gaussian state
+or embedded in experimental platforms. According to the        in squeezed vacuum, determined by squeezing magnitude
+present state of the art, while QRC has been mainly em-        r ∈ [0, 2] and phase ϕ ∈ [0, π/4]. Here r can take only a fi-
+ployed in classical temporal tasks, QELM has found its         nite number of equally spaced different values which are the
+realm in quantum information tasks. However, the use           classes. For three classes the possible values are r ∈ {0, 1, 2}
+of QRC is expected to display a disruptive potential in        and so on. The phase ϕ is either uniformly random or takes
+quantum temporal tasks as, for instance, in quantum se-        a constant value ϕ = 0. The target output ȳ is the class,
+cure communication, quantum channel tomography, non-           and should coincide with r.
+Markovianity detection, or quantum error correction. In
+                                                                    The starting point of the used QELM is the oscilla-
+this line, a very recent proposal for temporal quantum pro-
+                                                               tor network presented in Section IIA of [43], where it was
+cess tomography is found in [87]. Classical or quantum
+                                                               used for QRC. Here it is converted into a QELM by reset-
+RC substrates embedded in quantum systems can indeed
+                                                               ting its state to the ground state between inputs, removing
+allow for low-latency processing of quantum signals at the
+                                                               any memory of input history. The network is completely
+computational edge with high fidelity [61], operating at the
+                                                               connected and consists of N = 4 oscillators. The bare fre-
+timescales of the measured quantum system and providing
+                                                               quencies of all oscillators is set to ω0 = 0.25, whereas the
+a speed-up.
+                                                               interaction strengths in the network are chosen uniformly
+     To conclude, the field of QRC and QELM is still mov-
+                                                               at random from g ∈ [0, 0.2]. At the beginning of the proto-
+ing its first steps, so it is premature to make quantitative
+                                                               col the state of the oscillator selected for input injection is
+comparisons with their much more advanced classical coun-
+                                                               set to ρin . The network is allowed to evolve for a time ∆t,
+terparts in terms of efficiency or performance, especially
+                                                               after which the diagonal elements of the covariance matrix
+because of the absence of fully working experimental im-
+                                                               of the rest of the oscillators are used to form the output.
+plementations. However, the perspective we have presented
+                                                               The value of ∆t is chosen by considering a large set of
+here gives us a glimpse of the potential and the versatility
+                                                               possible values and choosing the one that minimizes the
+of these frameworks together with the new avenues that
+                                                               spectral radius specified in Lemma 1 of [43]. The network
+deserve to be explored.
+                                                               is first trained as in [43] (except that there is no prepara-
+                                                               tion phase since the network state is reset between inputs)
+Acknowledgements                                               using random input states. Typically the outputs are real
+                                                               numbers close to r. The predicted class is taken to be the
+We acknowledge the Spanish State Research Agency,              nearest class to the network output; the training is finished
+through the Severo Ochoa and Marı́a de Maeztu Pro-             by shifting the bias term such that this leads to the correct
+gram for Centers and Units of Excellence in R&D (MDM-          classification as often as possible. The trained weights are
+2017-0711) and through the QUARESC project (PID2019-           then tested by classifying a new set of random inputs.
+109094GB-C21 and -C22/ AEI / 10.13039/501100011033);                The success rate in the test phase is shown in Figure 3.
+We also acknowledge funding by CAIB through the                The network is first trained with 500 inputs and then used
+QUAREC project (PRD2018/47). The work of MCS has               to classify 200 fresh inputs. Both inputs with a constant
+been supported by MICINN/AEI/FEDER and the Univer-             phase ϕ = 0 and with a random phase are considered and
+
+
+                                                           11
+the number of classes, i.e. possible values for r, is var-          the target function for a given degree d of nonlinearity is:
+ied. 100 random realizations of both the inputs and the                                 Y               X
+networks were considered for each of the 8 different cases.                       ȳk =    Pdi [sk−i ],    di = d,           (6)
+                                                                                        i                i
+
+                                                                    such that the sum of the degrees di of all the multiplied
+A.2     Details on the QRC Timer                                    polynomials add up to a given degree d and where the in-
+The input/output map of the timer task of Figure 4 can be           puts sk−i are randomly and uniformly distributed.
+represented by                                                          Then, the capacity of approximating target functions
+                                                                    like Eq. 6 is quantified as
+                          (
+                           1 k ≥ c,                                                               minw MSEL (y, ȳ)
+                    sk =                                                        CL (X, y) = 1 −                     ,        (7)
+                           0 k < c,                                                                    hȳ2 iL
+                          (                                  (5)
+                            1 k = c + τ,                            where X is the matrix of the dynamical variables at differ-
+                    ȳk =
+                            0 otherwise,                            ent times, y and ȳ are the prediction and target sequences
+                                                                    respectively and w is the vector of weights of the output
+where the values of the inputs {sk } indicate when the              layer. The meanPsquare error MSE is the cost function
+                                                                                          L
+countdown starts (k = c = 500). Once the countdown                  MSEL (y, ȳ) = L1 k=1 (yk − ȳk )2 and the bracket hiL de-
+is initialized, the target is to obtain an isolated response of     notes the temporal average for sequences of length L.
+the output sequence with value ȳc+τ = 1.                               The total capacity is exactly saturated when infinite in-
+     The system we considered here is the quantum spin              put sequences are considered and the contributions of all
+model of [33]. We used a network of N = 10 spins, with              the possible nonlinearities, i.e. up to an infinite degree d,
+an homogeneous external magnetic field h = 10, coupling             are computed. However, a sufficiently long input sequence
+strength between qubits given by a random uniform distri-           and sufficiently high maximum degree give a stable result.
+bution Jij ∈ [−1/2, 1/2] and input injection rate ∆t = 10,              A first application of the IPC to QRC has been reported
+everything in normalized units. Three different instances           for a spin reservoir in Ref. [40].
+of the output layer were employed in Figures 4(a) and (b),
+where O denotes the number of observables. First, blue              References
+squares correspond to the case of using only the spin pro-
+jections in the z-axis hσiz i (1 ≤ i ≤ N ). Second, yellow           [1] A. Adamatzky, L. Bull, B. De Lacy Costello, S. Step-
+triangles correspond to all the local spin projections hσix i,           ney, C. Teuscher, Unconventional Computing 2007,
+hσiy i and hσiz i. Third, the red dots were obtained with the            Luniver Press, 2007.
+two-spin correlations along the z-axis hσiz σjz i (1 ≤ i, j ≤ N ,
+i < j) in addition to all the local spin projections.                [2] H. Jaeger,   Neuromorph. Comput. Eng. 2021, (in
+     Figures 4(a) and (b) represent the results for the timer            press).
+tasks of τ = 5 and τ = 20, respectively. We fed an input             [3] C. D. Wright, P. Hosseini, J. A. V. Diosdado, Adv.
+sequence of 800 time steps to the system, where the first                Funct. Mater. 2013, 23, 18 2248.
+400 were a used as warming up to remove the initial con-
+dition. The output layers were trained only with the last            [4] D. Ielmini, H.-S. P. Wong, Nat. Electron. 2018, 1, 6
+400 time steps, and we took 10 different realizations of the             333.
+couplings of the network to obtain averages of the output
+                                                                     [5] D. Monroe, Commun. ACM 2014, 57, 6 13–15.
+trajectories {yk }.
+                                                                     [6] B. V. Benjamin, P. Gao, E. McQuinn, S. Choudhary,
+                                                                         A. R. Chandrasekaran, J.-M. Bussat, R. Alvarez-Icaza,
+A.3     Details on the IPC                                               J. V. Arthur, P. A. Merolla, K. Boahen, Proc. IEEE
+Dambre et al. recently introduced the information process-               2014, 102, 5 699.
+ing capacity (IPC) [67] as a tool to estimate the computa- [7] S. B. Furber, F. Galluppi, S. Temple, L. A. Plana,
+tional capabilities of a classical dynamical system. They       Proc. IEEE 2014, 102, 5 652.
+demonstrated that the total computational capacity of a
+dynamical system is bounded by the number of linearly in-   [8] G. Indiveri, S.-C. Liu, Proc. IEEE 2015, 103, 8 1379.
+dependent variables that are used for the output, and this
+                                                            [9] S. K. Esser, P. A. Merolla, J. V. Arthur, A. S. Cas-
+bound is saturated when the dynamical system has fad-
+                                                                sidy, R. Appuswamy, A. Andreopoulos, D. J. Berg,
+ing memory, i.e. when the dynamical system dissipates the
+                                                                J. L. McKinstry, T. Melano, D. R. Barch, et al., Proc.
+information about the input after some time.
+                                                                Natl. Acad. Sci. U.S.A. 2016, 113, 41 11441.
+    To estimate the computational capabilities of a system,
+the capacity to approximate products of orthogonal func- [10] G. Indiveri, B. Linares-Barranco, R. Legenstein,
+tions, like the Legendre polynomials that can depend on         G. Deligeorgis, T. Prodromakis,      Nanotechnology
+present and past inputs, is evaluated. More specifically,       2013, 24, 38 384010.
+
+                                                                12
+[11] E. Behrman, L. Nash, J. Steck, V. Chandrashekar,         [32] S. Ortı́n, M. C. Soriano, L. Pesquera, D. Brunner,
+     S. Skinner, Inf. Sci. 2000, 128, 3 257.                       D. San-Martı́n, I. Fischer, C. Mirasso, J. Gutiérrez,
+                                                                   Sci. Rep. 2015, 5 14945.
+[12] M. Schuld, I. Sinayskiy, F. Petruccione, Quantum Inf.
+     Process. 2014, 13, 11 2567.                           [33] K. Fujii, K. Nakajima, Phys. Rev. Applied 2017, 8
+                                                                024030.
+[13] L. G. Wright, P. L. McMahon,               In CLEO:
+     QELS Fundamental Science. Optical Society of Amer- [34] K. Nakajima, K. Fujii, M. Negoro, K. Mitarai,
+     ica, 2020 JM4G–5.                                          M. Kitagawa, Phys. Rev. Applied 2019, 11 034021.
+
+[14] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,      [35] A. Kutvonen, K. Fujii, T. Sagawa, Sci. Rep. 2020, 10,
+     N. Wiebe, S. Lloyd, Nature 2017, 549, 7671 195.               1 14687.
+
+[15] V. Dunjko, H. J. Briegel, Rep. Prog. Phys. 2018, 81, [36] Q. H. Tran,        K. Nakajima,                 (Preprint)
+     7 074001.                                                 arXiv:2006.08999, 2020.
+
+[16] G. Carleo, I. Cirac, K. Cranmer, L. Daudet, M. Schuld, [37] J. Chen, H. I. Nurdin, Quantum Inf. Process. 2019,
+     N. Tishby, L. Vogt-Maranto, L. Zdeborová, Rev. Mod.         18, 7 198.
+     Phys. 2019, 91 045002.                                  [38] J. Chen, H. I. Nurdin, N. Yamamoto, In 2019 IEEE
+                                                                  58th Conference on Decision and Control (CDC).
+[17] D. Marković, J. Grollier, Appl. Phys. Lett. 2020, 117,
+                                                                  2019 401–406.
+     15 150501.
+                                                             [39] J. Chen, H. I. Nurdin, N. Yamamoto, Phys. Rev. Ap-
+[18] S. D. Sarma, D.-L. Deng, L.-M. Duan, Phys. Today
+                                                                  plied 2020, 14 024065.
+     2019, 72, 3 48.
+                                                             [40] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zam-
+[19] C. Ciliberto, M. Herbster, A. D. Ialongo, M. Pontil,
+                                                                  brini, M. C. Soriano, Cognit. Comput. 2020, 1–12.
+     A. Rocchetto, S. Severini, L. Wossnig, Proc. R. Soc.
+     A. 2018, 474 20170551.                                  [41] S. Dasgupta, K. E. Hamilton, A. Banerjee, (Preprint)
+                                                                  arXiv:2004.08240, 2020.
+[20] M. Lukoševičius, H. Jaeger, Comput. Sci. Rev. 2009,
+     3, 3 127.                                               [42] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C.
+                                                                  Soriano, R. Zambrini, (Preprint) arXiv:2103.05348,
+[21] G.-B. Huang, D. H. Wang, Y. Lan, Int. J. Mach.               2021.
+     Learn. Cybern. 2011, 2, 2 107.
+                                                             [43] J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, V. Parigi,
+[22] M. Lukoševičius, In Neural networks: Tricks of the         M. C. Soriano, R. Zambrini, Comm. Phys. 2021, 4, 1
+     trade, 659–686. Springer, 2012.                              1.
+[23] J. B. Butcher, D. Verstraeten, B. Schrauwen, C. R. [44] W. D. Kalfus, G. J. Ribeill, G. E. Rowlands, H. K.
+     Day, P. W. Haycock, Neural Netw. 2013, 38 76.              Krovi, T. A. Ohki, L. C. G. Govia, (Preprint)
+                                                                arXiv:2101.11729, 2021.
+[24] M. Lukoševičius, H. Jaeger, B. Schrauwen,      KI-
+     Künstliche Intelligenz 2012, 26, 4 365.              [45] J. Nokkala, R. Martı́nez-Peña, R. Zambrini, M. C. So-
+                                                                riano, Submitted, 2020.
+[25] G. Huang, G.-B. Huang, S. Song, K. You, Neural
+     Netw. 2015, 61 32.                                    [46] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek,
+                                                                T. C. H. Liew, npj Quantum Inf. 2019, 5, 1 35.
+[26] A. Bequé, S. Lessmann, Expert Syst. Appl. 2017, 86
+     42.                                                   [47] L. C. G. Govia, G. J. Ribeill, G. E. Rowlands, H. K.
+                                                                Krovi, T. A. Ohki, Phys. Rev. Research 2021, 3
+[27] P. Antonik, N. Marsal, D. Brunner, D. Rontani, Nat.        013077.
+     Mach. Intell. 2019, 1, 11 530.
+                                                           [48] S. Ghosh, T. Paterek, T. C. H. Liew, Phys. Rev. Lett.
+[28] M. Rafayelyan, J. Dong, Y. Tan, F. Krzakala, S. Gi-        2019, 123 260404.
+     gan, Phys. Rev. X 2020, 10 041037.
+                                                           [49] T. Krisnanda, S. Ghosh, T. Paterek, T. C. Liew, Neu-
+[29] N. D. Haynes, M. C. Soriano, D. P. Rosin, I. Fischer,      ral Netw. 2021, 136 141.
+     D. J. Gauthier, Phys. Rev. E 2015, 91, 2 020801.
+                                                           [50] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek,
+[30] J. V. Frances-Villora, A. Rosado-Muñoz, J. M.             T. C. H. Liew, IEEE Trans. Neural Netw. Learn. Syst.
+     Martı́nez-Villena, M. Bataller-Mompean, J. F. Guer-        2020, 1–8.
+     rero, M. Wegrzyn, Comput. Electr. 2016, 51 139.
+                                                           [51] M. Negoro, K. Mitarai, K. Fujii, K. Nakajima,
+[31] K. Nakajima, Jpn. J. Appl. Phys 2020, 59, 6 060501.        M. Kitagawa, (Preprint) arXiv:1806.10910, 2018.
+
+
+                                                           13
+[52] K. Fujii, K. Nakajima, (Preprint) arXiv:2011.04890, [71] E. Farhi, H. Neven,         (Preprint) arXiv:1802.06002,
+     2020.                                                    2018.
+
+[53] E. Aı̈meur, G. Brassard, S. Gambs,      Mach. Learn.    [72] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Har-
+     2013, 90, 2 261.                                             row, A. Kandala, J. M. Chow, J. M. Gambetta, Nature
+                                                                  2019, 567, 7747 209.
+[54] G. Tanaka, T. Yamane, J. B. Héroux, R. Nakane,
+     N. Kanazawa, S. Takeda, H. Numata, D. Nakano, [73] M. Schuld, N. Killoran, Phys. Rev. Lett. 2019, 122
+     A. Hirose, Neural Netw. 2019, 115 100 .            040504.
+
+[55] Z. Konkoli, In Advances in unconventional computing, [74] L. B. Kristensen, M. Degroote, P. Wittek, A. Aspuru-
+     573–607. Springer, 2017.                                  Guzik, N. T. Zinner, (Preprint) arXiv:1907.06269,
+                                                               2019.
+[56] H. Jaeger, Bonn, Germany: German National Re-
+     search Center for Information Technology GMD Tech- [75] J. M. Pino, J. M. Dreiling, C. Figgatt, J. P. Gaebler,
+     nical Report 2001, 148.                                   S. A. Moses, M. S. Allman, C. H. Baldwin, M. Foss-
+                                                               Feig, D. Hayes, K. Mayer, et al., Nature 2021, 592,
+[57] W. Maass, T. Natschläger, H. Markram, Neural Com-        7853 209–213.
+     put. 2002, 14, 11 2531.
+                                                          [76] N. Killoran, T. R. Bromley, J. M. Arrazola, M. Schuld,
+[58] L. Grigoryeva, J.-P. Ortega, Neural Netw. 2018, 108       N. Quesada, S. Lloyd, Phys. Rev. Research 2019, 1
+     495.                                                      033063.
+[59] G.-B. Huang, Q.-Y. Zhu, C.-K. Siew, Neurocomputing [77] A. J. Kollár, M. Fitzpatrick, A. A. Houck, Nature
+     2006, 70, 1 489.                                        2019, 571, 7763 45.
+[60] G. Marcucci, D. Pierangeli, C. Conti, Phys. Rev. Lett. [78] J. Nokkala, F. Arzani, F. Galve, R. Zambrini, S. Man-
+     2020, 125 093901.                                           iscalco, J. Piilo, N. Treps, V. Parigi, New J. Phys.
+                                                                 2018, 20, 5 053024.
+[61] G. Angelatos, S. Khan, H. E. Türeci, (Preprint)
+     arXiv:2011.09652, 2020.                                [79] Y. Cai, J. Roslund, G. Ferrini, F. Arzani, X. Xu,
+                                                                 C. Fabre, N. Treps, Nat. Commun. 2017, 8, 1 15645.
+[62] S. Ghosh, T. Krisnanda, T. Paterek, T. C. H. Liew,
+     (Preprint) arXiv:2003.09569, 2020.                     [80] T. Goto, Q. H. Tran, K. Nakajima, (Preprint)
+                                                                 arXiv:2009.00298, 2020.
+[63] H. Kawai, Y. O. Nakagawa, Mach. Learn.: Sci. Tech-
+     nol. 2020, 1 045027.                                   [81] F. Benatti, S. Mancini, S. Mangini, Int. J. Quantum
+                                                                 Inf. 2019, 17, 08 1941009.
+[64] D. Brunner, M. C. Soriano, G. Van der Sande, Pho-
+     tonic Reservoir Computing: Optical Recurrent Neural [82] G. Marcucci, D. Pierangeli, C. Conti, Phys. Rev. Lett.
+     Networks, Walter de Gruyter GmbH & Co KG, 2019.             2020, 125 093901.
+
+[65] U. Paudel, M. Luengo-Kovac, J. Pilawa, T. J. Shaw,      [83] C. Harney, S. Pirandola, A. Ferraro, M. Paternostro,
+     G. C. Valley, Optics express 2020, 28, 2 1225.               New J. Phys. 2020, 22, 045001.
+
+[66] J. Pathak, B. Hunt, M. Girvan, Z. Lu, E. Ott, Phys. [84] L. O’Driscoll, R. Nichols, P. A. Knott, Quantum Ma-
+     Rev. Lett. 2018, 120 024102.                             chine Intelligence 2019, 1, 1 5.
+
+[67] J. Dambre, D. Verstraeten, B. Schrauwen, S. Massar,     [85] R. Nichols, L. Mineh, J. Rubio, J. C. F. Matthews,
+     Sci. Rep. 2012, 2, 1 1.                                      P. A. Knott, Quantum Sci. Technol. 2019, 4, 045012.
+
+[68] E. Flurin, L. S. Martin, S. Hacohen-Gourgy, I. Siddiqi, [86] R. Laflamme, E. Knill, D. G. Cory, E. M. Fortunato,
+     Phys. Rev. X 2020, 10 011006.                                T. Havel, C. Miquel, R. Martinez, C. Negrevergne,
+                                                                  G. Ortiz, M. A. Pravia, Y. Sharf, S. Sinha, R. Somma,
+[69] A. F. Atiya, A. G. Parlos, IEEE Trans. Neural Net-           L. Viola, (Preprint) arXiv:quant-ph/0207172, 2002.
+     works 2000, 11, 3 697.
+                                                             [87] Q. H. Tran,         K. Nakajima,            (Preprint)
+[70] H. Jaeger, H. Haas, Science 2004, 304, 5667 78.              arXiv:2103.13973, 2021.
+
+
+
+
+                                                            14
+

@@ -1,0 +1,567 @@
+                                                     Feedback Connections in Quantum Reservoir
+                                                      Computing with Mid-Circuit Measurements
+                                                                Jakob Murauer∗ , Rajiv Krishnakumar†‡ , Sabine Tornow∗ and Michaela Geierhos∗
+                                                             ∗ Research Institute CODE, University of the Bundeswehr Munich, 85579 Neubiberg, Germany
+                                                                                        † QuantumBasel, 4144 Arlesheim, Switzerland
+                                                   ‡ Center for Quantum Computing and Quantum Coherence (QC2), University of Basel, 4001 Basel, Switzerland
+
+
+
+                                               Abstract—Existing approaches to quantum reservoir comput-            known as rewind protocols have been proposed [10]. Here,
+                                            ing can be broadly categorized into restart-based and continuous        the reservoir for cycle k is initiated from cycle k + 1 − τ ,
+arXiv:2503.22380v4 [quant-ph] 12 Jul 2025
+
+
+
+
+                                            protocols. Restart-based methods require reinitializing the quan-       thus reducing the computation to the last τ cycles compared
+                                            tum circuit for each time step, while continuous protocols use
+                                            mid-circuit measurements to enable uninterrupted information            to the first cycle in the conventional approach (Fig. 1 (b)).
+                                            processing. A gap exists between these two paradigms: while             This method is motivated by the fact that reservoirs have a
+                                            restart-based methods naturally have high execution times due           fading memory property [14], which means that over time the
+                                            to the need for circuit reinitialization, they can employ novel         reservoir loses information from distant time steps, making
+                                            feedback connections to enhance performance. In contrast, con-          them insignificant for more recent cycles. On the other hand,
+                                            tinuous methods have significantly faster execution times but
+                                            typically lack such feedback mechanisms. In this work, we               continuous QRC methods use mid-circuit measurements to
+                                            investigate a novel quantum reservoir computing scheme that             continuously monitor the dynamics of the reservoir, Fig. 1(d),
+                                            integrates feedback connections, which can operate within the           which immensely improves the overall execution time on
+                                            coherence time of a qubit. We demonstrate our architecture using        quantum hardware [15]. This method has also been combined
+                                            a minimal example and evaluate memory capacity and predictive           with weak measurements to mitigate the erasure of past
+                                            capabilities. We show that the correlation coefficient for the short-
+                                            term memory task on past inputs is nonzero, indicating that             inputs, as they extract limited information without completely
+                                            feedback connections can effectively operate during continuous          collapsing the quantum state. However, this comes at a cost,
+                                            processing to allow the model to remember past inputs.                  as the readout from the reservoir is now incomplete [10].
+                                               Index Terms—quantum computing, quantum reservoir com-                   A novel approach introduces a feedback link by feeding
+                                            puting, mid-circuit measurements, dynamic circuits.                     back expectation values into the reservoir [9]. This approach
+                                                                                                                    still restarts at each time step, but only needs to run for one
+                                                                   I. I NTRODUCTION                                 time step at a time. While this method effectively incorporates
+                                               Reservoir computing is a machine learning approach for               memories of previous inputs into the reservoir, it still has a
+                                            predicting time series data [1]–[4]. A reservoir computer               drawback, namely execution time on quantum hardware. As
+                                            transforms an input sequence into a higher dimensional feature          shown in Fig. 1 (c), for each time step the expectation value
+                                            space using a fixed but random non-linear system called a               has to be estimated with a certain number of shots. Recently,
+                                            reservoir. A simple linear regression model is then trained             a preprint has been published describing a modification of this
+                                            to read the state of the reservoir and map the result to a              protocol using weak measurements, where part of the reservoir
+                                            desired output. Since the training is done only in the last             state is carried over between time steps [16]. However, this
+                                            stage, while the internal dynamics are fixed, the optimization          method still requires many measurements to be taken between
+                                            is very efficient. Quantum Reservoir Computing (QRC) is                 time steps in order to compute expectation values before
+                                            the quantum analog of classical reservoir computing, where              feeding them into the next time step.
+                                            a quantum system is used as a reservoir and its complex                    In this paper, we introduce a novel feedback-driven quantum
+                                            dynamics are used to efficiently process temporal data [5]–             reservoir computing approach with mid-circuit measurements
+                                            [11]. This is seen as a promising approach because quantum              and classical feedforward operations during the coherence
+                                            systems offer a naturally high-dimensional Hilbert space and            time of a qubit. In the restart-based feedback protocol, as
+                                            complex non-linear dynamics. These properties are thought               shown in Fig. 1 (c), each cycle requires n shots. Thus, for
+                                            to enhance the performance of reservoir computing [9], [12],            an input sequence of training length t tested over k different
+                                            [13].                                                                   reservoir realizations, the total number of shots scales with
+                                               Several architectures have been proposed, broadly catego-            t × k × n. As t, k, or preferably n grow, the cumulative cost
+                                            rized into restart-based and continuous methods. Conventional           of running these circuits becomes large. This motivates our
+                                            restart-based QRC schemes generate the output time series by            exploration of feedback circuits operating within the coherence
+                                            averaging the measurement results over all qubits at each time          time of a qubit using novel classical feedforward methods.
+                                            step. This requires repeatedly restarting the system for each           To isolate and rigorously quantify the effect of mid-circuit
+                                            time step to obtain the complete time series, see Fig. 1 (a). To        feedback, we perform a qubit reset after each time step.
+                                            avoid running the whole process from the beginning, methods             This ensures that no extraneous information (other than the
+ (a)                                                                              (b)                                                                            (c)
+
+  ρ0   U (s0 )     U (s1 )           U (sk )                ⟨Z⟩k                   ρ0   U (sk+1−τ )     U (sk+2−τ )              U (sk )             ⟨Z⟩k            ρ0        U (sk , ⟨Z⟩k−1 )           ⟨Z⟩k
+
+
+  ρ0   U (s0 )     U (s1 )           U (sk )      U (sk+1 )              ⟨Z⟩k+1    ρ0   U (sk+2−τ )     U (sk+3−τ )              U (sk+1 )             ⟨Z⟩k+1        ρ0        U (sk+1 , ⟨Z⟩k )               ⟨Z⟩k+1
+
+
+
+ (d)                                                                              (e)
+
+                 ⟨Z⟩0             ⟨Z⟩1         ⟨Z⟩k−1             ⟨Z⟩k                                     m0                       mk−1                           mk                                  mk+1
+
+
+
+  ρ0   U (s0 )          U (s1 )                         U (sk )                    ρ0   U (s0 , m−1 )              R                U (sk , mk−1 )               R        U (sk+1 , mk )                  R
+                                                                                                        ⟨Z⟩0                                           ⟨Z⟩k                                   ⟨Z⟩k+1
+
+
+Fig. 1. QRC protocols: Each architecture is designed to process an input sequence sk . The systems are initialized in the state ρ0 . A unitary operator
+U (·), constructed from parameterized Pauli rotations, governs the state evolution. Each U (·) represents the processing of one time step (cycle). (a) Graphical
+representation of a conventional restart-based QRC scheme. For each timestep, the architecture must be restarted and run from the beginning. This results in
+a quadratic runtime. (b) A rewind protocol that does not restart from the beginning, but only processes the last τ time steps. (c) A feedback-controlled QRC
+protocol. Only one timestep is processed at a time, but the expectation value from the previous trial is stored in a buffer. (d) A mid-circuit measurement
+architecture that continuously monitors the quantum state. No restart is required. This architecture can be combined with weak measurements. (e) A feedback-
+driven QRC architecture with mid-circuit measurements. Feedback is incorporated by feeding the measurement strings mk back into the reservoir, a process
+that can be done at runtime. The expectation values ⟨Z⟩k are then computed in the post-processing step after all the circuits have been executed.
+
+
+
+intended feedback) propagates forward, allowing us to study                                             mjk−1 is inserted into another two-qubit gate R(af b mji ). The
+the feedback coupling itself in a controlled manner. One can                                            structure of the R gate is defined as follows:
+omit these resets to explore more complex scenarios in which                                                          Ri,j (θ) = CXij RZj (θ)CXij RXj (θ)RXi (θ)                                                (1)
+correlations persist over time, but here our primary goal is
+to study feedback connections in isolation and thereby clarify                                          Here θ represents an angle parameter that determines the
+their implications. For implementation, IBM superconducting                                             rotation applied in the two-qubit gate. Specifically, θ can take
+systems have in particular demonstrated classical real-time                                             values from the set {ain sk , af b mjk−1 }, where ain and af b
+feedforward operations [17], providing an opportunity to re-                                            are scaling parameters that control the input and feedback
+duce the overall shot overhead for certain problems. We use the                                         strength respectively. The structure of using R gates along
+measurement strings obtained from a mid-circuit measurement                                             with the scaling parameters is commonly used in QRC models
+as feedback for the next cycle. We can tune the feedback                                                due to its compromise between being hardware efficient and
+strength and the input strength through hyperparameters. We                                             generating substantial entanglement [9], [15], [19]. The full
+evaluate the memory performance by studying the short-term                                              unitary U (sk , mk−1 ) consists of an input R gate, N feedback
+memory task and the predictive capabilities by predicting the                                           R gates, and a Haar-random unitary. The idea is illustrated
+Mackey-Glass system [18] and the expectation value of a spin                                            for the case of 2 qubits in Fig. 2. For the first time step s0 ,
+in a chaotic Ising chain.                                                                               a random vector m−1 uniformly distributed from {−1, 1}N is
+                                                                                                        selected for time step 0. After unitary evolution, the system
+                                         II. M ETHODS                                                   is measured projectively in the computational basis. We note
+   In the following, we provide an overview of our approach                                             that further research can also employ weak measurements, as
+in three parts: first we describe the proposed mid-circuit QRC                                          seen in other QRC research [10], [15]. We reset our system
+architecture, then we present the training procedure, and finally                                       to ρN
+                                                                                                            0 and feed the measurement string forward into the next
+we explain the testing routine.                                                                         unitary.
+
+A. Architecture
+                                                                                                                U (sk , mk−1 )        =         R(ain sk )    R(af b m0k−1 )     R(af b m1k−1 )   UHaar
+   We propose a mid-circuit QRC architecture that incorporates
+feedback links, as shown in Fig. 1 (e). We start with a
+quantum system of N qubits, initialized in the state ρN     0
+                                                                                                        Fig. 2. Minimal two-qubit unitary circuit. The circuit processes the input
+                              ⊗N                                                                        sk via a rotation R(ain sk ) and then incorporates feedback via rotations
+which is chosen to be |0⟩ ⟨0|     throughout this work unless                                           R(afb m0k−1 ) and R(afb m1k−1 ), where {m0k−1 , m1k−1 } are the previous
+otherwise mentioned. Given an input sequence sk , the system                                            measurement results. The structure of R(·) is explained in Eq. 1. A final
+evolution is governed by the unitary operator U (sk , mk−1 ),                                           Haar-random unitary UHaar is applied at the end.
+where sk is the current time step of the input sequence
+and mk−1 ∈ {−1, 1}N are previous measurement results of                                                 B. Training
+the cycle sk−1 . The input sequence is inserted into a two-                                               The task of QRC is to build a regression model that
+qubit gate R(ain sk ), while each previous measurement result                                           accurately approximates a target sequence {ŷk } for a given
+input sequence {sk }. In typical QRC mechanisms, we run             as a figure of merit. When Rτ2 is close to 1, the model’s
+the model for lw + ltr + lts cycles, where lw , ltr , and lts       predictions closely match the actual targets, indicating minimal
+correspond to the lengths of the three main stages: washout,        error. In contrast, when Rτ2 is close to 0, the predicted outputs
+training, and testing respectively. As discussed in Section II-A,   show substantial deviation from the actual targets. Short-
+we start the first cycle with input s0 and a randomly selected      term memory capacity is then measured by summing R2 for
+feedback vector. To remove the effects of this initialization, we   different time steps:
+discard the first lw measurement results (the washout phase).                                        X
+A regression model is then built using the next ltr steps (the                               CΣ =        Rτ2                      (7)
+                                                                                                     τ
+training phase). The linear regression model is built based on
+the reservoir outputs of the training phase. Specifically, we       B. Predictive Capabilities
+build the matrix Xtr ∈ Rltr ×(N +1) , which is defined as:             To evaluate the predictive capabilities, we test the model
+           
+             ⟨Z⟩1lw+1     ⟨Z⟩2lw+1 · · · ⟨Z⟩N            1
+                                                                   on a classical task and a quantum time series. For the study
+                                                lw+1
+            ⟨Z⟩1lw+2     ⟨Z⟩2lw+2 · · · ⟨Z⟩N            1         of classical dynamical systems, we choose the Mackey-Glass
+                                                lw+2
+   Xtr = 
+           
+                                        ..                  (2)
+                                                                   time series, a well-known benchmark that has been extensively
+                                        .                         used in the context of reservoir computing [5], [9], [23], [24].
+                1            2                 N
+            ⟨Z⟩lw+ltr ⟨Z⟩lw+ltr · · · ⟨Z⟩lw+ltr 1                   The delay differential equation is defined as [18]:
+where ⟨Z⟩nk is the expectation value of the Pauli Z operator                      dP (t)   β0 θn P (t − τ )
+                                                                                         = n                − γP (t)             (8)
+on the nth qubit at the k th time step.                                            dt     θ + P (t − τ )n
+   We now create a linear model wopt such that ytr = Xtr wopt       We set β0 = 0.2, θ = 1, n = 10, τ = 17 and γ = 0.1. To
+closely resembles the target sequence ŷtr . We use the Moore-      generate the time series, we numerically integrate the delay
+Penrose inverse [20], [21], also called the pseudoinverse, to       differential equation using a forward Euler scheme with a time
+compute wopt :                                                      step of ∆t = 1. The initial values are set to a constant for the
+                          T
+                 wopt = (Xtr Xtr )−1 Xtr
+                                      T
+                                         ŷtr                (3)    duration of the delay, and the trajectory is normalized to the
+                                                                    interval [0, 1].
+C. Testing                                                             The quantum time series is constructed from the expecta-
+  We now test the trained model by using it to obtain a             tion value of the σ z operator of the middle spin in a one-
+prediction vector of length lts . We create a matrix Xts ∈          dimensional Ising chain governed by the Hamiltonian:
+Rlts ×(N +1) , which is defined as:                                                  X                  X           X
+                                                                              H=J         σiz σi+1
+                                                                                               z
+                                                                                                   + hx    σix + hz     σiz      (9)
+                 ⟨Z⟩1lw+ltr+1 · · · ⟨Z⟩N
+                                                   
+                                        lw+ltr+1   1                                  i                  i            i
+                ⟨Z⟩1lw+ltr+2 · · · ⟨Z⟩Nlw+ltr+2   1
+      Xts = 
+               
+                                                     (4)
+                                                                      We simulate the system using this Hamiltonian with param-
+                                          ..
+                                          .                       eters set to N = 5, J = 1, hx = 1.05, and hz = −0.5. This
+                    1                   N                           ensures that the quantum Ising model becomes non-integrable
+                ⟨Z⟩lw+ltr+lts · · · ⟨Z⟩lw+ltr+lts 1
+                                                                    and exhibits chaotic behavior [25], [26]. At each time step,
+The prediction vector in terms of wopt is then given as:
+                                                                    the expectation value ⟨Z⟩2t of the central spin is measured,
+                       ypred = Xts wopt                      (5)    generating the time series. The time evolution is discretized
+                                                                    with a time step of ∆t = 0.005.
+The resulting prediction ypred is then compared to the target          For all prediction tasks, the goal is to predict steps in the
+vector ŷts to evaluate the prediction performance of the model.    future, similarly formulated with the target sequence as ŷk =
+                      III. E XPERIMENTS                             sk+τ , where τ is positive. We evaluate the performance of the
+   In this section, we investigate the performance of our           models with the norm mean squared error, which is defined
+proposed reservoir computing model through three key exper-         as:                            PN                      2
+iments: measuring its short-term memory capacity, evaluating                                          i=1 ŷts,i − ypred,i
+                                                                             NMSE(ŷts , ypred ) =      PN            2        (10)
+its predictive capabilities, and analyzing the echo state prop-                                            i=1 ŷts,i
+erty.                                                               The NMSE measures the size of the error relative to the
+A. Short-term memory capacity                                       scale (magnitude) of the true data. A small error indicates
+                                                                    good model performance, while large values indicate a large
+   To characterize the performance of remembering past inputs
+                                                                    deviation from the target sequence.
+we use the short-term memory capacity [22]. Consider an input
+sequence {sk }, where each sk is drawn independently from           C. Analysis of Echo State Property
+a uniform distribution on [0, 1]. The goal is to retrieve values       As mentioned in Section I, one of the important aspects of
+of the sequence, formulated as ŷk = sk+τ , where τ is zero or      a reservoir computing model is the fading memory property.
+negative. We use the coefficient of determination, given by:        In the classical setting of echo state network (ESN) reservoir
+                           cov2 (ŷts , ypred )                     computing models, this can be implemented by ensuring
+                   Rτ2 =                           ,         (6)    that the ESN contains the echo state property (ESP) [27],
+                           σ 2 (ŷts )σ 2 (ypred )
+which ensures that the internal state of the model becomes               choose a washout length lw = 25, a training length ltr = 100,
+asymptotically dependent only on the input history, regardless           and a test length lts = 100.
+of its initial conditions. However, in quantum reservoir models,
+the fading memory property is usually generated by including              (a)
+some (preferably controlled) dissipation in the model [28],                       1.8                                            1.0
+                                                                                                                                                       1k shots
+[29]. Recently, there have been proposals of modified versions                                                                                         10k shots
+of the ESP that are specific to quantum reservoirs [30]. In this                                                                 0.6
+                                                                                  1.2
+
+
+
+
+                                                                                                                          R2
+paper, we describe and investigate a version of the ESP that
+
+
+
+
+                                                                            C
+applies across any reservoir computing model.
+                                                                                                                                 0.2
+   As a first step in investigating the role of the ESP in
+                                                                                  0.6
+quantum reservoir computing models, we perform an analysis                               0.5   1.0     1.5      2.0                    0         1      2          3
+of the asymptotic dependence of the reservoir state of several            (b)
+                                                                                                     afb
+reservoir computing models (including the one proposed in                       0.022
+                                                                                                           5k shots                        afb = 1.0
+this paper) on their initial internal states. To do this, we study                                                                         afb = 1.6
+                                                                                0.017
+                                                                                                           10k shots         0.05          afb = 2.2
+how the internal state of the reservoir evolves over time under
+
+
+
+
+                                                                                                                          NMSE
+                                                                          NMSE
+different random initializations. We can define the internal                    0.012                                        0.03
+state of the reservoir the same way as is defined in traditional
+reservoir computing models, i.e., xt ∈ RM at time t to be                       0.007
+                                                                                                                             0.01
+                                xt = F (xt−1 , st )               (11)                  1.0 1.2 1.4 1.6 1.8 2.0 2.2                    0        3       6      9
+                                                                                                     afb
+where M is the reservoir dimension, F is the fixed reservoir              (c)
+                                                                                                              5k shots       0.14          afb = 1.0
+function, and st is the time series at time t [14], [27].1 . For                 0.040                        10k shots                    afb = 1.6
+each model, we use input sequences drawn from a uniform                                                                                    afb = 2.2
+
+
+
+
+                                                                                                                          NMSE
+                                                                          NMSE
+distribution on [0, 1] (as described in Section III-A) over 5                                                                0.08
+                                                                                 0.025
+random initializations of the model. For each run, we extract
+the first component of the internal state of the reservoir, x1t ,
+                                                                                                                             0.02
+at time t and track its evolution over time across the different                 0.010
+                                                                                         1.0 1.2 1.4 1.6 1.8 2.0 2.2                   0        3       6      9
+runs. To quantify the asymptotic behavior of these internal                                          afb
+states, we compute the average difference of this component
+across runs. We perform this analysis for a classical minimal            Fig. 3. Evaluation of short term memory and predictive capabilities:
+ESN model [31], a feedback-driven QRC protocol [9], a QRC                All values are averaged over 128 Haar-random unitaries. Since there is no
+                                                                         single ‘privileged’ choice of unitary, our primary interest is in the average
+scheme with a mid-circuit measurements architecture [15], and            performance of the protocol over these random instances. Therefore we choose
+the model proposed in this paper.                                        to indicate one standard deviation of the mean with the error bars to show how
+                                                                         much this mean would vary if we resampled the Haar measure many times.
+                  IV. R ESULTS AND DISCUSSION                            (a) The left panel shows the short-term memory (STM) capacity for several
+                                                                         different values of af b , with τ ranging from 0 to −3. The right panel provides
+   In this section, we report on three key topics: simulation            a more detailed view for af b = 1.3, plotting all values of τ . (b) Here, we plot
+results of our proposed model, a hardware implementation on              the NMSE for the quantum 1D Ising chain, showing the prediction capabilities
+                                                                         for τ = 1 over different af b values. The right panel shows the prediction
+a QPU, and a simulation-based echo state property analysis               capabilities for different τ values for selected af b values. (c) shows the same
+for several reservoir computing models.                                  analysis for the Mackey-Glass task. 5k shots were used for the right panels
+                                                                         in both (b) and (c).
+A. Memory capacity and predictive performance
+   We obtain all predictive and memory results by simulating                In Fig. 3 (a) on the right, we plot the short-term memory
+a minimal instance of the proposed architecture with a system            correlation coefficient for four different delay values for a fixed
+size of N = 2. We use a shot-based approach, where each                  af b = 1.3. Even with a limited number of shots, the minimal
+shot represents a single experiment on the quantum hardware,             example shows nonzero correlation coefficients for τ = −1,
+and individual measurement results are sampled directly. This            indicating that the basic feedback connections during continu-
+approach mimics a noiseless version of what is done on real              ous processing play a beneficial role for memory. Notably, the
+hardware, and allows us to take into account the effect of shot          feedback connections were evaluated using a reset operation
+noise which plays an important role in the performance of                after each measurement, ensuring that any information carried
+quantum reservoir models [32]. We also note that since we                forward is solely from the proposed mechanism. Furthermore,
+use a density matrix formalism, analytically considering all             an upward shift is observed for an increasing number of
+possible measurement trajectories under the conditional feed-            shots, suggesting that performance improves with additional
+forward mechanism would require exponential overhead and is              measurement statistics. On the left in Fig. 3 (a) we show
+therefore not feasible. For further computational efficiency, we         the effect of varying the feedback strength on the memory
+                                                                         capacity CΣ for different numbers of measurements. Again,
+  1 In our architecture, x           1      2              N             we observe an upward shift in performance with increasing
+                             t = [⟨Z⟩t , ⟨Z⟩t , · · · , ⟨Z⟩t ].
+                    (a)                                     (b)                                                   (c)                                        (d)                                  (e)
+                                                          1.0                                                0.7                                                                            0.3
+                                                                             0.019535                                                                   0.6
+                0.8                                       0.8                0.019540
+                                                                             0.019545                        0.5                                                                            0.1
+ Value of xt1
+
+
+
+                0.6                                                          0.019550                                                                   0.4
+                                                          0.6                0.019555
+                0.4                                                          0.019560
+                                                                                                             0.3                                        0.2                                 0.1
+                                                          0.4                           20 22 24 26 28 30
+                0.2                                                                                                                                                                         0.3
+                                                          0.2                                                0.1                                        0.0
+                0.0
+                                                          0.0                                                0.1                                        0.2                                 0.5
+                      0   20   40   60    80 100 120            0   5   10    15         20    25     30           0    10   20   30   40   50   60           0    5 10 15 20 25 30 35 40           0   5 10 15 20 25 30 35 40
+                               Time Step t
+                                                          0.8                                               0.6                                                                               0.8
+                                                                                                                                                       0.6
+                0.4                      Mean
+Difference of x1
+         t
+
+
+
+
+                                         Std. Deviation   0.6                                                                                                                                 0.6
+                0.3                                                                                         0.4                                        0.4
+                                                          0.4                                                                                                                                 0.4
+                0.2
+                                                          0.2                                               0.2                                        0.2
+                0.1                                                                                                                                                                           0.2
+
+                0.0                                       0.0                                               0.0                                        0.0                                    0.0
+                      0   20 40 60 80 100 120                   0   5   10    15         20     25    30           0    10   20   30   40   50    60          0    5 10 15 20 25 30 35 40           0   5 10 15 20 25 30 35 40
+                               Time Step t
+
+ Fig. 4. Echo state property for different architectures: The top figures show the first component of the reservoir state over time for five randomly initialized
+ runs, while the bottom figures show the absolute difference between these five reservoir states. (a) Classical ESN model. (b) Feedback-driven QRC regime
+ [9]. (c) Mid-circuit measurements QRC [15]. (d) Proposed feedback-based QRC with mid-circuit measurements and post-measurement resets. (e) Proposed
+ feedback-based QRC with mid-circuit measurements and continuous operation (no resets).
+
+
+
+ number of measurements. In particular, we believe that careful                                                                    We then let the qiskit [35] compiler find native gates that best
+ tuning of both feedback and input strengths is crucial for                                                                        approximates this unitary A′ .
+ robust performance, as is the right choice of Haar matrix.
+ As noted in [9], if the angles in the feedback and input R                                                                                      (a)                                          (b)
+ gates exceed ±2π, the reservoir cannot reliably process the                                                                            0.06                                                            Simulation
+                                                                                                                                                                                        3.0
+ feedback connections and the memory capacity disappears.                                                                                                                                               QPU
+                                                                                                                                                                                        2.5
+ From the analysis in Fig. 3 (a) we can see that there is an
+                                                                                                                                   NMSE
+
+
+                                                                                                                                                                                        2.0
+ increase in memory capacity for af b values from 1.0 to about                                                                          0.05
+ 2.0. Interestingly, this trend is also reflected in the prediction                                                                                                                     1.5
+ performance – lower NMSE values are observed for the same                                                                                                                Simulation    1.0
+                                                                                                                                                                          QPU
+ af b range, as shown in Fig. 3 (b) and (c). This again confirms                                                                        0.04                                            0.5
+                                                                                                                                                 0       2          4     6     8              0        2      4     6   8
+ the importance of memory capacity for predictive tasks. We
+ can report an overall minimum average NMSE of 5.07 × 10−3
+ on the 5-qubit Ising chain. The model performs slightly worse                                                                     Fig. 5. QPU Test: NMSE for various τ using (a) Ising chain and (b) Mackey-
+ on the classical dynamical Mackey-Glass sequence with a                                                                           Glass sequences.
+ minimum average NMSE of 1.4 × 10−2 . We also note that the
+ model is robust to some amount of depolarizing noise (more                                                                           In Fig. 5, we compare the NMSE of our QPU experiment
+ details in Appendix A).                                                                                                           with that of the simulation, both run with 104 shots on the
+                                                                                                                                   Ising chain and Mackey-Glass sequence. We note that both the
+                                                                                                                                   simulation and the QPU runs have inherently limited predictive
+ B. QPU results
+                                                                                                                                   capabilities (as seen in the very high NMSE values) because
+    We now present experiments with our architecture on IBM                                                                        of the greatly reduced training and test lengths. Nonetheless,
+ hardware, specifically utilizing the dynamic circuit capabilities                                                                 our main objective here is to demonstrate that the proposed
+ of ibm marrakesh. Due to hardware constraints on the number                                                                       method can be executed on current quantum hardware.
+ of resets and conditional operations, we reduced the washout,
+ training, and testing lengths to 5, 25, and 20, respectively.                                                                     C. Echo state property analysis
+ Additionally, time and hardware limitations made it infeasible                                                                       We now present the results of the experiment on the analysis
+ to average over 128 Haar-random unitaries, so we selected                                                                         of the echo state property of different reservoir computing
+ a single fixed unitary. Below, we briefly describe how we                                                                         models. In all methods, we replicate the reservoirs as described
+ generate a Haar-random unitary for the IBM device. A more                                                                         in the respective references. In particular:
+ detailed description of this algorithm is found in [33] and [34]:                                                                    • For the classical minimal ESN model [31] – we use a
+
+                   1) Generate a 2N ×2N matrix A with complex entries zi =                                                              network of the form:
+                      ai + bi i, where all ai , bi are sampled from the Ginibre                                                                  xt+1 = (1 − α)xt + α tanh(Win st + b + W xt ) (12)
+                      ensemble
+                   2) Compute the QR decomposition A = QR                                                                                   where xk is 1000-dimensional. Each element in Win , b,
+                   3) Compute the diagonal Λ = diag(Rii /|Rii |)                                                                            and W is initialized with the random variable X ∼
+                   4) Compute A′ = QΛ, where A′ is a Haar-random unitary                                                                    N (−0.5, 1). Next, W is renormalized so that its spectral
+      radius is 1.25, and α is set to 0.3. This configuration               involving both classical and quantum chaotic systems. Our
+      reproduces a model that performed well on the Mackey–                 ESP results show that most investigated QRC regimes exhibit
+      Glass sequence used throughout this paper. Each run was               the ESP, while our proposed model with post-measurement
+      performed with a different initialization of x0 , with each           resets seems to have a mild form of the ESP.
+      component randomly drawn from a uniform distribution                     This work demonstrates sufficiently encouraging results to
+      between 0 and 1.                                                      warrant further investigations into the approach of having
+   • For the feedback-driven QRC protocol [9] – we take                     feedback connections during coherence time. Given that our
+      the architecture proposed in Fig. 1 (c) with the hyper-               model exhibits some initial memory and prediction capabil-
+      parameters ain = 0.001, af b = 2.5 and a Haar-randomly                ities even at very small scales, exploring the scaling of our
+      chosen Ures , using a state vector simulator to compute               model is a very promising direction for future investigation
+      the expectation values of the measurements. Each run was              that can reveal more on the effectiveness of this approach.
+      performed with a different Haar-random initialization of              Further investigations could also include experimenting with
+      the start state.                                                      alternative reset strategies, such as using conditional resets or
+   • For the QRC scheme with a mid-circuit measurement                      omitting resets altogether, thus allowing the model to continue
+      architecture [15] – we take the architecture proposed in              to evolve from the post-measurement state while also having
+      Fig. 1 (d) with 10 time steps and setting a = 5 and 104               feedback connections.
+      shots2 . Each run was performed with a different Haar-                                           A PPENDIX A
+      random 2-qubit initial state while keeping the 2 ancilla                                         N OISE T EST
+      qubits always starting in the |0⟩ state.
+                                                                               We present preliminary noise tests for larger runs, account-
+   • For the model proposed in this paper – we use the model
+                                                                            ing for the significant reductions in QPU runs. We use the same
+      described in Fig. 1 (e) with ain = 1, af b = 1.6, a
+                                                                            run statistics as in our numerical experiments. In our shot-
+      Haar-randomly chosen UHaar and 104 shots. Each run was
+                                                                            based simulation, we introduce a depolarization (DP) channel
+      performed with a different Haar-random 2-qubit initial
+                                                                            after each unitary of the form:
+      state (denoted by ρ0 in Fig. 1 (e)).
+                                                                                                                        I
+   The results of the ESP analysis are shown in Fig. 4. We                                      DP (ρ) = (1 − λ)ρ + λ                   (13)
+see that all models aside from the proposed model with post-                                                            d
+measurement resets, clearly exhibit the echo-state property.                where λ is the probability of the state to be found in the
+And even for the proposed model with post-measurement                       completely mixed state dI . For the one qubit case, the DP
+resets, we see that effect of the initial state becomes less                channel can expressed also with the Kraus operators:
+                                                                                                 r                  r
+prominent over time, although it does not completely vanish.                                            3λ                 λ
+This shows that all the QRC models investigated exhibit                                   K0 = 1 −          I, K1 = 1 − X,              (14)
+                                                                                                          4                4
+ESPs to at least some extent. To make sure that we did not
+                                                                                                 r                 r
+                                                                                                        λ                 λ
+stumble upon a special case, we found qualitatively similar                               K2 = 1 − Y, K3 = 1 − Z                        (15)
+                                                                                                         4                4
+results when we repeating the analysis with several different
+                                                                            We set lambda to 0.04, which corresponds geometrically to a
+initializations of the fixed random parameters (e.g., Win , UHaar ,
+                                                                            uniform Bloch sphere reduction of 4%, or in terms of random
+etc.) and over different dimensions of the internal state of the
+                                                                            processes: With 97% chance we apply the identity. With 1%
+reservoir. During the course of our experiments there was no
+                                                                            chance we use X, Y or Z. The predictive capabilities shown
+post-selection of the results, and all results from the different
+                                                                            in Fig. 6 on the Ising chain (similar to Fig. 3 (b)) demonstrate
+circuits composed of the various uniquely randomly generated
+                                                                            that our model is robust to some amount of depolarizing noise.
+UHaar matrices are included in the statistics .
+                          V. C ONCLUSION
+                                                                                      0.022               Exact simulation              afb = 1.6 exact
+   In this paper, we propose a quantum reservoir computing                                                Noisy simualtion   0.05       afb = 1.6 noisy
+
+scheme that uses mid-circuit measurements and feedback                                0.017
+                                                                                                                        NMSE
+                                                                                  NMSE
+
+
+
+
+within the runtime of a qubit. Our initial experiments aim                                                                   0.03
+                                                                                      0.012
+to determine whether feedback connection that happen during
+                                                                                                                             0.01
+the coherence time of the qubit actually improves memory                              0.007
+                                                                                              1.0 1.2 1.4 1.6 1.8 2.0 2.2           0       3             6   9
+capacity, rather than merely introducing uncertainties due to                                            afb
+measurement noise. We show that such an architecture with
+built-in resets has non-zero memory capacity for past inputs,               Fig. 6. Noise Test: We analyze how noise in our QRC regime affects the
+indicating that feedback connections have an impact. In partic-             NMSE in predicting the dynamics of the Ising chain.
+ular, peaks in memory capacity at specific feedback strengths
+are consistent with improved performance on prediction tasks                                     A PPENDIX B
+                                                                                             C ODE AVAILABILITY
+  2 Although no specific value for a was explicitly given in the original
+work, we were able to reproduce similar results to original work’s NARMA2     The Python implementation can be found at https://github.
+benchmark results when setting a = 5.                                       com/Muri7910/FB Con MCM QRC.
+                              R EFERENCES                                        [22] Z. Liao, H. Yamahara, K. Terao, K. Ma, M. Seki, and H. Tabata,
+                                                                                      “Short-term memory capacity analysis of lu3fe4co0.5si0.5o12-based
+ [1] C. Wringe, M. Trefzer, and S. Stepney, “Reservoir computing bench-               spin cluster glass towards reservoir computing,” Scientific Reports,
+     marks: a tutorial review and critique,” arXiv [cs.ET], 2024.                     vol. 13, no. 1, p. 5260, 2023. [Online]. Available: https://doi.org/10.
+ [2] M. Dale, S. O’Keefe, A. Sebald, S. Stepney, and M. A. Trefzer,                   1038/s41598-023-32084-8
+     “Reservoir computing quality: connectivity and topology,” Nat. Comput.,     [23] Y. Li, K. Hu, K. Nakajima, and Y. Pan, “Composite force learning
+     vol. 20, no. 2, pp. 205–216, Jun. 2021.                                          of chaotic echo state networks for time-series prediction,” in 2022
+ [3] X.-Y. Duan, X. Ying, S.-Y. Leng, J. Kurths, W. Lin, and H.-                      41st Chinese Control Conference (CCC). IEEE, Jul. 2022, p.
+     F. Ma, “Embedding theory of reservoir computing and reducing                     7355–7360. [Online]. Available: http://dx.doi.org/10.23919/CCC55666.
+     reservoir network using time delays,” Phys. Rev. Res., vol. 5, p.                2022.9901897
+     L022041, May 2023. [Online]. Available: https://link.aps.org/doi/10.        [24] L. Appeltant, M. C. Soriano, G. Van der Sande, J. Danckaert, S. Massar,
+     1103/PhysRevResearch.5.L022041                                                   J. Dambre, B. Schrauwen, C. R. Mirasso, and I. Fischer, “Information
+ [4] M. Dale, J. F. Miller, S. Stepney, and M. A. Trefzer, “A substrate-              processing using a single dynamical node as complex system,” Nat.
+     independent framework to characterize reservoir computers,” Proc.                Commun., vol. 2, no. 1, p. 468, Sep. 2011.
+     Math. Phys. Eng. Sci., vol. 475, no. 2226, p. 20180723, Jun. 2019.          [25] H.-J. Stöckmann and J. Stein, ““quantum” chaos in billiards studied by
+                                                                                      microwave absorption,” Phys. Rev. Lett., vol. 64, pp. 2215–2218, May
+ [5] K. Fujii and K. Nakajima, “Harnessing disordered-ensemble quantum
+                                                                                      1990. [Online]. Available: https://link.aps.org/doi/10.1103/PhysRevLett.
+     dynamics for machine learning,” Phys. Rev. Appl., vol. 8, p.
+                                                                                      64.2215
+     024030, Aug 2017. [Online]. Available: https://link.aps.org/doi/10.
+                                                                                 [26] M. C. Bañuls, J. I. Cirac, and M. B. Hastings, “Strong and
+     1103/PhysRevApplied.8.024030
+                                                                                      weak thermalization of infinite nonintegrable quantum systems,” Phys.
+ [6] A. Senanian, S. Prabhu, V. Kremenetski, S. Roy, Y. Cao, J. Kline, T. On-
+                                                                                      Rev. Lett., vol. 106, p. 050405, Feb 2011. [Online]. Available:
+     odera, L. G. Wright, X. Wu, V. Fatemi, and P. L. McMahon, “Microwave
+                                                                                      https://link.aps.org/doi/10.1103/PhysRevLett.106.050405
+     signal processing using an analog quantum reservoir computer,” Nat.
+                                                                                 [27] H. Jaeger, “The “echo state” approach to analysing and training recurrent
+     Commun., vol. 15, no. 1, p. 7490, Aug. 2024.
+                                                                                      neural networks-with an erratum note,” Bonn, Germany: German na-
+ [7] D. Fry, A. Deshmukh, S. Y.-C. Chen, V. Rastunkov, and V. Markov,                 tional research center for information technology gmd technical report,
+     “Optimizing quantum noise-induced reservoir computing for nonlinear              vol. 148, no. 34, p. 13, 2001.
+     and chaotic time series prediction,” Sci. Rep., vol. 13, no. 1, p. 19326,   [28] K. Fujii and K. Nakajima, “Harnessing disordered-ensemble quantum
+     Nov. 2023.                                                                       dynamics for machine learning,” Phys. Rev. Appl., vol. 8, p.
+ [8] J. Dudas, B. Carles, E. Plouet, F. A. Mizrahi, J. Grollier, and                  024030, Aug 2017. [Online]. Available: https://link.aps.org/doi/10.
+     D. Marković, “Quantum reservoir computing implementation on coher-              1103/PhysRevApplied.8.024030
+     ently coupled quantum oscillators,” Npj Quantum Inf., vol. 9, no. 1, Jul.   [29] J. Chen and H. I. Nurdin, “Learning nonlinear input–output maps with
+     2023.                                                                            dissipative quantum systems,” Quantum Inf. Process., vol. 18, no. 7, Jul.
+ [9] K. Kobayashi, K. Fujii, and N. Yamamoto, “Feedback-driven quantum                2019.
+     reservoir computing for time-series analysis,” PRX quantum, vol. 5,         [30] S. Kobayashi, Q. H. Tran, and K. Nakajima, “Extending echo state
+     no. 4, Nov. 2024.                                                                property for quantum reservoir computing,” Phys. Rev. E, vol. 110,
+[10] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano, and R. Zam-           p. 024207, Aug 2024. [Online]. Available: https://link.aps.org/doi/10.
+     brini, “Time-series quantum reservoir computing with weak and projec-            1103/PhysRevE.110.024207
+     tive measurements,” Npj Quantum Inf., vol. 9, no. 1, Feb. 2023.             [31] M. Lukoševičius, A Practical Guide to Applying Echo State Networks.
+[11] J. Chen, H. I. Nurdin, and N. Yamamoto, “Temporal information                    Springer Berlin Heidelberg, 2012, p. 659–686. [Online]. Available:
+     processing on noisy quantum computers,” Phys. Rev. Appl., vol. 14,               http://dx.doi.org/10.1007/978-3-642-35289-8 36
+     p. 024065, Aug 2020. [Online]. Available: https://link.aps.org/doi/10.      [32] A. Sannia, R. Martı́nez-Peña, M. C. Soriano, G. L. Giorgi, and
+     1103/PhysRevApplied.14.024065                                                    R. Zambrini, “Dissipation as a resource for quantum reservoir
+[12] K. Fujii and K. Nakajima, “Harnessing disordered-ensemble quantum                computing,” Quantum, vol. 8, p. 1291, Mar. 2024. [Online]. Available:
+     dynamics for machine learning,” Phys. Rev. Appl., vol. 8, no. 2, Aug.            http://dx.doi.org/10.22331/q-2024-03-20-1291
+     2017.                                                                       [33] O. D. Matteo, “Understanding the haar measure,” https://pennylane.ai/
+[13] K. Nakajima, K. Fujii, M. Negoro, K. Mitarai, and M. Kitagawa,                   qml/demos/tutorial haar measure, 03 2021, date Accessed: 2025-04-09.
+     “Boosting computational power through spatial multiplexing in quantum       [34] F. Mezzadri, “How to generate random matrices from the classical
+     reservoir computing,” Phys. Rev. Appl., vol. 11, no. 3, Mar. 2019.               compact groups,” Notices of the American Mathematical Society, vol. 54,
+[14] W. Maass, T. Natschläger, and H. Markram, “Real-time computing                  no. 5, pp. 592 – 604, May 2007.
+     without stable states: a new framework for neural computation based on      [35] A. Javadi-Abhari, M. Treinish, K. Krsulich, C. J. Wood, J. Lishman,
+     perturbations,” Neural Comput., vol. 14, no. 11, pp. 2531–2560, Nov.             J. Gacon, S. Martiel, P. D. Nation, L. S. Bishop, A. W. Cross, B. R.
+     2002.                                                                            Johnson, and J. M. Gambetta, “Quantum computing with qiskit,” 2024.
+[15] T. Yasuda, Y. Suzuki, T. Kubota, K. Nakajima, Q. Gao, W. Zhang,                  [Online]. Available: https://arxiv.org/abs/2405.08810
+     S. Shimono, H. I. Nurdin, and N. Yamamoto, “Quantum reservoir
+     computing with repeated measurements on superconducting devices,”
+     2023. [Online]. Available: https://arxiv.org/abs/2310.06706
+[16] T. Monomi, W. Setoyama, and Y. Hasegawa, “Feedback-enhanced
+     quantum reservoir computing with weak measurements,” 2025. [Online].
+     Available: https://arxiv.org/abs/2503.17939
+[17] E. Bäumer, V. Tripathi, D. S. Wang, P. Rall, E. H. Chen, S. Majumder,
+     A. Seif, and Z. K. Minev, “Efficient long-range entanglement using
+     dynamic circuits,” PRX Quantum, vol. 5, p. 030339, Aug 2024. [Online].
+     Available: https://link.aps.org/doi/10.1103/PRXQuantum.5.030339
+[18] M. C. Mackey and L. Glass, “Oscillation and chaos in physiological
+     control systems,” Science, vol. 197, no. 4300, pp. 287–289, Jul. 1977.
+[19] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yasuoka, and N. Yamamoto, “Nat-
+     ural quantum reservoir computing for temporal information processing,”
+     Sci. Rep., vol. 12, no. 1, p. 1353, Jan. 2022.
+[20] E. H. Moore, “On the reciprocal of the general algebraic matrix,”
+     Bulletin of the american mathematical society, vol. 26, pp. 294–295,
+     1920.
+[21] R. Penrose, “A generalized inverse for matrices,” in Mathematical
+     proceedings of the Cambridge philosophical society, vol. 51, no. 3.
+     Cambridge University Press, 1955, pp. 406–413.
+

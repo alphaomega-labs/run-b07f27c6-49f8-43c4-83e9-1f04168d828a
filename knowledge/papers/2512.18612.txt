@@ -1,0 +1,826 @@
+                                                               Image Denoising via Quantum Reservoir Computing
+
+                                                               Soumyadip Das,1 Luke Antoncich ,1 and Jingbo B. Wang                1, ∗
+
+                                                                  1
+                                                                      Centre for Quantum Information, Simulation and Algorithms,
+
+                                                                           School of Physics, Mathematics and Computing,
+
+                                                                         The University of Western Australia, Perth, Australia
+
+                                                       Quantum Reservoir Computing (QRC) leverages the natural dynamics of quantum systems
+arXiv:2512.18612v1 [quant-ph] 21 Dec 2025
+
+
+
+
+                                                     for information processing, without requiring a fault-tolerant quantum computer. In this
+
+                                                     work, we apply QRC within a hybrid quantum–classical framework for image denoising.
+
+                                                     The quantum reservoir is implemented using a Rydberg atom array, while a classical neural
+
+                                                     network serves as the readout layer. To prepare the input, images are first compressed using
+
+                                                     Principal Component Analysis (PCA), reducing their dimensionality to match the size of
+
+                                                     the atom array. Each feature vector is encoded into local detuning parameters of a time-
+
+                                                     dependent Hamiltonian governing the Rydberg system. As the system evolves, it generates
+
+                                                     nonlinear embeddings through the measurement of observables across multiple time steps.
+
+                                                     These temporal embeddings capture complex correlations, which are fed into a classical
+
+                                                     neural network to reconstruct the denoised images. To evaluate performance, we compare
+
+                                                     this QRC-assisted model against a baseline architecture consisting of PCA followed by a
+
+                                                     dense neural network, trained under identical conditions. Our results show that the QRC-
+
+                                                     based approach achieves improved image sharpness and similar structural recovery compared
+
+                                                     to the PCA-based model. We demonstrate the practical viability of this framework through
+
+                                                     experiments on QuEra’s Aquila neutral-atom processor, leveraging its programmable atom
+
+                                                     arrays to physically realize the reservoir dynamics.
+
+
+
+
+                                                                                       I.   INTRODUCTION
+
+
+                                                 Image denoising is a core problem in computer vision and signal processing, with the aim of
+
+                                            recovering clean images from noisy observations. Classical techniques, such as Principal Component
+
+                                            Analysis (PCA) [6] and convolutional neural networks (CNNs) [16], have been widely adopted
+
+                                            due to their effectiveness in capturing statistical correlations and spatial patterns. PCA reduces
+
+                                            dimensionality by identifying principal components that explain the variance in the data, while
+                                            ∗
+                                                jingbo.wang@uwa.edu.au
+                                                                                                  2
+
+
+CNNs learn hierarchical features through large-scale training on labeled datasets. Despite their
+
+success, these methods often face limitations when dealing with structured noise, dynamic image
+
+content, or nonlinear dependencies that evolve over time [17]. In such cases, the assumptions
+
+underlying classical models, such as linearity or stationarity, may not hold, leading to suboptimal
+
+denoising performance.
+
+   Quantum computing offers powerful new tools for high-dimensional and nonlinear information
+
+processing with the potential to outperform classical methods in certain tasks [1, 3, 14]. In recent
+
+years, several quantum approaches have been explored for image denoising [2, 7, 18], demonstrating
+
+promising results in noise suppression and feature recovery. One potential quantum approach is
+
+Quantum Reservoir Computing (QRC) [5, 10], which utilizes the complex dynamics of quantum
+
+many-body systems as computational reservoirs. In QRC, input data is encoded in the control
+
+parameters of a quantum system, typically through a time-dependent Hamiltonian, which drives
+
+the evolution of the system. This evolution naturally maps the input to a high-dimensional fea-
+
+ture space, due to the inherent complexity of the system. Outputs are extracted from measured
+
+observables over time and processed using a straight-forward readout.
+
+   In this study, we apply QRC to image denoising by encoding image features as inputs to a
+
+Rydberg-atom reservoir, where Hamiltonian dynamics processes the noisy data. A linear readout
+
+reconstructs the cleaned images, and performance is benchmarked against a PCA-based classi-
+
+cal baseline. The QRC model achieves higher image sharpness and similar structural similarity,
+
+demonstrating the utility of quantum correlations to extract information from noise. These findings
+
+support the potential of analog quantum systems as computational platforms for signal recovery
+
+and pattern recognition. They also demonstrate how controlled driving fields and detuning pulses
+
+can enhance nonlinear processing without requiring full quantum error correction.
+
+
+
+                                     II.   METHODOLOGY
+
+
+                                           A.   Overview
+
+
+   The core of this work is a novel hybrid quantum-classical framework designed for image denois-
+
+ing. The central idea is that the complex, high-dimensional dynamics of a quantum many-body
+                                                                                                  3
+
+
+system can serve as a powerful computational resource for feature extraction. Our proposed frame-
+
+work integrates a Quantum Reservoir Computer (QRC) [8–11] with a classical all-to-all neural
+
+network.
+
+   The methodology unfolds in three primary stages:
+
+   1. Preprocessing: Noisy input images are first subjected to Principal Component Analysis
+
+      (PCA)[6] for dimensionality reduction. This compresses the high-dimensional image data
+
+      into a low-dimensional representation suitable for encoding onto a near-term quantum device.
+
+   2. Quantum Feature Mapping: This representation is used to drive the dynamics of a
+
+      quantum reservoir. The time evolution of the quantum system, governed by the Hamiltonian,
+
+      nonlinearly maps the input features into the system’s Hilbert space.
+
+   3. Classical Reconstruction: The final state of the quantum reservoir is measured to extract
+
+      a classical feature vector. This vector, which now encodes complex correlations from the
+
+      input data, is fed into a classical feedforward neural network (the ”readout network”) that
+
+      is trained to reconstruct the clean image.
+
+   For evaluation, we benchmark our hybrid model against a purely classical baseline that uses
+
+the same PCA features but feeds them directly into an identical readout network, helping isolate
+
+the performance contribution of the quantum reservoir. Figure 1 provides a schematic overview of
+
+the hybrid quantum–classical image denoising framework.
+
+
+                                 B.     Dataset and Preprocessing
+
+
+   Let the dataset be denoted by D = {(Xi , Yi )}N
+                                                 i=1 , a collection of N image pairs. For each
+
+pair, Xi ∈ [0, 1]H×W is the ground-truth clean grayscale image, and Yi ∈ [0, 1]H×W is its noisy
+
+counterpart. The noise is introduced via the model:
+
+
+                                      Yi = N (Xi ) = Xi ⊙ (1 + ϵi ),                             (1)
+
+
+where ⊙ signifies the element-wise Hadamard product. The noise term ϵi is a matrix of random
+
+variables drawn from a zero-mean distribution, such as a Gaussian distribution N (0, σ 2 ), modeling
+                                                                                                           4
+
+
+
+
+FIG. 1. Schematic overview of the hybrid quantum–classical image denoising scheme based
+on Quantum Reservoir Computing (QRC). Noisy MNIST images undergo classical preprocessing
+(flattening and normalization) and PCA dimensionality reduction to d components (scaled to [0,1]), which
+are encoded as local detunings in a chain of d interacting Rydberg atoms. The quantum reservoir evolves
+under time-varying global Rabi pulses Ω(t) and detunings, and features are extracted from expectation
+values of single-site ⟨Zi (t)⟩ and pairwise ⟨Zi (t)Zj (t)⟩ observables across multiple timesteps. A classical
+feedforward neural network reconstructs the clean image from these quantum embeddings using an MSE
+training objective. Compared to a classical PCA baseline, the QRC approach consistently produces sharper
+images while maintaining near-identical structure, with associated metrics increasing as the reservoir size
+increases up to the maximum simulated dimension of d =18 atoms.
+
+
+a combination of additive and multiplicative noise often seen in real-world imaging systems.
+
+   For processing, each image is unrolled into a vector, xi = vec(Xi ) ∈ RM , where M = H × W is
+
+the total number of pixels. This allows the image to be treated as a single data point in a high-
+
+dimensional space. The resulting vectors {xi , yi } are normalized to ensure that all pixel values are
+
+within the [0, 1] range.
+
+
+
+
+                               C.   Dimensionality Reduction via PCA
+
+
+   Given the practical limitations of current quantum hardware (i.e., the number of available
+
+qubits, or ’sites’), it is infeasible to directly encode an entire image vector yi ∈ RM onto the
+
+quantum device. We therefore employ Principal Component Analysis (PCA) as an unsupervised
+
+linear dimensionality reduction technique.
+
+   PCA identifies an optimal orthogonal basis {u1 , . . . , uM } for the clean training data by finding
+
+the directions of maximal variance. The transformation projects the high-dimensional noisy vector
+                                                                                                     5
+
+
+yi onto the subspace spanned by the first d ≪ M principal components:
+
+
+                                             zi = Ud⊤ (yi − ȳ).                                   (2)
+
+
+Here, Ud = [u1 , . . . , ud ] ∈ RM ×d is the projection matrix containing the top d eigenvectors of the
+
+data’s covariance matrix, and ȳ is the mean of the noisy training vectors. The hyperparameter d
+
+is chosen to retain a significant portion of the total variance in the original data. The resulting
+
+low-dimensional vector zi ∈ Rd serves as a compressed representation of the noisy image, which is
+
+now compact enough to be encoded into the quantum reservoir.
+
+
+                                D.     Quantum Reservoir Encoding
+
+
+   The quantum reservoir is the computational core of our feature mapping process. It consists of
+
+an interacting chain of d qubits, where each qubit is associated with one component of the PCA-
+
+reduced input vector zi . The system’s dynamics are governed by a time-dependent transverse-field
+
+Ising Hamiltonian, a standard model for interacting spin systems:
+
+                                     d
+                                     X                            X
+                                           Ωi (t)σx(i) + ∆i (t)ni +
+                                       
+                           H(t) =                                    Vij ni nj .                   (3)
+                                     i=1                              i<j
+
+
+The terms in the Hamiltonian have clear physical interpretations:
+
+             (i)
+    • Ωi (t)σx : The Rabi frequency Ωi (t) drives coherent transitions between the ground (|0⟩) and
+                                                                                   (i)
+      excited (|1⟩) states of qubit i, governed by the Pauli-X operator σx .
+
+    • ∆i (t)ni : The detuning ∆i (t) controls the energy offset of the excited state of qubit i, where
+                    (i)
+      ni = 21 (1 + σz ) is the number operator. This term is used to encode the input data.
+
+    • Vij ni nj : The interaction term Vij describes the coupling strength between qubits i and j.
+
+      This term generates entanglement and complex correlations within the reservoir.
+
+   The input vector zi = (zi,1 , . . . , zi,d )⊤ is encoded into the reservoir’s dynamics by modulating
+
+the local detuning profiles. A simple linear encoding scheme is used:
+
+
+                                           ∆i (t) = ∆0 + k · zi,i ,                                (4)
+                                                                                                         6
+
+
+where ∆0 is a constant baseline detuning and k is a scaling factor. The reservoir is initialized in
+
+the ground state |ψ(0)⟩ = |0⟩⊗d and evolves for a total time T according to the time-dependent
+
+Schrödinger equation:
+
+
+                                             d
+                                        iℏ      |ψ(t)⟩ = H(t) |ψ(t)⟩ .                                 (5)
+                                             dt
+
+
+This evolution is simulated numerically, yielding the final state |ψ(T )⟩. This state is a highly
+
+complex, nonlinear function of the input vector zi .
+
+   The quantum reservoir was driven using simple time-independent control fields. First, the Rabi
+
+drive was applied as a constant pulse,
+
+
+                                              Ω(t) = 2π rad/µs.
+
+
+The encoding scale used for the detuning terms was set to ∆ = 9.0 rad/µs. The global detuning
+
+was held constant at half this value,
+
+
+                                                    ∆
+                                       ∆global =      = 4.5 rad/µs.
+                                                    2
+
+
+Each atom was also assigned a constant local detuning proportional to its encoded input value.
+
+Let xvec = (x1 , x2 , . . . , xN ) denote the scaled PCA components mapped to the sites. The local
+
+detuning profile was then
+
+
+                                  ∆local,i = −∆ xi = −9.0 xi rad/µs,
+
+
+which provides a fixed, site-dependent energy shift for each atom.
+
+
+
+
+                                  E.   Quantum Feature Extraction
+
+
+   To translate the information stored in the evolved quantum state |ψ(T )⟩ into a classical for-
+
+mat, we perform measurements [13]. The system’s state is sampled at L discrete time points
+
+{t1 , t2 , . . . , tL = T } during its evolution. At each time step tl , we estimate the expectation values
+                                                                                                             7
+
+
+of single-qubit and two-qubit observables in the computational basis. For each input, we perform
+
+K repeated state preparations and measurements (’shots’) to gather statistics.
+
+   The expectation values are estimated as follows:
+
+                                                             (l)
+                                               PK         bk,i
+    • Single-qubit observables: ⟨Zi ⟩tl = K1      k=1 (−1)     , which captures local information about
+
+      each qubit.
+
+                                                                            (l)   (l)
+                                                                 PK        bk,i ⊕bk,j
+    • Two-qubit correlation observables: ⟨Zi Zj ⟩tl = K1           k=1 (−1)           , which captures the cor-
+
+      relations and entanglement generated between pairs of qubits by the Vij term.
+
+       (l)
+Here, bk,i is the binary outcome for qubit i in shot k at time tl , and ⊕ is addition modulo 2 (XOR).
+
+   The final quantum feature embedding ri ∈ RR for the input yi is constructed by concatenating
+
+all these measured expectation values across all relevant sites and time steps:
+
+                                                                          
+                             ri = concat {⟨Zp ⟩tl , ⟨Zp Zq ⟩tl }p<q,l=1..L .                               (6)
+
+
+The dimensionality of this feature vector is R = L × (d + d(d−1)
+                                                             2   ). This vector serves as a fixed,
+
+high-dimensional, and non-linear representation of the original input, which is now ready to be
+
+interpreted by a classical machine learning model.
+
+
+
+                                 F.   Classical Readout Network
+
+
+   The final step is to map the quantum feature embedding ri back to a denoised image. This
+
+is accomplished by a trainable classical readout network, specifically a Multi-Layer Perceptron
+
+(MLP). This network defines a parametric function fθ that learns the mapping:
+
+
+                                               x̂i = fθ (ri ),                                             (7)
+
+
+where θ represents the set of all trainable weights and biases in the network. The MLP consists of
+
+an input layer of size R, several hidden layers with a non-linear activation function (e.g., ReLU),
+
+and an output layer of size M with a Sigmoid activation function to ensure the output pixel values
+
+are constrained to [0, 1].
+                                                                                                  8
+
+
+   The network is trained end-to-end by minimizing the Mean Squared Error (MSE) loss function
+
+between the reconstructed image x̂i and the ground-truth clean image xi :
+
+                                                  N
+                                         1 X
+                                  L(θ) =     ∥fθ (ri ) − xi ∥22 .                                (8)
+                                         N
+                                                  i=1
+
+
+Optimization of the parameters θ is performed using the Adam optimizer, a stochastic gradient-
+
+based algorithm, via standard backpropagation. Only the classical readout network’s parameters
+
+θ are trained; the quantum reservoir’s dynamics are fixed.
+
+
+                                  G.    Classical Baseline Model
+
+
+   To properly assess the advantage conferred by the quantum feature mapping, a purely classical
+
+baseline model is established as a control. This baseline replaces the entire quantum processing
+
+pipeline with a direct connection from the PCA stage to the readout network. The baseline network,
+
+fϕ , thus learns the mapping:
+
+
+                                              (PCA)
+                                            x̂i         = fϕ (zi ).                              (9)
+
+
+To ensure a fair comparison, the architecture of this baseline network (number of layers, neurons,
+
+activation functions) is identical to the one used in the hybrid model. It is also trained using the
+
+same loss function, optimizer, and training procedure.
+
+
+                                       H.   Evaluation Metrics
+
+
+   Model performance is quantitatively assessed using three standard and complementary metrics
+
+from the field of image processing:
+
+   • Mean Squared Error (MSE): Measures the average squared difference between the pixels
+
+      of the reconstructed and ground-truth images. It provides a direct measure of pixel-wise
+
+      reconstruction fidelity:
+
+                                                           M
+                                                      1 X
+                                        MSE =             (xij − x̂ij )2 .                     (10)
+                                                      M
+                                                          j=1
+                                                                                                  9
+
+
+   • Tenegrad Sharpness (TENG): A focus and edge-sharpness metric based on the magnitude of
+
+      image gradients computed via the Sobel operator. Higher Tenegrad values indicate stronger
+
+      edge responses and therefore sharper reconstructions:
+
+                                                     M
+                                                 1 X
+                                  TENG(X) =          ⊮(Gj > T ) G2j ,                           (11)
+                                                 M
+                                                     j=1
+
+
+      where Gj is the Sobel gradient magnitude at pixel j, T is a threshold that suppresses noise-
+
+      dominated gradients, and ⊮(·) is the indicator function. The metric effectively captures local
+
+      edge strength rather than global pixel-wise error.
+
+
+
+
+   • Structural Similarity Index (SSIM) [12]: A perceptual metric that assesses the similarity
+
+      between two images based on luminance, contrast, and structure, which aligns more closely
+
+      with human visual perception than pixel-wise metrics like MSE:
+
+
+                                                (2µX µX̂ + c1 )(2σX X̂ + c2 )
+                             SSIM(X, X̂) =                       2 + σ2 + c ) .                 (12)
+                                             (µ2X + µ2 + c1 )(σX              2
+                                                      X̂              X̂
+
+
+
+
+                                     I.   Overall Framework
+
+
+
+   In summary, the proposed hybrid denoising pipeline implements the following compositional
+
+mapping from a noisy image yi to its reconstructed clean version x̂i :
+
+
+                                    x̂i = (fθ ◦ gQ ◦ hPCA )(yi ),                               (13)
+
+
+where hPCA is the linear PCA projection, gQ represents the non-trainable, non-linear quantum fea-
+
+ture mapping, and fθ is the trainable classical reconstruction network. The baseline model simply
+
+omits the gQ step. This structure leverages the quantum system’s natural capacity for generating
+
+complex correlations to create a powerful feature expansion, enabling the classical network to solve
+
+the denoising problem more effectively than it could with linearly-compressed features alone.
+                                                                                                  10
+
+
+                               III.   RESULTS AND DICUSSION
+
+
+   To evaluate the performance of our Quantum Reservoir Computing (QRC) based image denoiser,
+
+we performed experiments on the [4] MNIST dataset, a widely adopted benchmark comprising
+
+60,000 training and 10,000 test images of 28×28 grayscale handwritten digits range between 0
+
+to 9. For the setup, we selected the first 1000 training images and 200 test images to manage
+
+computational overhead during emulations with Bloqade [15]. Noisy datasets were synthesized by
+
+applying multiplicative speckle noise, modeled as I˜ = I · (1 + σ · N (0, 1)), with σ = 0.7, cut to
+
+[0,1] to simulate realistic distortions encountered in optical imaging and sensor noise. This noise
+
+type was chosen for its multiplicative nature, which preserves relative intensities but introduces
+
+spatially varying artifacts, posing a challenging denoising scenario.
+
+   The quantity of PCA components and, consequently, the quantity of Rydberg atoms in the
+
+QRC chain was altered from 4 to 18 atoms to examine scalability and performance balances. Noisy
+
+images were applied to these PCA bases, normalized to [0,1] for each component, and represented
+
+as local detunings within a one-dimensional chain structure with a lattice spacing of 10 µm. The
+
+system progressed through 8 timesteps (dt=0.5 µs), utilizing 1000 shots for each emulation to
+
+calculate expectation values of individual-site Zi and pairwise Zi Zj observables, resulting in high-
+
+dimensional embeddings (e.g., dimension 288 for 8 atoms: 8 timesteps × (8 Z + 28 ZZ)).
+
+   A TensorFlow sequential model (two hidden layers: 1024 and 512 ReLU units, sigmoid output
+
+for 784 pixels) was trained on these embeddings to regress clean pixel values, using MSE loss, Adam
+
+optimizer (lr=0.001), batch size 64, and 500 epochs. A dropout rate of 0.3 was used as a form
+
+of regularization and a patience of 20 was chosen for early stopping. As a baseline, an identical
+
+model mapped noisy PCA features directly to clean images, bypassing the QRC. Performance was
+
+quantified on the 200 noisy test images which were held out from training.
+
+   Qualitatively, visualizations of the denoised outputs showed that QRC reconstructions consis-
+
+tently exhibited sharper edges and fewer residual artifacts across all reservoir sizes from 4 to 18
+
+atoms. Figure 2 compares clean and noisy MNIST images with the reconstructions generated by
+
+18-atom QRC and the corresponding PCA model. Both models are able to significantly reduce the
+
+added speckle noise.
+
+   The analysis across all tested reservoir sizes is summarized in Figure 3 and Table I. In terms of
+                                                                                                        11
+
+
+
+
+FIG. 2. Comparison of denoising performance on MNIST dataset: The first row shows the noisy
+inputs, the second row shows the clean reference images, the third row shows results from Quantum Reservoir
+Computing (QRC) denoising using an 18-atom chain, and the fourth row shows outputs from classical PCA-
+based denoising. The QRC-denoised images have sharper edges than their classical counterparts, while
+maintaining similar structure.
+
+
+
+SSIM, QRC matched PCA across all atom counts, indicating that the quantum reservoir preserves
+
+global structural features to a similar degree despite its nonlinear dynamics. QRC showed a clear
+
+advantage in TENG, outperforming PCA in every configuration. These higher sharpness scores
+
+suggest that the reservoir’s nonlinear evolution amplifies edge-relevant features, leading to recon-
+
+structions with stronger local gradients than those obtained from linear PCA. Conversely, QRC
+
+exhibited higher MSE across all settings, reflecting greater pixel-level variability. This elevated
+
+error likely arises from the stochasticity and nonlinear spreading of information within the reser-
+
+voir, which can introduce small local deviations even when overall structure and edge strength are
+
+preserved.
+
+   Experimental execution was performed on QuEra’s Aquila neutral-atom processor. Due to the
+
+significant computational overhead of sampling observables at various time evolutions for each
+                                                                                                         12
+
+
+
+
+FIG. 3. Comparison between Quantum Reservoir Computing (QRC) and classical PCA-based
+denoising performance across different reservoir sizes: The QRC model achieves a higher Tenegrad
+Sharpness (TENG) and slightly better Structural Similarity Index (SSIM) than the PCA model, while the
+PCA model achieves a lower (better) MSE. As the atom count increases both models continue to improve,
+with some evidence of saturation at the highest count. These results indicate the potential of QRC as a tool
+to denoise images and restore their sharpness, which has applications in medical contexts for example.
+
+
+TABLE I. Performance comparison across PCA dimensions. Values are mean ± standard deviation; best
+value per row for each metric is shown in bold.
+                       MSE                             SSIM                            TENG
+ Atoms
+               QRC             PCA              QRC            PCA              QRC              PCA
+ 4          0.044±0.018    0.043±0.015      0.384±0.149     0.373±0.131    569.7±245.2       479.4±236.2
+ 6          0.038±0.017    0.036±0.015      0.493±0.171     0.463±0.144    771.9±290.3       609.7±284.6
+ 8          0.034±0.016    0.032±0.014      0.537±0.169     0.523±0.148    816.3±306.0       699.3±297.9
+ 10         0.033±0.017    0.029±0.013      0.572±0.156     0.568±0.139    928.1±304.7       782.4±303.6
+ 12         0.030±0.015    0.026±0.012      0.599±0.154     0.594±0.127    944.3±304.3       846.0±309.8
+ 14         0.029±0.015    0.025±0.011      0.621±0.151     0.614±0.123    1005.8±311.9      874.2±313.9
+ 16         0.027±0.014    0.023±0.010      0.641±0.145     0.632±0.124    1041.4±315.0      907.2±322.9
+ 18         0.026±0.013    0.022±0.010      0.646±0.146     0.645±0.123    1036.0±315.8      938.6±327.9
+
+
+input, the study focused on 100 training and 20 testing instances. This provided a representative
+
+proof-of-concept while managing the total quantum resources required for high-resolution temporal
+
+tracking. With 14-atom chains and sampling the reservoir in 5 time steps, the QRC model trained
+
+with hardware embeddings did not perform as well as in the emulations. This is likely a combination
+
+of inherent noise in the system that is not present in emulations, as well as the restricted shot count
+
+(200 shots with hardware as opposed 1000 emulation shots). For some data samples the hardware
+
+results were able to achieve similar results to the PCA model, which can be seen in Figure 4. With
+
+the potential to take more shots and with longer coherence times for hardware atoms, it is feasible
+
+that this technique could be implemented with near-term quantum devices and with larger atom
+
+counts.
+                                                                                                     13
+
+
+
+
+FIG. 4. Comparison of denoising performance between QRC embeddings generated by hard-
+ware and the PCA-based model: The first row shows results from Quantum Reservoir Computing
+(QRC) denoising using a 14-atom chain on the hardware device Aquila, and the second row shows outputs
+from classical PCA-based denoising. The QRC-denoised images have more or less similar sharpness to those
+generated by the PCA model.
+
+
+                                        IV.   CONCLUSION
+
+
+   This study demonstrates that Quantum Reservoir Computing offers a viable approach to image
+
+denoising. Across all reservoir sizes tested, QRC produced reconstructions with higher Tenegrad
+
+Sharpness (TENG) and similar Structural Similarity Index Measure (SSIM) values compared to
+
+PCA, indicating stronger edge recovery without compromising global structural fidelity. Sharper
+
+reconstructions are especially relevant for downstream tasks where fine-scale gradients influence
+
+diagnostic or classification accuracy, such as medical imaging, pattern recognition, and feature
+
+extraction.
+
+   A notable finding is that QRC performance continued to improve with increasing atom number,
+
+with slight evidence of saturation at 18 atoms. This scaling behaviour suggests that larger quantum
+
+reservoirs may unlock even richer nonlinear feature transformations. A promising direction for fu-
+
+ture work is to explore the extent of this trend on larger neutral-atom devices and to assess whether
+
+similar gains persist for higher-resolution datasets or more challenging noise models. Overall, these
+
+results highlight the potential of quantum dynamical embeddings to enhance perceptual image
+
+quality and motivate further investigation into the capabilities of large-scale quantum reservoirs
+
+for vision and signal-processing applications.
+
+   In conclusion, QRC offers a promising direction for energy-efficient, hardware-native signal
+
+processing in image denoising. By leveraging the high-dimensional structure of Hilbert space and
+                                                                                                      14
+
+
+the complex intrinsic dynamics of quantum systems, QRC may separate signal from noise more
+
+effectively than classical reservoirs. This design requires only a simple classical readout layer and
+
+avoids the computational cost of backpropagation, making QRC particularly suited for small-data
+
+and resource-constrained environments. Future work will focus on rigorous benchmarking against
+
+classical and hybrid methods, scaling strategies, and assessing performance on real-world datasets.
+
+
+
+                                      ACKNOWLEDGEMENTS
+
+
+   This research was supported by the Critical Technologies Challenge Program of the Australian
+
+Government Department of Industry, Science and Resources. LA gratefully acknowledges funding
+
+from the Australian Government Research Training Program scholarship. Numerical simulations
+
+were conducted on Setonix, provided by the Pawsey Supercomputing Research Centre. Access
+
+to the QuEra Aquila processor was also facilitated through Pawsey Supercomputing Research
+
+Centre. The authors acknowledge valuable discussions with Tommaso Macri and Jonathan Wurtz
+
+from QuEra.
+
+
+
+
+ [1] Biamonte, J., Wittek, P., Pancotti, N., Rebentrost, P., Wiebe, N., and Lloyd, S. (2017). Quantum
+
+    machine learning. Nature, 549(7671):195–202.
+
+ [2] Chakraborty, S., Shaikh, S. H., Chakrabarti, A., and Ghosh, R. (2020). An Image Denoising Technique
+
+    using Quantum Wavelet Transform. International Journal of Theoretical Physics, 59(11):3348–3371.
+
+ [3] Chiew, M., DeLacy, K., Yu, C. H., Marsh, S., and Wang, J. B. (2019). Graph comparison via nonlinear
+
+    quantum search. Quantum Information Processing, 18:302.
+
+ [4] Deng, L. (2012). The mnist database of handwritten digit images for machine learning research [best
+
+    of the web]. IEEE Signal Processing Magazine, 29:141–142.
+
+ [5] Fujii, K. and Nakajima, K. (2017). Harnessing disordered-ensemble quantum dynamics for machine
+
+    learning. Physical Review Applied, 8(2):024030.
+
+ [6] Jolliffe, I. T. (2002). Principal Component Analysis. Springer Series in Statistics, New York.
+
+ [7] Kerger, P. and Miyazaki, R. (2023). Quantum image denoising: A framework via boltzmann machines,
+
+    qubo, and quantum annealing.
+
+ [8] Kornjača, M. and et.al. (2024). Large-scale quantum reservoir learning with an analog quantum com-
+
+    puter.
+                                                                                                       15
+
+
+ [9] Kutvonen, M., Fujii, K., and Nakajima, K. (2020). Reservoir computing with quantum systems.
+
+    Scientific Reports, 10:14687.
+
+[10] Nakajima, K. and Fischer, I. (2020). Quantum reservoir computing. Nature Reviews Physics, 2:623–634.
+
+[11] Nakajima, K. and Fischer, I. (2021). Reservoir Computing: Theory, Physical Implementations, and
+
+    Applications. Springer.
+
+[12] Ndajah, P., Kikuchi, H., Yukawa, M., Watanabe, H., and Muramatsu, S. (2010). Ssim image quality
+
+    metric for denoised images. pages 53–57.
+
+[13] Schuld, M. and Killoran, N. (2019). Quantum machine learning in feature hilbert spaces. Physical
+
+    Review Letters, 122:040504.
+
+[14] Wu, Y., Wu, B., Wang, J. B., and Yuan, X. (2023). Quantum Phase Recognition via Quantum Kernel
+
+    Methods. Quantum, 7:981.
+
+[15] Wurtz, J. et al. (2023). Aquila: QuEra’s 256-qubit neutral-atom quantum computer.
+
+[16] Zhang, K., Zuo, W., Chen, Y., Meng, D., and Zhang, L. (2017). Beyond a gaussian denoiser: Residual
+
+    learning of deep cnn for image denoising. IEEE Transactions on Image Processing, 26(7):3142–3155.
+
+[17] Zhao, R., Lam, K.-M., and Lun, D. P. (2019). Enhancement of a cnn-based denoiser based on spatial and
+
+    spectral analysis. In 2019 IEEE International Conference on Image Processing (ICIP), page 1124–1128.
+
+    IEEE.
+
+[18] Zhou, Y. and Liang, Y. S. (2024). Image denoising with machine learning: A novel approach to improve
+
+    quantum image processing quality and reliability.
+

@@ -1,0 +1,1170 @@
+                                               Spectral Phase Encoding for Quantum Kernel
+                                                                Methods
+arXiv:2602.19644v1 [cs.LG] 23 Feb 2026
+
+
+
+
+                                                 Pablo Herrero Gómez1 , Antonio Jimeno Morenilla1 , David
+                                                       Muñoz-Hernández1 , and Higinio Mora Mora1
+                                           1
+                                               Department of Computer Science Technology and Computation,
+                                                          University of Alicante, Alicante, Spain
+
+
+
+                                                                              Abstract
+                                                     Quantum kernel methods are promising for near-term quantum ma-
+                                                chine learning, yet their behavior under data corruption remains insuf-
+                                                ficiently understood. We analyze how quantum feature constructions
+                                                degrade under controlled additive noise.
+                                                     We introduce Spectral Phase Encoding (SPE), a hybrid construc-
+                                                tion combining a discrete Fourier transform (DFT) front-end with a
+                                                diagonal phase-only embedding aligned with the geometry of diagonal
+                                                quantum maps. Within a unified framework, we compare QK-DFT
+                                                against alternative quantum variants (QK-PCA, QK-RP) and classi-
+                                                cal SVM baselines under identical clean-data hyperparameter selection,
+                                                quantifying robustness via dataset fixed-effects regression with wild
+                                                cluster bootstrap inference across heterogeneous real-world datasets.
+                                                     Across the quantum family, DFT-based preprocessing yields the
+                                                smallest degradation rate as noise increases, with statistically sup-
+                                                ported slope differences relative to PCA and RP. Compared to classical
+                                                baselines, QK-DFT shows degradation comparable to linear SVM and
+                                                more stable than RBF SVM under matched tuning. Hardware exper-
+                                                iments confirm that SPE remains executable and numerically stable
+                                                for overlap estimation. These results indicate that robustness in quan-
+                                                tum kernels depends critically on structure-aligned preprocessing and
+                                                its interaction with diagonal embeddings, supporting a robustness-first
+                                                perspective for NISQ-era quantum machine learning.
+
+                                         Keywords: quantum kernels, data encoding, spectral methods, robustness,
+                                         NISQ computing
+
+
+
+                                                                                  1
+1    Introduction
+Quantum machine learning (QML) has attracted considerable attention as
+a potential avenue for leveraging near-term quantum devices in supervised
+learning tasks. Among the various paradigms explored, quantum kernel
+methods have emerged as a particularly appealing approach due to their
+conceptual simplicity and natural compatibility with noisy intermediate-
+scale quantum (NISQ) hardware. By embedding classical data into quantum
+states and estimating inner products in an implicit feature space, quantum
+kernels provide a principled bridge between classical learning theory and
+quantum computation [1, 2].
+    Despite this promise, it is now well understood that the practical per-
+formance of quantum kernel methods is strongly influenced by the choice
+of data encoding. Recent studies have shown that kernel behavior is of-
+ten dominated not by the quantum model itself, but by how classical data
+are mapped into the quantum feature space [3]. Inappropriate encodings
+can lead to trivial kernels, excessive concentration, or poor generalization,
+thereby obscuring any potential quantum advantage [4]. As a result, the
+design of informative and noise-resilient encodings has become a central
+challenge for quantum kernel methods in realistic regimes.
+    At the same time, there is growing recognition that quantum advantage
+should not be treated as a universal or binary objective. Rather than fo-
+cusing exclusively on outperforming classical baselines, recent work empha-
+sizes identifying regimes in which quantum models are practically viable,
+interpretable, and robust under noise and finite sampling [1, 5]. From this
+perspective, understanding how quantum pipelines degrade under controlled
+perturbations is at least as important as reporting peak performance.
+    A recurring insight in this line of research is the importance of structure-
+aware quantum kernels. Encodings that respect symmetries, invariances,
+or internal organization of the data have been shown to mitigate kernel
+concentration and improve robustness [6]. These observations suggest that
+incorporating inductive bias at the encoding stage is a promising strategy
+for enhancing the practical utility of quantum kernels, particularly in the
+NISQ regime.
+    In classical machine learning, one of the most successful ways to intro-
+duce such inductive bias is through preprocessing. Techniques such as prin-
+cipal component analysis (PCA) or frequency-domain representations based
+on the discrete Fourier transform (DFT) are routinely used to denoise data,
+reduce dimensionality, and expose global structure. In particular, spectral
+representations have proven especially effective for structured data such as
+
+                                       2
+time series, signals, and images, where meaningful patterns often manifest
+more clearly in the frequency domain. While these ideas are well estab-
+lished classically, their systematic integration into quantum kernel pipelines
+remains comparatively underexplored.
+    Motivated by these observations, this work focuses on the role of spectral
+structure in quantum kernel methods. We introduce Spectral Phase Encod-
+ing (SPE), a frequency-aware encoding that combines a discrete Fourier
+transform with diagonal quantum gates to encode spectral coefficients as
+phases. This choice leverages the natural expressivity of diagonal unitaries
+while preserving the global structure revealed by spectral preprocessing.
+    Rather than aiming to maximize accuracy at a fixed noise level, we
+adopt a noise-aware evaluation strategy that explicitly characterizes how
+performance degrades as noise increases. Through a systematic experimen-
+tal study on synthetic benchmarks, real-world datasets, and real quantum
+hardware, we analyze when spectral phase encoding is beneficial, when its
+advantages vanish, and how it behaves under realistic device noise. This
+approach allows us to delineate the scope of applicability and limitations of
+SPE in a principled and empirically grounded manner.
+
+Related Work Quantum kernel methods were initially formalized as learn-
+ing algorithms operating in implicit quantum feature spaces, enabling non-
+linear classification through inner products estimated on quantum devices
+[1, 2]. This formulation established a direct connection between classical
+kernel theory and quantum computation, and motivated a broad line of re-
+search on the design, evaluation, and deployment of quantum kernels under
+realistic conditions.
+    Subsequent work has investigated the feasibility of training and deploy-
+ing quantum kernels on near-term hardware. In particular, Hubregtsen et
+al. demonstrated that quantum embedding kernels can be trained on noisy
+devices, while highlighting the strong sensitivity of kernel performance to
+hardware noise, finite sampling, and circuit depth [7]. Related studies have
+emphasized that practical performance is often limited not by the expressiv-
+ity of the quantum model itself, but by the interaction between the chosen
+encoding, noise processes, and measurement statistics.
+    A parallel line of work has focused on improving the efficiency and scal-
+ability of quantum kernel methods. Sahin et al. proposed sub-sampling
+strategies to reduce the computational cost of kernel alignment and train-
+ing, enabling larger-scale experiments within realistic resource budgets [8].
+Variational and hybrid approaches, such as approximate or trainable QSVM
+
+
+                                      3
+formulations, have also been explored as a means of balancing expressivity
+and resource requirements in the NISQ regime [9].
+    Beyond discrete-variable encodings, continuous-variable quantum ker-
+nels have been investigated as an alternative approach to representing clas-
+sical data, offering greater flexibility at the cost of increased experimental
+complexity [10]. Across both discrete- and continuous-variable settings, a
+recurring limitation is the phenomenon of kernel concentration, whereby
+quantum kernels become nearly constant and lose discriminative power as
+system size, data dimension, or noise levels increase [4]. This observation
+has motivated the development of structure-aware and symmetry-respecting
+kernels, which incorporate inductive bias at the encoding stage to mitigate
+concentration effects and improve robustness [6].
+    The importance of data encoding has been further underscored by theo-
+retical studies analyzing the expressive power and inductive bias of quantum
+feature maps. It has been shown that the choice of encoding can fundamen-
+tally determine whether a quantum kernel exhibits meaningful variability or
+collapses to a trivial regime, independently of the downstream learning algo-
+rithm [3, 1]. These results highlight encoding design as a central bottleneck
+for practical quantum kernel methods.
+    In classical machine learning, the introduction of inductive bias is often
+achieved through preprocessing. Techniques such as principal component
+analysis (PCA) and frequency-domain representations based on the discrete
+Fourier transform (DFT) are routinely used to reduce dimensionality, sup-
+press noise, and expose global structure in data. Spectral representations, in
+particular, play a central role in time series analysis, signal processing, and
+image modeling, where relevant information often manifests more clearly in
+the frequency domain. Recent advances in classical learning have further re-
+inforced the effectiveness of frequency-aware representations for structured
+data.
+    Despite their widespread use in classical pipelines, such preprocessing
+strategies have received comparatively limited attention in the context of
+quantum kernel methods. Most existing quantum encodings operate di-
+rectly on raw or minimally processed features, without explicitly exploiting
+spectral structure or other domain-specific regularities. As a result, the po-
+tential benefits of combining classical structure-extracting transformations
+with quantum feature maps remain insufficiently characterized.
+    The present work builds on these insights by investigating spectral struc-
+ture as a concrete and widely applicable source of inductive bias for quantum
+kernel encodings. Rather than proposing a new kernel learning paradigm,
+we focus on systematically characterizing how frequency-aware phase encod-
+
+                                      4
+ings behave under increasing noise and realistic hardware constraints, and
+on identifying the regimes in which such structure-aware encodings remain
+informative.
+
+
+2     Methods
+2.1   Spectral Phase Encoding
+We introduce Spectral Phase Encoding (SPE), a structured quantum kernel
+construction that combines a discrete Fourier transform (DFT) front-end
+with a diagonal-gate-based phase embedding. SPE is designed to exploit a
+structural synergy between spectral representations and phase-only quan-
+tum encodings. Throughout the experimental section, this construction is
+denoted as QK-DFT to emphasize the separation between classical front-end
+and quantum backend within the unified regression framework used for ro-
+bustness analysis.
+     The design of SPE is motivated by two complementary observations.
+First, many real-world datasets exhibit meaningful structure in the fre-
+quency domain, which can be revealed through classical spectral transfor-
+mations. Second, diagonal quantum gates provide a natural and hardware-
+efficient mechanism for encoding relative phase information, which plays a
+central role in quantum interference-based representations.
+     Classical machine learning has long exploited frequency-domain repre-
+sentations as a form of preprocessing or feature extraction, particularly in
+signal processing, time-series analysis, and image-based tasks. DFT and re-
+lated spectral representations are commonly used to concentrate structured
+information into a reduced number of components, highlighting periodici-
+ties, global correlations, and scale-dependent patterns [11, 12]. Recent work
+in deep learning for time series has further emphasized the role of Fourier
+front-ends as a means of exposing inductive biases related to shift-invariance
+and long-range dependencies [13].
+     Given an input vector x ∈ Rd , SPE begins by applying a DFT, yielding
+a set of complex spectral coefficients that encode global correlations and
+oscillatory patterns present in the data. Rather than treating the DFT as
+part of a trainable model, as in frequency-aware neural architectures, here
+it is used explicitly as a fixed preprocessing step that defines the represen-
+tation supplied to the quantum embedding. This design mirrors classical
+pipelines in which spectral features are computed prior to classification or
+kernel evaluation [11].
+     Let F (x) ∈ Cd denote the discrete Fourier transform of x. We retain
+
+                                      5
+the first m spectral components and construct a phase vector ϕ ∈ [−π, π)m ,
+obtained from the arguments of the complex coefficients, optionally modu-
+lated by a bounded function of their magnitudes. These phases define the
+diagonal unitary in Eq. (1), which is applied to a uniform superposition state
+prepared by Hadamard gates.
+                                                            
+                     D(ϕ) = diag eiϕ0 , eiϕ1 , . . . , eiϕm−1 ,            (1)
+
+which is applied to a uniform superposition state prepared by Hadamard
+gates. Diagonal unitaries admit particularly efficient decompositions, of-
+ten avoiding ancilla overhead and enabling low-depth implementations [14].
+When m is not a power of two, the phase vector is deterministically padded,
+allowing the encoding to be implemented using n = ⌈log2 m⌉ qubits.
+    The resulting quantum state takes the form:
+                                      2 −1n
+                                  1 X iϕj (x)
+                        |ψ(x)⟩ = √         e  |j⟩ ,                        (2)
+                                   2n j=0
+
+where ϕj (x) denotes either a retained or padded phase component. This con-
+struction highlights a key advantage of diagonal-gate-based embeddings: 2n
+effective features are represented using only n qubits, without requiring state
+preparation procedures whose depth scales with the data dimension. In con-
+trast to amplitude encoding, which requires normalization and multi-qubit
+controlled operations, SPE relies exclusively on single-qubit Hadamards and
+a single diagonal unitary, resulting in shallow circuits that are well aligned
+with current NISQ hardware constraints [2]. Moreover, in superconducting
+platforms, Z-axis phase rotations are commonly implemented as “virtual-Z”
+updates with effectively zero duration and high fidelity, making phase/diag-
+onal constructions especially hardware-friendly [15, 16, 17].
+    From a mathematical perspective, the combination of a Fourier front-end
+with phase-only encoding is particularly natural. The Fourier transform di-
+agonalizes convolutional and shift-invariant operators, concentrating struc-
+tured information into a reduced number of spectral modes. Encoding this
+information as relative phases preserves interference patterns while remain-
+ing invariant under global amplitude rescaling. Physically, diagonal gates
+implement relative phase accumulation with reduced reliance on entangling
+operations, which mitigates circuit depth and exposure to multi-qubit noise
+on NISQ devices [15, 16].
+    In this work, SPE refers specifically to the combination of a DFT front-
+end with a diagonal-gate-based phase embedding. To isolate the contribu-
+tion of the spectral structure, we also evaluate alternative front-ends—principal
+
+                                      6
+Figure 1: Conceptual pipeline of Spectral Phase Encoding. Classical data
+are transformed to the frequency domain, mapped to a vector of relative
+phases, and embedded into a quantum state using a diagonal gate acting on
+a uniform superposition. Kernel values are obtained via overlap estimation.
+
+
+component analysis (PCA) and random projections (RP)—under the same
+diagonal quantum embedding, leading to the constructions QK-PCA and
+QK-RP in the experimental section. This controlled comparison enables us
+to disentangle the effect of spectral preprocessing from that of the quantum
+embedding itself.
+    Finally, kernel values are obtained by estimating overlaps between SPE-
+encoded quantum states using a SWAP test. This choice ensures direct
+compatibility with quantum kernel methods while maintaining a clear sepa-
+ration between classical preprocessing, quantum state preparation, and ker-
+nel evaluation. A schematic overview of the full SPE pipeline is shown in
+Fig. 1.
+
+Remark 1 (Phase-only encodings and complex-valued features). A practi-
+cal motivation for diagonal-gate-based phase encoding is its natural compati-
+bility with complex-valued features. Spectral representations produced by the
+discrete Fourier transform are inherently complex, with relevant informa-
+tion encoded in both magnitude and phase. Most standard quantum feature
+maps, including amplitude and angle encodings, are defined for real-valued
+inputs and therefore require ad hoc transformations or the explicit discarding
+of complex phase information [1, 2]. By contrast, diagonal quantum gates
+natively implement relative phase shifts, providing a direct and hardware-
+
+
+                                      7
+efficient mechanism to encode complex phases. This makes phase-only en-
+codings particularly well suited for spectral representations and allows the
+Fourier front-end in SPE to be integrated without additional approximations,
+while preserving a low-depth, NISQ-compatible circuit structure.
+
+2.2   Kernel evaluation and learning protocol
+All feature constructions considered in this work are evaluated within the
+same kernel-based learning framework. Given a dataset {(xi , yi )}N   i=1 , clas-
+sical preprocessing is first applied to obtain a transformed representation
+for each input, which is subsequently mapped to a quantum state using the
+chosen feature construction. Kernel values are then obtained by estimating
+pairwise state overlaps.
+    For a given training set, we construct a kernel matrix K ∈ RN ×N , where
+each entry Kij corresponds to the estimated overlap between the quantum
+states associated with xi and xj . To mitigate trivial correlations and im-
+prove numerical stability, kernel matrices are centered prior to downstream
+evaluation. Centered kernels are used consistently for all diagnostic metrics
+and learning tasks.
+    Learning performance is assessed using a support vector machine (SVM)
+with a precomputed kernel. Train–test splits are generated using stratified
+sampling to preserve class balance, and all reported metrics are averaged
+over multiple random seeds. This protocol ensures that observed perfor-
+mance differences reflect systematic effects of the feature construction rather
+than artifacts of a particular data split.
+    In addition to classification accuracy and macro-averaged F1 score, we
+report kernel-level diagnostics that provide insight into representation qual-
+ity. Specifically, we compute kernel alignment with the ideal label kernel,
+as well as the difference between within-class and between-class similarities.
+These quantities characterize how well the induced kernel geometry reflects
+class structure independently of the classifier.
+    To analyze robustness under noise, kernel construction and evaluation
+are repeated across a range of noise levels. Noise is injected at the data level
+prior to preprocessing, ensuring that all methods are exposed to identical
+perturbations. This design isolates the effect of the feature construction on
+robustness and allows degradation trends to be compared in a controlled
+and reproducible manner.
+    Unless stated otherwise, the same evaluation protocol is used for all clas-
+sical front-ends and quantum feature maps, enabling a fair and systematic
+comparison.
+
+
+                                       8
+2.3   Experimental setup
+Our empirical evaluation spans 20 widely used image-like classification bench-
+marks covering heterogeneous visual regimes (e.g., digits, natural images,
+faces, and medical imagery). These datasets are commonly employed in both
+classical and quantum machine learning studies, enabling reproducible and
+externally comparable robustness assessments 5. To make results compara-
+ble across datasets with different native resolutions and formats, all inputs
+are converted to grayscale when applicable, rescaled to a common 32 × 32
+resolution, and normalized to [0, 1] prior to feature construction. For each
+noise level we subsample N = 150 examples using class-balanced sampling
+to prevent spurious shifts in effective class priors. Dataset metadata (classes
+and characteristics) are reported in Appendix A (Table 2).
+    Robustness is assessed under controlled additive Gaussian corruption
+applied to normalized inputs,
+
+                    x 7→ clip[0,1] (x + η),   η ∼ N (0, σ 2 ),             (3)
+
+with σ ∈ {0.00, 0.025, 0.05, 0.075, 0.10, 0.125, 0.15, 0.20}. The upper bound
+σ = 0.20 corresponds to perturbations with variance 0.04 in the [0, 1] do-
+main, representing a high-noise regime where structure is significantly de-
+graded but not fully destroyed, thereby enabling slope-based robustness
+comparisons before universal chance-level collapse.
+    To isolate the role of the feature construction, we evaluate a family of
+quantum-kernel and classical-kernel pipelines that share the same down-
+stream classifier (SVM with a precomputed kernel) and differ only in the
+classical front-end that generates the m-dimensional representation feeding
+the quantum embedding. We consider three standard and widely adopted
+front-end constructions in machine learning: a DFT-based spectral selection,
+principal component analysis (PCA), and random projections (RP). These
+represent, respectively, frequency-domain feature extraction, variance- max-
+imizing linear compression, and structure-agnostic dimensionality reduction.
+To ensure a controlled comparison, we tie the retained feature dimension to
+the quantum state dimension, m = 2n , so that all variants operate at identi-
+cal effective dimensionality for fixed circuit size. DFT features are selected
+using a low-frequency radial criterion in 2D Fourier space, while PCA and
+RP are constructed to match the same m.
+    Kernel entries are estimated via quantum overlap estimation using a
+fixed number of circuit repetitions (shots), i.e., repeated projective mea-
+surements used to estimate expectation values under finite sampling. This
+fixed shot budget ensures comparable statistical precision across all vari-
+
+                                        9
+ants, producing Ktr and Kte,tr ; an SVM is trained using the precomputed
+kernel. All normalization statistics and any diagnostic kernel quantities are
+computed strictly on training data to prevent leakage [18]. We use stratified
+train–test splits with a 30% test fraction, repeated over five random seeds;
+performance metrics are averaged across seeds.
+    A central difficulty in cross-method robustness comparisons is that each
+dataset admits multiple valid configurations (e.g., different n and associated
+m, and possibly different budgets). To provide a fair comparison while al-
+lowing each method family to operate in a realistic tuned regime, we adopt a
+clean-data hyperparameter selection protocol. Specifically, for each dataset
+d and each method group g, we select the configuration that maximizes mean
+accuracy at a reference noise level σ0 (here σ0 = 0), and then freeze that
+choice for all σ ∈ S. This mirrors standard practice in which hyperparame-
+ters are tuned on clean (or lightly corrupted) data and robustness is assessed
+out-of-distribution, while explicitly avoiding noise-dependent retuning.
+    In particular, the group denoted QK DFT corresponds to the SPE con-
+struction introduced in Sec. 2.1. Under this protocol we compare five groups
+within a single unified statistical framework: QK DFT (i.e., SPE), QK PCA,
+and QK RP—three quantum kernels sharing the same diagonal embed-
+ding but differing in their classical front-end—and two classical baselines,
+SVM Linear and SVM RBF, evaluated under the same preprocessing choice
+used in the classical branch. Robustness is quantified using a dataset fixed-
+effects regression model with group-specific degradation slopes. Taking
+QK DFT as the reference group, we fit
+                                             X
+             Acci = αd(i) + βQK-DFT σi +            δg σi 1g(i) + εi ,     (4)
+                                           g̸=QK-DFT
+
+so that each group has slope βg = βQK-DFT +δg . Inference is performed with
+a wild cluster bootstrap using Rademacher weights at the dataset level (B =
+4000 replications), which preserves within-dataset dependence and yields
+robust confidence intervals for slope differences. For visualization, we report
+accuracy–vs–noise curves after sigma0 selection, together with bootstrap
+median curves and 95% bands to reflect between-dataset variability.
+    Finally, to validate practical executability, we conduct a hardware micro-
+benchmark on IBM Quantum backends using a SWAP-test overlap estima-
+tion task (Sec. 3.3). The objective is not end-to-end classification on hard-
+ware, but to assess overlap-estimation stability under realistic compilation
+and gate noise.
+
+
+
+                                      10
+3    Results
+The primary objective of this study is to characterize how different fea-
+ture constructions degrade as input noise increases, thereby providing a
+robustness-centered evaluation rather than a peak-accuracy comparison.
+In realistic machine learning pipelines—particularly in hybrid quantum–
+classical settings—data corruption is unavoidable, and performance stability
+under perturbations is often more relevant than peak clean accuracy. Con-
+sequently, evaluating methods at a single noise level can be misleading: a
+model that performs strongly at σ = 0 but deteriorates rapidly may be less
+desirable than a model with slightly lower clean accuracy but substantially
+greater robustness.
+    In this context, comparing methods solely at a fixed noise level can be
+misleading. A method that achieves high accuracy at low noise but deterio-
+rates rapidly may be less desirable than a method that exhibits slightly lower
+peak performance but degrades more gracefully. Accordingly, we adopt a
+noise-aware evaluation strategy in which the noise level σ is treated as a con-
+trolled experimental variable, and performance is analyzed as a function of
+increasing noise. Note that the underlying benchmark datasets already con-
+tain inherent acquisition and preprocessing noise; the added Gaussian per-
+turbation therefore represents controlled incremental corruption rather than
+a transition from perfectly clean data. This evaluation strategy is consistent
+with established corruption-robustness benchmarks in computer vision. As
+surveyed in [19], corruption benchmarks such as CIFAR-C and ImageNet-C,
+originally introduced by Hendrycks and Dietterich [20], systematically apply
+controlled levels of common perturbations—including Gaussian noise, blur,
+and digital distortions—to clean datasets in order to quantify performance
+degradation under distribution shift.
+    All results in this section are constructed under a unified experimen-
+tal protocol described in Sec. 2.3. In particular, hyperparameters are se-
+lected at a clean reference noise level σ0 = 0 separately for each dataset
+and method group, and then frozen for all higher noise levels. This prevents
+noise-dependent retuning and mirrors standard practice in which models
+are tuned on clean data and evaluated under distribution shift. Robust-
+ness is then quantified through a dataset fixed-effects regression model with
+group-specific degradation slopes, using wild cluster bootstrap inference at
+the dataset level.
+    We jointly compare five method groups within a single regression frame-
+work: QK DFT, QK PCA, QK RP, SVM Linear, and SVM RBF. QK DFT
+(spectral preprocessing followed by diagonal quantum encoding) is treated
+
+                                      11
+as the reference group. This unified modeling approach ensures that all
+slope estimates and confidence intervals arise from the same statistical ex-
+periment, avoiding inconsistencies that can arise from method-specific ag-
+gregation rules.
+    Throughout this section, we present complementary views of robustness.
+First, we report global degradation slopes obtained from the fixed-effects re-
+gression, which quantify accuracy loss per unit increase in σ. These slopes
+provide a compact and statistically grounded summary of robustness dif-
+ferences across methods. Second, we present accuracy-versus-noise curves
+with bootstrap confidence bands, offering a more granular visualization of
+degradation trajectories. Together, these analyses provide both quantitative
+and descriptive evidence regarding relative robustness.
+    Importantly, our analysis focuses on regimes in which performance degra-
+dation remains informative, rather than on asymptotic collapse scenarios.
+The emphasis is therefore on comparative stability across increasing corrup-
+tion levels, rather than on characterizing trivial high-noise behavior. In this
+way, the results directly address the central question of this work: whether
+spectral preprocessing combined with diagonal quantum encoding yields a
+more favorable degradation profile than alternative classical or quantum
+feature constructions under controlled noise.
+
+3.1   Performance Evolution under Noise
+We first analyze how classification accuracy evolves as a function of increas-
+ing additive Gaussian noise under the clean-data hyperparameter selection
+protocol described in Sec. 2.3. The visual evolution of the corrupted inputs
+corresponding to increasing σ is illustrated in Appendix A.2 (Fig. 6). As
+the noise standard deviation σ increases, spatial structure progressively de-
+grades, eventually approaching visually uninformative patterns. The quan-
+titative impact of this degradation on classification performance is shown in
+Fig. 2.
+    Figure 2 reports accuracy–vs–noise curves for four representative datasets
+spanning natural images, handwritten digits, face recognition, and medi-
+cal imaging. For each dataset and each method group, the configuration
+achieving the highest mean accuracy at σ0 = 0 is selected and then frozen
+for all subsequent noise levels. This mirrors standard practice in which
+hyperparameters are tuned on clean data and robustness is evaluated out-
+of-distribution without noise-dependent retuning.
+    Across datasets, a consistent qualitative pattern emerges. Among the
+quantum variants, QK DFT exhibits a systematically milder degradation
+
+
+                                      12
+Figure 2: Accuracy vs noise level σ for four representative datasets under
+sigma0 -frozen configuration selection.
+
+
+compared to QK PCA and especially QK RP, whose slopes are visibly steeper
+as σ increases. The classical baselines (SVM Linear and SVM RBF) display
+intermediate behavior, with degradation patterns that vary across datasets
+but do not systematically outperform QK DFT in the moderate-noise regime.
+    To assess this behavior at scale, we aggregate winner counts across all 20
+datasets at each noise level using the frozen-configuration protocol. Figure 3
+reports the number of datasets for which each method achieves the highest
+accuracy at each σ.
+    QK DFT achieves the largest number of wins across most noise levels,
+particularly in the intermediate corruption regime (0.05 ≤ σ ≤ 0.15), where
+structural information remains partially preserved but fine details are in-
+creasingly distorted. In this range, QK DFT attains between 7 and 8 wins
+out of 20 datasets, consistently matching or exceeding the performance of
+the classical baselines. In contrast, QK PCA and especially QK RP exhibit
+markedly fewer wins across the spectrum, reflecting their steeper degrada-
+tion patterns observed in the per-dataset curves. While SVM Linear and
+SVM RBF occasionally achieve competitive or even leading performance at
+specific noise levels (notably at σ = 0 and σ = 0.05), no consistent domi-
+nance over QK DFT emerges as noise increases.
+    Taken together, these aggregated winner counts indicate that the Fourier-
+
+                                     13
+Figure 3: Number of datasets (out of 20) for which each method achieves
+the highest accuracy at each noise level σ, after clean-data configuration
+selection and freezing.
+
+
+based quantum construction (QK DFT) maintains a comparatively stable
+competitive position under corruption. Rather than relying on isolated peak
+accuracies, the advantage manifests as sustained top performance across a
+broad noise range, suggesting that the combination of spectral preprocessing
+and diagonal phase embedding yields a robustness profile that is not sys-
+tematically surpassed by alternative quantum front-ends or classical kernel
+baselines under the same clean-data tuning protocol.
+
+3.2   Noise robustness analysis
+We now quantify robustness using the regression framework introduced in
+Sec. 2.3, applied to the sigma0 -tuned configurations of all five method groups
+simultaneously. Robustness is measured by the degradation slope βg , defined
+as the change in accuracy per unit increase of noise level σ.
+    Figure 4 summarizes the results. Panel (a) reports the estimated slopes
+with 95% wild cluster bootstrap confidence intervals (clustered at the dataset
+level, B = 4000), and Panel (b) shows the corresponding aggregated accu-
+racy curves with bootstrap bands. Numerical estimates are provided in
+Table 1.
+
+
+
+
+                                      14
+Table 1: Noise robustness slopes estimated via dataset fixed-effects regres-
+sion with wild cluster bootstrap. Slopes correspond to accuracy change per
+unit increase in noise σ. QK-DFT is the reference category.
+
+ Parameter                      Estimate    CI95% Low     CI95% High    Pr(β < 0)
+ βQK-DFT                          -0.214       -0.645         0.222        0.801
+ βQK-PCA                          -0.568       -1.063        -0.075        0.995
+ ∆(QK-PCA − QK-DFT)               -0.354       -0.524        -0.188        1.000
+ βQK-RP                           -1.367       -1.962        -0.760        1.000
+ ∆(QK-RP − QK-DFT)                -1.153       -1.592        -0.707        1.000
+ βSVM-Linear                      -0.253       -0.630         0.118        0.867
+ ∆(SVM-Linear − QK-DFT)           -0.040       -0.179         0.093        0.714
+ βSVM-RBF                         -0.362       -0.769         0.041        0.948
+ ∆(SVM-RBF − QK-DFT)              -0.149       -0.289        -0.011        0.986
+
+
+
+
+                              βQK-DFT = −0.214,
+                              βQK-PCA = −0.568,
+                               βQK-RP = −1.367,
+                           βSVM-Linear = −0.253,
+                             βSVM-RBF = −0.362.
+   Within the quantum family, DFT-based encoding exhibits the smallest
+degradation rate, while PCA and especially random projections deteriorate
+substantially faster. The differences relative to QK-DFT are:
+
+
+                    ∆(QK-PCA − QK-DFT) = −0.354,
+                      ∆(QK-RP − QK-DFT) = −1.153,
+    with bootstrap confidence intervals strictly below zero, indicating a sta-
+tistically robust advantage of spectral preprocessing within quantum models.
+    When compared to classical baselines, QK-DFT displays a degradation
+rate comparable to linear SVM and more favorable than RBF SVM. In
+particular:
+
+
+                  ∆(SVM-Linear − QK-DFT) = −0.040,
+                    ∆(SVM-RBF − QK-DFT) = −0.149.
+
+
+                                     15
+(a) Noise sensitivity by method. Bars           (b) Global accuracy vs noise level σ
+show the estimated degradation slopes           aggregated across complete dataset–
+β (accuracy change per unit increase in         configuration curves. Lines show the
+noise σ), with 95% wild cluster boot-           bootstrap median and shaded regions
+strap confidence intervals (clustered by        indicate the 95% wild cluster bootstrap
+dataset, B = 4000).                             bands (clustered by dataset, B = 4000).
+
+Figure 4: Global robustness analysis. (a) Degradation slopes with bootstrap
+confidence intervals. (b) Aggregated accuracy curves with 95% bootstrap
+bands.
+
+
+   The linear SVM difference is not statistically significant, whereas the
+RBF SVM exhibits significantly stronger degradation under noise.
+   Taken together, these results show that robustness is strongly governed
+by preprocessing alignment: spectral (DFT) representations yield consis-
+tently smaller noise sensitivity both in quantum and classical settings. How-
+ever, the diagonal quantum feature map preserves this stability and avoids
+the stronger degradation observed in nonlinear classical kernels under the
+same spectral features.
+
+3.3    Hardware validation: overlap estimation under realistic
+       noise
+To complement the simulation-based robustness analysis, we assess the prac-
+tical executability of SPE—denoted QK-DFT in the unified regression frame-
+work—on current superconducting quantum hardware. Rather than per-
+forming end-to-end classification on hardware, which would confound ker-
+nel behavior with training variance and limited shot budgets, we isolate the
+fundamental primitive underlying the quantum kernel: state overlap estima-
+tion. Given two real-valued inputs (x, y) with prescribed cosine similarity ρ,
+we prepare the corresponding quantum states |ψ(x)⟩ and |ψ(y)⟩ using the
+SPE construction (QK-DFT) or a low-depth angle-encoding baseline. The
+overlap is estimated via a SWAP test, producing a hardware probability
+
+
+                                           16
+                                         0.12                                DG_DFT
+                                                                             ANGLE_BM
+
+         MAE of overlap probability p0
+                                         0.10
+
+                                         0.08
+
+                                         0.06
+
+                                         0.04
+
+                                         0.02
+
+                                         0.00
+                                                2                3           4
+                                                          Number of qubits
+
+Figure 5: Hardware overlap-estimation error across qubit sizes. Mean abso-
+                                       exp
+lute error (MAE) of |∆p0 | = |phw0 − p0 | for SPE (DFT + DiagonalGate)
+and a low-depth angle-encoding baseline, averaged over two IBM Quantum
+backends (ibm fez, ibm marrakesh), similarity values, and repeated runs.
+Error bars indicate variability across measurement instances.
+
+                                                              exp
+phw
+  0 , which we compare against its expected reference value p0    obtained
+from analytic calculation (SPE) or noiseless statevector simulation (angle
+baseline). Hardware fidelity is summarized through the absolute deviation
+                                                                    exp
+                                                    |∆p0 | = |phw
+                                                               0 − p0 |,
+
+which directly measures how accurately the device reproduces the theoretical
+kernel overlap.
+    Experiments were executed on two distinct IBM Quantum backends,
+ibm fez and ibm marrakesh, using identical circuit constructions, transpi-
+lation strategies, and shot budgets. Results are averaged across backends,
+multiple similarity settings, and repeated runs in order to mitigate backend-
+specific calibration fluctuations and transient noise effects.
+    Figure 5 reports the mean absolute error as a function of qubit count.
+Across all tested regimes (n = 2, 3, 4), deviations remain moderate and
+do not exhibit catastrophic growth with increasing system size. Although
+the relative ordering between SPE and the angle baseline varies with qubit
+count, both constructions produce stable and non-degenerate overlap esti-
+mates. Importantly, the diagonal phase embedding does not display insta-
+bility or collapse as circuit depth increases, despite relying on structured
+phase accumulation across computational basis states.
+
+                                                            17
+    These results provide empirical evidence that the structural proper-
+ties exploited by SPE—namely diagonal phase encoding and low entan-
+gling depth—translate into hardware executability on present-day super-
+conducting devices. Combined with the large-scale simulation analysis, this
+hardware validation supports the practical viability of SPE as a kernel-
+construction mechanism compatible with current NISQ architectures.
+
+
+4    Discussion
+This work reframes the evaluation of quantum kernel constructions from
+peak clean-data performance toward controlled degradation under distribu-
+tional corruption. Rather than asking whether a given encoding achieves the
+highest accuracy at σ = 0, we quantify how performance decays as additive
+noise increases, and compare degradation rates across quantum and classical
+pipelines under matched tuning conditions. This perspective is consistent
+with recent arguments that quantum advantage should not be framed as a
+binary outcome, but assessed through stability, structural alignment, and
+feasibility under realistic NISQ constraints [1, 5].
+    Methodologically, the study integrates three elements into a single ro-
+bustness framework: (i) clean-data hyperparameter selection with frozen
+configurations, (ii) dataset fixed-effects regression with group-specific noise
+slopes, and (iii) wild cluster bootstrap inference at the dataset level. This de-
+sign prevents optimistic noise-dependent retuning and avoids overconfident
+inference due to repeated measurements within datasets. In contrast to de-
+scriptive degradation plots alone, the regression model yields interpretable
+slope coefficients βg representing accuracy loss per unit noise increase, en-
+abling direct cross-family comparison.
+    Across the five model families considered (QK-DFT, QK-PCA, QK-RP,
+SVM-Linear, SVM-RBF), a consistent structure emerges. Within the quan-
+tum family, QK-DFT exhibits the smallest degradation magnitude, followed
+by QK-PCA and then QK-RP. The slope differences between QK-PCA and
+QK-DFT, and especially between QK-RP and QK-DFT, are supported by
+bootstrap intervals excluding zero, indicating a statistically robust advan-
+tage of Fourier-based preprocessing within the diagonal quantum embed-
+ding. By contrast, QK-PCA and QK-RP degrade substantially faster as
+corruption increases.
+    The particularly steep degradation observed for random projections is
+consistent with classical dimensionality-reduction theory. While random
+projections preserve pairwise distances in expectation under Johnson- Lin-
+
+
+                                       18
+denstrauss guarantees [21, 22], they do not exploit data-dependent or task-
+aligned structure. Under additive noise, this structure-agnostic property
+provides no preferential preservation of discriminative directions, leading to
+accelerated collapse relative to variance-based (PCA) or frequency-aware
+(DFT) representations. PCA, by construction, concentrates maximal vari-
+ance directions [23, 24], which partially explains its intermediate robustness
+profile.
+    The favorable behavior of QK-DFT can be interpreted through the in-
+teraction between spectral preprocessing and diagonal unitary feature maps.
+Fourier-domain representations have repeatedly been shown to act as an in-
+ductive bias in classical learning, improving robustness and expressivity in
+noisy image and signal settings [25, 26, 27, 28]. Injecting this spectral struc-
+ture into a phase-only diagonal quantum embedding preserves interference-
+based relational information without increasing circuit depth. Diagonal en-
+codings are known to be hardware-compatible and shallow relative to more
+entanglement-heavy constructions [29, 2], and recent analyses emphasize
+the importance of structure-aware and symmetry-respecting feature maps
+for avoiding kernel concentration and expressivity pathologies [6, 30]. Our
+results suggest that the combination of Fourier structure and diagonal phase
+encoding provides a favorable compromise between expressivity and stability
+under corruption.
+    Importantly, the comparison with classical SVM baselines clarifies that
+robustness gains are not purely a consequence of preprocessing. When eval-
+uated under identical clean-data tuning, QK-DFT exhibits a degradation
+rate comparable to linear SVM and more stable than RBF SVM under the
+same spectral preprocessing. This indicates that robustness is jointly gov-
+erned by representation alignment and the geometry induced by the kernel
+map, rather than by the classical front-end alone.
+    The hardware validation further supports the practical viability of this
+construction. While QK-DFT does not uniformly outperform a low-depth
+angle-encoding baseline in absolute overlap-estimation error, it remains nu-
+merically stable across qubit counts and backends. Given the well-known
+sensitivity of hardware experiments to calibration, transpilation, and backend-
+specific noise profiles [7, 31], the key observation is that the diagonal phase
+construction does not exhibit instability or collapse under realistic device
+noise. This operational stability is consistent with its shallow, diagonal
+structure and supports its suitability for near-term quantum kernel pipelines.
+    Overall, the findings position Spectral Phase Encoding as a structurally
+aligned quantum feature construction whose advantage lies not in universal
+peak accuracy, but in slower degradation under corruption and in statisti-
+
+                                      19
+cally supported slope improvements within the quantum family. The results
+also highlight that robustness is fundamentally domain-conditional: spec-
+tral alignment benefits datasets exhibiting exploitable frequency structure,
+while offering limited gains when such structure is weak. This nuanced
+picture aligns with the broader shift in quantum machine learning toward
+domain-aware, noise-conscious algorithm design, where progress is likely to
+depend less on universal advantage claims and more on identifying struc-
+turally compatible problem classes.
+
+
+5    Conclusion
+We introduced Spectral Phase Encoding (SPE), a hybrid quantum feature
+construction that combines a discrete Fourier transform (DFT) front-end
+with a phase-only diagonal quantum embedding. Within the unified exper-
+imental framework, this construction is instantiated as QK-DFT and eval-
+uated alongside alternative quantum front-ends (QK-PCA, QK-RP) and
+classical SVM baselines under a common clean-data tuning protocol.
+    Rather than focusing on peak accuracy at zero noise, the central ob-
+jective of this study was to characterize controlled degradation under addi-
+tive corruption. By combining clean-data hyperparameter selection, dataset
+fixed-effects regression, and wild cluster bootstrap inference, we quantified
+robustness through interpretable degradation slopes across 20 heterogeneous
+datasets.
+    The results consistently show that within the quantum family, QK-DFT
+exhibits the smallest magnitude degradation under increasing noise, followed
+by QK-PCA and QK-RP. The slope differences relative to QK-DFT are
+statistically supported by bootstrap intervals excluding zero, indicating a
+robust advantage of spectral preprocessing within a diagonal quantum em-
+bedding. Importantly, when compared to classical SVM baselines under
+identical tuning conditions, QK-DFT displays a degradation rate compa-
+rable to linear SVM and more stable than RBF SVM, suggesting that ro-
+bustness arises from the interaction between representation alignment and
+kernel geometry rather than from preprocessing alone.
+    These findings are consistent with theoretical analyses indicating that
+quantum kernels can suffer from expressivity collapse and concentration phe-
+nomena under noise and measurement constraints [4]. By injecting struc-
+tured spectral information into a shallow diagonal embedding, SPE provides
+a construction that balances expressivity and stability without increasing
+circuit depth. From a hardware perspective, diagonal phase constructions
+
+
+                                     20
+remain particularly attractive on superconducting platforms, where virtual-
+Z implementations and shallow diagonal synthesis reduce overhead and sys-
+tematic error [15, 16, 17, 14].
+    The hardware experiments further demonstrate that SPE (QK-DFT) re-
+mains operational across multiple backends and qubit counts, producing sta-
+ble overlap estimates without evidence of catastrophic degradation. While
+not implying hardware-level dominance, this stability reinforces the prac-
+tical compatibility of diagonal phase embeddings with present-day NISQ
+devices.
+    From a computational perspective, the classical front-ends considered
+here differ modestly in preprocessing cost. DFT-based spectral selection
+can be implemented in O(d log d) time via FFT routines, while PCA re-
+quires an initial covariance estimation and eigendecomposition, and random
+projections incur O(dm) projection cost without training overhead. In our
+experimental regime, these classical costs remain negligible compared to
+the dominant expense of quantum kernel estimation under finite measure-
+ment shots. Consequently, the observed robustness differences cannot be at-
+tributed to disproportionate classical preprocessing complexity [32, 33, 34].
+    Overall, the advantage of SPE does not lie in universally higher clean-
+data accuracy, but in statistically supported slower degradation under cor-
+ruption and in the existence of robust configurations when the data exhibit
+exploitable spectral structure. This supports the broader view that success-
+ful quantum kernel constructions require domain-compatible inductive bias
+rather than universal advantage claims [30].
+
+Future Directions
+The present results suggest several concrete extensions:
+
+  1. Structure-aware and symmetry-respecting extensions. Inte-
+     grating SPE-style spectral priors with explicitly covariant or symmetry-
+     aware kernel constructions may further improve stability and inductive
+     alignment. Covariant quantum kernels provide a principled mechanism
+     for encoding invariances and have been experimentally demonstrated
+     in superconducting settings [6].
+
+  2. Mitigating kernel concentration in larger regimes. Since kernel
+     concentration and noise-induced collapse can limit informativeness at
+     larger scales [4], mitigation strategies tailored to fidelity-based kernels
+     remain important. Recent proposals demonstrate practical mitigation
+     techniques for covariant fidelity kernels at larger sizes [35].
+
+                                      21
+3. Learnable spectral selection and hybrid transforms. SPE cur-
+   rently relies on fixed Fourier truncation. Extensions incorporating
+   adaptive frequency masks, learnable phase scalings, or alternative fre-
+   quency transforms (e.g., DFT/DCT/wavelets) would connect this frame-
+   work to the broader frequency-based inductive bias literature in mod-
+   ern machine learning [12, 13, 36].
+4. Scalable kernel training and alignment. Incorporating trainable
+   phase scalings or diagonal layers, optimized through kernel alignment
+   objectives, may enhance performance while controlling circuit depth.
+   Subsampling-based alignment strategies offer a promising route to re-
+   duce training overhead [8].
+5. Hardware-aware diagonal synthesis. As system size grows, com-
+   pilation and diagonal synthesis will increasingly determine realized
+   depth and noise sensitivity. Leveraging optimized diagonal decompo-
+   sitions and virtual-Z-centric compilation strategies can further reduce
+   systematic error [15, 17, 14]. More broadly, recent analyses of Grover-
+   based circuit constructions highlight that qubit overhead and circuit
+   depth remain the primary bottlenecks on current NISQ hardware, even
+   for moderately sized problem instances [37]. This reinforces the im-
+   portance of shallow, structure-preserving encodings when aiming for
+   practical scalability.
+6. Bridging to classically hard diagonal feature maps. Integrating
+   spectral priors with commuting or diagonal circuit families conjectured
+   to be classically hard to simulate may strengthen separations in ker-
+   nel evaluation. Complexity-theoretic evidence for commuting circuit
+   hardness provides motivation for such exploration [38].
+7. Application-driven evaluation under realistic constraints. While
+   several studies report promising speedups of quantum algorithms in
+   domains such as financial optimization, practical deployment remains
+   limited by hardware cost, calibration instability, and circuit depth con-
+   straints [39]. Future work should therefore evaluate encoding strategies
+   such as SPE within domain-specific pipelines under realistic hardware
+   and resource assumptions.
+8. Error mitigation for overlap estimation. Since kernel evaluation
+   remains measurement-limited and noise-sensitive, incorporating miti-
+   gation techniques specifically designed for near-term fidelity estimation
+   pipelines is an important practical direction [35].
+
+                                   22
+Supplementary information The code required to reproduce all exper-
+iments, figures, and statistical analyses is publicly available at: https://
+github.com/cloudlab-aia/kernel-comparison. The repository includes
+data preprocessing scripts, kernel construction routines, evaluation pipelines,
+and instructions for reproducing the main results.
+
+Acknowledgements Grant Serverless4HPC PID2023-152804OB-I00 funded
+by MICIU/AEI/10.13039/501100011033 and by ERDF/EU.
+
+
+A     Additional experimental details
+A.1    Class selection and dataset balancing
+
+Table 2: Overview of the 20 real-world 2D datasets used in the experiments.
+All datasets are converted to grayscale (when applicable), resized to 32 × 32,
+and subsampled to a balanced subset as described in Sec. 2.3.
+
+    Dataset                Classes (C)        Domain            Source
+    BreastMNIST                 2          Medical imaging   MedMNIST
+    CIFAR-10                   10          Natural images       CIFAR
+    DermaMNIST                  7           Dermatology      MedMNIST
+    Digits                     10           Handwritten       scikit-learn
+    DTD                        20             Texture        Oxford VGG
+    EMNIST (ByClass)           20            Characters          NIST
+    Fashion-MNIST              10             Clothing          Zalando
+    FER2013                     7           Facial expr.        Kaggle
+    GTSRB                      20           Traffic signs       GTSRB
+    KMNIST                     10          Japanese char.      KMNIST
+    OCTMNIST                    4           Retinal OCT      MedMNIST
+    PneumoniaMNIST              2           Chest X-ray      MedMNIST
+    RetinaMNIST                 5             Retinal        MedMNIST
+    STL-10                     10          Natural images      Stanford
+    SVHN (cropped)             10           Street digits        SVHN
+    USPS                       10           Handwritten        LIBSVM
+
+   Real-world datasets considered in this work differ substantially in their
+number of available classes, class imbalance, and total sample size. To en-
+sure a fair and reproducible comparison across datasets, we adopt a unified
+and deterministic class-selection rule that balances representativeness and
+
+
+                                      23
+statistical reliability. For each dataset, we first determine the total number
+of available classes Cavail from the full label set. Unless explicitly overridden,
+the number of classes C used in the experiments is then selected according
+to the following rule:
+                                                        
+                                      N
+                         C = min            , Ccap , Cavail ,                  (5)
+                                    nspc
+
+where N is the total number of samples requested for the dataset, nspc is
+the target minimum number of samples per class, and Ccap is a fixed upper
+bound on the number of classes. In all experiments, we use nspc = 10 and
+Ccap = 20.
+    This rule enforces three constraints simultaneously: (i) each class is
+represented by a sufficient number of samples to avoid degenerate decision
+boundaries, (ii) datasets with a very large number of classes are capped to
+prevent overly sparse class coverage, and (iii) the selected number of classes
+never exceeds the number of classes originally present in the dataset.
+    Once C is determined, the corresponding classes are selected determin-
+istically using a fixed random seed. This ensures that class identities are
+reproducible across runs and noise levels, while avoiding any bias induced
+by manual class curation. Given the selected classes, a strictly class-balanced
+subset of N samples is then drawn using stratified sampling.
+
+A.2    Progressive Samples Corruption
+
+
+
+
+                                       24
+  Figure 6: Representative samples under increasing Gaussian noise σ.
+
+
+References
+[1] Maria Schuld and Nathan Killoran. Is Quantum Advantage the Right
+    Goal for Quantum Machine Learning? PRX Quantum, 3(3):030101,
+    July 2022.
+
+[2] Vojtěch Havlı́ček, Antonio D. Córcoles, Kristan Temme, Aram W.
+    Harrow, Abhinav Kandala, Jerry M. Chow, and Jay M. Gambetta.
+    Supervised learning with quantum-enhanced feature spaces. Nature,
+    567(7747):209–212, March 2019.
+
+[3] Minati Rath and Hema Date. Quantum data encoding: a comparative
+    analysis of classical-to-quantum mapping techniques and their impact
+    on machine learning accuracy. EPJ Quantum Technology, 11(1):72,
+    October 2024.
+
+
+
+                                  25
+ [4] Supanut Thanasilp, Samson Wang, M. Cerezo, and Zoë Holmes. Ex-
+     ponential concentration in quantum kernel methods. Nature Commu-
+     nications, 15(1):5200, June 2024.
+
+ [5] Sofiene Jerbi, Lukas J. Fiderer, Hendrik Poulsen Nautrup, Jonas M.
+     Kübler, Hans J. Briegel, and Vedran Dunjko. Quantum machine learn-
+     ing beyond kernel methods. Nature Communications, 14(1):517, Jan-
+     uary 2023.
+
+ [6] Jennifer R. Glick, Tanvi P. Gujarati, Antonio D. Córcoles, Youngseok
+     Kim, Abhinav Kandala, Jay M. Gambetta, and Kristan Temme. Co-
+     variant quantum kernels for data with group structure. Nature Physics,
+     20(3):479–483, March 2024.
+
+ [7] Thomas Hubregtsen, David Wierichs, Elies Gil-Fuster, Peter-Jan H. S.
+     Derks, Paul K. Faehrmann, and Johannes Jakob Meyer. Training quan-
+     tum embedding kernels on near-term quantum computers. Physical
+     Review A, 106(4):042431, October 2022.
+
+ [8] M. Emre Sahin, Benjamin C. B. Symons, Pushpak Pati, Fayyaz Minhas,
+     Declan Millar, Maria Gabrani, Stefano Mensa, and Jan Lukas Rober-
+     tus. Efficient Parameter Optimisation for Quantum Kernel Alignment:
+     A Sub-sampling Approach in Variational Training. Quantum, 8:1502,
+     October 2024.
+
+ [9] Siheon Park, Daniel K. Park, and June-Koo Kevin Rhee. Variational
+     quantum approximate support vector machine with inference transfer.
+     Scientific Reports, 13(1):3288, February 2023.
+
+[10] Laura J. Henderson, Rishi Goel, and Sally Shrapnel. Quantum Ker-
+     nel Machine Learning With Continuous Variables. Quantum, 8:1570,
+     December 2024.
+
+[11] Ben D. Fulcher and Nick S. Jones. Highly comparative feature-based
+     time-series classification. IEEE Transactions on Knowledge and Data
+     Engineering, 2014.
+
+[12] Kun Yi, Qi Zhang, Wei Fan, Longbing Cao, Shoujin Wang, Hui He,
+     Guodong Long, Liang Hu, Qingsong Wen, and Hui Xiong. A survey on
+     deep learning based time series analysis with frequency transformation.
+     In Proceedings of the 31st ACM SIGKDD Conference on Knowledge
+     Discovery and Data Mining (KDD ’25), 2025.
+
+
+                                    26
+[13] Tian Zhou, Ziqing Ma, Qingsong Wen, Xue Wang, Liang Sun, and
+     Rong Jin. Fedformer: Frequency enhanced decomposed transformer
+     for long-term series forecasting. arXiv:2201.12740, 2022.
+
+[14] Jonathan Welch, Daniel Greenbaum, Sarah Mostame, and Alán
+     Aspuru-Guzik. Efficient quantum circuits for diagonal unitaries without
+     ancillas. New Journal of Physics, 16:033040, 2014.
+
+[15] David C. McKay, Christopher J. Wood, Sarah Sheldon, Jerry M. Chow,
+     and Jay M. Gambetta. Efficient z gates for quantum computing. Phys-
+     ical Review A, 96(2):022330, 2017.
+
+[16] Morten Kjaergaard, Mollie E. Schwartz, Jochen Braumüller, Philip
+     Krantz, Joel I.-J. Wang, Simon Gustavsson, and William D. Oliver.
+     Superconducting qubits: Current state of play. Annual Review of Con-
+     densed Matter Physics, 11:369–395, 2020.
+
+[17] Arian Vezvaee, Vinay Tripathi, Daria Kowsari, Eli Levenson-Falk, and
+     Daniel A. Lidar. Virtual-z gates and symmetric gate compilation. PRX
+     Quantum, 6(2):020348, 2025.
+
+[18] Nello Cristianini, John Shawe-Taylor, Andre Elisseeff, and Jaz Kandola.
+     On kernel-target alignment. In Proceedings of the 15th International
+     Conference on Neural Information Processing Systems: Natural and
+     Synthetic, NIPS’01, pages 367–373, Cambridge, MA, USA, January
+     2001. MIT Press.
+
+[19] Shunxin Wang, Raymond Veldhuis, Christoph Brune, and Nicola
+     Strisciuglio. A survey on the robustness of computer vision models
+     against common corruptions, 2024.
+
+[20] Dan Hendrycks and Thomas Dietterich. Benchmarking neural network
+     robustness to common corruptions and perturbations, 2019.
+
+[21] Dimitris Achlioptas. Database-friendly random projections: Johnson-
+     Lindenstrauss with binary coins. Journal of Computer and System
+     Sciences, 66(4):671–687, June 2003.
+
+[22] Ping Li, Trevor J. Hastie, and Kenneth W. Church. Very sparse random
+     projections. In Proceedings of the 12th ACM SIGKDD international
+     conference on Knowledge discovery and data mining, KDD ’06, pages
+     287–296, New York, NY, USA, August 2006. Association for Computing
+     Machinery.
+
+                                    27
+[23] Jonathon Shlens. A Tutorial on Principal Component Analysis, April
+     2014. arXiv:1404.1100 [cs].
+
+[24] Ian T. Jolliffe and Jorge Cadima. Principal component analysis: a
+     review and recent developments. Philosophical Transactions of the
+     Royal Society A: Mathematical, Physical and Engineering Sciences,
+     374(2065):20150202, April 2016.
+
+[25] Dong Yin, Raphael Gontijo Lopes, Jonathon Shlens, Ekin D. Cubuk,
+     and Justin Gilmer. A fourier perspective on model robustness in com-
+     puter vision. In Advances in Neural Information Processing Systems 32
+     (NeurIPS 2019), pages 13276–13286. Curran Associates, Inc., 2019.
+
+[26] Kai Xu, Minghai Qin, Fei Sun, Yuhao Wang, Yen-Kuang Chen,
+     and Fengbo Ren. Learning in the Frequency Domain, March 2020.
+     arXiv:2002.12416 [cs].
+
+[27] José Augusto Stuchi, Levy Boccato, and Romis Attux. Frequency learn-
+     ing for image classification, June 2020. arXiv:2006.15476 [cs].
+
+[28] Matthew Tancik, Pratul P. Srinivasan, Ben Mildenhall, Sara
+     Fridovich-Keil, Nithin Raghavan, Utkarsh Singhal, Ravi Ramamoorthi,
+     Jonathan T. Barron, and Ren Ng. Fourier features let networks learn
+     high frequency functions in low dimensional domains. In Proceedings
+     of the 34th International Conference on Neural Information Processing
+     Systems, NIPS ’20, pages 7537–7547, Red Hook, NY, USA, December
+     2020. Curran Associates Inc.
+
+[29] Maria Schuld, Ryan Sweke, and Johannes Jakob Meyer. Effect of
+     data encoding on the expressive power of variational quantum-machine-
+     learning models. Phys. Rev. A, 103:032430, Mar 2021.
+
+[30] Jonas M. Kübler, Simon Buchholz, and Bernhard Schölkopf. The induc-
+     tive bias of quantum kernels. In Proceedings of the 35th International
+     Conference on Neural Information Processing Systems, NIPS ’21, Red
+     Hook, NY, USA, 2021. Curran Associates Inc.
+
+[31] Sau Lan Wu, Shaojun Sun, Wen Guan, Chen Zhou, Jay Chan, Chi Lung
+     Cheng, Tuan Pham, Yan Qian, Alex Zeng Wang, Rui Zhang, Miron
+     Livny, Jennifer Glick, Panagiotis Kl. Barkoutsos, Stefan Woerner, Ivano
+     Tavernelli, Federico Carminati, Alberto Di Meglio, Andy C. Y. Li,
+     Joseph Lykken, Panagiotis Spentzouris, Samuel Yen-Chi Chen, Shinjae
+     Yoo, and Tzu-Chieh Wei. Application of quantum machine learning
+
+                                    28
+    using the quantum kernel algorithm on high energy physics analysis at
+    the LHC. Physical Review Research, 3(3):033221, September 2021.
+
+[32] J. W. Cooley and John W. Tukey. An algorithm for the machine
+     calculation of complex fourier series. Mathematics of Computation,
+     19(90):297–301, 1965. Introduces the FFT algorithm reducing DFT
+     complexity from O(N 2 ) to O(N log N ) via divide-and-conquer recur-
+     sion.
+
+[33] Ella Bingham and Heikki Mannila. Random projection in dimension-
+     ality reduction: Applications to image and text data. In Proceedings
+     of the Seventh ACM SIGKDD International Conference on Knowledge
+     Discovery and Data Mining (KDD ’01), pages 245–250. ACM, 2001.
+     Shows that random projections are computationally simpler than PCA
+     and effective for dimensionality reduction with low distortion.
+
+[34] Fan Yang, Sifan Liu, Edgar Dobriban, and David P. Woodruff. How to
+     reduce dimension with pca and random projections? arXiv preprint,
+     abs/2005.00511, 2020. Reviews differences between PCA (data-aware)
+     and random projections (data-oblivious), noting speed advantages of
+     random projections for dimensionality reduction.
+
+[35] Gabriele Agliardi, Giorgio Cortiana, Anton Dekusar, Kumar Ghosh,
+     Naeimeh Mohseni, Corey O’Meara, Vı́ctor Valls, Kavitha Yogaraj, and
+     Sergiy Zhuk. Mitigating exponential concentration in covariant quan-
+     tum kernels for subspace and real-world data. npj Quantum Informa-
+     tion, 12:12, 2025.
+
+[36] James Lee-Thorp, Joshua Ainslie, Ilya Eckstein, and Santiago Ontañón.
+     Fnet: Mixing tokens with fourier transforms. arXiv:2105.03824, 2021.
+
+[37] Marcos Alemany Manzanaro and Higinio Mora. Assessing the viability
+     of quantum sat solvers: A comparative study using grover’s algorithm
+     and quantum hardware. In Kohei Arai, editor, Proceedings of the Future
+     Technologies Conference (FTC) 2025, Volume 4, pages 310–325, Cham,
+     2026. Springer Nature Switzerland.
+
+[38] Michael J. Bremner, Richard Jozsa, and Daniel J. Shepherd. Commut-
+     ing quantum computations: post hoc distributed sampling and classi-
+     cal simulations. Proceedings of the Royal Society A, 467(2126):459–472,
+     2010.
+
+
+
+                                    29
+[39] Pablo Herrero-Gómez, Francisco Pujol-López, Ana Martı́nez Garcı́a,
+     and Higinio Mora Mora. Quantum computing models for financial anal-
+     ysis. In Hoai An Le Thi, Tao Pham Dinh, and Hoai Minh Le, editors,
+     Modelling, Computation and Optimization in Information Systems and
+     Management Sciences, pages 183–194, Cham, 2026. Springer Nature
+     Switzerland.
+
+
+
+
+                                   30
+

@@ -1,0 +1,1243 @@
+                                                 Quantum inference on a classically trained quantum extreme learning machine
+
+                                            Emanuele Brusaschi,1 Marco Clementi,1 Marco Liscidini,1 Matteo Galli,1 Daniele Bajoni,2 and Massimo Borghi1, ∗
+                                                            1
+                                                                Dipartimento di Fisica “A. Volta”, Università di Pavia, Via Bassi 6, 27100 Pavia, Italy
+                                                                            2
+                                                                              Dipartimento di Ingegneria Industriale e dell’Informazione,
+                                                                               Università di Pavia, Via Ferrata 1, 27100 Pavia, Italy
+                                                                                               (Dated: March 23, 2026)
+                                                        Quantum extreme learning machines (QELMs) are unconventional computing architectures that
+                                                        bear remarkable promise in both classical and quantum machine-learning tasks, such as the estimate
+                                                        of quantum state properties. However, the probabilistic nature of quantum measurements demands
+                                                        extensive repetitions for training to precisely estimate expectation values, imposing stringent trade-
+                                                        offs among experimental resources, acquisition time, and signal-to-noise ratio, particularly for large
+                                                        datasets. Here we introduce a paradigm shift by harnessing the correspondence between stimulated
+                                                        and spontaneous emission. The QELM is trained exclusively with intense classical fields, yet it
+arXiv:2603.20167v1 [quant-ph] 20 Mar 2026
+
+
+
+
+                                                        performs inference directly on previously unseen quantum input states to predict their quantum
+                                                        properties. This strategy dramatically reduces acquisition times while substantially enhancing the
+                                                        signal-to-noise ratio. Using frequency-bin–encoded biphoton states – implemented here for the first
+                                                        time in a quantum machine-learning architecture – we demonstrate entanglement witnessing of two-
+                                                        qubit states with (93 ± 4)% accuracy, multi-dimensional entanglement detection, and learning of
+                                                        the Hamiltonian governing photon-pair generation with a fidelity of (96 ± 4)%. By establishing
+                                                        classical training as a scalable route to quantum feature extraction, our results bridge macroscopic
+                                                        observables and nonclassical correlations, opening a new pathway toward faster and more robust
+                                                        quantum neural networks.
+
+
+                                                                 INTRODUCTION                                ated with the training of hidden layers using backprop-
+                                                                                                             agation or the parameter-shift rule [21]. This approach
+                                                                                                             also naturally avoids issues such as vanishing gradients
+                                            Quantum reservoir computing (QRC) [1, 2] is an emerg-            [22]. A key advantage of QRCs is that the input in-
+                                            ing paradigm in quantum machine learning that aims to            formation is processed in a Hilbert space whose dimen-
+                                            accelerate neural network models by harnessing the fun-          sion grows exponentially with the number of quantum
+                                            damental principles of quantum mechanics, potentially            resources, enabling a natural enhancement of computa-
+                                            offering exponential computational advantages compared           tional expressivity. In addition, the architecture allows
+                                            to classical architectures [3]. The computational sub-           one to access quantum features through single-shot mea-
+                                            strate consists of a quantum system composed of many             surements without requiring full quantum-state tomog-
+                                            recurrently interconnected nodes, possibly with fading           raphy or repeated changes of measurement settings, sig-
+                                            memory. In quantum reservoirs, the input to be pro-              nificantly simplifying the readout stage.
+                                            cessed by the network nodes can take the form of infor-
+                                            mation, encoded into the quantum state of the reservoir             A subclass of feed-forward reservoirs, characterized
+                                            nodes [4], or it may itself be a quantum state interacting       by absence of recurrence or memory, are referred to as
+                                            with the reservoir [2, 5]. Once injected, the input infor-       quantum extreme learning machines (QELMs) [6, 23].
+                                            mation spreads across the reservoir nodes, which evolve          In recent years, several demonstrations of QELMs have
+                                            according to a dynamical map that may be fully unitary           been reported across multiple physical platforms, includ-
+                                            [6] or may include dissipation and coherent driving [7].         ing hot atomic vapors [12], superconducting microwave
+                                            These dynamics mimic the layered transformations per-            cavities [8], nuclear spins [24], and photonic systems
+                                            formed by hidden layers in deep-learning models. The             [9, 11, 25, 26]. Parallel to these experimental advances,
+                                            states of selected nodes are then measured over a set            theoretical work has increasingly focused on understand-
+                                            of observables, whose expectation values provide an ex-          ing their expressivity [6, 23], the role of reservoir topology
+                                            panded, high-dimensional evolution of the input data,            and quantum information scrambling [27], and the con-
+                                            constituting the output layer of the network. Only the           tribution of quantum resources to enhanced classification
+                                            weights of this layer are trained to produce the desired         and inference performance [16].
+                                            output, which may correspond to a quantum observable               A universal challenge in QRC and QELMs is the need
+                                            [8, 9], an entanglement quantifier [7, 10, 11], a categor-       to evaluate expectation values, which requires repeated
+                                            ical label [12–14], a classical parameter or function [15–       experimental runs. This repetition is necessary to sup-
+                                            17] or even a target quantum state or operation [18–20].         press finite-sampling noise arising from the probabilistic
+                                            Training is typically carried out via supervised learning,       nature of quantum measurements. As a result, QELM
+                                            using labeled examples for each input. Because training          performance depends on a careful balance of several fac-
+                                            reduces to a linear regression over the output-layer fea-        tors, including the available experimental resources, their
+                                            tures, the number of learned parameters remains small,           cost, the tolerable noise level, and the acquisition time,
+                                            greatly reducing the time, cost, and complexity associ-          each of which can scale rapidly with the system size.
+                                                                                                                                        2
+
+   a)                              State synthesis                       Evolution                Measurement and analysis
+
+    Classical process
+        (training)
+                                                                                                               Training
+
+
+
+
+                          Pump and       Stimulated   Classical beams                            Measurement         Weights
+                        coherent seed     process                         Reservoir
+
+   b)                                                                                                  Transfer learning
+    Quantum process
+       (inference)
+
+
+
+
+                                                                                                                           Regression
+
+
+
+
+                                        Spontaneous
+                        Pump                          Biphoton state      Reservoir                                Observables
+                                          process
+
+
+FIG. 1. Photonic quantum extreme learning machine and its classical training. (a) In the paradigm shift introduced
+here, the QELM is trained using classical light by exploiting the correspondence between stimulated and spontaneous emis-
+sion. A properly amplitude-shaped coherent state (blue) seeds a third-order parametric nonlinear process, such as four-wave
+mixing. The resulting stimulated coherent beam (red) then propagates through the reservoir (here represented as a network
+of interconnected nodes without recurrent memory), and its output spectrum is recorded by a spectrum analyzer. If the seed
+is prepared in one of the asymptotic states of the full system, for example, in spectral mode j, the spectral intensity of the
+stimulated mode k at the output becomes proportional to the photon-pair emission rate in the mode pairs (k, j) in the corre-
+sponding spontaneous process. This duality is exploited to train the QELM, thereby determining the weights used in the linear
+regression. (b) Once the classical training phase is complete, inference is performed on quantum input states generated via the
+corresponding spontaneous process, such as spontaneous four-wave mixing. This process involves the inelastic scattering of two
+pump photons, leading to the generation of entangled biphoton states. After generation, the quantum state propagates through
+the same reservoir used during classical training. The photon-pair detection probabilities are then processed through the linear
+regression model previously trained with classical signals (transfer learning) to infer the expectation value of a property of the
+input quantum state, such as the entanglement witness ⟨W⟩. Using classical beams as seeds significantly increases the output
+photon number compared to coincidence measurements, thereby reducing the time required to train the QELM by several
+orders of magnitude.
+
+
+Moreover, long-term drifts in the experimental condi-                   characterization of photon-pair correlations across many
+tions during acquisition can introduce additional com-                  degrees of freedom with unprecedented speed, resolution,
+plications, especially for large training datasets.                     and precision [30–33], and is now widely employed for
+                                                                        the characterization of photon-pair sources. Recently, a
+   There are cases in which quantum expectation val-                    similar approach has also been employed to reconstruct
+ues share strong similarities with classical signals, as-               Gaussian bosonic channels [34, 35], potentially extending
+sociated with macroscopic, easy-to-measure observable                   its applicability to the continuous-variable regime.
+quantities. A well-known example is provided by the
+Einstein relations, which connect the small rate of spon-                  In this work, we build on the fundamental connection
+taneous emission to the much larger rate of stimulated                  between spontaneous and stimulated processes to train a
+emission in light–matter interactions [28]. A similar du-               quantum extreme learning machine using purely strong
+ality appears in nonlinear optics, particularly between                 classical signals, while demonstrating its inference capa-
+spontaneous parametric processes and parametric ampli-                  bilities on quantum input states. We show that this clas-
+fication [29]. At a fundamental level, these general corre-             sical training enables excellent inference performance of
+spondence principles arise because spontaneous and stim-                nonclassical observables on quantum inputs, such as en-
+ulated processes are governed by the same interaction                   tanglement [7, 11], high-dimensional entanglement quan-
+Hamiltonian, which induces transition rates proportional                tifiers [37], and properties of quantum states and process
+either to the number of photons in the stimulating field                Hamiltonians.
+or to vacuum fluctuations, respectively. Therefore, intro-                Experimentally, we leverage frequency-bins [38] to en-
+ducing a coherent seed that stimulates the process can en-              code biphoton states generated via spontaneous four-
+hance the transition probability by several orders of mag-              wave mixing (SpFWM) on a photonic chip [39–41]. Such
+nitude. The use of stimulated emission has enabled the                  experimental demonstration naturally benefits from the
+                                                                                                                                                3
+
+a)                      State synthesis                                      Evolution                              Measurement
+                Pump + seed                                                                                         and analysis
+           (jth asymptotic state)                              Modulation
+                                    Classical beams            (reservoir)
+ Seed
+
+            EOM
+
+ Pump                       WS
+                                                              EOM
+            EOM                       StFWM                                                                                         Training
+                                                         WS                         Classical measurement     OSA
+
+Classical process (training)
+                                             Biphoton state
+                            Pump                                                                                             Weights
+b)                                                                                   Modulation              Quantum
+                                                                                     (reservoir)            measurement
+                                                                                                                                   Regression
+            EOM                                               EOM
+ Pump                       WS
+                                       SpFWM                  EOM
+                                                         WS
+Quantum process (inference)                                                                                         SNSPD
+
+
+FIG. 2. Experimental implementation of a frequency-bin QELM. (a) Training of the QELM is performed by stimulated
+FWM. To obtain an output intensity of the stimulated beam which is proportional to the coincidence probability Ckj of detecting
+a signal-lder photon-pair in frequency modes k and j in the corresponding spontaneous process, a laser seed (blue) is shaped
+into a superposition of frequency-bins that mimics the asymptotic output state of the j th frequency mode of the system (see [36]
+and Supplementary Materials). The stimulated beam (red) is a coherent state that undergoes evolution through the reservoir,
+and its spectrum is acquired by an OSA. The output intensity Ikj on the kth bin is proportional to Ckj . The intensities Ikj are
+used to train the QELM using linear regression, from which the weights are computed. (b) Inference is performed on quantum
+input states generated by SpFWM. Light from a pump laser (green) is sent through a sequence of an EOM and a WS, tailoring
+its spectrum. The pump is routed to an integrated silicon photonic waveguide, where broad-band entangled photon-pairs are
+generated by SpFWM. A second WS completes the state synthesis by defining the output frequency-bin encoded biphoton state
+by setting amplitude and phase to the frequency-bins. The state evolves through the reservoir, consisting of two EOMs acting
+on the demultiplexed signal and idler modes, realizing a tight-binding-type interaction, whose intensity and phase depend on
+the RF driving of the two EOMs. The reservoir mixes the frequency-bins, and expands the dimensionality of the Hilbert
+space. After narrowband filtering, which selects one of the possible signal-idler frequency-bins combinations (k, j), coincidence
+detection is performed by a pair of SNSPDs, yielding the value Ckj . The multiple frequency-bin combinations represent the
+output layer of the QELM. These are used as inputs to the linear regression, which is applied using the weights assessed in
+the training phase. EOM: electro-optic phase modulator. WS: waveshaper. SpFWM: spontaneous four-wave mixing. StFWM:
+stimulated four-wave mixing. SNSPD: superconducting nanowire single-photon detector. OSA: optical spectrum analyzer.
+
+
+ease of scaling towards high dimensions – here showcased                                               RESULTS
+up to ququarts – and represents the first implementa-
+tion of a quantum learning machine based on frequency-                                      Overview and formalism
+bins. Electro-optic modulators (EOMs), driven by radio-
+frequency signals matching the bin spacing, are used
+as reservoir, scrambling qubits and qudits to higher-                   Generally, the QELM workflow consists of three sequen-
+dimensional (up to 64) Hilbert spaces. The set of all pos-              tial steps: input-state preparation, evolution through the
+sible frequency correlations between the signal and idler               reservoir system, and measurement of the network nodes.
+photons forms the output layer of the test set. We bench-               The reservoir evolution can be described by a map that
+mark the quantum inference of the classically trained                   sends the initial state in the joint input–reservoir space to
+machine with quantum light against expected outcomes,                   the final state of the reservoir [6]. In practice, a strict dis-
+demonstrating strong qualitative and quantitative perfor-               tinction between the degrees of freedom of the input and
+mance across all cases. Compared with training based on                 those of the reservoir is not required, as the input state
+frequency-resolved coincidence measurements, such clas-                 can be initially embedded into a subset of modes form-
+sical operation reduces dramatically the training time,                 ing a high-dimensional qudit that also hosts the reser-
+while improving at the same time the signal-to-noise ra-                voir modes (typically initialized in the vacuum state).
+tio (SNR).                                                              Moreover, the measurements may also involve the state
+                                                                        degrees of freedom [6]. This is the framework that we
+                                                                        adopt throughout this work. After the evolution, a set
+                                                                        of measurements, described by positive-operator-valued
+                                                                        measures (POVMs) {µb : b ∈ Σ}, where Σ is the num-
+                                                                        ber of measurement outcomes, is performed on each state
+                                                                                                                             4
+
+                                             (r)
+r. This procedure yields the probabilities xb for all the     the path of the idler photon in mode j from the detector
+input states of the training set.                             to the source. The resulting complex amplitude pattern,
+   QELM training is a supervised learning process that        which is generally multimode and termed the asymp-
+associates each input training state ρ(r) with correspond-    totic output field of the j th mode of the system [36],
+                           (r)  −1                            is subsequently used as a coherent seed for stimulated
+ing M labels or values {ym }M  m=0 (e.g., an entanglement
+measure or a set of density matrix elements), and the         four-wave mixing. This process generates a signal beam
+goal is to determine the set of weights wmb that best         whose intensity Ikj in mode k becomes proportional to
+approximates the linear function                              Ckj , thereby mapping the quantum correlations onto a
+                                                              macroscopic classical signal.
+                         (r)                                  More rigorously, the coincidence probability Ckj at the
+                X              X
+          (r)
+        ym    ∼    wmb xb =        wmb Tr(µb ρ(r) ),   (1)
+               b∈Σ            b∈Σ
+                                                              output of the QELM in the spontaneous process can be
+                                                              written as (see Supplementary Materials for derivation)
+which represents a standard linear regression problem,
+for which closed-form solutions exist for the weights wmb                  Ckj ∝ |[UQELM,s Ssi UTQELM,i ]kj |2 ,           (2)
+(see Methods for more details). Once the weights have
+                                                              where [·]kj denotes the matrix element, [Ssi ]kj is the prob-
+been determined, the inference accuracy is evaluated on
+                                                              ability amplitude for the signal and idler photons to be
+a set of Nt previously unseen states, using Eq. (1) to
+                   (r)                                        in modes k and j, respectively, at the QELM input, and
+infer the labels ỹm . The accuracy is quantified using a     UQELM,s(i) are the matrices describing the transforma-
+suitable metric, such as the mean squared error MSE =         tion implemented by the QELM to the signal and idler
+                   (r)   (r)
+(M Nt )−1 rm |ỹm − ym |2 .
+           P
+                                                              photons (here and in the following assumed to factor into
+   The definitions introduced so far illustrate the stan-     independent transformations). In the stimulated case,
+dard workflow employed in the training and testing of         by contrast, one starts with the idler seed in a coher-
+any QELM architecture [1, 2, 6]. Since the output typi-       ent state in mode j, described by the amplitude vector
+cally requires the estimation of expectation values, possi-   αj = (0, . . . , αj , . . . , 0), and shapes its amplitude by ap-
+bly corresponding to observables that carry non-classical     plying the transformation αj 7→ Ũi αj before entering
+correlations arising from entanglement, the stochastic na-    the nonlinear source. The intensity Ikj of the stimulated
+ture of quantum measurements requires the preparation         coherent state of the signal in mode k is given by (see the
+of multiple copies of the state and repeated measure-         Supplementary Materials for the derivation)
+ments to accumulate sufficient statistics and suppress
+finite-sampling noise. Although strategies based on en-                     Ikj ∝ |αj |2 |[UQELM,s Ssi Ũ∗i ]kj |2 .       (3)
+semble computing have been proposed to reduce the in-
+tegration time [2, 24], the achievable speedup is modest,     Therefore, Ckj ∝ Ikj only if Ũi = U†QELM,i , i.e., the
+and they require the implementation of global unitaries       complex amplitude U†QELM,i αj equals that of a coherent
+acting identically on many copies of identically prepared     beam back-propagated from mode j at the detectors to-
+input states.                                                 wards the nonlinear source.
+   The paradigm shift introduced here is to exploit the       The set of intensities Ib=kj replace the POVM outcomes
+connection between a macroscopic, high-intensity classi-        (r)
+cal signal (i.e. a coherent state of the quantized electro-   xb in the spontaneous process, and are associated to the
+                                                                       (r)
+magnetic field), produced via stimulated four-wave mix-       labels ym . Through Eq.(1), they are used to train the
+ing (StFWM) in a third-order nonlinear optical media,         QELM and learn the weights wmb .
+and the quantum correlations of photon-pairs generated        Inference is carried out on previously unseen quantum
+in the corresponding spontaneous four-wave mixing pro-        input states (Fig.1(b)) generated via spontaneous four-
+cess (SpFWM) [29, 42]. This concept is illustrated in         wave mixing (SpFWM). It is essential that the inference
+Fig. 1(a). During the training phase, rather than collect-    stage operates directly on quantum states, as these con-
+ing coincidence counts from the weak spontaneous signal       stitute the actual quantum resources employed in exper-
+to evaluate the coincidence probability Ckj between a         imental protocols.
+signal photon in mode k and an idler photon in mode
+j at the reservoir output, one can detect an informa-
+tionally equivalent but much stronger field by stimulat-            Implementing a QELM with frequency-bins
+ing the generation of a coherent signal beam, thereby
+drastically reducing the integration time while simulta-      The inference performance of any machine-learning pro-
+neously increasing the SNR. This is achieved by seeding       tocol depends critically on the quality of the training
+the photon-pair source with a properly amplitude-shaped       dataset, which should be as unbiased as possible, repre-
+idler beam and by measuring the signal intensity in mode      sentative of the process under investigation, and of suffi-
+k using a standard detector. The required amplitude pro-      cient size to fully capture its complexity. Moreover, while
+file of the idler beam can be formally obtained through       the state evolution may be uncalibrated, it must be stable
+a simple prescription [43]. One first considers the corre-    over time and repeatable across multiple runs of the ex-
+sponding spontaneous process and then back-propagates         periment. These requirements call for a platform capable
+                                                                                                                                5
+
+of preparing a large variety of quantum states with high           setup (see Methods section for more details).
+fidelity, together with a robust and reliable system for              The separable states |00⟩ and |11⟩ can be obtained by
+their evolution. We now outline how all these steps are            setting either gs1 (i1 ) or gs0 (i0 ) to zero in Eq. (6). Simi-
+implemented in our work. We first discuss state synthesis,         larly, separable states in which one of the two photons
+which is accomplished by generating photon-pairs in re-            is in a superposition can be generated in the DP con-
+configurable states via SpFWM in a Silicon-On-Insulator            figuration by setting one of the weights to zero. For
+spiral waveguide. Logical states are encoded in the                example, by choosing gs0 = 0, one obtains the state
+discretized frequency degree of freedom (frequency-bin),               1
+                                                                   NDP (g) |0⟩s (gi1 |1⟩i + 2gi0 |0⟩i ). Overall, by combining the
+which is particularly attractive for implementing QELMs            two pump configurations and adjusting the WS weights,
+due to its inherently high-dimensional state space [39, 44]        one can access a wide range of entangled and separable
+and robustness against environmental noise [41], and ease          states without physically changing the source.
+of manipulation [45–47]. Next, we discuss how state evo-              Evolution. The reservoir is implemented using
+lution is implemented using an electro-optic phase modu-           electro-optic phase modulators placed along both the sig-
+lator, which coherently mixes frequency bins and broad-            nal and idler paths and driven by a sinusoidal waveform
+casts the input states into a higher-dimensional Hilbert           at 20 GHz with modulation depth δ = 1.4. With a sin-
+space. Finally, we present the measurement procedure               gle driving tone, the EOMs implement a tight-binding
+applied to the reservoir output nodes. At this stage, we           Hamiltonian of the form HEOM =
+                                                                                                                 P Ω(δ) †
+                                                                                                                    m 2 am am−1 ,
+highlight the main difference between two workflows: the
+                                                                   where |Ω(δ)|2 represents the hopping probability between
+standard approach, in which both QELM training and in-
+                                                                   adjacent frequency modes m and m − 1 (described by the
+ference are performed on quantum input states, and the
+                                                                   ladder operators am and am−1 ), [48] and can be tuned
+classical-training approach, where training is carried out
+                                                                   by adjusting the modulation depth δ [45] (see Supple-
+using stimulated emission and the learned weights are
+                                                                   mentary Materials for additional details on the EOM
+subsequently transferred to the inference stage operating
+                                                                   transformation). The reservoir topology can be visual-
+on quantum inputs.
+                                                                   ized as a linear chain of frequency modes with nearest-
+   State synthesis. The quantum states are synthesized
+                                                                   neighbor interactions, where the input states constitute
+as shown in Fig. 2(b). A pump laser is phase-modulated
+                                                                   single excitations that are initially localized at specific
+at 20 GHz to generate an electro-optic comb, which then
+                                                                   lattice sites and subsequently spread across the reservoir
+passes through a waveshaper (WS). Two coherent pump
+                                                                   nodes during the evolution. In principle, more complex
+lines ωp1 and ωp2 of equal intensity are selected by the
+                                                                   reservoir topologies can be realized by introducing ad-
+WS (dual pump (DP) configuration), which are then
+                                                                   ditional driving frequencies in the EOM. For example,
+amplified and injected into a silicon waveguide. Broad-
+                                                                   a two-dimensional square lattice of size L can be im-
+band SpFWM occurs in the waveguide, from which we
+                                                                   plemented in a nonlocal one-dimensional lattice by cou-
+carve discrete frequency-bins with spacing and width of
+                                                                   pling nearest neighbors and Lth nearest neighbors us-
+20 GHz using the WS. These bins are symmetrically po-
+                                                                   ing driving frequencies ν and Lν, respectively [47]. The
+sitioned in the signal and idler bands at frequencies ωs
+                                                                   frequency domain thus provides a highly versatile plat-
+and ωi , respectively, so as to satisfy energy conservation.
+                                                                   form for exploring a wide variety of synthetic lattices for
+In the waveguide, either non-degenerate or degenerate
+                                                                   QELMs, whose performance in terms of accuracy and
+SpFWM processes can occur. The degenerate processes
+                                                                   stability generally improves with increasing network con-
+2ωp1 = ωi0 + ωs1 and 2ωp2 = ωi1 + ωs0 generate photon-
+                                                                   nectivity [6].
+pairs in the |10⟩ and |01⟩ components of the two-qubit
+                                                                      Measurement. At the output of the EOMs, the reser-
+state, respectively. In contrast, the non-degenerate pro-
+                                                                   voir nodes constituted by the frequency-bins are mea-
+cess ωp1 + ωp2 = ωi0 + ωs0 = ωi1 + ωs1 contributes to
+                                                                   sured pairwise by performing frequency-resolved coinci-
+the |00⟩ and |11⟩ components of the state. The WS im-
+                                                                   dence detections between the signal and idler modes us-
+plements adjustable weights g = (gs0 , gs1 , gi0 , gi1 ) to two
+                                                                   ing superconducting single-photon detectors in combina-
+selected signal and idler bins ωs(i)0(1) , while blocking all
+                                                                   tion with narrowband filters. We consider Q bins for each
+other frequency components, thereby shaping the quan-
+                                                                   photon, yielding a Q × Q grid of frequency correlations,
+tum state into the form:
+                                                                   which is vectorized to form the input feature vector x(r)
+                     1                                            associated with each input state ρ(r) . The training fea-
+        |Ψ⟩DP =             2gs0 gi0 |00⟩ + 2gs1 gi1 |11⟩          ture vectors are used to determine the regression weights,
+                 NDP (g)                                     (4)
+                                                                  which are subsequently applied during the inference stage
+                         + gs0 gi1 |01⟩ + gs1 gi0 |10⟩ ,           on the test set via Eq. (1). In the standard workflow, the
+                                                                   feature vectors for both the training and test sets are ob-
+where NDP (g) is a normalization factor and the factor             tained through coincidence measurements. However, the
+of two arises from the non-degenerate SpFWM process.               large size of the training set, together with the inherently
+In addition, the WS can be configured to transmit only             weak nature of the spontaneous process, requires long
+a single pump line at frequency ωp = (ωp1 + ωp2 )/2 (we            integration times to accumulate sufficient statistics for a
+refer to this configuration as single-pump (SP)), extend-          reliable estimation of the weights in Eq. (1). By contrast,
+ing the class of states that can be synthesized from our           in our approach we exploit the connection between the
+                                                                                                                           6
+
+spontaneous and stimulated processes—mathematically             Eq. (1). To this end, we measured the Q × Q matrices of
+expressed by Eqs. (2, 3)—to extract the feature vectors         frequency-bin correlations at the output of the QELM,
+of the large training set using intensity-only measure-         setting Q = 6 and using the bins ωs(i)0 , ωs(i)1 to define
+ments (classical training). This strategy enables a dras-       the logical state of each qubit. Leveraging the classical
+tic reduction of the time dedicated to QELM training.           process, we collected 250 correlation matrices in the SP
+                                                                configuration and 500 matrices in the DP configuration
+                                                                (including 100 obtained from separable states). Using
+                    Classical training                          coincidence measurements, we collected 100 matrices for
+                                                                both the SP and DP configurations (of which 20 corre-
+                                                                sponded to separable states). As a comparison, the total
+The experimental procedure used to train the frequency-
+                                                                acquisition time was approximately 1.5 hours for com-
+bin QELM is illustrated in Fig. 2(a). A seed (idler) laser
+                                                                pleting the stimulated measurements and 24 hours for
+tuned to frequency-bin j passes through an EOM and
+                                                                the coincidence measurements, the former mainly deter-
+a WS in series before being coupled into the chip to-
+                                                                mined by the OSA acquisition time, the second one by
+gether with the pump beam. The EOM–WS sequence
+                                                                the integration time needed to collect sufficient statistics.
+shapes the seed spectral amplitude to match that of the
+                                                                Thus, the use of the stimulated process reduced the inte-
+idler photon back-propagated from detector mode j to
+                                                                gration time per state by a factor of ∼ 60. Remarkably,
+the source in the spontaneous process shown in Fig. 2(b).
+                                                                this reduction in integration time was accompanied by
+Conjugation (i.e. time-reversal) is implemented by shift-
+                                                                an improvement in the SNR of the brightest frequency-
+ing the RF waveform driving the EOM by π and by re-
+                                                                bin correlations of approximately 19 dB (see Supplemen-
+placing the set of idler weights gi applied by the WS in
+                                                                tary Materials for a detailed analysis of the SNR). This
+the spontaneous process with their complex conjugates
+                                                                result is particularly notable given the very different na-
+gi∗ (see Supplementary Materials for a rigorous deriva-
+                                                                ture of the two detection processes, which differ in terms
+tion). Stimulated FWM occurs in the waveguide, gen-
+                                                                of mechanism, cost, complexity, and SNR, the latter in
+erating a signal beam that subsequently passes through
+                                                                particular being nearly 6 orders of magnitude lower for
+the same EOM reservoir shown in Fig. 2(b). An optical
+                                                                the standard OSA. With the use of specialized equip-
+spectrum analyzer (OSA) placed at the EOM output is
+                                                                ment, such as single-photon OSA [49], the integration
+then used to resolve the individual frequency-bins com-
+                                                                time or SNR could be further improved by several orders
+posing the signal beam. This procedure, which can be
+                                                                of magnitude, albeit at the cost of additional complexity.
+naturally extended to higher-dimensional two-qudit sys-
+                                                                In Fig. 3(a), we quantitatively compare the distributions
+tems, is particularly straightforward to implement with
+                                                                of the fidelities (Frobenius norm) between the expected
+frequency-bin encoding, since all modes propagate and
+                                                                outcomes and the patterns obtained via stimulated emis-
+are coherently manipulated within the same optical fiber.
+                                                                sion (StFWM) and coincidence detections (SpFWM).
+By contrast, other forms of high-dimensional encoding,
+                                                                On average, these fidelities are FSpFWM = 0.987(7) and
+such as path, time-bin, or orbital angular momentum,
+                                                                FStFWM = 0.995(5), respectively. Representative exam-
+may require sub-wavelength stabilization of relative op-
+                                                                ples of patterns associated with SP and DP states, ac-
+tical paths to preserve coherence.
+                                                                quired using both stimulated and coincidence measure-
+   As a first preliminary step, we evaluated the synthesis
+                                                                ments, are shown in Fig. 3(b,c), demonstrating excellent
+capability of our apparatus. We randomly sampled the
+                                                                agreement with expected outcomes.
+complex weights g and used them to construct and gen-
+erate 250 states in the SP configuration and 500 states
+in the DP configuration. Full quantum state tomogra-                     Entanglement witness of two qubits
+phy was performed on these ensembles at the output of
+the synthesis stage using the classical seed [31], yielding
+Uhlmann fidelities of 0.94(5) and 0.92(7) with respect to       The correlation matrices acquired by the stimulated pro-
+the expected density matrices for the SP and DP config-         cess, as discussed in the previous paragraph, were used
+urations, respectively (SP-StFWM and DP-StFWM in                to train the QELM to reproduce the value of the entan-
+Fig.3(a), see also Supplementary Materials). We then            glement witness:
+randomly selected 20 elements from these ensembles for                                   I
+both SP and DP configurations, and performed quantum                               W=      − Φ+ Φ+ ,                     (5)
+                                                                                         2
+state tomography via coincidence measurements (SP-
+SpFWM and DP-SpFWM panels on Fig.3(a)), achieving
+fidelities of 0.98(2) and 0.95(2) respectively.                 where |Φ+ ⟩ = √12 (|00⟩ + |11⟩) (see Methods for details on
+As a second step, we fed the reservoir using both classical     the training procedure). Values of W < 0 indicate en-
+input and quantum states. The purpose of this test was          tanglement, while separable states all have W ≥ 0. The
+to assess the ability of a classical process to reproduce the   trained QELM is used to infer W on test sets of previ-
+quantum correlations captured by frequency-resolved co-         ously unseen quantum states, whose correlation matrix
+incidence detection. Such correlations will be later used       have been acquired through coincidence measurements.
+to train the QELM by estimating the weights reported in           A representative example of inferred W versus its true
+                                                                                                                             7
+
+a)
+
+
+
+
+b)
+
+      10          01
+
+
+     Idler       Signal
+                                           Expected                          SpFWM                             StFWM
+
+c)
+
+      10          01
+
+
+     Idler      Signal
+                                           Expected                          SpFWM                             StFWM
+
+
+
+
+FIG. 3. Synthesis and characterization of two-qubit states. a) Box-plots showing the fidelity of the reconstructed density
+matrices with respect to the expected targets. Random states are prepared in the SP (Eq.(6)) and DP Eq.(4) configurations.
+Datasets are acquired either using StFWM or coincidence measurements (SpFWM). (b) Distribution of the fidelity between the
+expected 6 × 6 matrices describing the frequency correlations at the output of the QELM and the corresponding experimental
+patterns acquired via coincidence measurements (SpFWM) and stimulated emission (StFWM). (b) A representative example of
+frequency correlations at the output of the QELM for a state prepared in the SP configuration. From left to right: the expected
+pattern, the pattern obtained via coincidence measurements of spontaneously emitted photon-pairs (SpFWM), and the pattern
+obtained via StFWM by measuring light intensities with an optical spectrum analyzer. (c) Representative frequency correlation
+matrix for a state prepared in the DP configuration.
+
+
+value is shown in Fig. 4, indicating a very good infer-                           High dimensional states
+ence performance. We assessed a MSE on the test set of
+0.012(7) (normalized MSE: NMSE = 0.18(4)) by averag-
+                                                                 We now generalize entanglement detection to higher di-
+ing over 30 random compositions of both the training and
+                                                                 mensions, a task that is particularly suitable to be imple-
+the test sets. From the perspective of certifying entan-
+                                                                 mented with frequency-bins, owing to the inherently high
+glement, we quantified the fraction of entangled states
+                                                                 dimension of the associated Hilbert space [41, 44, 50].
+with W < 0 for which the QELM also infers W < 0,
+                                                                 We generate
+                                                                       P3 a wide class of two-qudit states of the form
+showing the confusion matrix related to the inference
+                                                                 |Ψ⟩ = j=0 αj |jj⟩ with the SP configuration, where the
+in Fig. 4. The accuracy in entanglement certification
+                                                                 complex coefficients αj are set by the WS.
+is 96%, and only slightly decreases to 93(4)% when it is
+averaged over 30 independent and randomly populated                Tests of nonlocality tailored to maximally en-
+training and test sets. Similarly, separable states erro-        tangled two-qudit states have been developed
+neously classified as entangled (W < 0) are 12(8)%.              to reveal correlations incompatible with local-
+                                                                 hidden-variable (LHV) theories.           We choose the
+                                                                 Salavrakos–Augusiak–Tura–Wittek–Acín–Pironio (SAT-
+                                                                 WAP) inequality, previously used to certify high-
+                                                                 dimensional entanglement in path-encoded qubits [37],
+                                                                 as the target feature to be reproduced by our QELM.
+                                                                                                                          8
+
+                                                                 shows examples of QELM outputs for various state di-
+                                                                 mensionalities and acquired through the stimulated pro-
+
+
+
+
+                            True
+                                                                 cess together with their expected outcomes, demonstrat-
+                                                                 ing excellent agreement, further quantified by an average
+                                                                 fidelity of F = 0.997(2) between the full training and test
+                                                                 sets and the corresponding simulations. The QELM out-
+Inferred
+
+
+
+
+                                                                 puts obtained from coincidence measurements exhibit a
+           Inferred                                              fidelity of F = 0.982(7) with the expected outcome.
+                                                                    In Fig. 5(d) we show the inferred values of the correla-
+                                                                 tors Id across the test set, which align closely with their
+                                                                 expected value (NMSE = 0.033(6)). After classical train-
+                                                                 ing, the QELM is used to infer the SATWAP value for
+                                                                 the spontaneously generated maximally entangled states,
+                                                                 shown in Fig. 5(e). Up to dimension three, the inferred
+                                                                 Id exceeds the LHV bound by more than a standard de-
+                                                                 viation, while for dimension four the mean value remains
+FIG. 4. Entanglement witness for two qubits. Inferred            above the classical bound. Overall, the classically trained
+versus true values of the entanglement witness ⟨W⟩ on a repre-   QELM infers an increasing Id with the system dimen-
+sentative test set acquired through coincidence measurements     sionality d. For all states |Ψ⟩, we find Id > Qd−1 , where
+of spontaneously emitted photon-pairs. Diamond markers in-
+                                                                 Qd = 2(d−1) is the Tsirelson bound, the maximum value
+dicate separable states. The confusion matrix in the inset
+illustrates the binary classification of states with ⟨W⟩ ≤ 0
+                                                                 attainable by a d-dimensional quantum system [37]. Con-
+and ⟨W⟩ ≥ 0.                                                     sequently, the local dimension of each state is certified.
+
+
+
+The SATWAP inequality takes the form Id ≥ Cd , where                              Hamiltonian learning
+Id is a correlator constructed from the joint detection
+probabilities between the signal and the idler photons,
+and Cd is the classical bound implied by LHV theories            Having proved the inference capabilities of the system on
+for d-dimensional systems (see Methods for details). In          nonclassical observables, we now benchmark the QELM
+general, Id can be constructed from m ≥ 2 measurement            in the task of learning the Hamiltonian responsible for the
+settings with d outcomes; larger m values provide                generation of photon-pairs, usually referred as the non-
+increased robustness to depolarizing noise and enable            linear Hamiltonian of SpFWM. In the low pump power
+stronger violations of the classical bound [51]. For             regime, where the emission of multiple pairs is negligible,
+this proof-of-concept demonstration we choose m = 2.             a close connection
+                                                                                 P exists between the nonlinear Hamilto-
+However, we emphasize that a QELM could, in principle,           nian HNL = qp Hqp a†q a†p + H.c. and the state density
+                                                                                                               iHNL
+infer Id for arbitrary m in a single-shot measurement,           matrix ρ. Specifically, the state |Ψ⟩ = e− ℏ |vac⟩ is
+provided that the reservoir is sufficiently expressive.          approximated  P to the first order in HNL as the biphoton
+Additionally, the QELM learns the projectors appearing           state |Ψ⟩ ∼ qp Hqp |qp⟩, where the index q(p) labels the
+in Id , which correspond to superpositions of multiple           N -dimensional computational basis of the signal(idler)
+frequency-bins with highly specific amplitude profiles           photon. The density matrix ρ, written on the basis |qp⟩,
+– states that are typically extremely challenging to             is then ρ = c† c, where c = vec(H). Note that the den-
+generate using quantum frequency processors [52] (see            sity matrix is parametrized by 2N 2 − 2 real numbers be-
+Methods for the explicit expression of the learned                                                 iHNL
+                                                                 cause the state generated by e− ℏ is pure. As QELMs
+projectors).
+                                                                 can be trained to infer the density matrix elements [8],
+   We truncate the Hilbert space dimension at the output         one can retrieve c (hence the elements Hqp ) from the
+of the QELM to form a 8×8 grid, in which the central 4×4         unique eigenvector of ρ with unit eigenvalue. The com-
+matrix initially encodes the amplitudes |αij |2 = δij of the     plete workflow for learning the nonlinear Hamiltonian is
+input qudit states |ij⟩. As for the qubit case, also here        schematized in Fig. 6(a).
+the QELM is trained using the classical process. Both               The input state, described by the target density ma-
+the training and the test sets consist of balanced sets          trix ρt , is coupled to the reservoir, producing its high-
+of qudit, qutrit and ququart states (see Methods for the         dimensional representation encoded in the output matrix
+detailed composition). Because of the large dimensional-         of frequency correlations. We include the waveshaper
+ity of the QELM output, we choose to acquire also the            transformation Uws into HNL to generate a variety of
+test set via stimulated emission, performing frequency-          nonlinear Hamiltonians, i.e., HNL 7→ Uws HNL U†ws . The
+resolved coincidence measurements only for the separable         QELM is trained to infer the target 2N 2 − 2 real pa-
+state |00⟩ and for the three maximally entangled states          rameters of the density matrix through multi-task linear
+             PM
+|Ψ⟩ = √1M j=1 |jj⟩ with M = 2, 3, 4. Figure 5(a-c)               regression. However, due to unavoidable noise and mea-
+                                                                                                                               9
+
+a)                                                                               d)
+  3210        0 1 23
+
+
+     Idler     Signal
+
+
+
+
+                                                                                  Inferred
+                                      Expected                      StFWM
+
+
+b)
+     3210     0 1 23
+                                                                                 e)
+     Idler     Signal
+                                      Expected                      StFWM
+                                                                                               Inferred
+c)
+     3210     0 1 23
+
+
+     Idler     Signal
+                                      Expected                      StFWM
+
+
+
+
+FIG. 5. Entanglement witness in high-dimensions. (a-c) Representative examples of frequency-bin correlation matrices
+at the output of the QELM. The panels show the expected patterns (Expected) for randomly chosen qubit (a), qutrit (b),
+and ququart (c) states. The rightmost column panels display the corresponding patterns measured via stimulated emission
+(StFWM).
+(d) Inferred versus true values of the SATWAP inequality for a representative test set acquired using stimulated emission. (e)
+ Inferred values (cyan) of the SATWAP inequality for maximally entangled states of dimensions 2, 3, and 4, as well as for the
+  separable state |00⟩ (indicated as dimension one). The corresponding QELM output patterns were acquired via coincidence
+ measurements on spontaneously emitted photon-pairs, while training was performed using stimulated emission. The hatched
+   bars indicate the LHV bound. Error bars are computed from inference obtained by training the QELM using 30 different
+                                                        training sets.
+
+
+surement errors, the reconstructed density matrix will              sity matrix ρMLE = c† c of rank-1 having the minimum
+likely be non-physical. Therefore, we look for the physi-           MSE with the inferred set of elements in y (see Methods
+cal density matrix ρMLE of rank-1 that has the maximum              section for more details). An example of learned density
+overlap with that learned by the QELM by using a stan-              matrix and its expected outcome is shown in Fig. 6(c). As
+dard maximum likelihood estimation technique (details               shown in Fig. 6(d), the fidelity between the reconstructed
+are left to the Methods section). From the singular value           density matrices and those expected from simulations is
+decomposition of ρMLE , we calculate the unique eigen-              high and is on average F = 0.96(4). By construction, this
+vector c and from this the elements of HNL .                        fidelity coincides with that between the expected and re-
+                                                                    constructed matrices representing the nonlinear Hamilto-
+  In the experiment, we implemented 512 training HNL
+                                                                    nian in the computational basis. An example that show-
+by modifying the WS weights, and for each of them we
+                                                                    cases the good matching between the QELM inference
+acquired the frequency correlation matrix via stimulated
+                                                                    with the expected outcome is shown in Fig. 6(e).
+emission. We focused on two-qubit states generated in
+the DP configuration. The number of independent pa-
+                                                                       As a conclusive remark, we point that in the low-
+rameters in the multi-task regression is then six. We arbi-
+                                                                    gain approximation where multiple-pair emission is ne-
+trarily choose y = {ρ00 , ρ11 , ρ22 , R(ρ12 ), R(ρ02 ), R(ρ03 )},
+                                                                    glected, |Hqp |2 is the probability of detecting a signal
+where R(·) denotes the real part. The test set is com-
+                                                                    photon in the frequency-bin |q⟩ and the idler photon in
+posed by 87 states and has been acquired by coinci-
+                                                                    the frequency-bin |p⟩, thus it represents an element of
+dence measurements, following the same methodologies
+                                                                    the joint spectral intensity in the discrete basis set of the
+described in Section . Figure 6(b) shows the inference
+                                                                    N frequency-bins. Therefore, the QELM correctly infers
+on the test set after classical training of the QELM. The
+                                                                    the phase-resolved joint spectral amplitude (i.e. the com-
+good inference performance is assessed from an average
+                                                                    plex biphoton wavefunction) in the subset of frequency-
+NMSE = 0.034.
+                                                                    bins describing the computational space of the signal-
+  For each state, we then calculated the physical den-              idler qubits.
+                                                                                                                              10
+
+a) State evolution and injection             Reservoir         Linear output training                 and         inference
+
+
+
+           ...                       ...
+
+
+
+
+b)                                                                     c)                      Expected
+
+
+
+
+                                                                                               Inferred
+
+
+
+
+                                                                      d)
+
+
+
+
+e)
+
+
+
+
+FIG. 6. Hamiltonian learning. (a) Logical workflow for density matrix reconstruction and Hamiltonian learning using
+a QELM. The input state ρ is prepared by evolving the input vacuum state through HNL , and is fed to the reservoir, here
+represented by a node chain with nearest neighbour interaction. The state of each node is read and feeds the QELM, which
+is trained to reproduce six independent density matrix elements. The physical density matrix ρMLE = c† c reproducing the
+elements is found by maximum likelihood, with c representing HNL on the computational basis in vectorized form. (b) Inferred
+versus true values of the six independent density matrix elements characterizing the pure quantum states in the test set.
+(c) Example of inferred density matrix after maximum likelihood estimation (top panel) and its expected outcome (bottom
+panel). (d) Distribution of the fidelities between the inferred and the expected density matrices of the test set. (e) Example of
+reconstruction (Inferred) of HNL in the 2 × 2 signal-idler frequency-bin subspace and its expected outcome (Expected).
+
+
+                      DISCUSSION                                  by the classical seed. Due to this property, the training
+                                                                  weights can be transferred from the stimulated to the
+                                                                  spontaneous regime. Remarkably, this strict correspon-
+At the heart of the classical training procedure presented
+                                                                  dence enables not only qualitative inference about the
+so far lies the one-to-one correspondence between coin-
+                                                                  state under test, but also quantitative estimates, even in-
+cidence probabilities in the SpFWM process and the in-
+                                                                  volving nonclassical state properties such as its degree of
+tensity of the coherent state of the idler beam stimulated
+                                                                                                                         11
+
+entanglement. For example, we verified that the accuracy        the reservoir [6]. For unitary evolution of the joint input
+in inferring the value of the entanglement witness ⟨W⟩ is       and reservoir state, this has been shown to be equivalent
+comparable to that obtained from the reconstructed den-         to perform specific POVMs on the input state ρ⊗n [6].
+sity matrix (see Supplementary Materials). Moreover, we         In this perspective, we could prepare the signal and idler
+confirmed that the QELM can learn the density matrix            photons in the tensor-product state ρs ⊗ ρi , with ρs =
+with fidelities relative to the expected states that can        ρi = ρ, to estimate quadratic functionals of the density
+exceed those achieved via full quantum state tomogra-           matrix, such as the state purity Tr(ρ2 ). Functionals of
+phy (see Supplementary Materials), notably using a sin-         order ms + mi could be, in principle, learned by encoding
+gle measurement setting instead of the nine local Pauli         multiple qubits in each signal-idler photon through high-
+settings required in standard tomography.                       dimensional encoding [56], such that ρs(i) = ρ⊗ms(i) for
+   The capability to perform precise and accurate quanti-       some integer ms(i) > 1.
+tative inference on entangled states using classical signals       We also envision the classical training of models
+for training is a distinctive feature afforded by stimulated    for Gaussian states in the continuous variable do-
+emission. By contrast, as shown in [11], a QELM trained         main. For example, the tomographic procedures im-
+solely on separable states - whose statistics can be repro-     plemented in [34, 35] showed that the elements A
+duced with coherent states without the use of stimulated        of the Bogoliubov transformation in aout = Aain , re-
+emission - can still correctly classify entangled states, but   lating the output creation and annihilation operators
+at the cost of a poor accuracy on the value of ⟨W⟩.             aout = (aout    out †   out    out †
+                                                                          s , [as ] , ai , [ai ] ) (here assumed with
+   Our procedure is based on the sole assumption of             zero mean field) to the input ain in a general Gaus-
+single-pair emission. In this context, it is independent        sian process can be extracted from stimulated emission.
+on the order of the spontaneous parametric process (sec-        In the case of a Gaussian state undergoing a noiseless
+ond or third), number of bosonic modes, choice of degree        Gaussian bosonic channel, which may include the QELM
+of freedom, and pump temporal waveform. Potential ap-           transformation, the input covariance matrix Vin of the
+plications might include hyper-entanglement witnessing          state transforms as Vout = AVin A† , hence it can be
+[53], reconstruction of the joint spectral amplitude [32],      fully determined from a set of intensity-only measure-
+learning of unitary maps [8], of correlated quantum-walks       ments. This set can be used for training, eliminating
+[45] and reconstruction of density matrices [31].               the need for homodyne detection at that stage. The
+   The use of frequency-bin encoding, here applied for          testing phase can then be carried out via homodyne de-
+the first time to quantum machine learning, is particu-         tection on multimode vacuum states. Accordingly, in-
+larly suited for this task, due to the natural capability of    tensity measurements replace homodyne detection in the
+spontaneous parametric processes to generate frequency-         continuous-variable implementation, just as they replace
+entangled states [39]. Combined with standard compo-            coincidence measurements in the photon-pair case, while
+nents such as waveshapers, EOMs, and tunable filters, a         coherent seeds take the role of vacuum fluctuations in
+frequency-bin entangled photon sources enable the gen-          both scenarios.
+eration, evolution, and measurement of large classes of         On the other hand, there are cases in which QELM train-
+two-qubit states [38], here expressed (but in principle         ing on classical states cannot be directly transferred to
+not limited to) by Eqs. (6, 4). All these components            infer nonclassical correlations, or at least not through
+could be furthermore integrated on-chip, in the perspec-        straightforward generalizations of the methodologies pre-
+tive of developing chip-scale a quantum processing units        sented in this work. For example, this limitation arises
+[40, 41, 54, 55]. Compared to other encoding schemes            when attempting to learn multi-photon correlations at
+(e.g. path encoding), frequency-bins also provide robust-       the output of a boson-sampling device, or when con-
+ness to mechanical drifts, which may critically affect long     structing entanglement witnesses for multi-photon states.
+computations. Moreover, they provide a natural way to           Indeed, no information about the exchange statistics of
+scale the Hilbert space dimension to high-dimensional qu-       indistinguishable particles can be inferred from the inten-
+dit states (here up to d = 4 per photon), as well as a          sity correlations of classical coherent states, which always
+large reservoir dimension (here up to 8 per photon). In         factorize as the product of the first-order intensity corre-
+this perspective, it is worth mentioning that the reservoir     lations of each individual beam.
+topology, here defined by a nearest-neighbor interaction,       In conclusion, we have introduced and experimentally
+could be further refined to enhance the reservoir expres-       demonstrated a new paradigm for training QELMs which
+sivity [27], for example via Fourier synthesis of complex       uses classical inputs to infer nonclassical features of un-
+driving RF tones, by the use of multiple EOMs, or by            known quantum states. The approach, inspired by stimu-
+leveraging nonlinear conversion processes for frequency         lated emission tomography, and here implemented on the
+mixing.                                                         frequency-bin basis, enables a drastic reduction in train-
+   While here we restricted our focus on the inference of       ing time while simultaneously improving the signal-to-
+linear functionals of the density matrix elements, such as      noise ratio, mitigating experimental drifts, and avoiding
+the entanglement witness, nonlinear functionals of order        any resource overheads. We showcase excellent perfor-
+n could be in principle learned by the QELM by letting          mance across multiple supervised-learning tasks, includ-
+n copies of the input state to sequentially interact with       ing entanglement witnessing, high-dimensional entangle-
+                                                                                                                          12
+
+ment detection, and learning of the nonlinear Hamilto-          a length of 1.6 cm, a width of 450 nm, a total height of
+nian underlying photon-pair generation.                         310 nm, and a shallow etch depth of 155 nm. The source
+Looking ahead, we foresee extending this method to other        brightness is measured to be 3 · 106 Hz/(mW2 · nm).
+quantum features and additional degrees of freedom,             In the spontaneous process, discrete frequency-bins are
+with promising prospects for applications in continuous-        carved from the broad-band photon-pair emission using
+variable Gaussian states. More broadly, we believe that         the WS, each with a width and spacing of 20 GHz. The
+this paradigm, linking macroscopic observables to non-          signal and idler bins are centered at λs,n = 1561.43 + n∆
+classical features of quantum systems, can be transferred       and λi,n = 1551.72 − n∆, respectively, with n ∈ Z
+to other domains, such as condensed-matter and atomic           and ∆ = 0.16 nm. The WS is used both to carve
+physics, opening new avenues for faster and more robust         the frequency-bins and to apply the complex weights g.
+training of machine-learning models for quantum feature         Qubit states are prepared by allowing only two frequency-
+extraction.                                                     bins to pass while blocking all other wavelengths, whereas
+                                                                up to four bins are transmitted to generate qudit states.
+                                                                In the DP configuration, the state of the signa-idler pho-
+            Funding and acknowledgments                         tons at the output of the WS is given by Eq.(4). In the
+                                                                SP configuration, the resulting states take the form:
+D.B. acknowledges European Union funding from the
+                                                                                   1
+STARLight project (project ID: 101194170). E.B., M.C.,                 |Ψ⟩SP =          (gs gi |00⟩ + gs1 gi1 |11⟩) .    (6)
+M.L., M.G. and M.B. acknowledge the PNRR MUR                                     NSP (g) 0 0
+project PE0000023-NQSTI. M.C. acknowledges funding
+from the European Union under the MSCA Postdoctoral             Note that Eq. (6) and Eq. (4) cannot be made equivalent
+Fellowship grant 101211100 (project GLINT). The au-             for any choice of the coefficients g; therefore, they span
+thors acknowledge CEA-Leti, Grenoble for providing the          distinct subsets of the two-qubit Hilbert space. While the
+silicon photonic chip used as source of photon pairs. The       coefficients of the four logical states are not all indepen-
+authors declare no competing interests.                         dent, the family of states in Eq.(4) span a large portion
+                                                                of two-qubit Hilbert space, which is sufficient for demon-
+                                                                strating the generalization capabilities of the QELM dis-
+                       METHODS                                  cussed in the main text.
+                                                                After the WS, the signal and idler photons exit through
+                                                                two separate fibers, which are directed to independent
+                   Experimental setup
+                                                                EOMs driven by sinusoidal waveforms at 20 GHz with an
+                                                                RF power of 23 dBm. In the stimulated process, only the
+The pump is a tunable continuous-wave laser that is             signal beam is passed through the WS and the EOM. A
+passed through an EOM driven by a sinusoidal signal             passband filter is used in both the signal and idler paths
+at 20 GHz with an RF power of 23 dBm. Phase mod-                to suppress residual pump light. The correlation matri-
+ulation generates multiple electro-optic comb lines. A          ces shown, for example, in Fig. 3(b,c) are obtained in the
+WS is then used to select either one (λp ∼ 1556.56 nm)          spontaneous process via frequency-resolved coincidence
+or two (λp1 = 1556.48 nm and λp2 = 1556.64 nm) comb             detection. Fiber Bragg gratings with a bandwidth of 12
+lines for the generation of SP and DP states, respectively.     GHz, together with circulators, are used to select the de-
+The pump is subsequently amplified using an Erbium-             sired frequency-bin combinations, which are detected by
+Doped Fiber Amplifier, and its polarization is set to TE.       pairs of superconducting nanowire single-photon detec-
+In the DP configuration, the powers of the two selected         tors with a detection efficiency of 85%. In the stimulated
+comb lines are adjusted such that the ratio between the         process, the spectra of the signal beam are recorded using
+non-degenerate and degenerate SpFWM processes is ap-            an Optical Spectrum Analyzer.
+proximately 4. A bandpass filter is then used to remove
+background noise at the wavelengths of the signal and
+idler photons. During the training phase, a tunable seed                             QELM training
+laser is employed to stimulate the FWM process. This
+laser is phase-modulated at 20 GHz with an RF power of
+23 dBm using an EOM, and subsequently passed through            We detail here the methods used to train the QELM
+a WS that applies the idler weights gi . The polarization       for reproducing the results presented in the main
+of the seed laser is aligned with that of the pump, and         manuscript. For each input state r = (1, ..., Nin ), the cor-
+the two beams are multiplexed into a common channel of          responding output from the QELM is a Q × Q frequency-
+a fiber array. Light is coupled into and out of the silicon     resolved correlation matrix {Ckj }Q−1
+                                                                                                  k,j=0 , which is reshaped
+photonic chip (fabricated by CEA-Leti Grenoble)using a          into a column vector [x(r) ]T of length Q2 . Each vector
+pair of grating couplers, resulting in a total insertion loss   is rescaled to have unit norm and then placed into the
+of approximately ∼ 6 dB and an effective on-chip pump           rth column of the Q2 × Nin matrix X. Training consists
+and seed powers of ∼ 15 dBm and ∼ 5 dBm respectively.           of determining the M × Q2 weight matrix W that mini-
+The photon-pair source consists of a rib waveguide with         mizes the mean squared error ||Y − WX||2 , where Y is
+                                                                                                                                   13
+
+an M × Nin matrix of M targets labels.                                features, which are then standardized before model fit-
+Entanglement witness                                                  ting. The training set is made by 216 states, divided into
+Training is performed by regularized Elastic Net linear               four subsets. In the k th subset, k − 1 of the coefficients
+regression [57]. The ℓ1 regularization strength is selected           αj of the input state |Ψ⟩ (see main text) are set to zero,
+from the grid [0.1, 0.5, 0.7]. The regularization param-              while the nonzero coefficients are assigned randomly as
+eter is chosen from a list of 100 logarithmically spaced              αj = |αj |eiϕj with |αj | ∼ U [0, 1] and ϕj ∼ U[−π, π]. The
+values between 10−5 and 10, and is optimized through                  test set consists of four subsets of 26 states each. This
+9-fold cross validation using the R2 score as the evalua-             stratification ensures that neither the training set nor the
+tion metric. Before training, both the the training and               test set is biased toward any particular qudit dimension.
+test datasets are pre-processed by standardizing the in-              Density matrix reconstruction
+put feature matrix. The training dataset consists of 290              Training is performed by multitask regularized Elastic
+states, composed of 70 separable states, 70 states from               Net linear regression [58]. The ℓ1 regularization strength
+the SP configuration, and 150 states from the DP config-              is selected from the grid [0.01, 0.05, 0.1, 0.25, 0.5, 0.9, 1].
+uration. The test set consists of 96 states, including 16             The overall regularization parameter is chosen from 50
+separable states, 35 states from the SP configuration, and            logarithmically spaced values between 10−6 to 1, and is
+45 states from the DP configuration. Both the training                optimized by 5-fold cross validation using R2 score as the
+and test sets are randomly sampled from a pool of 250                 metric. Prior to training, the input data is pre-processed
+states prepared in the SP configuration and 500 states                by feature selection using a variance threshold criterion
+prepared in the DP configuration.                                     set to 2.5 · 10−5 . This reduces the number of input fea-
+SATWAP inequalities                                                   tures from 36 to 21. The selected features are subse-
+Definition: the SATWAP inequality can be defined on                   quently standardized.
+two systems A and B sharing a quantum state. On                       The QELM is trained to infer six independent ele-
+their state, each party perform one of two measurements               ments of the density matrix for each input state, y =
+A1 , A2 and B1 , B2 , each yielding one of d possible out-            {ρ00 , ρ11 , ρ22 , R(ρ12 ), R(ρ02 ), R(ρ03 )}. To obtain the
+comes labelled by 0, ..., d − 1. The inequality is written            physical rank-1 density matrix ρMLE that most likely re-
+as [37]                                                               produces the inferred elements in y, we first parametrize
+                                                                      the four-component vector c using six real parameters q:
+                 d−1
+                 X
+         Id :=         al ⟨Al1 B1d−l ⟩ + a∗l ω l ⟨Al1 B2d−l ⟩                    c1 = q0
+                 l=1
+                                                                (7)                   q
+                                                                                 c2 = 1 − q02 eiq1 cos(q2 )
+                 + al ⟨Al2 B2d−l ⟩ + a∗l ⟨Al2 B1d−l ⟩ ≤ Cd ,                          q                                          (10)
+             2πi                         √                                       c2 = 1 − q02 ei(q1 +q3 ) sin(q2 ) cos(q4 )
+                             (2l−d)/8
+where ω = e , al = ω
+              d                         / 2 and Cd is its classical                   q
+bound given by:                                                                  c4 = 1 − q02 ei(q4 +q5 ) sin(q2 ) sin(q4 )
+                                 
+              1        π        3π                                  with q0 ∈ [0, 1], q2 , q4 ∈ [0, π2 ] and q1 , q3 , q5 ∈ [0, 2π).
+        Cd =     3 cot     − cot      − 2.                      (8)
+              2         4d        4d                                  This parametrization ensures that ||c||2 = 1. The cor-
+                                                                      responding physical density matrix is constructed as
+The observables A1(2) and B1(2) have eigenprojectors                  ρMLE = c† c, which is, by construction, rank-1 and there-
+                                d−1
+                                                                      fore represents a pure quantum state. Finally, the pa-
+                       1 X i2πk(a−θ1(2) )                             rameters q are obtained by minimizing the maximum-
+            |a⟩1(2) = √       e  d        |k⟩ ,
+                        d k=0                                         likelihood cost function ||y − ỹ(q)||2 , using Particle
+                                                                (9)   Swarm optimization, where ỹ denotes the corresponding
+                                d−1
+                        1 X i2πk(ξ1(2) −b)                            density matrix elements extracted from ρMLE .
+             |b⟩1(2) = √       e  d        |k⟩ ,
+                         d k=0
+
+where a, b ∈ {0, ..., d − 1}, θ1 = 1/4, θ2 = 3/4, ξ1 = 1/2                      SUPPLEMENTARY MATERIALS
+and ξ2 = 1.
+Training procedure: training is performed using regular-                 Correspondence between StFWM and SpFWM
+ized Elastic Net linear regression. The ℓ1 regularization
+strength is selected from the grid [0, 0.05, 0.1, 0.5, 0.7, 1].        Here, we first derive the expression for the coincidence
+The regularization strength is chosen from 100 logarith-              probability between a signal and an idler photon at
+mically spaced values ranging from 10−9 to 10−3 , and                 the output of the QELM in the spontaneous process.
+is optimized by 4-fold cross-validation using the R2 as a             We then compare this expression with the intensity of
+selection metric. Prior to training, both the training and            the conjugate beam generated in the stimulated process,
+test datasets are pre-processed through feature selection             highlighting the conditions under which the two expres-
+using a variance-threshold criterion set to 5 · 10−4 . This           sions become proportional, the essential feature exploited
+reduces the dimensionality of the input from 64 to 21                 for training the QELM with classical signals.
+                                                                                                                                       14
+
+  We analyze both settings within the framework of                       In the stimulated case, a coherent seed, here taken as
+input-output relations between operators. In the sponta-              the idler beam, is injected in mode j at the input of the
+neous process, a two-mode squeezed vacuum state is gen-               EOM and WS chain, undergoing the transformation Ũi
+erated by SpFWM, which is characterized by the trans-                 shown in Fig. 7(b). The resulting field drives stimulated
+formation matrix                                                      four-wave mixing in the nonlinear medium, generating a
+                                                                    conjugate signal which subsequently undergoes the pas-
+                         Sss Ssi
+                                                    (11)              sive transformation Us , identical to that in the sponta-
+                         Sis Sii
+                                                                      neous configuration. The overall transformation is
+from the set of input signal (as ) and idler (ai ) modes
+a = [as , ai , a†s , a†i ]. In Eq.(11), Sss , Sii are the same-                   as → Us Sss as + Us Ssi Ũ†i (δa†i + α∗j )
+                                                                                                                                     (14)
+mode signal(idler) transfer functions and Ssi = STis is                           ai → Sii Ũi (δai + αj ) + Sis a†s
+the cross-mode transfer function related to SpFWM. The
+multimode squeezed state propagates through the WS                    where αj = (0, ..., αj , ...0) denotes the coherent displace-
+and the EOM, as illustrated in Fig. 7(a). The final input-            ment applied to the j th input mode and ai = αj + δai ,
+output relation between operators becomes                             where δai describes the noise contribution to ai . The
+                  as → Us Sss as + Us Ssi a†i                         resulting signal-mode intensity Ikj is
+                                                              (12)
+                  ai → Ui Sii ai + Ui Sis a†s                                      Ikj ∝ ⟨ns,k ⟩ ∼ |αj |2 |[Us Ssi Ũ∗i ]kj |2       (15)
+               s(i) s(i)
+where Us(i) = UEOM Uws is the passive transformation
+                                                                      where the spontaneous contribution has been neglected,
+imparted by the WS and EOM. The coincidence prob-
+                                                                      being several orders of magnitude weaker than the stim-
+ability Ckj between a signal photon in frequency-bin k
+                                                                      ulated field. By comparing Eq.(15) with Eq.(13), we find
+and an idler photon in frequency-bin j is ⟨a†s,k as,k a†i,j ai,j ⟩,
+                                                                      that Ckj ∝ Ikj if Ũi = U†i . This result is well known:
+which using Eq.(12) becomes
+                                                                      if a coherent seed is prepared in the state U†i αj and in-
+             Ckj = ⟨ns,k ⟩⟨ni,j ⟩ + |[Us RUTi ]kj |2        (13)      jected into the nonlinear medium of Fig. 7(a), then it
+                       P                            2
+                                                                      exists the QELM in mode j (U†i Ui = I), implying that it
+where ⟨ns(i),k(j) ⟩ =     q |[Us(i) Ssi(is) ]k(j)q | are the av-      corresponds to the asymptotic output field of the system
+erage photon numbers, and Sss Ssi = Ssi STii = R en-                  [36].
+sures that the transformed operators preserve the canon-
+ical commutation relations [59]. For low pair-generation
+probability, the first term on the right hand side of
+                                                                                    Modeling of the QELM output
+Eq.(13) can be neglected, Sss , Sii ∼ I, and one recog-
+nizes Us Ssi UTi as the low-gain biphoton wavefunction at
+the QELM output.                                                      The states |Ψ⟩ in Eqs.(6,4) are evolved through the
+                                                                                                                         s(i)
+                                                                      EOMs as |Ψ⟩ 7→ UsEOM ⊗ UiEOM |Ψ⟩, where UEOM is
+a)                                                                    expressed in the basis |j⟩ of frequency-bins as [45, 48]
+
+                                                                                     s(i)
+                                                                                              X
+                                                                                   UEOM =           Jn (δs(i) )einθ |j + n⟩⟨j|       (16)
+                                                                                               jn
+
+
+                                                              &       where δs(i) denotes the modulation depth and Jn is the
+                                                                      nth Bessel function of the first kind. The relation be-
+                                                                      tween the amplitude of the        sinusoidal driving voltage
+b)                                                                    Vs(i) (t) = V0 sin ωt + θs(i) and δ is δ = VVπ0 π, where
+                                                                      Vπ is the half-wave voltage of the EOM. In all the nu-
+                                                                      merical simulations and in the experiments, the rela-
+                                                                      tive phase θs − θi is set to zero and Vs = Vi = Vπ .
+                                                                      The theoretically infinite basis of frequency-bins is trun-
+                                                                      cated to a finite dimension of 8 and spans the logical
+                                                                      states |−3⟩s(i) , |−2⟩s(i) , ..., |3⟩s(i) , |4⟩s(i) , where the con-
+                                                                      vention is that the wavelength λs,n corresponding to
+FIG. 7. (a) Sequence of transformations experienced by the
+signal (red) and idler (blue) modes when the QELM is driven           bin |n⟩s is λs,n = 1561.43 + n∆ and that of |n⟩i is
+by photons generated through spontaneous FWM. Dashed                  λi,n = 1551.72 − n∆, with ∆ = 0.16 nm. Qubit states
+lines indicate vacuum inputs. (b) Sequence of transformations         are defined on the logical states |0⟩s(i) , |1⟩s(i) , while qu-
+applied to the signal and idler modes when the QELM is                dit states have support on the logical states from |2⟩s(i)
+trained using stimulated emission.                                    through |−1⟩s(i) .
+                                                                                                                           15
+
+Analysis of the SNR in the stimulated and classical            a)
+                     regime
+
+   The main advantage of using StFWM to measure
+photon-pair correlations is the significant improvement
+in SNR compared to coincidence measurements. Indeed,
+the stimulated signal is proportional to the number of
+stimulating photons [29], and the resulting enhancement
+over the pair-generation rate, for the same input pump
+power, has been shown to exceed five orders of magnitude
+in ring-resonator systems [42]. Here, we analyze the SNR
+improvement of the QELM output patterns obtained via
+StFWM and SpFWM. In both cases, we consider train-
+ing samples from the DP configuration and sort the 36
+frequency-bin combinations in descending order of inten-
+sity. We then select the bins accounting for 90% of the cu-
+mulative signal, i.e., those carrying most of the signal in-   b)
+tensity in each 6×6 output pattern. For coincidence mea-
+surements, the SNR of each bin is defined as √CCnet , where
+                                                  tot
+Ctot and Cnet denote the raw and accidentals-subtracted
+coincidence counts, respectively. For StFWM measure-
+                                  I
+ments, the SNR is defined as Inoise  , where I is the signal
+intensity and Inoise ∼ 1 pW is the background noise level
+of the OSA (Anritsu model MS9740B, measured at an
+acquisition settings of 0.1 nm of resolution, 200 Hz of
+video-bandwidth, 501 sampling points, and without op-
+tical attenuator). As shown in Fig. 8, the StFWM signal
+exhibits an average SNR of 35 ± 4 dB, whereas SpFWM
+yield an average SNR of 16 ± 2 dB. This corresponds to
+a SNR improvement of 19(5) dB when using StFWM.
+It is important to note, however, that the two measure-        FIG. 9. (a) Box plots showing the distribution of the entangle-
+ment schemes were performed under different acquisition        ment witness difference ⟨W⟩−⟨W⟩true in the single pump (SP)
+conditions. Specifically, each coincidence measurement         and dual pump (DP) configurations, where ⟨W⟩ is either in-
+                                                               ferred by QELM or calculated after density matrix reconstruc-
+                                                               tion (QST), and ⟨W⟩true is the expected value. (b) Box plots
+                             10 s integration (projected)      showing the fidelity distribution between the expected den-
+                                                               sity matrices and those reconstructed by full quantum state
+                                                               tomography (QST) or inferred by QELM. The latter marges
+                                                               states obtained from single and dual-pump configurations.
+
+
+                                                               was acquired over 10 s, while the time required by the
+                19 dB                                          OSA to record each frequency-bin is only 501  34
+                                                                                                                ∼ 68 ms
+                                                               (each frequency-bin is sampled by 34 points, and acqui-
+                                                               sition of the full 501-point spectrum takes approximately
+                                                               1 s). When the two measurements are normalized to the
+                                          StFWM
+                                                               same acquisitionq time, the SNR improvement increases
+                                                                                    10
+                                          SpFWM                to 19 + 10 log     0.068   ∼ 30 dB.
+
+
+                                                                Inference performance of the QELM compared to
+                                                                         full quantum state tomography
+FIG. 8. SNR of the brightest (see main text) frequency-
+bins combinations acquired by StFWM (68 ms/bin) and from
+SpFWM (10 s of integration), in the dual-pump configura-        In this section, the ability of the QELM to efficiently ex-
+tion. The average values are indicated with straight lines.    tract quantum features is compared with a more demand-
+The blue dashed line indicates the projected average SNR of    ing approach based on full quantum state tomography.
+the StFWM acquisitions if the integration time was raised to   We first focus on entanglement witnessing in the SP and
+10 s.                                                          DP datasets. In Fig. 9(a), we report box plots showing
+                                                                                                                                16
+
+the statistical distribution of the quantity ⟨W⟩ − ⟨W⟩true          tive to errors in α (especially when θα = π2 ) for SP
+for the two datasets (DP-QELM and SP-QELM), where                   states. While QST treats all density matrix elements
+⟨W⟩ is the entanglement witness inferred by the QELM                with equal weight and is subject to calibration errors that
+introduced in the main text, and ⟨W⟩true is its true value.         accumulate over multiple projective measurements, the
+The same distributions are also obtained by first per-              QELM extracts information from the most relevant den-
+forming full quantum state tomography (projective mea-              sity matrix elements (in this case ⟨00| ρ |00⟩, ⟨11| ρ |11⟩,
+surements are acquired using StFWM) to reconstruct                  and ⟨00| ρ |11⟩+c.c), providing a more precise estimate of
+the density matrix ρ of each state, and then computing              ⟨W⟩. On the other hand, QST is more effective than the
+⟨W⟩ = Tr(Wρ). These results (DP-QST and SP-QST)                     QELM for retrieving ⟨W⟩ in the DP case, most likely be-
+are shown as hatched box plots in Fig. 9(a). Interest-              cause the entanglement witness depends on all the state
+ingly, the SP-QELM distribution exhibits an interquar-              coefficients (see Eq.(17)). Part of this information may
+tile range (IQR) smaller than that of SP-QST, together              be poorly represented or missing in the simple QELM
+with a smaller 1.5-IQR range, indicating higher precision           implementation used here, which relies on a single EOM.
+compared to SP-QST. Conversely, for the DP dataset,                 In a second analysis, we benchmark the ability of the
+the entanglement witness obtained from full quantum                 QELM to reconstruct the density matrix of both SP and
+state tomography shows a lower IQR than that inferred               DP states against full quantum state tomography, with
+by the QELM. Insight into the origin of this different be-          measurements acquired using StFWM. Figure 9(b) shows
+havior can be gained by explicitly calculating ⟨W⟩SP(DP)            the fidelity between the density matrices reconstructed
+for SP states of the form |Ψ⟩sp = √ 1 2 (|00⟩ + α |11⟩)             by the two approaches (QELM and SP(DP)-QST) and
+                                       1+|α|
+                                                                    their expectations. While the median values are compat-
+and DP states of the form |Ψ⟩DP = √P 1 2 ij αij |ij⟩,
+                                               P
+                                             |αij |                 ible in all cases, the use of a QELM slightly improves
+which yields                                                        precision. This improvement likely arises from the fact
+                                                                    that the QELM is constrained to learn a pure state, de-
+  ⟨W⟩SP = −|α|
+                   p
+                    1 − |α|2 cos(θα )                               scribed by only 6 parameters, rather than the 15 free pa-
+                                                                    rameters spanning the full state space explored by QST.
+               |α01 |2 + |α10 |2                                    Nevertheless, the QELM reconstructs the density matrix
+  ⟨W⟩DP =                        − |α00 α11 | cos(θα00 − θα11 ),
+                       2                                            using a single measurement setting and without calibra-
+                                                             (17)   tion of the measurement apparatus, whereas QST is im-
+                                                                    plemented here using 9 local Pauli measurement settings
+where θα = Arg(α) and θαij = Arg(αij ).                             following careful calibration of the sidebands generated
+  Equation (17) shows that the witness ⟨W⟩ is sensi-                by each EOM.
+
+
+
+
+  ∗
+     corresponding author: massimo.borghi@unipv.it                       T. C. H. Liew, Quantum reservoir processing, npj Quan-
+ [1] S. Ghosh, K. Nakajima, T. Krisnanda, K. Fujii, and T. C.            tum Information 5, 35 (2019).
+     Liew, Quantum neuromorphic computing with reservoir             [8] T. Krisnanda, P. Song, A. Copetudo, C. Y. Fontaine,
+     computing networks, Advanced Quantum Technologies                   T. Paterek, T. C. Liew, and Y. Y. Gao, Experimen-
+     4, 2100053 (2021).                                                  tal demonstration of enhanced quantum tomography
+ [2] P. Mujal, R. Martínez-Peña, J. Nokkala, J. García-Beni,             via quantum reservoir processing, Quantum Science and
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-                Technology 10, 035041 (2025).
+     tunities in quantum reservoir computing and extreme             [9] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo, V. Ci-
+     learning machines, Advanced Quantum Technologies 4,                 mini, T. Giordani, I. Palmisano, E. Polino, N. Spagnolo,
+     2100027 (2021).                                                     F. Sciarrino, et al., Experimental property reconstruc-
+ [3] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,                 tion in a photonic quantum extreme learning machine,
+     N. Wiebe, and S. Lloyd, Quantum machine learning, Na-               Physical Review Letters 132, 160802 (2024).
+     ture 549, 195 (2017).                                          [10] H. Assil, A. El Allati, and G. L. Giorgi, Entanglement es-
+ [4] J. Dudas, B. Carles, E. Plouet, F. A. Mizrahi, J. Grol-             timation of werner states with a quantum extreme learn-
+     lier, and D. Marković, Quantum reservoir computing im-              ing machine, Physical Review A 111, 022412 (2025).
+     plementation on coherently coupled quantum oscillators,        [11] D. Zia, L. Innocenti, G. Minati, S. Lorenzo, A. Suprano,
+     npj Quantum Information 9, 64 (2023).                               R. Di Bartolo, N. Spagnolo, T. Giordani, V. Cimini,
+ [5] A. De Lorenzis, M. Casado, M. Estarellas, N. Lo Gullo,              G. M. Palma, et al., Quantum reservoir computing for
+     T. Lux, F. Plastina, A. Riera, and J. Settino, Harnessing           photonic entanglement witnessing, Science Advances 11,
+     quantum extreme learning machines for image classifica-             eady7987 (2025).
+     tion, Physical Review Applied 23, 044024 (2025).               [12] P. Azam and R. Kaiser, Optically accelerated extreme
+ [6] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Pa-          learning machine using hot atomic vapors, Physical Re-
+     ternostro, and G. M. Palma, Potential and limitations               view Applied 22, 034041 (2024).
+     of quantum extreme learning machines, Communications           [13] S.-Q. Gong, M.-C. Chen, H.-L. Liu, H. Su, Y.-C. Gu,
+     Physics 6, 118 (2023).                                              H.-Y. Tang, M.-H. Jia, Y.-H. Deng, Q. Wei, H. Wang,
+ [7] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and                 et al., Enhanced image recognition using gaussian boson
+                                                                                                                                17
+
+     sampling, arXiv preprint arXiv:2506.19707 (2025).                  an entangled-photon source with classical detectors and
+[14] V. Cimini, M. M. Sohoni, F. Presutti, B. K. Malia, S.-Y.           measurements, Optica 2, 430 (2015).
+     Ma, R. Yanagimoto, T. Wang, T. Onodera, L. G. Wright,         [32] A. Eckstein, G. Boucher, A. Lemaître, P. Filloux,
+     and P. L. McMahon, Large-scale quantum reservoir com-              I. Favero, G. Leo, J. E. Sipe, M. Liscidini, and S. Ducci,
+     puting using a gaussian boson sampler, arXiv preprint              High-resolution spectral characterization of two photon
+     arXiv:2505.13695 (2025).                                           states via classical measurements, Laser & Photonics Re-
+[15] W. Kalfus, G. Ribeill, G. Rowlands, H. Krovi, T. Ohki,             views 8, L76 (2014).
+     and L. Govia, Hilbert space as a computational resource       [33] D. Grassani, A. Simbula, S. Pirotta, M. Galli,
+     in reservoir computing, Physical Review Research 4,                M. Menotti, N. C. Harris, T. Baehr-Jones, M. Hochberg,
+     033007 (2022).                                                     C. Galland, M. Liscidini, and D. Bajoni, Energy corre-
+[16] S. Nerenberg, O. D. Neill, G. Marcucci, and D. Faccio,             lations of photon pairs generated by a silicon microring
+     Photon number-resolving quantum reservoir computing,               resonator probed by Stimulated Four Wave Mixing, Sci-
+     Optica Quantum 3, 201 (2025).                                      entific Reports 6, 23564 (2016).
+[17] L. Govia, G. Ribeill, G. Rowlands, H. Krovi, and T. Ohki,     [34] G. Triginer, M. D. Vidrighin, N. Quesada, A. Eckstein,
+     Quantum reservoir computing with a single nonlinear os-            M. Moore, W. S. Kolthammer, J. Sipe, and I. A. Walm-
+     cillator, Physical Review Research 3, 013077 (2021).               sley, Understanding high-gain twin-beam sources using
+[18] T. Krisnanda, S. Ghosh, T. Paterek, and T. C. Liew, Cre-           cascaded stimulated emission, Physical Review X 10,
+     ating and concentrating quantum resource states in noisy           031063 (2020).
+     environments using a quantum neural network, Neural           [35] G. Gwak, C. Roh, Y.-D. Yoon, M. Kim, and Y.-S. Ra,
+     Networks 136, 141 (2021).                                          Completely characterizing multimode second-order non-
+[19] S. Ghosh, T. Paterek, and T. C. Liew, Quantum neuro-               linear optical quantum processes, Nature Photonics , 1
+     morphic platform for quantum state preparation, Physi-             (2025).
+     cal review letters 123, 260404 (2019).                        [36] M. Liscidini, L. Helt, and J. Sipe, Asymptotic fields for a
+[20] S. Ghosh, T. Krisnanda, T. Paterek, and T. C. Liew,                hamiltonian treatment of nonlinear electromagnetic phe-
+     Realising and compressing quantum circuits with quan-              nomena, Physical Review A—Atomic, Molecular, and
+     tum reservoir computing, Communications Physics 4,                 Optical Physics 85, 013833 (2012).
+     105 (2021).                                                   [37] J. Wang, S. Paesani, Y. Ding, R. Santagati,
+[21] G. E. Crooks, Gradients of parameterized quantum gates             P. Skrzypczyk, A. Salavrakos, J. Tura, R. Augusiak,
+     using the parameter-shift rule and gate decomposition,             L. Mančinska, D. Bacco, et al., Multidimensional quan-
+     arXiv preprint arXiv:1905.13311 (2019).                            tum entanglement with large-scale integrated optics, Sci-
+[22] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Bab-                ence 360, 285 (2018).
+     bush, and H. Neven, Barren plateaus in quantum neural         [38] H.-H. Lu, M. Liscidini, A. L. Gaeta, A. M. Weiner, and
+     network training landscapes, Nature communications 9,              J. M. Lukens, Frequency-bin photonic quantum informa-
+     4812 (2018).                                                       tion, Optica 10, 1655 (2023).
+[23] W. Xiong, G. Facelli, M. Sahebi, O. Agnel, T. Chotibut,       [39] M. Kues, C. Reimer, P. Roztocki, L. R. Cortés, S. Sciara,
+     S. Thanasilp, and Z. Holmes, On fundamental aspects of             B. Wetzel, Y. Zhang, A. Cino, S. T. Chu, B. E. Little,
+     quantum extreme learning machines, Quantum Machine                 et al., On-chip generation of high-dimensional entangled
+     Intelligence 7, 20 (2025).                                         quantum states and their coherent control, Nature 546,
+[24] M. Negoro, K. Mitarai, K. Fujii, K. Nakajima, and                  622 (2017).
+     M. Kitagawa, Machine learning with controllable quan-         [40] M. Clementi, F. A. Sabattoli, M. Borghi, L. Gianini,
+     tum dynamics of a nuclear spin ensemble in a solid, arXiv          N. Tagliavacche, H. El Dirani, L. Youssef, N. Bergam-
+     preprint arXiv:1806.10910 (2018).                                  asco, C. Petit-Etienne, E. Pargon, et al., Programmable
+[25] M. Joly, A. Makowski, B. Courme, L. Porstendor-                    frequency-bin quantum states in a nano-engineered sili-
+     fer, S. Wilksen, E. Charbon, C. Gies, H. Defienne,                 con device, Nature Communications 14, 176 (2023).
+     and S. Gigan, Harnessing photon indistinguishability          [41] M. Borghi, N. Tagliavacche, F. A. Sabattoli, H. E. Dirani,
+     in quantum extreme learning machines, arXiv preprint               L. Youssef, C. Petit-Etienne, E. Pargon, J. Sipe, M. Lisci-
+     arXiv:2505.11238 (2025).                                           dini, C. Sciancalepore, et al., Reconfigurable silicon pho-
+[26] M. Rambach, A. Roy, A. Gilchrist, A. Sakurai, W. J.                tonic chip for the generation of frequency-bin-entangled
+     Munro, K. Nemoto, and A. G. White, Photonic                        qudits, Physical Review Applied 19, 064026 (2023).
+     quantum-accelerated machine learning, arXiv preprint          [42] S. Azzini, D. Grassani, M. Galli, L. C. Andreani,
+     arXiv:2512.08318 (2025).                                           M. Sorel, M. J. Strain, L. G. Helt, J. E. Sipe, M. Lis-
+[27] M. Vetrano, G. Lo Monaco, L. Innocenti, S. Lorenzo,                cidini, and D. Bajoni, From classical four-wave mixing to
+     and G. M. Palma, State estimation with quantum ex-                 parametric fluorescence in silicon microring resonators,
+     treme learning machines beyond the scrambling time, npj            Opt. Lett. 37, 3807 (2012).
+     Quantum Information 11, 20 (2025).                            [43] M. Borghi, Phase-resolved joint spectra tomography of a
+[28] A. Einstein, Zur quantentheorie der strahlung, Annalen             ring resonator photon pair source using a silicon photonic
+     der Physik 354, 121 (1917).                                        chip, Optics Express 28, 7442 (2020).
+[29] M. Liscidini and J. Sipe, Stimulated emission tomogra-        [44] P. Imany, J. A. Jaramillo-Villegas, M. S. Alshaykh, J. M.
+     phy, Physical review letters 111, 193602 (2013).                   Lukens, O. D. Odele, A. J. Moore, D. E. Leaird, M. Qi,
+[30] B. Fang, O. Cohen, M. Liscidini, J. E. Sipe, and V. O.             and A. M. Weiner, High-dimensional optical quantum
+     Lorenz, Fast and highly resolved capture of the joint spec-        logic in large operational spaces, npj Quantum Informa-
+     tral density of photon pairs, Optica 1, 281 (2014).                tion 5, 59 (2019).
+[31] L. A. Rozema, C. Wang, D. H. Mahler, A. Hayat, A. M.          [45] P. Imany, N. B. Lingaraju, M. S. Alshaykh, D. E. Leaird,
+     Steinberg, J. E. Sipe, and M. Liscidini, Characterizing            and A. M. Weiner, Probing quantum walks through co-
+                                                                                                                              18
+
+     herent control of high-dimensionally entangled photons,           tics Express 30, 10126 (2022).
+     Science advances 6, eaba8066 (2020).                         [53] G. Vallone, R. Ceccarelli, F. De Martini, and P. Mat-
+[46] A. Lupo, L. Butschek, and S. Massar, Photonic extreme             aloni, Hyperentanglement witness, Physical Review
+     learning machine based on frequency multiplexing, Op-             A—Atomic, Molecular, and Optical Physics 78, 062305
+     tics express 29, 28257 (2021).                                    (2008).
+[47] A. Senanian, L. G. Wright, P. F. Wade, H. K. Doyle, and      [54] B. E. Nussbaum, A. J. Pizzimenti, N. B. Lingaraju, H.-
+     P. L. McMahon, Programmable large-scale simulation of             H. Lu, and J. M. Lukens, Design methodologies for inte-
+     bosonic transport in optical synthetic frequency lattices,        grated quantum frequency processors, J. Lightwave Tech-
+     Nature Physics 19, 1333 (2023).                                   nol. 40, 7648 (2022).
+[48] R. Haldar, R. Johanning, P. Rübeling, A. K. Kashi,           [55] K. Wu, L. M. Cohen, K. V. Myilswamy, N. B. Lingaraju,
+     T. Bækkegaard, S. Bose, N. T. Zinner, and M. Kues,                H.-H. Lu, J. M. Lukens, and A. M. Weiner, On-chip pulse
+     Steering of quantum walks through coherent con-                   shaping of entangled photons, Phys. Rev. Res. 7, 033015
+     trol of high-dimensional bi-photon quantum frequency              (2025).
+     combs with tunable state entropies, arXiv preprint           [56] A. Baldazzi, M. Sanna, M. Borghi, S. Azzini, and
+     arXiv:2210.06305 (2022).                                          L. Pavesi, Four-qubit variational algorithms in silicon
+[49] M. A. Guidry, D. M. Lukin, K. Y. Yang, R. Trivedi,                photonics with integrated entangled photon sources, npj
+     and J. Vučković, Quantum optics of soliton microcombs,            Quantum Information 11, 107 (2025).
+     Nature Photonics 16, 52 (2022).                              [57] H. Zou and T. Hastie, Regularization and variable selec-
+[50] H.-H. Lu, K. V. Myilswamy, R. S. Bennink, S. Seshadri,            tion via the elastic net, Journal of the Royal Statistical
+     M. S. Alshaykh, J. Liu, T. J. Kippenberg, D. E. Leaird,           Society Series B: Statistical Methodology 67, 301 (2005).
+     A. M. Weiner, and J. M. Lukens, Bayesian tomography of       [58] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel,
+     high-dimensional on-chip biphoton frequency combs with            B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer,
+     randomized measurements, Nature Communications 13,                R. Weiss, V. Dubourg, et al., Scikit-learn: Machine learn-
+     4338 (2022).                                                      ing in python, the Journal of machine Learning research
+[51] A. Salavrakos, R. Augusiak, J. Tura, P. Wittek, A. Acín,          12, 2825 (2011).
+     and S. Pironio, Bell inequalities tailored to maximally      [59] A. Christ, B. Brecht, W. Mauerer, and C. Silberhorn,
+     entangled states, Physical review letters 119, 040402             Theory of quantum frequency conversion and type-ii
+     (2017).                                                           parametric down-conversion in the high-gain regime, New
+[52] H.-H. Lu, N. B. Lingaraju, D. E. Leaird, A. M. Weiner,            Journal of Physics 15, 053038 (2013).
+     and J. M. Lukens, High-dimensional discrete fourier
+     transform gates with a quantum frequency processor, Op-
+

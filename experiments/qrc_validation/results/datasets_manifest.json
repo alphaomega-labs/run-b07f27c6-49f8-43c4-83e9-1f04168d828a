@@ -1,0 +1,27 @@
+[
+  {
+    "path":"experiments\/qrc_validation\/results\/parity_tier_benchmark.csv",
+    "size_bytes":20739,
+    "sha256":"22f77a4944e3dbb9e3f71215ddc191bd2d9abd02fdb54ebae050c059f48d4e05"
+  },
+  {
+    "path":"experiments\/qrc_validation\/results\/entanglement_factorial.csv",
+    "size_bytes":17690,
+    "sha256":"5ddd1f2169e65e151bbb34a55167e576abda2ad96b2efeefedee1922751f7b15"
+  },
+  {
+    "path":"experiments\/qrc_validation\/results\/operator_dynamics_factorial.csv",
+    "size_bytes":3641,
+    "sha256":"2c71b2215d92fc6e268a720623d2714863b5cf71df93e8e589e111c1b7cb6d4a"
+  },
+  {
+    "path":"experiments\/qrc_validation\/results\/boundary_counterexample_stress.csv",
+    "size_bytes":562,
+    "sha256":"3e2b2eb091e901eb3d573361791ee658f3bae47f10f53fe1f55a5560c11a8903"
+  },
+  {
+    "path":"experiments\/qrc_validation\/results\/negative_results_claim_matrix.csv",
+    "size_bytes":218,
+    "sha256":"65609f50664efe982c8e9360e0a18ae62b93703589ecd8e62d02706936267dab"
+  }
+]

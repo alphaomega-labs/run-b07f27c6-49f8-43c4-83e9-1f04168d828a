@@ -1,0 +1,14 @@
+MANIFEST.in
+README.md
+pyproject.toml
+requirements.txt
+src/omegaxiv_qrc_ising_core.egg-info/PKG-INFO
+src/omegaxiv_qrc_ising_core.egg-info/SOURCES.txt
+src/omegaxiv_qrc_ising_core.egg-info/dependency_links.txt
+src/omegaxiv_qrc_ising_core.egg-info/requires.txt
+src/omegaxiv_qrc_ising_core.egg-info/top_level.txt
+src/qrc_ising_core/__init__.py
+src/qrc_ising_core/core.py
+src/qrc_ising_core/symbolic.py
+tests/test_core.py
+tests/test_symbolic.py

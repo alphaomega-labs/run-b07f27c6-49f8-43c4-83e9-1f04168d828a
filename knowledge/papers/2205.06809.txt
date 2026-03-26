@@ -1,0 +1,1508 @@
+                                            Time Series Quantum Reservoir Computing with Weak and Projective Measurements
+
+                                                    Pere Mujal, Rodrigo Martı́nez-Peña, Gian Luca Giorgi, Miguel C. Soriano, and Roberta Zambrini
+                                                                 IFISC, Institut de Fı́sica Interdisciplinària i Sistemes Complexos (UIB-CSIC),
+                                                                                UIB Campus, E-07122 Palma, Mallorca, Spain
+                                                                                              (Dated: May 16, 2022)
+                                                           Quantum machine learning represents a promising avenue for data processing, also for purposes
+                                                        of sequential temporal data analysis, as recently proposed in quantum reservoir computing (QRC).
+                                                        The possibility to operate on several platforms and noise intermediate-scale quantum devices makes
+                                                        QRC a timely topic. A challenge that has not been addressed yet, however, is how to efficiently
+                                                        include quantum measurement in realistic protocols, while retaining the reservoir memory needed
+                                                        for sequential time series processing and preserving the quantum advantage offered by large Hilbert
+                                                        spaces. In this work, we propose different measurement protocols and assess their efficiency in terms
+arXiv:2205.06809v1 [quant-ph] 13 May 2022
+
+
+
+
+                                                        of resources, through theoretical predictions and numerical analysis. We show that it is possible
+                                                        to exploit the quantumness of the reservoir and to obtain ideal performance both for memory and
+                                                        forecasting tasks with two successful measurement protocols. One consists in rewinding part of the
+                                                        dynamics determined by the fading memory of the reservoir and storing the corresponding data of
+                                                        the input sequence, while the other employs weak measurements operating online at the trade-off
+                                                        where information can be extracted accurately and without hindering the needed memory. Our
+                                                        work establishes the conditions for efficient protocols, being the fading memory time a key factor,
+                                                        and demonstrates the possibility of performing genuine online time-series processing with quantum
+                                                        systems.
+
+
+                                                            I.   INTRODUCTION                               speech recognition, stock market forecasting or climate
+                                                                                                            prediction. In contrast to classification tasks [32], tem-
+                                                                                                            poral ones require continuous data monitoring and the
+                                               The availability of big data analyzed and exploited          temporal order within the data sequence to be processed
+                                            with machine learning methods is one of the main traits         plays a key role [33]. Among classical approaches to
+                                            of the present information era and the search for en-           time-series processing [34–37], reservoir computing [38]
+                                            hanced data processing capabilities is spurring research        has been successful in recognizing spoken words [39, 40]
+                                            also in quantum approaches [1–3]. Recent quantum ma-            and human activity [41] or in forecasting chaotic dy-
+                                            chine learning implementations have been reported rang-         namical systems [42, 43], with appealing features such
+                                            ing from NMR platforms [4] to noisy quantum computers           as easy training and energy efficiency. In this scheme,
+                                            [5, 6], and many proposals [7–11] promise an advantage          data are continuously injected into a reservoir system,
+                                            in the performance with respect to classical approaches.        processed, and extracted, without requiring an external
+                                            Still, dealing with quantum systems for machine learning        memory avoiding the von Neumann bottleneck [44]. The
+                                            poses new challenges not only to preserve fragile quan-         reservoir itself can be either an artificial recurrent neural
+                                            tum coherence from the action of the environment [12]           network [45] or even a physical substrate [46], providing a
+                                            but also to efficiently access the processed information        high dimensional phase space, a non-linear input-output
+                                            through measurement [13], being these related issues. In        transformation and a fading memory [47].
+                                            particular, a first distinctive aspect of quantum measure-
+                                            ments is that expectation values require an ensemble of            Recently, reservoir computing has been extended to
+                                            copies of the system. Indeed, in most quantum tech-             the quantum regime considering several models rang-
+                                            nologies including computation [14], sensing [15, 16], or       ing from qubits to fermions and bosons, modeling pho-
+                                            communications [17–19], different approaches to optimize        tonic, atomic and solid-state platforms [48, 49]. Theoret-
+                                            and reduce the number of measurements have been re-             ical proposals display successful performances of quan-
+                                            cently reported [20, 21] also including classical machine       tum reservoir computing (QRC) in genuine temporal
+                                            learning tools [22–25]. A second distinctive aspect to          tasks [50–55] and in generalization and classification ones
+                                            deal with is that a measurement performed on a quan-            [49, 56–61], an approach known as extreme learning ma-
+                                            tum system generally alters its state [26–29]. This mea-        chine. A first experimental implementation of a static
+                                            surement back-action has deep consequences when mon-            classification task has been realized with NMR of a nu-
+                                            itoring a system, beyond a single input-output setup and        clear spin ensemble in a solid [62], while the first ex-
+                                            has been addressed for instance in feedback control [13]        ploration of temporal series processing with QRC was
+                                            or in quantum error correction [30, 31]. Our goal here          recently reported on a quantum digital computer [52].
+                                            is to introduce a quantum measurement framework for             The potential of exploiting present NISQ devices [3, 63]
+                                            temporal series processing considering both accuracy and        is indeed one of the motivations for QRC [50]. Still, in
+                                            back-action.                                                    order to establish the most promising avenues towards
+                                             Many prominent tasks in the context of (classical)             quantum approaches a daunting question is how to ef-
+                                            machine learning deal with time-series processing, like         ficiently monitor and extract meaningful information in
+                                                                                                                                     2
+
+   (a)                                (b)                           Restarting Protocol (RSP)
+                    output
+                                                                    Vk+1                                                     Vk+2
+                  reservoir
+                                            s0    s1      sk+1                         s0         s1      sk+1   sk+2
+                    input
+
+   (c)                        Rewinding Protocol (RWP)                           (d)              Online Protocol (OLP)
+
+                                                                                                                 Vk+1     Vk+2
+                               Vk+1                                 Vk+2
+
+
+           s1      sk+1                           s2      sk+2
+                                                                                       s0          s1     sk+1    sk+2     sk+3
+
+
+
+FIG. 1. (a) Schematic representation of QRC, in input, reservoir and output layers. (b)–(d) Measurement restarting, rewinding
+ond online protocols (RSP, RWP and OLP) for consecutive measurements at time steps k + 1 and k + 2 in one ensemble
+realization. For the RSP (b), at each output time step, all the sequence processing is repeated (Nt time steps to gather the
+output k + 1, Nt + 1 time steps to gather k + 2, etc.). For the RWP (c), Nwo steps of the sequence are repeated for each output
+time step. For the RWP the choice of the reset state at tk − τwo has no effect on the output (here we set it to ρ0 ). For the OLP
+with weak measurement (d), the evolution is continuously monitored without repeating any part of the reservoir evolution.
+
+
+such experimental platforms, when including the effect            for time series processing in tasks requiring respectively
+of quantum measurement. The scope of this work is to              memory or forecasting capabilities. Conclusions and fu-
+address this point by proposing different measurement             ture perspective are discussed in Sec. III.
+protocols and to identify the most promising ones for
+implementation, also addressing the crucial issue of the
+required resources.                                                                         II.        RESULTS
+   Continuous time-series processing needs to be not only
+efficient in terms of time and energy resources (repeti-             A.    Restarting, rewinding and online protocols
+tions, ensemble size) but also reliable in spite of measure-
+ment back-action, being these often competing require-               All QRC architectures [48] for time series processing
+ments. The presence of noise due to finite ensembles              proposed so far share the common feature of information
+is common to most quantum technologies and has also               extraction based on quantum measurement at the output
+been considered in proposals of QRC [56, 57, 64, 65]. In          layer, Fig. 1(a). In this section, we present three differ-
+time-series processing, the back-action of measurement            ent measurement protocols of a quantum system driven
+for continuous monitoring (i.e. introducing the measure-          by a sequence of (classical or quantum) inputs, as illus-
+ment map for each processing time step) becomes a fur-            trated in Fig. 1(b)–(d), being most considerations gen-
+ther crucial factor for realistic implementations, still to       erally valid for any monitored quantum system, also be-
+be addressed. Here, we will explore protocols based ei-           yond QRC. We formally describe the evolution of a quan-
+ther on repeating (part of) the reservoir dynamics or on          tum system state in discrete time steps, with k = t/∆t
+weak measurements [66, 67], known to be noisier and less          labeling the input injection sequence, by means of the
+informative than projective ones, but with the advantage          recurrence relation
+to perturb less the state, therefore preserving time infor-
+mation in the system. In this work, we analyze the effect                                    ρuk = Lk [ρuk−1 ]                      (1)
+of quantum measurement for realistic QRC, assessing the
+required resources for temporal series processing (consid-        for the unperturbed (u) state dynamics, i.e., in the ab-
+ering both finite ensemble and back-actions issues) with          sence of any measurement process. The superoperator
+analytical and numerical methods (Sec. II). Considering           Lk can account both for a unitary evolution as well as
+different protocols (Sec. II A) based on both projective          for the interaction with an additional external environ-
+and weak measurements (Sec. II B) and taking into ac-             ment. The input, sk in Fig. 1, can be introduced either
+count their accuracy (Sec. II C), we will identify success-       through the sequential update of the state of part of the
+ful strategies leveraging performance and resource effi-          system state [50] or by means of a control Hamiltonian
+ciency. In Sects. II D and II E, we illustrate these aspects      or dynamical parameter [52, 68].
+                                                                                                                               3
+
+  In an ideal case, at each time step, information is ex-         For this purpose, we consider the possibility to continu-
+tracted through the expectation value of any observable           ously monitor the quantum trajectories of the evolving
+operator Ô over an infinite ensemble                             QRC by introducing weak quantum measurements.
+                                                                   If information is extracted at the output layer through
+                    hÔi∞  ≡ Tr   Ôρ u
+                                          .                (2)    projective measurements of all the reservoir physical
+                        ρu            k
+                         k
+                                                                  units, then most coherence is lost also erasing informa-
+                                                                  tion of previous inputs. As a strategy to overcome this
+In any implementation, however, the expectation value             extreme back-action effect, the QRC can be monitored by
+can be inferred only from a finite number, Nmeas , of iden-       preserving part of its fading memory either considering
+tical copies of the quantum system and the estimated              weak measurements or projectively measuring only part
+value suffers from a statistical error that represents a          of the reservoir nodes (indirectly measuring the rest of
+first major experimental limitation. The second issue of          the reservoir) [66, 70]. Both approaches are actually re-
+paramount relevance is represented by the disturbance             lated [13] and here we will focus on the case of a tunable
+introduced by a quantum measurement, which modifies               weak measurement. Then, alternating input injection
+the “unperturbed” dynamics of Eq. (1) at each time step           and output extraction –as in classical RC– we propose
+k. A common way to circumvent this back-action is-                an online time series processing protocol based on weak
+sue, –where the effect of quantum measurement is not              measurement, as represented in panel (d) of Fig. 1.
+accounted for– is through the reinitialization of the dy-            For a single realization of the online protocol (OLP),
+namics after each measurement, as usually implicit in             the monitored state ρVk (for which we drop the apex ‘u’)
+QRC proposals so far [48]. As a drawback, one would               evolves following a quantum trajectory characterized by
+need to repeat the experiment Nmeas times for each of             the (stochastic) measurement outcomes Vk :
+the time steps tk of the input time series to be processed.
+This scheme, which we will refer to as the restarting pro-                                  (MVk ◦ Lk ) [ρVk−1 ]
+tocol (RSP), is sketched in Fig. 1(b). It was used in the                       ρ Vk =                            ,         (3)
+                                                                                          Tr (MVk ◦ Lk ) [ρVk−1 ]
+quantum digital computer implementation in Ref. [52].
+   A significant improvement with respect to the RSP can          where the effect of the measurements on the system is
+be attained in reservoir computing considering its dy-            determined by the form of the superoperator MVk (see
+namical features, and in particular the echo state prop-          also Eq. (5)) and the state ρVk is properly normalized
+erty, that is its ability to process time series indepen-         to have unit trace. The mixed state that accounts for all
+dently on the initial state ρ0 of the reservoir [69]. We          possible measurement outcomes at time step k, assuming
+introduce the washout time τwo , as the time necessary for        an infinite ensemble of realizations, is given by:
+the dynamical system to lose any information from initial                 Z ∞                  Z ∞
+conditions, so that the reservoir computer depends effec-           ρk = dVk ρVk P (Vk ) = dVk (MVk ◦ Lk ) [ρk−1 ],
+tively on the input recent history, a property also known                  −∞                        −∞
+as fading memory (Fig. 1(b)). This suggests that a more                                                                 (4)
+efficient strategy than the RSP is to limit the repetition        where the details of the derivation from Eq. (3) can be
+time to the shorter washout time, restarting the dynam-           found in Appendix A. The expectation values of opera-
+ics from tk − τwo instead of t0 [52]. This rewinding proto-       tors in the OLP can be immediately generalized by re-
+col (RWP) is devised to optimize the resources needed to          placing the unperturbed state ρuk of the RSP and RWP
+overcome the measurement feedback by re-initialization            with the monitored state ρk , accounting for the measure-
+and is characterized by a sliding repetition time inter-          ment back-action.
+val τwo with an associated number of input injections
+Nwo ≡ τwo /∆t (Fig. 1(c)).
+                                                                                B.       Monitored qubit system
+   In both RSP and RWP, the measurement outcomes,
+Vk l , at each time step k and for several realizations
+l = 1, ..., Nmeas , allow one to approximate the expec-             In order to account for the measurements during the
+tation value of the observables as an average over a large        dynamics of the system with the OLP, we introduce in
+number of measured values hÔiN         meas
+                                             with a precision     Eq. (3) the following measurement superoperator:
+                                    ρu
+                     √                 k
+proportional to 1/ Nmeas . In other words, the statis-                                   MVk [ρ] = Φ̂Vk ρΦ̂†Vk .             (5)
+tical uncertainty limits the approximation to the ideal
+                                                       − 12
+                                                            
+expectation values as hÔi∞   u  =  h Ôi Nmeas
+                                           u    + O  N meas   .   Given a system of N qubits, single-qubit measurements
+                             ρk           ρk
+                                                                  in a single realization are described by the Kraus oper-
+These protocols are designed so that the measurement
+                                                                  ators Φ̂Vk = Ω̂V (0) ⊗ · · · ⊗ Ω̂V (N −1) , which give a set of
+back-action does not need to be taken into account but                               k                 k
+                                                                                                       (i)
+require to repeat, for each input injection, part or all          measurement results Vk l = {Vk l }, with i = 0, ..., N − 1,
+of the processing sequence, requiring then to store these         where the indices k and l label the time step and the
+inputs in an external memory. An important question               experimental realization, respectively.
+arises in this context, is there a way to avoid restarting          We employ indirect measurements already imple-
+(or rewinding) the process after each output extraction?          mented experimentally in diverse platforms [49, 70–74].
+                                                                                                                                   4
+
+For instance, the state of a superconducting qubit cou-             reservoir consists of a qubit network unitarily evolv-
+pled to a cavity is indirectly measured by probing the              ing under the disordered transverse-field Ising Hamilto-
+cavity with a microwave signal [70–73]. In the trapped              nian [50, 53], while the input is injected into the system
+ion experiment in [74], the information about the elec-             by rewriting a node state ρin
+                                                                                                k . The system parameters are
+tronic states is extracted from their interaction with the          chosen in such a way that the reservoir is found in the
+vibrational motion. For all these platforms, indirect mea-          ergodic dynamical phase, which has been shown to guar-
+surements in the z direction can be modeled by means of             antee optimal QRC performances [53]. Different realiza-
+the following operator:                                             tions of the reservoir produce similar results. Full details
+                                                                  are given in Appendices C and D. By using Eqs. (8) and
+     z      1       −
+                      (V −g)2
+                                          −
+                                            (V +g)2
+                                                                    (9), we find that the explicit dependence on the input
+   Ω̂V = √        e      4    |0i h0| + e      4    |1i h1| , (6)
+          4
+            2π                                                      and on g of the components of ρk is translated to the
+                                                                    observables as (see Appendix A):
+where g is the tunable strength of the measurement and
+V is the measurement outcome, both normalized with                                 N
+                                                                                   X          N −n 2
+the two Gaussians width. Measurements in the x and y                    hÔi∞
+                                                                            ρk =         e−     2 g    (An + Bn sk + Cn rk ) ,   (10)
+directions can be obtained by means of rotations (see Ap-                          n=1
+pendix B). From Eq. (6), the probability distribution for                                                          p
+an outcome V , when we measure a qubit in the reduced               where sk is the kth input injected, rk ≡ sk (1 − sk ),
+state ω, Pz (V ) = Tr(Ω̂z†  z                                       and the matrices An , Bn , and Cn depend on the state
+                        V Ω̂V ω), is:
+                                                                    ρk−1 , as it was found in the absence of measurement in
+                1  (V −g)2          1  (V +g)2                      Ref. [75]. Iterating these relations, it is then found that
+ Pz (V ) = ω00 √ e− 2 + (1 − ω00 ) √ e− 2 , (7)                     no further nonlinearities beyond the polynomials of rk
+                2π                  2π
+                                                                    and sk with different k are introduced in the measure-
+where ω00 = h0|ω|0i, and whose outcomes are sampled                 ment process. The exponential factors of Eq. (10) ef-
+from a weighted sum of two Gaussian distributions (at               fectively determine the amount of measurement-induced
+distance 2g) depending on the state before the measure-             back-action introduced in the system, being all equal to
+ment. Therefore, in the limit of large g, the projective            1 in the unperturbed case.
+case is approached and most outcomes V can be unam-
+biguously assigned to one of the two distributions. How-
+ever, if g is small, the measurement is weak and the                               C.    Measurement accuracy
+two distributions largely overlap making the measure-
+ment less informative. With the outcomes obtained from                 In the previous discussion, we have anticipated two
+indirect measurements, we can compute the expectation               main experimental limiting factors to the detection of
+values of the observables. For instance, when we mea-               the expected values of the system observables: (i) the fi-
+sure a single qubit
+               R ∞ with state ω in the z direction, we              nite number of stochastic measurements in the ensemble,
+have hV izω = −∞ V Pz (V ) dV = ghσ̂ z iω . The expecta-            affecting all the protocols of Fig. 1, and (ii) the mea-
+tion values of two-qubit observables are computed in a              surement weakness, which preserves better the state but
+similar way, as shown in Appendix B 2.                              limits the amount of information that can be extracted
+   By using Eq. (6) in Eq. (4) (see Appendix A), we can             and is particularly relevant for the OLP.
+evaluate the integrals and leave a clean formulation of                Within our measurement framework, for single-qubit
+the iterative map                                                   observables, these two sources of statistical uncertainty
+         Z ∞                                                        combine together to give an error up to (see Appendix B):
+   ρk = dVk Φ̂Vk Lk [ρk−1 ]Φ̂†Vk = M Lk [ρk−1 ], (8)
+           −∞                                                                                          s
+                                                                                                            g2 + 1
+where    represents the element-wise product and M is                                     s̄hσ̂i =                   ,           (11)
+                                                                                                           g 2 Nmeas
+defined as
+                                        g2
+                                           !                        while for two-qubit observables the statistical uncertainty
+                  ⊗N             1 e− 2                             reads:
+           M ≡ M̃ , M̃ =          g2
+                                             .    (9)
+                               e− 2    1                                                        s
+                                                                                                  g 4 + 2g 2 + 1
+                                                                                    s̄hσ̂⊗σ̂i =                  .         (12)
+This allows us to quantify the increasing decoherence in-                                            g 4 Nmeas
+troduced by sharper measurements, while for very small
+g the state is weakly perturbed.                                    The fact that more information is extracted with sharper
+   An interesting question is about the possible effect of          measurements (g  1) is reflected in a reduction in the
+measurement as a further non-linearity source for QRC.              statistical uncertainty in the observables when increasing
+In order to more clearly address this point, let us spe-            g, for a fixed number of measurements. For the RSP and
+cialize to the framework of QRC introduced in Ref. [50],            the RWP, this justifies the use of strong measurements,
+which will be also used in the following sections. The              approximately projective (e.g. g = 10). However, for
+                                                                                                                                         5
+
+the OLP a careful assessment is needed, taking into ac-                                  g = 0.3                            g = 10
+count that measurement back-action in general leads to                        (a)                               (b)
+deviations from the unperturbed dynamics, erasing infor-                0.2
+
+
+
+
+                                                                 hσ̂2z i
+                                                                          0
+mation. Equations (11)-(12) also tell us that the degree               -0.2
+of precision depends on the kind of observable chosen.                  0.2
+
+
+
+
+                                                                 hσ̂1z i
+                                                                          0
+Indeed, taking a weak value g  1, the same uncertainty                -0.2
+obtained with Nmeas ∼ g −2 for single-qubit observables                 0.2
+
+
+
+
+                                                                 hσ̂0z i
+would require Nmeas ∼ g −4 in the case of two-qubit ob-                   0
+                                                                       -0.2
+servables.
+                                                                              (c)                               (d)
+                                                                      0.05
+
+
+
+
+                                                                 hσ̂2xi
+    In order to appreciate the way back-action and the two               0
+sources of statistical uncertainty (i) and (ii) affect the           -0.05
+OLP, we plot in Fig. 2 the dynamics of some observables               0.05
+
+
+
+
+                                                                 hσ̂1xi
+and compare them with the ideal quantities. The finite                   0
+                                                                     -0.05
+number of measurements is responsible for small devia-                 0.1
+tions (not visible in the plot), namely, s̄hσ̂i ≈ 2 · 10−3 in
+
+
+
+
+                                                                 hσ̂0xi
+                                                                      0.05
+                                                                         0
+panels (a) and (c), and s̄hσ̂i ≈ 8 · 10−4 in (b) and (d).                           960 970 980 990 1000              960 970 980 990 1000
+Actually, as we will show below, these seemingly small                                                   t/∆t
+fluctuations have an important impact for machine learn-
+ing purposes. The most apparent discrepancies are due            FIG. 2. Single-qubit observables of the first three qubits of the
+to measurement back-action and are shown in Fig. 2(d),           system with N = 6 in the (a)-(b) z and (c)-(d) x directions.
+between the (OLP) measured and the (RSP and RWP)                 Solid lines correspond to the ideal values (Nmeas → ∞) with
+unperturbed values. Back-action impact is rooted in the          (black) the effect of measurements on the system (OLP) and
+reservoir state features and finally in its operation regime:    (grey) the unperturbed case (RSP and RWP), respectively.
+In the z-direction, in panels (a) and (b), this effect is less   In symbols, the values obtained by numerically simulating
+important because the qubits are mostly aligned along z          the measurement process with Nmeas = 1.5 · 106 in the OLP.
+due to the reservoir parameter choice [53]. If the mea-          Panels (a), (c) correspond to a weak measurement strength,
+surements are done in a different direction, i.e. to gather      g = 0.3; whereas in panels (b), (d) strong measurements,
+                                                                 g = 10, are performed. The input is encoded into the state of
+hσ̂ix i and are sharp (Fig. 2(d)), they introduce strong de-
+                                                                 qubit 0 (see Appendix C).
+coherence leading to the strong deviation with respect to
+the unperturbed state. Only with sufficiently weak mea-
+surements, as in Fig. 2(c), the (unperturbed) dynamics is                           D.   Short-term memory capacity
+qualitatively and approximately preserved with the OLP.
+A similar discussion also applies to more general observ-
+ables, like two-qubit observables (see Appendix E). These           In the previous sections, we have analytically as-
+analytical and numerical findings hint at the fact that a        sessed measurement effects and we are now applying this
+weak measurement is the only viable option for the OLP.          framework to QRC assessing its memory (this section)
+                                                                 and forecasting (next section) capabilities. In order to
+                                                                 identify the accuracy limitations and back-action effects
+                                                                 of measurements, we consider the short-term memory
+    An important consequence of Eq. (9) is that, for g  1,      (STM) task. This allows us to establish the reservoir
+the ideal state (monitoring an infinite ensemble) is weakly      efficiency in storing past information, that is, the fading
+perturbed, as M approaches the unity matrix with all             memory crucial for effective reservoir computing. Given
+components 1. Intuitively, the disturbance introduced by         the input sequence {sk } of random numbers generated
+such measurement is so weak that almost no information           from a uniform distribution, the task is to reproduce the
+is lost during the online processing. With finite mea-           target values
+surement ensembles Nmeas , the error associated to this
+unsharp measurement is larger than in the √     unperturbed                                        yk = sk−τ ,                        (13)
+state (e.g. s̄hσ̂i in Eq. (11) is larger than 1/ Nmeas ). In-
+terestingly, in the ideal case (infinite resources) informa-     where τ is the delay. The predictions are obtained
+tion would still be extracted with a limit vanishing error       with different measured observables (for instance hσ̂ix i,
+s̄hσ̂i . Building on this analysis, the estimation of observ-    or hσ̂iz σ̂jz i) for all qubits i, j = 1, N and comparing RSP,
+ables experimentally accessible with finite measurements         RWP and OLP. As usual, the performance is quanti-
+can be numerically emulated adding the proper Gaussian           fied comparing predictions, ỹ = {ỹk }, and target values,
+noise to the ideal ones, hÔi∞  ρk . The comparison between      y = {yk }, through the normalized correlation, namely
+either performing numerically an ensemble over Nmeas in-         the capacity C(τ ) ∈ [0, 1]. Perfect STM at delay τ cor-
+dependent trajectories or adding a Gaussian noise to an          responds to C(τ ) = 1. More details in Appendix C.
+ideal infinite ensemble (with standard deviation given by           The STM capacity for increasing delays is shown in
+either Eq. (11) or (12)) will also be verified below.            Fig. 3(a), for single-qubit observables in the output layer.
+                                                                                                                                                          6
+
+               (a) hσ̂iα i                OLP, g = 10            RWP, g = 10                 in Fig. 3(a)), the capacity instead reaches larger delays
+        1.0                                                                                  (τ = 4). Therefore, the ideal OLP with g = 10 does
+        0.8                               OLP, g = 0.3           RSP, g = 10                 not achieve the memory obtained with the other proto-
+        0.6                                                      Unperturbed                 cols due to back-action: continuous sharp measurements
+C
+
+
+
+        0.4                                                                                  erase reservoir information encoded in quantum coher-
+        0.2                                                                                  ences and correlations (Fig. 2(d)).
+        0.0                                                                                      The input sequence to the QRC and the ability to re-
+                1         2      3    4       5       6     7     8    9         10          produce past inputs in the OLP are shown in more detail
+                                                  τ                                          in Fig. 3(b) and (c), for the STM capacity at delay τ = 2.
+                                 g = 0.3                           g = 10                    For weak measurement (b), all qubits observables (σ̂ x , σ̂ y ,
+                (b)           C xyz = 0.781           (c)       C xyz = 0.214                and specially σ̂ z ) contribute to the capacity C(τ = 2),
+                                  z
+                               C = 0.451                            z
+                                                                 C = 0.212                   while sharp measurements (large g) hinder the ability of
+        1.00                                                                                 the output to reproduce the target. On the one hand,
+        0.75                                                                                 Fig. 3(b) also tells us that, despite the state is mostly
+y, ỹ
+
+
+
+
+        0.50                                                                                 aligned in the z direction [53], the reservoir is far from
+        0.25                                                                                 approaching the classical regime, where quantum coher-
+        0.00                                                                                 ences would be negligible. Indeed, significant contribu-
+                    970        980     990        1000 970       980       990        1000   tions to the capacity come from all the qubit directions
+                                                   t/∆t                                      (more details are given in Appendix F). Intuitively, even
+                                                                                             though such coherences are small with respect to the pop-
+FIG. 3. (a) STM capacity from single-qubit observables de-                                   ulations (see also Fig. 2), they still provide significant
+pending on the delay τ obtained with the different protocols                                 richness to the reservoir output (being larger than the
+and Nmeas = 1.5 · 106 measurements (symbols). The ideal                                      statistical uncertainty of the measurement process). On
+capacities (Nmeas → ∞), are represented with a solid line                                    the other hand, we see in Fig. 3(c) that if such coherences
+in the corresponding color; the unperturbed situation is in                                  are further hindered by stronger back-action (falling be-
+black. The dashed green line corresponds to estimated val-                                   low the statistical noise, then the capacity reached with
+ues obtained from the observables in the limit Nmeas → ∞                                     σ̂ z (C = 0.21) does not improve when also considering
+but adding a Gaussian noise. Indices of label hσ̂iα i refer to                               σ̂ x and σ̂ y .
+i = 0, ..., N = 6 and α = x, y, z. In (b) and (c), target val-
+                                                                                                 The overall performance of the STM task is quantified
+ues (grey filled circles) are shown with predictions (colored
+unfilled symbols) for the STM task at τ = 2 obtained with                                    in Fig. 4 by the sum capacity accounting for the total
+the OLP and weak measurements (b), and strong measure-                                       memory at all delays (equivalent to truncating at 10 as
+ments (c), both with single-qubit observables. All data shown                                C(τ > 10) ∼ 0)
+correspond to the test data set.                                                                                          X
+                                                                                                                    CΣ ≡      C(τ ),                (14)
+                                                                                                                            τ
+
+The performance when neglecting any perturbation in-                                         as a function of g, considering both single-qubit and two-
+troduced by measurement (black line) progressively de-                                       qubit observables. In the infinite-measurements limit,
+cays, showing the ability of the reservoir to store past                                     the OLP (solid lines) in Fig. 4(a) displays maximum
+information up to about six previous steps (consistently                                     memory CΣ for g → 0+ , when the system becomes effec-
+with the network size N = 6 [76]). This STM capacity                                         tively unperturbed (no back-action effect, see Eq. (6)).
+can be achieved with the RWP and the RSP with high                                           However, in realistic implementations with a finite num-
+accuracy for Nmeas = 1.5 · 106 . We remark that values                                       ber of measurements, the statistical uncertainty diverges
+of Nmeas ranging from 104 to 106 are in accordance with                                      in this extremely weak (non-informative) measurement
+experiments of quantum computation [14] and quantum                                          limit as shown in Eq. (11). Then, the optimum sum ca-
+machine learning [5]. When continuously monitoring the                                       pacity is achieved at a larger g value, depending on Nmeas ,
+system in the OLP, the effect of measurement back-action                                     where the output expectation values are more accurate
+becomes critical and for sharp measurement (g = 10)                                          but at the same time the back-action is not too strong.
+the performance is significantly hindered. Remarkably,                                       Indeed the larger Nmeas , the weaker the measurement
+this limitation is overcome with weak measurements and                                       that maximizes the capacity. With Nmeas = 1.5 · 106 , the
+the STM capacity achieved for g = 0.3 is approaching                                         optimal measurement strength is found around g = 0.3
+the unperturbed case. Therefore, weak measurements                                           for one-qubit observables (black diamonds).
+preserve short memory performing this online temporal                                           Two-qubit correlations can also be exploited for QRC,
+task, sequentially injecting new inputs and continuously                                     and, in the ideal limit (solid purple line in Fig. 4(a)) they
+extracting information. The explanation of the hindered                                      reach a larger memory capacity than single-qubit ones,
+performance for strong measurement (g = 10) is shown                                         as expected for a larger number of observables. However,
+to be due to both back-action and statistical noise, with                                    these correlations are smaller and subject to a more sig-
+C decaying strongly for τ = 2. Assuming infinite accu-                                       nificant statistical uncertainty. Therefore, with a finite
+racy (ideal case of infinite Nmeas , green continuous line                                   number of measurements, the performance is actually
+                                                                                                                                               7
+
+                                                                                      of the capacity (green line in Fig. 4(b)), which seems to
+                           hσ̂iα i:         OLP,          RWP,      RSP
+                                                                                      saturate to a lower value than the one corresponding to
+                     hσ̂i ⊗ σ̂jα i:
+                        α
+                                            OLP,          RWP,      RSP               the Nmeas → ∞ limit.
+             (a)                                                                         In order to analyze the real amount of resources de-
+         5                                                                            manded by each protocol, it is meaningful to quantify
+                                                                                      the time needed for each experimental realization (see
+         4
+                                                                                      Appendix G, Eqs. (G1)–(G3)) and not only the ensem-
+CΣ
+
+
+
+
+         3                                                                            ble size Nmeas . The required experimental time for each
+                                                                                      measurement protocol is shown in Fig. 4(c) for the case
+         2
+                                                                                      of a single-observable output layer. As expected, the
+         1                                                                            RSP is not efficient, while both the OLP and the RWP
+                                                                                      achieve a good performance with the same resources, if
+         0                                                                            the measurement is weak in the online approach (OLP
+          0           0.25      0.5         0.75          1      1.25      1.5 10
+                                                g                                     with g = 0.3). Indeed it is interesting to compare the
+                                                                                      OLP and the RWP by finding the value of g such that
+                   RSP, g = 10               OLP, g = 0.3               Unperturbed   tOLP      RWP
+                                                                                       exp ≤ texp     while also imposing the same statistical
+                   RWP, g = 10               OLP, g = 10                              uncertainty in both cases. This leads to finding a cri-
+         (b)                                        (c)
+                                                                                      terion to determine the minimum measurement strength
+     4                                                                                for online processing to be advantageous with respect to
+                                                                                      rewinding. The relevant quantity to this aim is the num-
+     3
+                                                                                      ber of washout steps Nwo , (Appendix G) that, as shown
+CΣ
+
+
+
+
+     2                                                                                in Sec. II A, defines the finite memory of the reservoir.
+                                                                                      For single-qubit observables we find
+     1
+                                                                                                               r
+     0                                                                                                                1
+     102       103     104 105        106    ∞     0.0    0.1 0.2 0.3 0.4                                  g≥              .               (15)
+                                                                                                                   Nwo − 1
+                         Nmeas                              texp /(∆t · 1010 )
+                                                                                      This is a necessary condition to be successful in online
+FIG. 4. (a) STM sum capacity depending on g for different                             processing (with less resources than the RWP), while
+kind of observables. For the OLP, solid lines represent the                           it will be sufficient if the corresponding measurement
+values when Nmeas → ∞ associated to the unfilled symbols in
+                                                                                      is weak enough to have negligible back-action effects in
+the same color for the Nmeas = 1.5 · 106 case. Vertical dashed
+lines represent the values of g = 0.3 (red), g = 0.5 (orange),
+                                                                                      the OLP. For instance, if the washout steps amount to
+and g = 10 (green). The capacities of the RWP and the RSP                             Nwo = 20, the measurement strength in Eq. (15) is
+are nearly identical. This figure has also been reproduced for                        g & 0.23 producing negligible back-action. Indeed the red
+100 realizations of the random couplings of the Hamiltonian,                          line of Fig. 4(c) of best capacity corresponds to g = 0.3.
+see Fig. 6. In (b), CΣ is plotted as a function of the number                         The bound in g for efficient OLP also depends on the kind
+of measurements; in (c), depending on the experimental time                           of observables considered. The analogous condition for
+required. Single-quibt observables, hσiα i, are used in (b) and                       two-qubit observables is more restrictive, i.e. a stronger
+(c), with α = x, y, z and i = 1, ..., N = 6. All data shown                           measure is needed, as described in Appendix G and fur-
+correspond to the test set.                                                           ther discussed in Appendix E.
+
+
+worse than for single qubit observables (symbol lines). Of                                     E.   Chaotic time series forecasting
+course, we also see that in this case there is further room
+for improvement by increasing Nmeas . This is a key point                                After the analysis of the STM task, we quantify the
+in view of experimental implementations as, beyond the                                capacity of the QRC system to make forward predictions
+performance achievable in QRC when considering quan-                                  on the Santa Fe laser time series, corresponding to a NH3
+tum measurements, it is critical to quantify the amount                               laser in a chaotic dynamical state [77]. This benchmark
+of needed resources. In Fig. 4(b), we represent the sum                               dataset originates from a time-series forecasting compe-
+capacity as a function of the number of measurements,                                 tition held at the Santa Fe Institute in the 1990s [78] and
+showing that with the OLP limited to weak measure-                                    it has been used extensively ever since. Formally, our
+ments (red line), as well as with the RSP and the RWP,                                target is written as
+the sum capacity increases as soon as the statistical un-
+certainties become negligible and until the corresponding                                                    yk = sk+η ,                    (16)
+upper bound is approached. Indeed, while for ensemble
+sizes Nmeas ∼ 104 , reset protocols perform better, all the                           where η labels the number of steps forward to make the
+RSP, the RWP and the OLP with g = 0.3 reach ideal                                     predictions. The original values of the Santa Fe series
+capacities for Nmeas ∼ 106 . In contrast, the use of strong                           were shifted and normalized such that {sk } ∈ [0, 1] (see
+measurements with the OLP leads to a slow convergence                                 Appendix C).
+                                                                                                                                         8
+
+        1.0 (a) Unperturbed           η=1                   (b)               Santa Fe laser time series, i.e. at η ≈ 7 and η ≈ 14.
+        0.8                                            0.2                    As shown in the previous section for the STM task, the
+                                      C = 0.98
+        0.6                                            0.1                    perturbative nature of a sharp quantum measurement
+
+
+
+
+                                                   y − ỹ
+y, ỹ
+
+
+                                                       0.0                    (e.g. g = 10) erases part of the QRC memory on the in-
+        0.4
+                                                      −0.1                    put history. The results presented in Fig. 5(c) illustrate
+        0.2
+                                                      −0.2                    that such a memory loss also impacts the forecasting ca-
+        0.0                                                       1480 1520
+                                                                              pabilities of the QRC, with the prediction capacity for
+                                                                    t /∆t
+               1460         1480 1500       1520                              g = 10 falling below the one for g = 0.3. Interestingly, in
+                                t /∆t                                         the limit of infinite measurements, the capacity for the
+                                                                              weak measurement matches the one of the unperturbed
+            1.00                                                              system and there is no significant back-action effect on
+                       (c)                         Unperturbed                future predictions. The considerably good capacity ob-
+                                                   OLP, g = 0.3
+            0.75                                   OLP, g = 10                tained with the simulated experimental data with weak
+                                                                              measurements in Fig. 5(c) (red symbols) could be im-
+        C
+
+
+
+
+            0.50                                                              proved with more measurements to eventually approach
+                                                                              the upper bound (solid red line).
+            0.25
+                   1    3     5   7     9    11 13 15 17 19
+                                                                                               III.   CONCLUSIONS
+                                            η
+
+FIG. 5. (a) One-step forward predictions and (b) prediction                      The potential advantage in processing temporal data
+errors on the Santa Fe time series for a part of the test data                sequences with quantum systems in reservoir computing
+when the observables of the unperturbed quantum reservoir                     is rooted in the large processing capability opened by
+are employed. In panel (a), target values correspond to grey                  their Hilbert space [48, 50]. Here, we provide the first ev-
+filled circles and predictions to black unfilled circles. (c) Ca-             idence that this advantage can still be achieved beyond
+pacity of predictions, C, depending on the number of time                     ideal situations, when including the effect of quantum
+steps forward η. In panel (c), the OLP with g = 0.3 and                       measurement, paving the way to experimental demon-
+g = 10 is used, respectively, to estimate the observables with                strations of sequential data processing both in memory
+Nmeas = 1.5 · 106 measurements at each time step. The limit                   and forecasting tasks. We have analyzed protocols where
+case for g = 0.3 with Nmeas → ∞ is represented with a solid
+                                                                              after each detection the reservoir dynamics is repeated
+red line; the unperturbed situation is in black. The dashed
+red and green lines correspond to estimated values obtained
+                                                                              for the whole past input sequence [52, 55] (named restart-
+in the limit Nmeas → ∞ but adding a Gaussian noise to the                     ing protocol, RSP) or for the last part of it, exploiting
+observables. The values of the capacities correspond to the                   the fading memory of the reservoir (rewinding protocol,
+test data.                                                                    RWP). An alternative proposal is based on weak mea-
+                                                                              surements, allowing for online data processing (OLP)
+                                                                              without repeating dynamical steps or storing any inputs
+   In Figs. 5(a) and (b), we illustrate the performance of                    externally.
+the QRC for one-step forward predictions with the un-                            For time series processing, the impact on the task ac-
+perturbed system. By considering together both single-                        curacy (i) of statistical noise (ensemble size), (ii) of mea-
+qubit and two-qubit observables, a remarkable capac-                          surement weakness, and (iii) of the back-action for con-
+ity of C = 0.98 is reached. A similar accuracy can be                         tinuous monitoring, need to be taken into account to de-
+obtained with the RSP or the RWP. The prediction of                           sign a quantum reservoir computer with a good compro-
+the Santa Fe time series is particularly challenging when                     mise between performance and resource cost. Optimum
+there is a jump from large to low amplitude oscillations,                     performance has been shown to be reachable beyond ideal
+see t/∆t ∼ 1500 in Fig. 5(a). Accordingly, the most ap-                       assumptions both in the RSP and RWP, with projective
+preciable differences in Fig. 5(b) between the target and                     measurements and buffering input data, as well as in the
+the predicted values are found when there are sudden                          OLP with (weak) monitoring. The distinctive feature
+changes in the amplitude of the signal, which are never-                      of the OLP is the online operation, without storing any
+theless mostly captured by the predicted values.                              input, either classical or quantum. This is particularly
+   The quality of further future predictions (η ≥ 1) is                       advantageous in platforms where system ensembles can
+shown in Fig. 5(c), where we have concentrated on the                         be measured at the output layer, at each input injection,
+study of the results obtained with the OLP in compar-                         as for atomic/molecular ensembles [79] or in multimode
+ison to the unperturbed situation (ideally retrieved by                       (pulsed) photonics [80], where fully online time series pro-
+the RSP and the RWP). The prediction task becomes                             cessing with weak measurements could be realized.
+more complicated as the prediction distance η increases.                         Online weak measurements enable us to partially pre-
+Accordingly, the goodness of the predictions decreases                        serve quantum coherences in the OLP. They can be im-
+with increasing η. As an exception, there are local max-                      plemented for different reservoirs, with a prominent ex-
+ima in the capacity due to the quasi-periodicity in the                       ample of superconducting qubits and trapped ions, where
+                                                                                                                                 9
+
+the strength of the measurement can be tuned through                    Appendix A: Equations of the ideal case with
+the interaction time between system and measurement                                    back-action
+apparatus [73, 74], or through the reflectivity in the pho-
+tonic memristor set-up in Ref. [49]. Alternative strategies            Here, we will derive the equations for the ideal case
+for continuous monitoring time series could be considered           of sampling an infinite number of measurements, but in-
+depending on the choice of the physical reservoir, as for           troducing the effect of the back-action. In particular,
+instance detection based on quantum jumps, while quan-              Eqs. (4), (8), (9) and (10) are obtained step by step. We
+tum non-demolition measurements could be used but are               start by Eq. (4):
+typically limited in the number of accessed observables.                         Z ∞
+In general quantum trajectories have been successfully
+                                                                           ρk = dVk ρVk P (Vk )                             (A1)
+implemented in a variety of contexts [72, 81–84] laying                           −∞
+the grounds for monitored QRC experiments, as recently                        Z ∞ Z ∞
+proposed for non-temporal tasks [56].                                       = · · · dVk · · · dV1 ρVk P (Vk , . . . , V1 ),
+                                                                                −∞    −∞
+    A further crucial aspect in view of experimental im-
+plementations of high performance QRC is the efficiency             where we have applied the definition of a marginal
+in terms of experimental resources. The potential ad-               probability distribution, being P (Vk , . . . , V1 ) the joint
+vantage of QRC, given by the exponential size of the                distribution.       Then, this joint distribution can be
+Hilbert state, requires the use of higher-order terms               decomposed in terms of the conditional probabil-
+                   α
+hσ̂iαi ⊗ · · · ⊗ σ̂j j ⊗ σ̂lαl i that are typically of small mag-   ity of the last event, such that P (Vk , . . . , V1 ) =
+nitude and actually necessitate more resources to be ac-            P (Vk |Vk−1 , . . . , V1 )P (Vk−1 , . . . , V1 ). We are inter-
+curately determined. Depending on the reservoir fad-                ested in this factorization because of the denominator
+ing memory and the performing task, we find that the                of ρVk in Eq. (3). The term Tr (MVk ◦ Lk ) [ρVk−1 ]
+OLP with measurements of the proper strength could                  represents the probability of obtaining the outcome Vk
+exceed the performance of the RWP being efficient even              given the previous history of ρVk−1 . If we wrote this ex-
+for higher-order moments (ultimately exploiting the full            pression only in terms of the outcomes Vi , this would be
+size of the Hilbert space).                                         in fact the conditional probability P (Vk |Vk−1 , . . . , V1 ).
+                                                                    Gathering these definitions, we can finally derive Eq. (4):
+   Quantum models suited for QRC as the one studied                           Z ∞ Z ∞
+here are realized in state-of-the-art experiments, such as              ρk = · · · dVk · · · dV1 (MVk ◦ Lk ) [ρVk−1 ]
+in superconducting qubits [85] and trapped ions [86, 87].                      −∞    −∞
+Besides our particular scheme, the realistic measurement                P (Vk |Vk−1 , . . . , V1 )P (Vk−1 , . . . , V1 )
+framework analyzed here establishes the advantage of                              P (Vk |Vk−1 , . . . , V1 )
+quantum reservoirs beyond ideal scenarios, and is ex-                      Z ∞
+pected to have an impact on the experimental imple-                     = dVk (MVk ◦ Lk )
+mentations of previous [50–55] and future proposals of                      −∞
+                                                                        Z ∞ Z ∞
+time-series processing with quantum systems, including
+                                                                                                                              
+implementations of quantum recurrent neural networks.                       · · · dVk−1 · · · dV1 ρVk−1 P (Vk−1 , . . . , V1 )
+                                                                           −∞     −∞
+                                                                           Z ∞
+                                                                        = dVk (MVk ◦ Lk ) [ρk−1 ].                             (A2)
+                                                                            −∞
+
+                                                                    In the second to last equality, we have used the linearity
+                                                                    of the map (MVk ◦ Lk ) to introduce the integrals up to
+                ACKNOWLEDGMENTS                                     Vk−1 into the argument, and then write ρk−1 with the
+                                                                    definition of Eq. (A1).
+                                                                       Next, we derive Eqs. (8) and (9). We begin from the
+  We acknowledge the Spanish State Research Agency,                 last line of Eq. (A2), introducing the measurement oper-
+through the Severo Ochoa and Marı́a de Maeztu                       ators of Eq. (5):
+Program for Centers and Units of Excellence in                               Z ∞                         Z ∞
+R&D (MDM-2017-0711) and through the QUARESC
+project (PID2019-109094GB-C21 and -C22/ AEI /                          ρk = dVk Φ̂Vk Lk [ρk−1 ]Φ̂Vk = dVk Φ̂Vk ρ̃k Φ̂†Vk ,
+                                                                                                   †
+                                                                              −∞                            −∞
+10.13039/501100011033). We also acknowledge funding                                                                    (A3)
+by CAIB through the QUAREC project (PRD2018/47).                    where we just simplified notation with Lk [ρk−1 ] ≡ ρ̃k .
+GLG is funded by the Spanish Ministerio de Educación y             Equation (A3) is a compact way of writing the integral
+Formación Profesional/Ministerio de Universidades and              of a matrix, but what we are really computing is the
+co-funded by the University of the Balearic Islands                 following:
+through the Beatriz Galindo program (BG20/00085).                                        Z ∞ h
+The CSIC Interdisciplinary Thematic Platform (PTI) on
+                                                                                                            i
+                                                                                [ρk ]ij = dVk Φ̂Vk ρ̃k Φ̂†Vk ,         (A4)
+Quantum Technologies in Spain is also acknowledged.                                         −∞                    ij
+                                                                                                                                                   10
+
+where indices ij represent the matrix indices. Now, using                      As a remark, we can apply these results for measuring
+Eq. (6) for all qubits, i.e. in the z direction, it can be                  in any direction, not only the z direction. We just need to
+shown that the Kraus operator Φ̂Vk can be written as                        rotate the density matrix towards the direction where the
+                        X                                                   measurement is represented by the diagonal operator of
+                 Φ̂Vk =      fi (Vk ) |ii hi| ,       (A5)                  Eq. (A5). For example, measuring in the x direction, we
+                                  i                                         apply the Hadamard gates before (for the measurement)
+                                                                            and after (to return to the z basis):
+which is a diagonal operator in the z basis. Here fi (Vk )
+is a product of N gaussian distributions (see Eq. (6)),                                  ρk = H (M     (HLk [ρk−1 ]H)) H                   (A12)
+where N is the number of qubits and each gaussian is
+associated to the outcome of each spin. For example,                           Let us finally derive Eq. (10). Our goal is to see which
+for a system of N = 2 qubits, the function associated to                    g-factors could appear in the expression of the observ-
+                                                 (0)             (1)
+                                              (V
+                                                k
+                                                     −g)2   (V
+                                                                 k
+                                                                     −g)2   ables for a given input at time step k. We start from the
+the basis state |00i is f = (2π)−1/2 e−        4       e− 4   .             definition of expected value:
+By applying the measurement operators to the density
+matrix, we obtain that the matrix elements of the integral
+                                                                                                                              
+                                                                              hÔi∞
+                                                                                  ρk = Tr Ôρk = Tr Ô(M         ρ̃k ) = Tr Ôρ̃k .
+are
+       h                i                                                                                                        (A13)
+         Φ̂Vk ρ̃k Φ̂†Vk   = fi (Vk )fj (Vk ) [ρ̃k ]ij .    (A6)             The last equality is only true when we compute the ex-
+                            ij
+                                                                            pected value of an observable Ô in the same direction
+Coming back to Eq. (A4),                                                    where the measurements are performed. In this situa-
+            Z ∞                                                           tion, Ô is diagonal so the only matrix elements that con-
+                                                                            tribute to the trace are the diagonal elements of ρ̃k . As
+  [ρk ]ij =    dVk fi (Vk )fj (Vk ) [ρ̃k ]ij = Mij [ρ̃k ]ij .               one can infer from Eq. (A11), the diagonal of the matrix
+                  −∞
+                                                    (A7)                    M is full of ones, so there is no back-action contribu-
+We define the  matrix  M   such that its matrix elements                    tion at this level. This can be explained such that the
+           R∞
+are Mij ≡ −∞ dVk fi (Vk )fj (Vk ). By using matrix no-                      measurements at time step k do not introduce informa-
+tation, we recover Eq. (8):                                                 tion about the back-action at that moment. Once the
+                                                                            quantum state is updated with the measurement back-
+              ρk = M             ρ̃k = M   Lk [ρk−1 ].              (A8)    action, the effect will be observed at latter time steps.
+                                                                            For this reason, we need to inspect at least one previous
+As we mentioned before, the functions fi (Vk ) are fac-                     time step in the past to find an effect of the back-action
+torized in gaussians that are associated to each spin, so                   (see Appendix C for details on the reservoir map Lk ):
+they can be written as fi (Vk ) = l f¯il (Vk ), where f¯il
+                                   QN          (l)
+                                                                                                                         
+represents the contribution of each qubit for the basis el-                    hÔi∞                in
+                                                                                   ρk = Tr Ô Û ρk ⊗ Trin [M     ρ̃k−1 ] Û † . (A14)
+ement |ii. Then, matrix elements Mij can be obtained
+as:                                                                         For computing the partial trace, we need to write the
+                  N Z ∞                                                     matrices in blocks. We will use 2 × 2 matrices composed
+                        dVk f¯il (Vk )f¯jl (Vk ).
+                           (l)      (l)       (l)
+                                                                            by blocks of dimension 2N −1 × 2N −1 :
+                  Y
+           Mij =                                     (A9)
+                        l        −∞
+                                                                                                                g2
+                                                                                                                           !
+                                                                                       ⊗N         M̃ ⊗N −1   e− 2 M̃ ⊗N −1
+Each f¯il (Vk ) can only have two possible values, either
+            (l)                                                               M = M̃       =       g2
+                 (l)                          (l)                                              e− 2 M̃ ⊗N −1    M̃ ⊗N −1
+            (V       −g)2                  (V     +g)2                                                                        (A15)
+                 k                           k
+(2π)−1/4 e−          or (2π)−1/4 e−          . Then, there
+                                                                                                     !
+               4                        4                                                 (1)   (2)
+                                                                                        ρ̃k−1 ρ̃k−1
+are only two possible outcomes for each integral:                             ρ̃k−1 =     (3)   (4)    .
+                               (                                                        ρ̃k−1 ρ̃k−1
+   Z ∞
+         (l) ¯   (l) ¯    (l)       1 if i = j
+      dVk fil (Vk )fjl (Vk ) =        2
+                                   − g2
+                                                     (A10)                  Then, the element-wise product gives us
+     −∞                           e       if i 6= j.
+                                                                                                                             g2
+                                                                                                                                                       !
+                                                                                                           (1)                                   (2)
+The previous equation allows us to define the matrix M                                      M̃ ⊗N −1      ρ̃k−1        e− 2 M̃ ⊗N −1        ρ̃k−1
+                                                                            M ρ̃k−1 =        g2                  (3)                       (4)
+                                                                                                                                                           .
+of one single qubit, that we will denote as M̃ . In such                                  e− 2 M̃ ⊗N −1     ρ̃k−1            M̃ ⊗N −1
+                                                                                                                             ρ̃k−1
+case, the measurement effect is represented by                                                                                  (A16)
+                                  g2
+                                     !                                      The partial trace is performed over the first qubit, so it
+                           1 e− 2                                           can be computed as the sum of the diagonal blocks:
+                 M̃ =       g2
+                                       .           (A11)
+                         e− 2    1                                                                                     (1)        (4)
+                                                                               Trin [M    ρ̃k−1 ] = M̃ ⊗N −1       (ρ̃k−1 + ρ̃k−1 ).       (A17)
+Taking a look at Eq. (A9), we can observe that actu-
+ally Mij is the result of a tensor product of single qubit                  As a consequence, every time step the measurement is
+                                                                                                                                  N g2
+matrices M̃ , writing it as M = M̃ ⊗ · · · ⊗ M̃ = M̃ ⊗N .                   applied over all the qubits, the factor e− 2                 does not
+                                                                                                                                             11
+
+appear in the next time step because of the partial trace              and,
+operation. Finally, applying an analysis similar to [75],
+i.e. decomposing the input injection in three terms like               Py (V ) = Tr((Ω̂yV )† Ω̂yV ω) =                            (B4)
+ρin
+  k ⊗ Trin [M      ρ̃k−1 ] = A + Bsk + Crk , where rk ≡
+                                                                                                                                    
+                                                                        1       1                  −
+                                                                                                     (V −g)2
+                                                                                                                 1             −
+                                                                                                                                 (V +g)2
+p                                                                      √          − =(ω01 ) e           2    +     + =(ω01 ) e      2      ,
+   sk (1 − sk ), we can obtain Eq. (10):                                 2π     2                                2
+               N
+               X          N −n 2
+                                                                       where <() and =(), indicate, respectively, the real and
+    hÔi∞
+        ρk =         e−     2 g    (An + Bn sk + Cn rk ) ,   (A18)     imaginary part of a complex number.
+               n=1
+
+with terms An , Bn and Cn gathering all the informa-                               b.    Expectation values and uncertainties
+tion about both the unitary dynamics Û and the quan-
+tum state ρ̃k−1 (which contains the information about
+                                                                         From the last equations,
+                                                                                               R ∞ we also derive the analogous
+the input sequence). All the combinations of exponential
+                                     N g2
+                                                                       expressions to hV izω = −∞ V Pz (V ) dV = ghσ̂ z iω , for the
+factors (except the term e− 2 due to the partial trace)                x and y directions. The expectation value of V when the
+appear as a consequence of the mixing of matrix elements               measurements are performed in the x and y directions,
+of ρ̃k−1 generated by the unitary dynamics.                            are, respectively, for the state ω, given by:
+                                                                                             Z ∞
+                                                                                   hV ixω = V Px (V ) dV = ghσ̂ x iω ,         (B5)
+         Appendix B: Measurements formalism                                                         −∞
+
+
+              1.     Single-qubit measurements                         and
+                                                                                                   Z ∞
+         a.    Measurements in the x and y directions
+                                                                                        hV iyω =     V Py (V ) dV = ghσ̂ y iω ,             (B6)
+                                                                                                    −∞
+
+
+  In addition to the measurement operator in the z di-                 with hσ̂ x iω = Tr(ωσ̂ x ), and hσ̂ y iω = Tr(ωσ̂ y ).
+rection given in the main text, in Eq. (6), here we write                Getting back to the case of measurements in the z di-
+the analogous expressions for the x and y directions, re-              rection, we compute the uncertainty associated to the
+spectively:                                                            expectation value by additionally computing
+                                                                                              Z ∞
+   Ω̂xV ≡ ĤD Ω̂V ĤD =                                       (B1)                  hV 2 izω = V 2 Pz (V ) dV = g 2 + 1.      (B7)
+                                                                                                  −∞
+        1           (V −g)2        (V +g)2
+                 e− 4 + e− 4                 (|0i h0| + |1i h1|)
+   (32π)1/4                                                            Then, the dispersion reads:
+                                                     
+           (V −g)2       (V +g)2
+    + e− 4 − e− 4
+                                                                                                                      q
+                                   (|0i h1| + |1i h0|) ,
+                                                                                        p
+                                                                              szV =         hV 2 izω − (hV izω )2 =       1 + g 2 s2z,ω ,   (B8)
+
+and,                                                                   with, s2z,ω ≡ 1−hσ̂ z i2ω = 1−(2ω00 −1)2 . The standard de-
+                     †                                                viation of the mean value estimated with Nmeas      measure-
+                                                                                                                        PNmeas
+                                                                       ment results, namely, as hV izω ≈ (1/Nmeas ) l=1        Vlz , is
+           
+   Ω̂yV ≡ ĤD Ŝ † Ω̂V ĤD Ŝ † =                               (B2)
+                                                                                                     s
+        1             (V −g)2        (V +g)2
+                                                                                                sz        1 + g 2 s2z,ω
+          1/4
+                  e− 4 + e− 4                  (|0i h0| + |1i h1|)                   s̄zV = √ V       =                 .       (B9)
+   (32π)                                                                                        Nmeas       Nmeas
+                                                        
+             (V −g)2        (V +g)2
+    −i e− 4 − e− 4                    (|0i h1| − |1i h0|) ,            Finally, the state-dependent uncertainty is computed as
+                                                                                                         s
+where                                                                                             s̄zV     1 + g 2 s2z,ω
+    √ ĤD is the Hadamard operator, ĤD =                                             s̄hσ̂z iω =      =                 . (B10)
+(1/ 2) (|0i h0| + |0i h1| + |1i h0| − |1i h1|), and Ŝ is the                                      g        g 2 Nmeas
+phase shift operator, Ŝ = |0i h0| + i |1i h1|.
+   The corresponding probability distributions (analo-                For the x and y directions, the same analogous expres-
+gous to Eq. (7)) of an outcome V for a reduced single-                sions are found for s̄hσ̂x iω and s̄hσ̂y iω by replacing s2z,ω
+qubit state ω to the previous two equations are, respec-              with s2x,ω and s2y,ω , respectively. The state-independent
+tively, given by:                                                     and direction-independent uncertainty given in Eq. (11)
+                                                                      is the upper bound of s̄hσ̂x iω , s̄hσ̂y iω , and s̄hσ̂z iω . Namely,
+Px (V ) = Tr((Ω̂xV )† Ω̂xV ω) =                            (B3)                                           s
+                                                                                                                1 + g2
+                                                             
+ 1       1                  −
+                              (V −g)2     1             −
+                                                          (V +g)2
+√          + <(ω01 ) e           2    +     − <(ω01 ) e      2      ,                s̄hσ̂α iω ≤ s̄hσ̂i =                ,            (B11)
+  2π     2                                2                                                                   g 2 Nmeas
+                                                                                                                                                    12
+
+which is valid for any reduced single-qubit state ω and di-         with a measurement on the state ω reads:
+rection α = x, y, z. This maximum uncertainty is reached                                  h                                 i
+in the direction α when hσ̂ α iω = 0.                                Pz (V1 , V2 ) = Tr (Ω̂zV1 ⊗ Ω̂zV2 )† (Ω̂zV1 ⊗ Ω̂zV2 )ω = (B16)
+   The previous equation is useful to compare a measure-
+                                                                         
+                                                                       1            (V1 −g)2    (V2 −g)2          (V1 −g)2    (V2 +g)2
+
+ment with strength g to a measurement with strength g 0 .                  ω00 e− 2 e− 2                 + ω11 e− 2 e− 2 +
+                                                                      2π
+In order to estimate an expectation value with the same                                                                          
+                                                                              (V1 +g)2    (V2 −g)2          (V1 +g)2    (V2 +g)2
+statistical uncertainty, namely, s̄hσ̂i = s̄0hσ̂i , the number of     ω22 e− 2 e− 2                + ω33 e− 2 e− 2                 .
+                                                            0
+measurements associated to each case, Nmeas and Nmeas           ,
+respectively, are related as follows:                               From this last expression, we compute the mean value of
+                                                                    the product of the measurement results:
+                             0       (1 + g 2 )g 02                                   Z ∞ Z ∞
+                    Nmeas = Nmeas                   .     (B12)
+                                     (1 + g 02 )g 2                     hV1 V2 izω = dV1     dV2 Pz (V1 , V2 )V1 V2 =
+                                                                                       −∞   −∞                        (B17)
+                                                                         2 z        z
+For g < g 0 , in general, more weaker measurements are                  g hσ̂ ⊗ σ̂ iω ,
+                     0
+needed, Nmeas > Nmeas    . In particular, we can compare            and also the statistical uncertainty:
+projective measurements with weaker ones. In the limit                                p
+of g  g 0 we have:                                                       sz(V1 V2 ) = h(V1 V2 )2 izω − (hV1 V2 izω )2 =
+                                                                          p                                                                    (B18)
+                                                                           1 + 2g 2 + g 4 (1 − hσ̂ z ⊗ σ̂ z i2ω ),
+                             0        1
+                    Nmeas = Nmeas 1 + 2 .                 (B13)
+                                     g                              where we have used that:
+                                                                               Z ∞ Z ∞
+                                                                        2 2 z
+  The upper bound in Eq. (B11) is closely reached in                 hV1 V2 i = dV1      dV2 Pz (V1 , V2 )V12 V22 = (g 2 + 1)2 .
+                                                                                         −∞        −∞
+some limits. We can write the expression in (B10) for                                                                                         (B19)
+the direction α as                                                  As before for the single-qubit case, we similarly calcu-
+                              s                                     late the standard deviation of the mean value estimated
+                                   1 + g2 √                         with Nmeas measurements, namely, with hV1 V2 izω ≈
+                s̄hσ̂α iω =                 1 − ,        (B14)                     PNmeas
+                                  g 2 Nmeas                         (1/Nmeas ) l=1                (V1 V2 )zl ,
+                                                                                                       s
+                                                                                        z
+                    2
+                                                                                       s(V     V   )         1 + 2g 2 + g 4 (1 − hσ̂ z ⊗ σ̂ z i2ω )
+where  = hσ̂ α iω /(1 + 1/g 2 ). In the limits of either g → 0       s̄z(V1 V2 ) = √        1   2
+                                                                                                     =                                               ,
+or hσ̂ α iω → 0, we will have that  → 0. Then, we can                                   Nmeas                              Nmeas
+approximate the previous equation as                                                                                                          (B20)
+                                                                    and for hσ̂ z ⊗ σ̂ z iω , the associated uncertainty is given
+                              s                                     by:
+                                   1 + g2     
+                s̄hσ̂α iω ≃               (1 − ).         (B15)                          s̄z(V1 V2 )
+                                                                                                         s
+                                   2
+                                  g Nmeas     2                                                                1 + 2g 2 + g 4 (1 − hσ̂ z ⊗ σ̂ z i2ω )
+                                                                     s̄hσ̂z ⊗σ̂z iω =           2
+                                                                                                      =                                                ,
+                                                                                              g                            g 4 Nmeas
+In these two situations, the dependence on the state and                                                                                      (B21)
+on the direction are small first-order corrections to the           As well as in Eq. (B11), in the main text, in Eq. (12), we
+upper bound, which is the main zeroth-order term.                   consider the upper bound of the statistical uncertainty,
+                                                                    which is independent of both the state and the direction
+                                                                    of measurement,
+                                                                                                                  s
+               2.       Two-qubit measurements                                                                      1 + 2g 2 + g 4
+                                                                              s̄hσ̂α ⊗σ̂α iω ≤ s̄hσ̂⊗σ̂i =                          ,         (B22)
+                                                                                                                       g 4 Nmeas
+          a.   Expectation values and uncertainties
+                                                                    for any reduced two-qubit state ω and direction α = x,
+                                                                    y, z.
+   In this section, we consider a reduced two-qubit state
+                                                                         As before, this last equation can be used to compare
+ω, with components ωij , with i, j ∈ {0, 1, 2, 3}. Our goal
+                                                                    a measurement with strength g to a measurement with
+is to measure the expectation value of two-qubit observ-
+                                                                    strength g 0 . In order to estimate an expectation value
+ables of the form σ̂ α ⊗ σ̂ α through indirect measurements.
+                                                                    with the same statistical uncertainty, namely, s̄hσ̂⊗σ̂i =
+In the following lines, as an example, we treat the case
+                                                                    s̄0hσ̂⊗σ̂i , the number of measurements associated to each
+of the operator σ̂ z ⊗ σ̂ z .                                                              0
+                                                                    case, Nmeas and Nmeas      , respectively, are related as fol-
+   The two-qubit indirect measurement operator in con-
+                                                                    lows:
+sideration is Ω̂zV1 ⊗ Ω̂zV2 , which is a product of two single-
+qubit operators whose form is given in Eq. (6). The prob-                                     0            (1 + 2g 2 + g 4 )g 04
+                                                                                     Nmeas = Nmeas                                .            (B23)
+ability of obtaining the measurement outcomes V1 and V2                                                    (1 + 2g 02 + g 04 )g 4
+                                                                                                                                       13
+
+      Appendix C: Quantum reservoir based on a                            of weights employed, L, depends on our particular choice
+          disordered transverse Ising model                               for the observable set. For instance, when we consider
+                                                                          the expectation values of σ̂ix , σ̂iy , and σ̂iz for all qubits,
+   Reservoir computing [38, 46, 47] is a supervised ma-                   then L = 3N .
+chine learning method based on the three-layer scheme:                       For the STM task, we consider a total dataset of Nt =
+(i) input, (ii) reservoir, and (iii) output, depicted in                  1000 time steps. The initial Nwo = 20 instants within
+Fig. 1(a). The main enabling features of reservoir com-                   the washout time are discarded. This value, in agreement
+puting are the ability to differentiate any pair of inputs,               with previous results [76], is long enough to guarantee a
+known as separability [88], the fading memory in the past                 nearly identical performance between the RSP and the
+and the independence of the reservoir initialization (echo                RWP. It is also valid for the OLP even if a shorter time
+state or convergence property) [69]. This guarantees that                 could be enough, as the memory of the system is reduced
+after a transient time the reservoir output depends only                  for increasing values of g due to back-action. The weights
+on the recent input sequence. Recent proposals for quan-                  in Eq. (C2) are optimized using the following 735 time
+tum reservoir computing have been reviewed in [48].                       instants and the last 245 time steps constitute the test
+   The quantum reservoir computer considered in this                      set, where the learned weights are used to evaluate the
+work consists of a qubit network evolving in time un-                     accuracy of the QRC system.
+der the the action of the disordered transverse-field Ising                  For the Santa Fe task, the data set is comprised of
+Hamiltonian [50, 53]:                                                     Nt = 2000 time steps. The first Nwo = 20 time steps
+                          N −1        N −1
+                                                                          are again discarded. The following 70% instants are used
+                        1 X z X                                           to train the weights, while the test prediction error is
+                Ĥ =           hσ̂i +      Jij σ̂ix σ̂jx .       (C1)
+                        2 i=0                                             evaluated for the last 30% steps.
+                                      i<j
+                                                                             The QRC perfomance is quantitatively evaluated
+In all the numerical simulations, we used N = 6 qubits                    through the capacity
+and randomly generated a single set of qubit-qubit cou-
+plings Jij from a uniform distribution in the interval                                                cov2 (y, ỹ)
+                                                                                               C≡                  ,                (C3)
+[−Js /2, Js /2], where Js is set as a reference unit. We                                             var(y)var(ỹ)
+have checked that the deviations introduced by different
+coupling realizations is not relevant in our analysis, as                 where cov (y, ỹ) indicates the covariance between the two
+can be seen in the example of Appendix D. The exter-                      series and var(y) is the variance. C ∈ [0, 1] and perfect
+nal magnetic field and the time interval, respectively, are               predictions are obtained with C = 1.
+fixed at h = 10Js and ∆t = 10/Js so that the reservoir
+is in an appropriate dynamical regime where the system
+                                                                               Appendix D: QRC performance considering
+tends to thermalize [53]. The input is represented by a se-
+                                                                                   different random qubit networks
+quence {s0 , s1 , . . . , sk , . . . } and is injected into the system
+by rewriting a node state ρin         k every time step k. In partic-
+ular, we consider encoding a real input sk ∈ [0, 1] in one                   All the results in the main text can be consistently re-
+qubit (labeled                                                            produced when considering different realizations of the
+              √by 0) by setting       √
+                                          it at each time into a pure
+                                                                          disordered Ising model in Eq. (C1). In Fig. 6, we show
+state |ψk i = 1 − sk |0i+ sk |1i [75]. The resulting evo-
+lution after input injection is given by the completely pos-             as an example the STM sum capacity depending on g
+itive trace-preserving map Lk [ρ] = Û ρin                            †   for single and two-qubit observables in the OLP, resem-
+                                                      k ⊗ Trin [ρ] Û
+[50, 53]. This fully defines the unperturbed state dynam-                 bling Fig. 4(a) of the main text. All the lines corre-
+ics in the case of the RSP and the RWP, as given by                       spond to the ideal case of Nmeas → ∞ with back-action,
+Eqs. (1) and (3).                                                         adding Gaussian noise (with standard deviation given by
+                                                                          Eqs. (11) and (12)) in the observables for the dashed
+                                                                          lines. The shadowed region displays the standard devi-
+                 1.     QRC training and test                             ation when considering a sample of 100 networks, with
+                                                                          different qubit-qubit couplings Jij . We see that no large
+  For task resolution, the QRC systems are trained in a                   variations in the capacity are observed for different ran-
+supervised manner. Given the target output yk for the in-                 dom networks, confirming the same qualitative behaviour
+put sk in the training examples, a linear weighted combi-                 that was obtained in Fig. 4(a) of the main text for a single
+nation of the reservoir observables is constructed to min-                realization.
+imize the prediction error with a least-squares method                       We also note that while we have obtained the results in
+[34]. More precisely, the form of the predictions is                      the main paper mostly considering monitored quantum
+                                                                          trajectories, here instead we have estimated the effect
+                        L
+                        X                                                 of statistical noise due to the limited ensemble size by
+                ỹk =         wm hÔik,(m) + wL+1 ,              (C2)     introducing a single realization of Gaussian noise. This
+                        m=1                                               stochastic fluctuation of zero mean and standard devi-
+where wm are the free parameters (weights) to be opti-                    ation given by Eqs. (11) or (12) (depending on which
+mized, including the bias term wL+1 . The total number                    observable we use) accounts for the largest deviation we
+                                                                                                                                                   14
+
+                                                                                                    g = 0.3                           g = 10
+                       hσ̂iα i:    Ideal       Ideal+Noise
+                hσ̂iα ⊗ σ̂jα i:    Ideal       Ideal+Noise                                 (a)                             (b)
+                                                                                  0.2
+                                                                                    0
+                                                                                 -0.2
+     5
+
+
+
+
+                                                                    hσ̂iz ⊗ σ̂jzi
+                                                                                  0.2
+     4                                                                              0
+                                                                                 -0.2
+CΣ
+
+
+
+
+     3                                                                            0.2
+                                                                                    0
+     2                                                                           -0.2
+     1                                                                                     (c)                             (d)
+                                                                                     0.1
+     0                                                                                 0
+      0      0.25         0.5     0.75     1       1.25      1.5                    -0.1
+
+
+
+
+                                                                    hσ̂iy ⊗ σ̂jy i
+                                   g                                                 0.1
+                                                                                       0
+                                                                                    -0.1
+FIG. 6. STM sum capacity depending on g for different kind                           0.1
+of observables in the OLP averaged over 100 different qubit-                           0
+                                                                                    -0.1
+qubit couplings Jij realizations. Solid lines represent the ideal
+values when Nmeas → ∞. Dashed lines corresponds to esti-                                   (e)                             (f)
+                                                                                     0.1
+mated values obtained again in the limit Nmeas → ∞ but                                 0
+adding a Gaussian noise to the observables. The shaded re-                          -0.1
+
+
+
+
+                                                                    hσ̂ix ⊗ σ̂jxi
+gions correspond to the standard deviation over couplings’                           0.1
+realizations. Vertical dashed lines represent the values of                            0
+                                                                                    -0.1
+g = 0.3 (red) and g = 0.5 (orange). In the plot legend, α =                          0.1
+x, y, z, and i, j = 1, ..., N = 6. All data shown correspond to                        0
+the test set.                                                                       -0.1         960 970 980 990 1000            960 970 980 990 1000
+                                                                                                                    t/∆t
+
+could find in an experiment with a given measurement
+strength g and number of measurements Nmeas .                       FIG. 7. Two-qubit observables in the x, y and z directions.
+                                                                    Solid lines correspond to the ideal values with the effect of
+                                                                    measurements on the system (black) and the unperturbed
+                                                                    case (grey), respectively. In symbols, the estimated values
+ Appendix E: QRC performance using second order                     obtained by numerically simulating the measurement process
+                   moments                                          with Nmeas = 1.5 · 106 by following the OLP are represented.
+                                                                    Panels (a), (c), and (e) correspond to a weak measurement
+   The output layer of QRC can be based on different                strength, g = 0.3; whereas in panels (b), (d), and (f) strong
+                                                                    measurements, g = 10, are performed. The input is encoded
+observables and in the main body of the paper we il-
+                                                                    into the state of qubit 0 (see Appendix C). In each panel,
+lustrate the performance mostly considering first-order             from bottom to top, we plot the observables corresponding to
+moments. Here, we provide more detailed results when                the following pairs of qubits: i = 0, j = 1; i = 0, j = 2; and
+considering two-qubit observables in the x, y and z direc-          i = 1, j = 2.
+tions. We start by showing the impact of weak/strong
+measurement on the two Pauli operators strings comple-
+menting Fig. 2 in the main text. In Fig. 7, we see that
+also these observables follow the unperturbed dynamics              OLP, the measurement strength is critical, but the situ-
+for weak measurement, while qubit correlations in the x             ation is different to the case of single-qubit observables.
+and y directions are erased due to strong measurement               For g = 10 (green symbols), there is an exponential mem-
+back-action, so that only the z components follow the tar-          ory decay in terms of τ , while g = 0.5 (orange symbols)
+get even when strongly monitored. We can explain again              preserves the memory plateau of the unperturbed case
+this behaviour because of a dynamics mostly aligned in              for small delays. But while we observed in Fig. 3(a) that
+the z-direction of the reservoir.                                   weak measurements preserved the whole tail of memory,
+   Figure 8 shows the STM capacity of the two-qubit                 here we do not see this behaviour for the longer delays.
+observables against the delay of the target, similar to                In the main text, we explained the hindered perfor-
+Fig. 3(a) for single-qubit observables. However, in this            mance of g = 10 as the result of both back-action and
+case we study the OLP for g = 0.5 instead of g = 0.3.               statistical noise, but the latter has now an important
+Here, the unperturbed case shows a memory tail that                 role for g = 0.5. In fact, as can be seen in Eq. (12),
+decays slower than for single-qubit observables, which is           now the dependence on g makes necessary a much larger
+reasonable since we are using more observables. And                 number of measurements to reduce the statistical error.
+again the RWP and RSP (blue symbols), for a finite                  Assuming infinite measurements (ideal cases with back-
+number Nmeas = 1.5·106 of measurements, reach the per-              action, represented by colored continuous lines), we can
+formance of the unperturbed case. With respect to the               isolate the effect of the back-action with respect to the
+                                                                                                                                           15
+
+           hσ̂iα ⊗ σ̂jα i           OLP, g = 10               RWP, g = 10         cating the possibility of reaching the ideal sum capacity
+     1.0                            OLP, g = 0.5              RSP, g = 10         for a smaller Nmeas . Figure 9(b) displays the STM sum
+     0.8                                                      Unperturbed         capacity in terms of the experimental time to indicate
+     0.6                                                                          the real needed resources by each protocol. As discussed
+C
+
+
+
+
+     0.4                                                                          in the main text, the RSP is very inefficient in compar-
+     0.2                                                                          ison with the RWP. Now, the examples of OLP require
+     0.0                                                                          a longer experimental time to reach the same sum ca-
+            1      2        3   4      5        6         7   8    9    10        pacity as in the RWP. This behavior indicates that the
+                                            τ                                     back-action of g = 0.5 is strong enough to be detrimental
+                                                                                  for the performance.
+FIG. 8. STM capacity from two-qubit observables depend-
+ing on the delay τ obtained with the different protocols and
+Nmeas = 1.5 · 106 measurements (symbols). The limit cases                              Appendix F: Memory capacity C(τ = 1) and
+with Nmeas → ∞, are represented with a solid line in the cor-                               non-classical signatures of QRC
+responding color; the unperturbed situation is in black. The
+dashed lines corresponds to estimated values obtained again
+in the limit Nmeas → ∞ but adding a Gaussian noise to the
+                                                                                     The maximum STM capacity is obtained when target-
+observables. i = 0, ..., N = 6 and α = x, y, z.                                   ing the shortest possible delay, that is delay τ = 1, and
+                                                                                  it progressively decays with delay. In the main text, we
+                                                                                  have illustrated the ability of the system to reproduce the
+                RSP, g = 10                OLP, g = 0.5             Unperturbed   target for delay τ = 2 while here we add the plots in the
+                RWP, g = 10                OLP, g = 10                            more favorable case C(τ = 1). We also show separately
+     6 (a)                                          (b)                           the effect of measurement in all the directions.
+     5                                                                               Figure 10 represents a time window of the target val-
+     4                                                                            ues (grey) and the predictions obtained for the projection
+                                                                                  observables (color) in directions x, y and z. These pre-
+CΣ
+
+
+
+
+     3
+     2
+                                                                                  dictions correspond to the OLP, where left panels are
+                                                                                  produced with weak measurements (g = 0.3) and right
+     1
+                                                                                  panels are produced with strong measurements (g = 10).
+     0
+     102     103    104 105     106    ∞        0.0       0.1 0.2 0.3 0.4         For weak measurements (left panels (a), (c) and (e)),
+                      Nmeas                                 texp /(∆t · 1010 )    the contributions from all three directions are significant.
+                                                                                  However, in the strong measurement case (right panels
+FIG. 9. (a) STM sum capacity as a function of the number of                       (b), (d) and (f)), contributions from x and y directions
+measurements, and, (b) depending on the experimental time                         are drastically reduced, in particular the y-direction. As
+required. Two-qubit observables, hσ̂iα ⊗σ̂jα i, are used with α =                 in Figs. 3(b) and (c) of the main text, we can explain the
+x, y, z and i, j = 1, ..., N = 6. All data shown correspond to                    difference in performance between weak and strong mea-
+the test set                                                                      surements in terms of the dynamics of the reservoir. Even
+                                                                                  with a dynamics that produces states mostly aligned in
+                                                                                  the z-direction, back-action of weak measurements does
+statistics. In this situation, the performance is consider-                       not destroy the remaining small quantum coherences of
+ably improved, but still, the strong back-action effect of                        the dynamics. In this way, single-qubit observables in
+g = 10 affects the memory of the reservoir for the longer                         all directions can provide memory. On the other hand,
+delays. Applying a Gaussian noise with a standard devi-                           strong measurements in the x and y directions destroy
+ation given by Eq. (12) to these ideal cases, we recover                          these small coherences, finding that contributions to the
+the OLP with finite samples.                                                      memory could become negligible as in the y-direction.
+   Finally, Fig. 9 is the two-qubit representation of                                When dealing with quantum information processing
+Figs. 4(b) and (c) of the main text. The STM capac-                               protocols, a central issue is the possible performance
+ity sum is represented as a function of the number of                             improvement with respect to some meaningful classical
+measurements for all the protocols, taking g = 0.5 for                            limit. In the case of QRC, the most immediate evi-
+the weak measurements of the OLP. In (a) we find that                             dence of such an improvement is given by the large size of
+the sum capacities of the RSP and RWP increase almost                             the Hilbert space with respect to the number of physical
+to converge to the unperturbed case. But in this case,                            nodes. In our model, the classical limit can be identified
+it is required to increase the number of measurements                             with the regime where the back-action does not affect the
+by almost one order of magnitude with respect to the                              dynamics as all the processing is performed along a fixed
+single-qubit case to see this saturation. Accordingly, in                         direction, with no quantum coherence involved. In this
+the OLP the increase of the sum capacity is also displaced                        sense, while we have not investigated the classical limit of
+to larger values of Nmeas . As for single-qubit observables,                      the model (for instance corresponding to the absence of
+g = 10 in the OLP shows a slower convergence of the sum                           the external magnetic field), clear evidence of such an ad-
+capacity. In contrast, g = 0.5 shows a steeper slope, indi-                       vantage can be found both in recognition and forecasting
+                                                                                                                                         16
+
+                            g = 0.3                       g = 10                  By replacing (G1) and (G3) in this last expression, we
+               (a) C z = 0.971               (b) C z = 0.978                    obtain:
+        1.00
+        0.75
+                                                                                            OLP
+        0.50                                                                               Nmeas   τwo + (τwo + τR + τM )Nt
+        0.25                                                                                RWP
+                                                                                                 ≤                          .         (G5)
+                                                                                           Nmeas      τwo + (∆t + τM )Nt
+        0.00
+               (c) C y = 0.827               (d) C y = 0.096
+        1.00                                                                      In the right part of the inequality, we consider the case
+        0.75                                                                    when the number of time steps is sufficiently large to ne-
+y, ỹ
+
+
+
+
+        0.50                                                                    glect the first washout-time term in both the numerator
+        0.25                                                                    and the denominator. Namely, Nwo  Nt . In addition,
+        0.00                                                                    we assume that the measurement time is the same in
+               (e) C x = 0.771               (f) C x = 0.435
+        1.00                                                                    both protocols and very fast, i.e. τM  ∆t, and that
+        0.75                                                                    τR  τwo . With all these assumptions, we end up with:
+        0.50
+        0.25
+        0.00                                                                                           OLP
+                                                                                                      Nmeas
+                   960   970     980   990 1000 960    970     980   990 1000                          RWP
+                                                                                                            ≤ Nwo .                   (G6)
+                                            t/∆t                                                      Nmeas
+                                                                                   One main difference between the online and the RWP
+FIG. 10. Target values (grey filled circles) and predictions                    is the measurement strength used. In the RWP, a pro-
+(colored unfilled symbols) for the STM task at τ = 1 obtained                   jective measurement is the best choice as the back-action
+with the OLP in different directions separately with weak                       effect is irrelevant. However, for the OLP, the measure-
+measurements (left panels), and strong measurements (right
+                                                                                ment strength has to be tuned so that it is sufficiently
+panels), both with single-qubit observables. All data shown
+correspond to the test set.
+                                                                                weak to have a system with exploitable memory but
+                                                                                strong enough to extract information and reduce the re-
+                                                                                quired number of measurements. Consequently, the num-
+protocols as all linear independent observables, includ-                        ber of measurements for achieving the same statistical
+ing noncommuting operators, contribute to give the total                        error in the observables depends on the protocol. The
+processing capability of the system.                                            relations between measurements with different measure-
+                                                                                ment strength were derived in Appendix B, Eqs. (B12)
+                                                                                and (B23). By using these equations, we find for single-
+        Appendix G: Experimental time resources and                             qubit and two-qubit observables, respectively:
+                derivation of equation (15)
+                                                                                                   OLP
+                                                                                                  Nmeas   (1 + g 2 )g 02
+                                                                                                        =                ,            (G7)
+  If the measurement process takes time τM and the sys-                                            RWP
+                                                                                                  Nmeas   (1 + g 02 )g 2
+tem has to be reset to continue the experiment with an
+associated preparation time, τR , the expressions for the                                       OLP
+                                                                                               Nmeas   (1 + 2g 2 + g 4 )g 04
+experimental time corresponding to the RSP, the RWP,                                                 =                        .       (G8)
+and the OLP are, respectively:
+                                                                                                RWP
+                                                                                               Nmeas   (1 + 2g 02 + g 04 )g 4
+                                                                                g is the measurement strength of the OLP. A projective
+                                             
+      RSP    RWP             1
+     texp = texp + 3Nmeas      Nf (Nf + 1)∆t ,      (G1)                        measurement in the RWP is achieved in the limit of large
+                             2
+                                                                                g 0 , so that the two previous equations are simplified, re-
+        tRWP
+         exp = 3Nmeas (τwo + (τwo + τR + τM )Nf ) ,                     (G2)    spectively, to:
+        tOLP
+         exp = 3Nmeas (τwo + (∆t + τM )Nf ) .                           (G3)                          OLP
+                                                                                                     Nmeas   1 + g2
+The factor 3 accounts for the need for non-simultaneous                                               RWP
+                                                                                                           =        ,                 (G9)
+                                                                                                     Nmeas     g2
+measurements for the x, y, and z directions; and Nf ≡
+Nt − Nwo , where we remind that Nt is the total number
+                                                                                                  OLP
+of time steps k in the input time-series. In the main text,                                      Nmeas   1 + 2g 2 + g 4
+                                                                                                       =                .            (G10)
+we have considered that the measurements are done in-                                             RWP
+                                                                                                 Nmeas        g4
+stantaneously and that the time for resetting the system
+is negligible, namely τM = τR = 0.                                                At this point, we can relate the value of g, which is
+   In the following lines, we provide the details of the                        always g ≥ 0, with the number of washout time steps in
+derivation of Eq. (15) and the equivalent for two-qubit                         order to have the same statistical error with both proto-
+observables from these last equations. We start with the                        cols and to have a faster OLP.
+condition:                                                                        For single-qubit observables, we obtain the condition:
+
+                                                                                                      1 + g2
+                                  tOLP    RWP                                                                ≤ Nwo ,                 (G11)
+                                   exp ≤ texp .                         (G4)                            g2
+                                                                                                                            17
+
+which leads to Eq. (15) in the main text:                        that finally reads as:
+                         r
+                               1                                                           s
+                    g≥             .                   (G12)                                         1
+                           Nwo − 1                                                    g≥       √             .          (G14)
+                                                                                                   Nwo − 1
+  For two-qubit observables, we have:
+
+                   1 + 2g 2 + g 4                                For example, for Nwo = 20, the measurement strength
+                                  ≤ Nwo ,              (G13)     should be g & 0.54.
+                        g4
+
+
+
+ [1] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,              Brandao, D. A. Buell, B. Burkett, Y. Chen, Z. Chen,
+     N. Wiebe, and S. Lloyd, Quantum machine learning, Na-            B. Chiaro, R. Collins, W. Courtney, A. Dunsworth,
+     ture 549, 195 (2017).                                            E. Farhi, B. Foxen, A. Fowler, C. Gidney, M. Giustina,
+ [2] M. Cerezo, A. Arrasmith, R. Babbush, S. C. Benjamin,             R. Graff, K. Guerin, S. Habegger, M. P. Harrigan,
+     S. Endo, K. Fujii, J. R. McClean, K. Mitarai, X. Yuan,           M. J. Hartmann, A. Ho, M. Hoffmann, T. Huang,
+     L. Cincio, and P. J. Coles, Variational quantum algo-            T. S. Humble, S. V. Isakov, E. Jeffrey, Z. Jiang,
+     rithms, Nature Reviews Physics 3, 625 (2021).                    D. Kafri, K. Kechedzhi, J. Kelly, P. V. Klimov, S. Knysh,
+ [3] K. Bharti, A. Cervera-Lierta, T. H. Kyaw, T. Haug,               A. Korotkov, F. Kostritsa, D. Landhuis, M. Lind-
+     S. Alperin-Lea, A. Anand, M. Degroote, H. Heimonen,              mark, E. Lucero, D. Lyakh, S. Mandrà, J. R. Mc-
+     J. S. Kottmann, T. Menke, W.-K. Mok, S. Sim, L.-C.               Clean, M. McEwen, A. Megrant, X. Mi, K. Michielsen,
+     Kwek, and A. Aspuru-Guzik, Noisy intermediate-scale              M. Mohseni, J. Mutus, O. Naaman, M. Neeley, C. Neill,
+     quantum algorithms, Rev. Mod. Phys. 94, 015004 (2022).           M. Y. Niu, E. Ostby, A. Petukhov, J. C. Platt, C. Quin-
+ [4] Z. Li, X. Liu, N. Xu, and J. Du, Experimental realization        tana, E. G. Rieffel, P. Roushan, N. C. Rubin, D. Sank,
+     of a quantum support vector machine, Phys. Rev. Lett.            K. J. Satzinger, V. Smelyanskiy, K. J. Sung, M. D. Tre-
+     114, 140504 (2015).                                              vithick, A. Vainsencher, B. Villalonga, T. White, Z. J.
+ [5] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Harrow,          Yao, P. Yeh, A. Zalcman, H. Neven, and J. M. Marti-
+     A. Kandala, J. M. Chow, and J. M. Gambetta, Super-               nis, Quantum supremacy using a programmable super-
+     vised learning with quantum-enhanced feature spaces,             conducting processor, Nature 574, 505 (2019).
+     Nature 567, 209 (2019).                                     [15] S. Pirandola, B. R. Bardhan, T. Gehring, C. Weedbrook,
+ [6] E. Peters, J. Caldeira, A. Ho, S. Leichenauer,                   and S. Lloyd, Advances in photonic quantum sensing,
+     M. Mohseni, H. Neven, P. Spentzouris, D. Strain, and             Nature Photonics 12, 724 (2018).
+     G. N. Perdue, Machine learning of high dimensional data     [16] C. L. Degen, F. Reinhard, and P. Cappellaro, Quantum
+     on a noisy quantum processor, npj Quantum Information            sensing, Rev. Mod. Phys. 89, 035002 (2017).
+     7, 161 (2021).                                              [17] N. Gisin and R. Thew, Quantum communication, Nature
+ [7] X.-D. Cai, D. Wu, Z.-E. Su, M.-C. Chen, X.-L. Wang,              Photonics 1, 165 (2007).
+     L. Li, N.-L. Liu, C.-Y. Lu, and J.-W. Pan, Entanglement-    [18] W. J. Munro, A. M. Stephens, S. J. Devitt, K. A. Harri-
+     based machine learning on a quantum computer, Phys.              son, and K. Nemoto, Quantum communication without
+     Rev. Lett. 114, 110504 (2015).                                   the necessity of quantum memories, Nature Photonics 6,
+ [8] L. Hu, S.-H. Wu, W. Cai, Y. Ma, X. Mu, Y. Xu, H. Wang,           777 (2012).
+     Y. Song, D.-L. Deng, C.-L. Zou, and L. Sun, Quan-           [19] Y.-A. Chen, Q. Zhang, T.-Y. Chen, W.-Q. Cai, S.-K.
+     tum generative adversarial learning in a superconducting         Liao, J. Zhang, K. Chen, J. Yin, J.-G. Ren, Z. Chen,
+     quantum circuit, Science Advances 5, eaav2761 (2019).            S.-L. Han, Q. Yu, K. Liang, F. Zhou, X. Yuan, M.-S.
+ [9] X.-W. Yao, H. Wang, Z. Liao, M.-C. Chen, J. Pan, J. Li,          Zhao, T.-Y. Wang, X. Jiang, L. Zhang, W.-Y. Liu, Y. Li,
+     K. Zhang, X. Lin, Z. Wang, Z. Luo, W. Zheng, J. Li,              Q. Shen, Y. Cao, C.-Y. Lu, R. Shu, J.-Y. Wang, L. Li, N.-
+     M. Zhao, X. Peng, and D. Suter, Quantum image pro-               L. Liu, F. Xu, X.-B. Wang, C.-Z. Peng, and J.-W. Pan,
+     cessing and its application to edge detection: Theory and        An integrated space-to-ground quantum communication
+     experiment, Phys. Rev. X 7, 031041 (2017).                       network over 4,600 kilometres, Nature 589, 214 (2021).
+[10] F. Tacchino, C. Macchiavello, D. Gerace, and D. Bajoni,     [20] M. Cramer, M. B. Plenio, S. T. Flammia, R. Somma,
+     An artificial neuron implemented on an actual quantum            D. Gross, S. D. Bartlett, O. Landon-Cardinal, D. Poulin,
+     processor, npj Quantum Information 5, 26 (2019).                 and Y.-K. Liu, Efficient quantum state tomography, Na-
+[11] Y. Liu, S. Arunachalam, and K. Temme, A rigorous and             ture Communications 1, 149 (2010).
+     robust quantum speed-up in supervised machine learn-        [21] A. Elben, S. T. Flammia, H.-Y. Huang, R. Kueng,
+     ing, Nature Physics 17, 1013 (2021).                             J. Preskill, B. Vermersch, and P. Zoller, The randomized
+[12] H.-P. Breuer, F. Petruccione, et al., The theory of open         measurement toolbox, arXiv:2203.11374 .
+     quantum systems (Oxford University Press on Demand,         [22] A. Hentschel and B. C. Sanders, Machine learning for pre-
+     2002).                                                           cise quantum measurement, Phys. Rev. Lett. 104, 063603
+[13] H. M. Wiseman and G. J. Milburn, Quantum measure-                (2010).
+     ment and control (Cambridge University Press, 2009).        [23] G. Garcı́a-Pérez, M. A. Rossi, B. Sokolov, F. Tacchino,
+[14] F. Arute, K. Arya, R. Babbush, D. Bacon, J. C.                   P. K. Barkoutsos, G. Mazzola, I. Tavernelli, and S. Man-
+     Bardin, R. Barends, R. Biswas, S. Boixo, F. G. S. L.             iscalco, Learning to measure: Adaptive informationally
+                                                                                                                              18
+
+     complete generalized measurements for quantum algo-               denicarevic, T. Hirtzlin, N. Locatelli, D. Querlioz, and
+     rithms, PRX Quantum 2, 040342 (2021).                             J. Grollier, Vowel recognition with four coupled spin-
+[24] G. Torlai, G. Mazzola, J. Carrasquilla, M. Troyer,                torque nano-oscillators, Nature 563, 230 (2018).
+     R. Melko, and G. Carleo, Neural-network quantum state        [41] F. Palumbo, C. Gallicchio, R. Pucci, and A. Micheli, Hu-
+     tomography, Nature Physics 14, 447 (2018).                        man activity recognition using multisensor data fusion
+[25] A. M. Palmieri, E. Kovlakov, F. Bianchi, D. Yudin,                based on reservoir computing, Journal of Ambient Intel-
+     S. Straupe, J. D. Biamonte, and S. Kulik, Experimen-              ligence and Smart Environments 8, 87 (2016), 2.
+     tal neural network enhanced quantum tomography, npj          [42] J. Pathak, B. Hunt, M. Girvan, Z. Lu, and E. Ott, Model-
+     Quantum Information 6, 20 (2020).                                 free prediction of large spatiotemporally chaotic systems
+[26] B. Skinner, J. Ruhman, and A. Nahum, Measurement-                 from data: A reservoir computing approach, Phys. Rev.
+     induced phase transitions in the dynamics of entangle-            Lett. 120, 024102 (2018).
+     ment, Phys. Rev. X 9, 031009 (2019).                         [43] J. Moon, W. Ma, J. H. Shin, F. Cai, C. Du, S. H. Lee,
+[27] Y. Li, X. Chen, and M. P. A. Fisher, Quantum zeno effect          and W. D. Lu, Temporal data classification and forecast-
+     and the many-body entanglement transition, Phys. Rev.             ing using a memristor-based reservoir computing system,
+     B 98, 205136 (2018).                                              Nature Electronics 2, 480 (2019).
+[28] C. Elouard, D. A. Herrera-Martı́, M. Clusel, and             [44] A. Sebastian, M. Le Gallo, R. Khaddam-Aljameh, and
+     A. Auffèves, The role of quantum measurement in                  E. Eleftheriou, Memory devices and applications for
+     stochastic thermodynamics, npj Quantum Information 3,             in-memory computing, Nature Nanotechnology 15, 529
+     9 (2017).                                                         (2020).
+[29] G. Manzano and R. Zambrini, Quantum thermodynam-             [45] H. Jaeger, The “echo state” approach to analysing and
+     ics under continuous monitoring: a general framework,             training recurrent neural networks-with an erratum note,
+     arXiv:2112.02019 .                                                Bonn, Germany: German National Research Center for
+[30] J. Chiaverini, D. Leibfried, T. Schaetz, M. D. Barrett,           Information Technology GMD Technical Report 148, 13
+     R. B. Blakestad, J. Britton, W. M. Itano, J. D. Jost,             (2001).
+     E. Knill, C. Langer, R. Ozeri, and D. J. Wineland, Re-       [46] G. Tanaka, T. Yamane, J. B. Héroux, R. Nakane,
+     alization of quantum error correction, Nature 432, 602            N. Kanazawa, S. Takeda, H. Numata, D. Nakano, and
+     (2004).                                                           A. Hirose, Recent advances in physical reservoir comput-
+[31] C. Ryan-Anderson, J. G. Bohnet, K. Lee, D. Gresh,                 ing: A review, Neural Networks 115, 100 (2019).
+     A. Hankin, J. P. Gaebler, D. Francois, A. Chernoguzov,       [47] Z. Konkoli, On reservoir computing: From mathemat-
+     D. Lucchetti, N. C. Brown, T. M. Gatterman, S. K. Halit,          ical foundations to unconventional applications, in Ad-
+     K. Gilmore, J. A. Gerber, B. Neyenhuis, D. Hayes, and             vances in Unconventional Computing: Volume 1: The-
+     R. P. Stutz, Realization of real-time fault-tolerant quan-        ory, edited by A. Adamatzky (Springer International
+     tum error correction, Phys. Rev. X 11, 041058 (2021).             Publishing, Cham, 2017) pp. 573–607.
+[32] M. I. Jordan and T. M. Mitchell, Machine learning:           [48] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni,
+     Trends, perspectives, and prospects, Science 349, 255             G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-
+     (2015).                                                           tunities in quantum reservoir computing and extreme
+[33] H. Jaeger and H. Haas, Harnessing nonlinearity: Predict-          learning machines, Advanced Quantum Technologies ,
+     ing chaotic systems and saving energy in wireless com-            2100027 (2021).
+     munication, Science 304, 78 (2004).                          [49] M. Spagnolo, J. Morris, S. Piacentini, M. Antesberger,
+[34] M. Lukoševičius and H. Jaeger, Reservoir computing ap-          F. Massa, A. Crespi, F. Ceccarelli, R. Osellame, and
+     proaches to recurrent neural network training, Comput.            P. Walther, Experimental photonic quantum memristor,
+     Sci. Rev. 3, 127 (2009).                                          Nature Photonics 16, 318 (2022).
+[35] D. Salinas,       V. Flunkert,      J. Gasthaus, and         [50] K. Fujii and K. Nakajima, Harnessing disordered-
+     T. Januschowski, Deepar: Probabilistic forecasting                ensemble quantum dynamics for machine learning, Phys.
+     with autoregressive recurrent networks, International             Rev. Applied 8, 024030 (2017).
+     Journal of Forecasting 36, 1181 (2020).                      [51] Q. H. Tran and K. Nakajima, Learning temporal quan-
+[36] H. Hewamalage, C. Bergmeir, and K. Bandara, Recur-                tum tomography, Phys. Rev. Lett. 127, 260401 (2021).
+     rent neural networks for time series forecasting: Cur-       [52] J. Chen, H. I. Nurdin, and N. Yamamoto, Temporal in-
+     rent status and future directions, International Journal          formation processing on noisy quantum computers, Phys.
+     of Forecasting 37, 388 (2021).                                    Rev. Applied 14, 024065 (2020).
+[37] D. J. Gauthier, E. Bollt, A. Griffith, and W. A. S. Bar-     [53] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. So-
+     bosa, Next generation reservoir computing, Nature Com-            riano, and R. Zambrini, Dynamical phase transitions
+     munications 12, 5564 (2021).                                      in quantum reservoir computing, Phys. Rev. Lett. 127,
+[38] K. Nakajima and I. Fischer, eds., Reservoir Comput-               100502 (2021).
+     ing: Theory, Physical Implementations, and Applications      [54] J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, V. Pa-
+     (Springer Singapore, Singapore, 2021).                            rigi, M. C. Soriano, and R. Zambrini, Gaussian states
+[39] L. Larger, A. Baylón-Fuentes, R. Martinenghi, V. S.              of continuous-variable quantum systems provide univer-
+     Udaltsov, Y. K. Chembo, and M. Jacquot, High-speed                sal and versatile reservoir computing, Communications
+     photonic reservoir computing using a time-delay-based             Physics 4, 53 (2021).
+     architecture: Million words per second classification,       [55] Y. Suzuki, Q. Gao, K. C. Pradel, K. Yasuoka, and N. Ya-
+     Phys. Rev. X 7, 011015 (2017).                                    mamoto, Natural quantum reservoir computing for tem-
+[40] M. Romera, P. Talatchian, S. Tsunegi, F. Abreu Araujo,            poral information processing, Scientific Reports 12, 1353
+     V. Cros, P. Bortolotti, J. Trastoy, K. Yakushiji,                 (2022).
+     A. Fukushima, H. Kubota, S. Yuasa, M. Ernoult, D. Vo-        [56] S. A. Khan, F. Hu, G. Angelatos, and H. E. Türeci, Phys-
+                                                                                                                             19
+
+     ical reservoir computing using finitely-sampled quantum     [75] P. Mujal, J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi,
+     systems, arXiv:2110.13849 .                                      M. C. Soriano, and R. Zambrini, Analytical evidence of
+[57] L. Govia, G. Ribeill, G. Rowlands, H. Krovi, and T. Ohki,        nonlinearity in qubits and continuous-variable quantum
+     Quantum reservoir computing with a single nonlinear os-          reservoir computing, Journal of Physics: Complexity 2,
+     cillator, Physical Review Research 3, 013077 (2021).             045008 (2021).
+[58] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and         [76] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini,
+     T. C. H. Liew, Quantum reservoir processing, npj Quan-           and M. C. Soriano, Information processing capacity of
+     tum Information 5, 35 (2019).                                    spin-based quantum reservoir computing systems, Cog-
+[59] S. Ghosh, T. Paterek, and T. C. H. Liew, Quantum neu-            nitive Computation , 1 (2020).
+     romorphic platform for quantum state preparation, Phys.     [77] U. Hübner, N. B. Abraham, and C. O. Weiss, Dimen-
+     Rev. Lett. 123, 260404 (2019).                                   sions and entropies of chaotic intensity pulsations in a
+[60] S. Ghosh, T. Krisnanda, T. Paterek, and T. C. H. Liew,           single-mode far-infrared nh3 laser, Phys. Rev. A 40, 6354
+     Realising and compressing quantum circuits with quan-            (1989).
+     tum reservoir computing, Communications Physics 4,          [78] A. Weigend and N. Gershenfeld, Results of the time series
+     105 (2021).                                                      prediction competition at the santa fe institute, in IEEE
+[61] P. Mujal, Quantum reservoir computing for speckle dis-           International Conference on Neural Networks (1993) pp.
+     order potentials, Condensed Matter 7, 17 (2022).                 1786–1793 vol.3.
+[62] M. Negoro, K. Mitarai, K. Fujii, K. Nakajima, and           [79] M. Negoro, K. Mitarai, K. Nakajima, and K. Fujii,
+     M. Kitagawa, Machine learning with controllable quan-            Toward nmr quantum reservoir computing, in Reser-
+     tum dynamics of a nuclear spin ensemble in a solid,              voir Computing: Theory, Physical Implementations, and
+     arXiv:1806.10910 .                                               Applications, edited by K. Nakajima and I. Fischer
+[63] J. Preskill, Quantum Computing in the NISQ era and               (Springer Singapore, Singapore, 2021) pp. 451–458.
+     beyond, Quantum 2, 79 (2018).                               [80] J. Garcı́a-Beni, G. L. Giorgi, M. C. Soriano, and R. Zam-
+[64] J. Nokkala, R. Martı́nez-Peña, R. Zambrini, and M. C.           brini (2022), (in preparation).
+     Soriano, High-performance reservoir computing with          [81] Z. K. Minev, S. O. Mundhada, S. Shankar, P. Rein-
+     fluctuations in linear networks, IEEE Transactions on            hold, R. Gutiérrez-Jáuregui, R. J. Schoelkopf, M. Mir-
+     Neural Networks and Learning Systems , 1 (2021).                 rahimi, H. J. Carmichael, and M. H. Devoret, To catch
+[65] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and              and reverse a quantum jump mid-flight, Nature 570, 200
+     T. C. H. Liew, Reconstructing quantum states with quan-          (2019).
+     tum reservoir networks, IEEE Transactions on Neural         [82] W. Wieczorek, S. G. Hofer, J. Hoelscher-Obermaier,
+     Networks and Learning Systems 32, 3148 (2021).                   R. Riedinger, K. Hammerer, and M. Aspelmeyer, Opti-
+[66] A. A. Clerk, M. H. Devoret, S. M. Girvin, F. Marquardt,          mal state estimation for cavity optomechanical systems,
+     and R. J. Schoelkopf, Introduction to quantum noise,             Phys. Rev. Lett. 114, 223601 (2015).
+     measurement, and amplification, Rev. Mod. Phys. 82,         [83] J. C. Bergquist, R. G. Hulet, W. M. Itano, and D. J.
+     1155 (2010).                                                     Wineland, Observation of quantum jumps in a single
+[67] T. A. Brun, A simple model of quantum trajectories,              atom, Phys. Rev. Lett. 57, 1699 (1986).
+     American Journal of Physics 70, 719 (2002).                 [84] S. Gleyzes, S. Kuhr, C. Guerlin, J. Bernu, S. Deléglise,
+[68] L. C. G. Govia, G. J. Ribeill, G. E. Rowlands, and T. A.         U. Busk Hoff, M. Brune, J.-M. Raimond, and S. Haroche,
+     Ohki, Nonlinear input transformations are ubiquitous in          Quantum jumps of light recording the birth and death of
+     quantum reservoir computing, Neuromorphic Computing              a photon in a cavity, Nature 446, 297 (2007).
+     and Engineering 2, 014008 (2022).                           [85] K. Xu, J.-J. Chen, Y. Zeng, Y.-R. Zhang, C. Song,
+[69] L. Grigoryeva and J.-P. Ortega, Echo state networks are          W. Liu, Q. Guo, P. Zhang, D. Xu, H. Deng, K. Huang,
+     universal, Neural Networks 108, 495 (2018).                      H. Wang, X. Zhu, D. Zheng, and H. Fan, Emulating
+[70] M. Hatridge, S. Shankar, M. Mirrahimi, F. Schackert,             many-body localization with a superconducting quantum
+     K. Geerlings, T. Brecht, K. M. Sliwa, B. Abdo, L. Frun-          processor, Phys. Rev. Lett. 120, 050507 (2018).
+     zio, S. M. Girvin, R. J. Schoelkopf, and M. H. Devoret,     [86] J. Smith, A. Lee, P. Richerme, B. Neyenhuis, P. W.
+     Quantum back-action of an individual variable-strength           Hess, P. Hauke, M. Heyl, D. A. Huse, and C. Mon-
+     measurement, Science 339, 178 (2013).                            roe, Many-body localization in a quantum simulator with
+[71] M. Naghiloo, Introduction to experimental quantum                programmable random disorder, Nature Physics 12, 907
+     measurement with superconducting qubits (2019).                  (2016).
+[72] K. W. Murch, S. J. Weber, C. Macklin, and I. Siddiqi,       [87] J. Zhang, G. Pagano, P. W. Hess, A. Kyprianidis,
+     Observing single quantum trajectories of a superconduct-         P. Becker, H. Kaplan, A. V. Gorshkov, Z.-X. Gong, and
+     ing quantum bit, Nature 502, 211 (2013).                         C. Monroe, Observation of a many-body dynamical phase
+[73] S. J. Weber, K. W. Murch, M. E. Kimchi-Schwartz,                 transition with a 53-qubit quantum simulator, Nature
+     N. Roch, and I. Siddiqi, Quantum trajectories of super-          551, 601 (2017).
+     conducting qubits, Comptes Rendus Physique 17, 766          [88] L. Grigoryeva and J.-P. Ortega, Universal discrete-time
+     (2016), quantum microwaves / Micro-ondes quantiques.             reservoir computers with stochastic inputs and linear
+[74] Y. Pan, J. Zhang, E. Cohen, C.-w. Wu, P.-X. Chen, and            readouts using non-homogeneous state-affine systems,
+     N. Davidson, Weak-to-strong transition of quantum mea-           Journal of Machine Learning Research 19, 1 (2018).
+     surement in a trapped-ion system, Nature Physics 16,
+     1206 (2020).
+

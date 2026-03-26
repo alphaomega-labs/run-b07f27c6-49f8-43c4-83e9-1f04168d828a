@@ -1,0 +1,9 @@
+{
+  "handle": "qrc-ising-core",
+  "distribution_name": "omegaxiv-qrc-ising-core",
+  "version": "0.1.0",
+  "import_name": "qrc_ising_core",
+  "package_type": "library",
+  "manifest_path": "packages/qrc-ising-core/packaging_manifest.json",
+  "install_target": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl"
+}

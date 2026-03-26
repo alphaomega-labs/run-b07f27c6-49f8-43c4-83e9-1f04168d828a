@@ -1,0 +1,479 @@
+                                           Entanglement estimation of Werner states with a quantum extreme learning machine
+
+                                                                          Hajar Assil,1 Abderrahim El Allati,1, 2 and Gian Luca Giorgi3
+                                                           1
+                                                               Laboratory of R&D in Engineering Sciences, Faculty of Sciences and Techniques Al-Hoceima,
+                                                                                      Abdelmalek Essaadi University, Tetouan, Morocco
+                                                                                 2
+                                                                                   Max Planck Institute for the Physics of Complex Systems,
+                                                                                      Nöthnitzer Str. 38, D-01187 Dresden, Germany
+                                                                   3
+                                                                     Institute for Cross-Disciplinary Physics and Complex Systems (IFISC) UIB-CSIC,
+                                                                           Campus Universitat Illes Balears, 07122 Palma de Mallorca, Spain. ∗
+                                                             Quantum Extreme Learning Machines (QELMs) have emerged as a potent tool for various quan-
+                                                          tum information processing tasks. We present a QELM protocol for estimating the amount of
+                                                          entanglement in Werner states. The protocol requires the generation of a sequence of random
+                                                          Werner states, which are then combined with a reservoir state and evolved using an Ising Hamilto-
+                                                          nian. A set of observables based on the Bloch basis is constructed and employed to train the system
+arXiv:2511.01387v1 [quant-ph] 3 Nov 2025
+
+
+
+
+                                                          to recognize unseen features. To assess the protocol’s robustness, noise is introduced into the input
+                                                          states, and the system’s performance under these noisy conditions is analyzed. Additionally, the
+                                                          influence of the magnetic field parameter within the Ising Hamiltonian on the estimation accuracy
+                                                          is investigated.
+
+
+                                                                I.   INTRODUCTION                             is motivated by their immediate applicability in noisy
+                                                                                                              intermediate-scale quantum (NISQ) devices [27, 28].
+                                              Traditional machine learning algorithms face chal-                 The concept of ELM was introduced within the
+                                           lenges as datasets become more complex and larger.                 broader framework of reservoir computing, which evolved
+                                           Quantum computing presents a promising solution to                 from echo state networks (ESN) and liquid state ma-
+                                           these limitations with its inherent parallelism and expo-          chines (LSM) in the early 2000s [29], [21]. The RC system
+                                           nential computational capabilities. By utilizing the dis-          consists of a reservoir denoted as R and a trainable read-
+                                           tinct characteristics of quantum systems, Quantum Ma-              out layer w. The reservoir retains its shape over time
+                                           chine learning can reach new frontiers in speed, precision,        and is instrumental in processing information. Various
+                                           and scalability for training neural networks [1–4].                reservoir types, such as traditional RNNs, ESNs, LSMs,
+                                              A very successful machine learning paradigm is repre-           and physical systems like octopus arms or photonic reser-
+                                           sented by reservoir computers (RCs) and extreme learn-             voirs, can be employed. The reservoir serves as an infor-
+                                           ing machines (ELMs), which are subclasses of recurrent             mation transducer, transforming input information into
+                                           neural networks (RNN) that do not require the tuning               the system’s state. Notably, from ELM, the state xk of
+                                           of the parameters of the reservoir, as during the learn-           the reservoir is uniquely determined by the corresponding
+                                           ing process, only the weights of the output layer are              input uk , as expressed by the equation
+                                           adapted through linear regression [5–8]. Besides the eas-
+                                           iness of the training process, reservoir computers and ex-                                 xk = f (uk ) .                (1)
+                                           treme learning machines are known for their ability to
+                                           solve multiple tasks simultaneously by training the out-           This design choice differs from reservoir computing,
+                                           put layer independently for each task. The primary dis-            where the state evolution depends on both current and
+                                           tinguishing factor between RCs and ELMs is the reser-              past inputs, which makes ELM useful in classification
+                                           voir’s internal memory utilization. While reservoir com-           tasks. Consider a classification problem that aims to de-
+                                           puters retain the memory of past inputs, making them               termine whether a picture contains a car or not. The
+                                           appropriate for processing temporal data, extreme learn-           presence of a car in a previous picture has no bearing on
+                                           ing machines perform static tasks and are not required             the presence of a car in the current picture[10].
+                                           to possess internal memory.                                           Quantum Extreme Learning Machine (QELM) stands
+                                              The extension to the quantum domain of the RC [9–               as an interesting form within the context of Quantum
+                                           15] and ELM [16–20] paradigms are motivated by the                 Reservoir Computing (QRC), a paradigm that seamlessly
+                                           promise of the exponential size of the Hilbert space               integrates quantum computing principles with physical
+                                           compared to the physical size of the system [21–24],               reservoir computing for real-time machine learning ap-
+                                           which can potentially lead to overcome classical algo-             plications [9, 30]. While QRC processes input data over
+                                           rithms, and with the intrinsic ability to process quantum          time, capturing temporal dependencies and correlations
+                                           inputs [25, 26] without requiring any information pre-             among previous inputs, QELM introduces a distinctive
+                                           processing, which would be inefficient in classical hard-          departure from this temporal paradigm. Compared to
+                                           ware. Furthermore, the popularity of QRC and QELM                  QRC, QELM does not rely on temporal dependencies
+                                                                                                              and does not store information about previous inputs in
+                                                                                                              the quantum reservoir. Instead, QELM performs a static,
+                                           ∗ gianluca@ifisc.uib-csic.es
+                                                                                                              one-shot transformation of the input data using the quan-
+                                                                                                                          2
+
+tum reservoir. This characteristic renders QELM partic-        are different from those of a reservoir computer. For the
+ularly suitable for tasks such as classification, where the    model II, the ergodic phase is achieved for magnetic fields
+inherent temporal dynamics of sequential data may be           larger than the typical values of Ji,j (while the concept of
+less crucial. The novel approach of QELM capitalizes on        dynamical phase transition can only strictly be applied
+the unique features of quantum systems, including the          to the case of thermodynamic systems, effects can also
+exponential growth of degrees of freedom in a Hilbert          be seen for finite-size models, even though the transition
+space (d.o.f ∼ 4N for a spin-1/2 system). The tempo-           between the two phases will not be sharp.).
+ral independence of QELM makes it an intriguing model             Werner states - Werner states of two qubits are mixed
+for specific applications within the broader landscape of      states that can be defined as follows:
+Quantum Reservoir Computing.
+   In this paper, we investigate an extreme learning ma-                                1−p
+                                                                             ϱW (p) =       I + p |ψ− ⟩ ⟨ψ− |           (3)
+chine technique that employs a quantum network consist-                                  4
+ing of randomly coupled spins, similar to the proposals        where I is the 4×4 identity matrix and |ψ− ⟩ is the singlet
+described in Fujii et al. (2017). Our goal is to accurately    state. These are known to be entangled if p > 1/3 and
+determine the Werner state parameter p using a machine         factorized otherwise [33].
+learning algorithm that relies solely on individual qubit
+measurements. The protocol’s resilience to noise in input         QELM protocol - Our goal is to estimate the parameter
+states is evaluated, shedding light on its efficacy under      p using a QELM, determining in such a way the entan-
+noisy conditions. Furthermore, we explore the concept          glement of a Werner state. First, we prepare a series
+                                                                                           (2)
+of generalizability in our QELM. We train the network          of input density matrices ϱW (pk ) = ϱW (pk ) where pk is
+using data from various domains and then assess its per-       a random number pk ∈ [0, 1]. Second, we prepare the
+formance on a target domain not included in the training       density matrix of the whole system at t = 0
+set. This analysis provides insight into the system’s ca-
+pability to learn and apply its knowledge to unseen data,                        ρk (0) = ϱW (pk ) ⊗ Rk                 (4)
+a crucial aspect for practical applications.
+                                                               where Rk is a random state of the reservoir selected from
+   The structure of this paper is outlined as follows: In
+                                                               a uniform distribution. It is worth remarking that Rk de-
+the initial section, we articulate our proposed model, uti-
+                                                               pends on k, that is, it is different for each input ϱW (pk ),
+lizing the Transverse Ising model as a reservoir, illumi-
+                                                               which makes the task highly nontrivial. Let us also re-
+nating each step in the process. Subsequently, we assess
+                                                               mark that, while k-dependent, the reservoir state Rk is
+the robustness of the reservoir by introducing noise to
+                                                               not related to the input and does not enter the machine
+the input states. The results section is dedicated to an
+                                                               learning part of the protocol. Then we let the state evolve
+in-depth discussion and analysis of the various findings.
+                                                               according to
+
+                                                                                ρk (t) = e−iHt ρk (0)eiHt ,             (5)
+                   II.     PROTOCOL
+                                                               where e−iHt is the operator of the unitary dynamics.
+                                                               Third, the extraction of information from the density is
+ Reservoir - Our reservoir is given by a Transverse Ising      achieved through measurement, where the corresponding
+Model [9, 12, 21], whose Hamiltonian reads                     observables are defined as the elements of the N-qubit
+                    N                        N                 Bloch vector and can be calculated as xi (∆t) = ⟨Bi ⟩ =
+                                                               Tr [Bi ρ(∆t)], where Bi are the Pauli strings of the quan-
+                    X                        X
+               H=          Jij σix σjx + h         σiz   (2)
+                     i<j                     i=1
+                                                               tum reservoir and ∆t is the time at which the system
+                                                               is measured [9]. In our paper, we will use the local ob-
+where i, j label the sites of the network, σia (a = x, y, z)   servables Bi = σiz . This choice is motivated by its ex-
+are the Pauli matrices acting on the i−th site, h is the       perimental simplicity, making it practical and feasible to
+value of the external magnetic field, Jij is the spin-spin     implement in real-world setups. Thus, the data are col-
+coupling, randomly selected from a uniform distribution        lected as follows
+in the range {−Js /2, Js /2} with Js = 1 and N is the
+number of qubits. As discussed in [12, 31, 32] in the                        xi (∆t) = ⟨σiz ⟩ = Tr [σiz ρ(∆t)] .        (6)
+context of QRC, the dynamical phase of the reservoir can
+play an important role in the computational capabilities         Following the data acquisition from the reservoir, the
+of the system. In particular, it has been shown that the       subsequent step involves initiating our machine learn-
+ergodic phase, which appears for h ≳ 0.1Js , provides a        ing procedure. In this process, observables of Eq. (6)
+suitable scenario for efficient information propagation, in    are then employed in training the system. To initiate
+contrast to the nonergodic phase, where the presence of        the training process, we define the vector x(k) (∆t) =
+                                                                 (k)   (k)      (k)
+local conserved quantities can cause slow convergence.         (x1 , x2 , ..., xN )⊤ . In the training phase, a dataset
+On the other hand, such an analysis is lacking for an          comprising L < n instances (with n denoting the num-
+extreme learning machine, whose memory requirements            ber of inputs) is collected, where each instance is paired
+                                                                                                                        3
+
+with a target value p̄k . The objective during training        where rk is a further random density matrix and 0 ≤ ε ≤
+is the minimization of the mean square error (MSE) be-         1 is a measure of the noise.
+tween the estimated parameter pk and its corresponding            Moreover, we will explore the impact of the magnetic
+target p̄k :                                                   field in the Hamiltonian 2 on the performance of the pro-
+                                                               tocol. By varying the strength of the magnetic field h, we
+                                   L
+                                1X             2               want to see how this parameter affects the resilience of
+            M SE training =        (pk − p̄k )           (7)   the quantum reservoir to noise-induced fluctuations. To
+                                L
+                                  k=1                          have a closer look at our protocol, in the next sections,
+The estimation of pk involves a weighted sum of observ-        we will evaluate the MSE for the test set.
+ables, with weights wiLR determined using the Moore-
+                                      −1 T
+Penrose pseudo-inverse X + = X T X        X , where X
+                                                                                   III.   RESULTS
+represents the matrix of input data. Specifically, the
+weights are calculated as wLR = X + y, where y is the
+vector of target values. Thus, the parameter pk is esti-          The protocol under consideration in this work is to
+mated as:                                                      estimate the parameter ”p” for predicting the entangle-
+                                                               ment of Werner states using a system of N = 5 qubits.
+                                                               This system size will be used throughout the paper un-
+                          N
+                          X             (k)
+                                                               less explicitly specified otherwise. For training and test,
+                   pk =         wiLR xi .                      we use 100 training states and 100 test states. To ensure
+                          i=0                                  a thorough comprehension of the following study, we first
+                                                               present in Fig. 1 a series of panels depicting the raw data
+After minimization, we proceed to the test phase, where
+                                                               for both the outputs and predictions.
+performance is evaluated on a particular set of n − L
+instances. The evaluation involves computing the mean             Figure 1 serves as a comprehensive representation of
+square error (MSE) for the test set. This procedure pro-       the linear regression model’s performance in predicting
+vides a quantitative measure of the system’s capability to     actual data. The red line represents the target data, and
+estimate the parameter pk and, consequently, the entan-        the blue data points present the output of our protocol.
+glement properties of the input states. A diagrammatic         Panels (a) through (d) describe distinct scenarios; panel
+description of the whole protocol described here can be        (a) presents the raw data in the no-noise case, where the
+found in TABLE (I).                                            protocol’s output is very close to the perfect predictions,
+                                                               and the model demonstrates a robust ability to generalize
+                                                               from training data and reproduce fundamental relation-
+TABLE I. Schematic representation of how our QELM pro-         ships. From (b) to (d) the noise increases from ε = 0.2 to
+tocol processes information.                                   ε = 0.9. Low noise scenarios show the model’s resilience,
+                   ϱW (p) = 1−p                                maintaining accuracy despite noise (e.g., ε = 0.2). On
+        Input                4 I + p |ψ− ⟩ ⟨ψ− |
+                                                               the other hand, high noise levels (e.g., ε = 0.9) expose
+                            ϱW (pk ) ⊗ Rk                      limitations, with predictions deviating significantly from
+                                                               actual data points.
+      Reservoir H =
+                       PN          x x
+                                              PN     z            The quantitative analysis starts in Fig. 2, where we
+                          i<j Jij σi σj + h     i=1 σi
+                                                               show the MSE as a function of the external magnetic
+                                                               field with different levels of noise. We begin by analyzing
+                 ρk (t) = e−iHt [ϱW (pk ) ⊗ Rk ]eiHt
+                                                               the simplest scenario: the absence of noise. This allows
+                                                               us to isolate and examine the core dynamics of the sys-
+                     xi (k∆t) = Tr [σiz ρ(k∆t)]
+                                                               tem. Without the confounding factor of noise, the QELM
+                                PN     LR (k)
+                                                               can effectively model the system using a relatively simple
+       Output           pk =      i=0 wi xi                    network configuration. This configuration does not re-
+                                                               quire incorporating the magnetic field parameter h into
+   Real-world quantum systems inevitably exhibit imper-        the model. For our analysis, the noise-free case serves as
+fections. These imperfections can arise from internal          a baseline for evaluating the model’s performance when
+limitations or interactions with the surrounding environ-      noise is introduced.
+ment. This can introduce various forms of noise that can          The orange and green lines show how the dynamics
+hinder the performance of quantum algorithms. In this          of the system becomes substantially more complex when
+work, we focus on the specific case of noisy input injec-      noise is introduced. It becomes evident that the model’s
+tion. This scenario occurs when the actual input data          performance gradually diminishes. However, as noise in-
+fed into the quantum system deviates from the ideal in-        tensifies to a considerable degree, the model’s ability to
+put due to noise. For this, let us assume that the state       provide accurate predictions is notably impeded. Sur-
+injected into the reservoir is                                 prisingly, leveraging the impacts of the phase transition
+                                                               might be beneficial in this case. On the contrary, there
+           ϱW (pk , ε) = (1 − ε)ϱW (pk ) + εrk ,         (8)   appears to be little advantage to operating within the
+                                                                                                                              4
+
+
+
+
+FIG. 1. Comparison of Actual Output and Predicted Output in Linear Regression, (a) without noise, (b) with Low Noise
+ε = 0.2, (c) with Moderate Noise ε = 0.5, (d) with High Noise ε = 0.9. The figure shows the comparison between the actual
+output and the predicted output obtained from a linear regression model operating in the presence of varying noise levels.
+The blue data points represent the actual output values, while the red line represents the ideal predictions. As noise increases
+(ε = 0.2, ε = 0.5, and ε = 0.9 ), the model’s ability to accurately capture the underlying trend faces challenges.
+
+
+                                                                  quirements. This insight stems from the recognition that
+                                                                  the current task prioritizes information distribution over
+                                                                  the retention of past inputs, rendering memory preserva-
+                                                                  tion less crucial. As a result, our exploration unveils the
+                                                                  potential to optimize performance by effectively address-
+                                                                  ing noise-induced complexities through phase transition
+                                                                  strategies.
+                                                                     Figure 3 explores how adjusting the time step size (∆t)
+                                                                  affects the model’s ability to predict the target behavior.
+                                                                  The experiment focuses on a system with a specific ex-
+                                                                  ternal magnetic field strength h = 0.1. When there’s
+                                                                  no noise in the data, the model performs well regardless
+                                                                  of the time step size. Any time step allows the model to
+                                                                  capture the underlying dynamics and achieve perfect pre-
+                                                                  dictions. When the noise level is high, the model strug-
+                                                                  gles to make accurate predictions irrespective of the time
+                                                                  step. The high noise overwhelms the system, making it
+FIG. 2. MSE as a function of the magnetic field h with varying    difficult to extract meaningful information. In the inter-
+levels of noise (Average over 20 realizations).                   mediate noise scenario, a minimum time step (∆t) exists
+                                                                  below which the model’s performance suffers. This sug-
+                                                                  gests that under moderate noise, the model needs a cer-
+ergodic phase. The criticality of working within specific         tain amount of time (captured by (∆t)) to develop the
+phases is highlighted by the orange and green lines in Fig.       necessary internal complexity to accurately predict the
+2. These phase transitions can be strategically employed          target behavior. This can be related to the scrambling
+to our advantage.                                                 time of the reservoir [34].
+   The introduction of noise creates an intricate inter-             A relevant issue in a realistic set-up is the presence of
+play of factors, and by navigating these critical points,         finite resources. For instance, in any experimental re-
+we gain the ability to exploit their inherent properties to       alization, the observables that we introduced above can
+improve task performance. Intriguingly, we observe that           only be estimated by realizing a series of (finite) mea-
+the ergodic phase, while known for its memory-preserving          surements (see [35, 36] ) for more details. Indeed, a QRC
+capabilities, does not necessarily align with our task’s re-      or QELM’s capability can be severely limited.
+                                                                                                                                5
+
+
+
+
+FIG. 3. MSE as a function of ∆t. The system’s parameter is     FIG. 4. MSE as a function of ∆t with different number of
+h = 0.1 (average of 20 realizations).                          measurements and infinite number of measurements Nm and
+                                                               ε = 0.2. The system’s parameter is h = 0.1 (Average of 20
+                                                               realizations)
+   Figure 4 compares the results obtained previously (Fig.
+3) using different numbers of finite measurements Nm
+with those obtained in the infinite measurement limit.         mary objective of domain generalization is to improve the
+Here, the observable is evaluated for three different values   robustness and adaptability of machine learning models
+of Nm = 1000, 5000, and 15000, with the error parameter        to a wide range of data distributions. This is particu-
+ε = 0.2. The grey line represents the results obtained in      larly critical for real-world applications where the data
+the infinite measurement limit. In quantum mechanics,          can vary greatly in various scenarios, making it imprac-
+the measurement process is inherently probabilistic, and       tical to collect labeled data for every potential domain.
+the accuracy of the measured observable depends on the            In the following, we demonstrate the ability of the
+number of measurements Nm performed. For a finite              QELM to generalize the learning of Werner states in
+number of measurements, the observable ⟨O⟩finite can           higher dimensions, which is possible with knowledge of a
+be expressed as:                                               single element in the test domain. More specifically, dur-
+                                                             ing the training phase, we will utilize the Werner states
+                                           1                   defined in Eq. (3). These states will be relabeled as
+           ⟨O⟩finite = ⟨O⟩infinite + O √                        (2)
+                                          Nm                   ϱW (p), where the superscript 2 denotes the number of
+                                                               qubits utilized to encode the state. Then, in the test
+where ⟨O⟩infinite is the ideal value of the observable
+                                                       in     stage, the reservoir will be fed with fresh states belong-
+                                           1                   ing to
+the infinite measurement limit, and O √N        represents
+                                             m
+the statistical error due to the finite number of measure-                           1−p
+                                                                           (n)
+ments [35, 37]. In the figure, the solid lines correspond                ϱW (p) =        In + p |ψGHZ ⟩ ⟨ψGHZ | ,             (9)
+                                                                                      2n
+to different finite measurements, showing how the observ-
+able converges towards the infinite measurement limit as       where In is the (2n × 2n ) identity matrix and |ψGHZ ⟩
+Nm increases. We see that in our case, a relatively small      is any GHZ state (for the sake of clarity, in Fig.        √ III A
+number of repeated measurements is sufficient to achieve       we used |ψGHZ ⟩ = (|0, 0, . . . , 0⟩ + |1, 1, . . . , 1⟩)/ 2). This
+good performance in the case of limited error.                 can be seen as a generalization of Werner states to larger
+                                                               dimensions n > 2. To maintain the reservoir connections
+                                                               unchanged in the training and in the test phase, we will
+              A.   Domain generalization                       keep the total number of qubits N fixed.
+                                                                  In Fig. 5, we present the prediction made for targeting
+   In the context of machine learning, domain generaliza-      Werner states of n = 3 (panel (a)) and n = 4 (panel (b))
+tion refers to the problem of training a model on data         qubits. In both cases, we used N = 7. We compare the
+from multiple source domains and then using it to per-         perfect prediction (diagonal dashed lines) with the actual
+form well on a target domain that was not seen during          output of the QELM (blue points). The predictions (re-
+the training stage. It is a hard problem because ma-           ferred to as ”raw predictions” in the figure) demonstrate
+chine learning models are typically designed to perform        that the reservoir is able to capture the existence of a lin-
+well in a specific domain, and their performance may           ear dependence between the target and the output, even
+degrade when applied to new, unseen domains. The pri-          though it lacks the ability to predict the exact value of
+                                                                                                                          6
+
+the target. In order to do that, we only need to know the       data may be corrupted by noise. This resilience signifi-
+target of a single element from the test set. Using that        cantly enhances the versatility of our method, making it
+value, we can simply adapt the linear dependence of the         suitable for various practical applications. We also con-
+full set of data, which results in an almost perfect predic-    sider the role of the dynamical phases of the reservoir
+tion. To be clearer, the linear regression estimates that       by studying the computational capability of the system
+the predicted value p is related to the target p̄ through       as a function of the external magnetic field. Our find-
+p̄ = mp (blue points in 5). If there is a single input data     ings differ from previous studies in the field of quantum
+in the test set such that the target value p̄∗ is known, then   reservoir computing, where the internal memory of the
+the dressed prediction can be written as p̄ = mp(p∗ /p̄∗ ),     reservoir is often considered crucial for optimal perfor-
+which results in the red points of Fig. 5.                      mance. However, our results suggest a distinct scenario.
+                                                                For our specific QELM model, the optimal performance
+                                                                is achieved around the quantum critical point, a region
+                                                                where the system undergoes a significant phase transi-
+                                                                tion. Conversely, the ergodic phase (a different thermo-
+                                                                dynamic state) does not offer any significant performance
+                                                                advantage.
+                                                                   Compared to other QELM approaches, our model of-
+                                                                fers a distinct advantage. For each new instance, the
+                                                                reservoir state is reset, allowing the model to achieve its
+                                                                task solely through its internal dynamics. This simplifies
+                                                                the model and potentially improves its efficiency. Finally,
+                                                                our findings further demonstrate the model’s suitability
+                                                                for domain generalization. This means the QELM can
+                                                                effectively learn from data in one domain and apply that
+                                                                knowledge to make accurate predictions in a different but
+                                                                related domain. This broadens the potential applications
+                                                                of our model across various tasks within the realm of
+                                                                quantum information processing and quantum comput-
+                                                                ing.
+
+
+                                                                               ACKNOWLEDGMENTS
+
+                                                                   We acknowledge the Spanish State Research Agency,
+                                                                through the Marı́a de Maeztu project CEX2021-001164-
+                                                                M funded by
+                                                                MCIU/AEI/10.13039/501100011033, through the CO-
+FIG. 5. Ability of the QELM model to generalize to unseen
+                                                                QUSY project PID2022-140506NB-C21 and -C22 funded
+data from a new domain. The blue line represents the raw        by
+data obtained from the generalized domain (different from the   MCIU/AEI/10.13039/501100011033, and the Quan-
+training data). The red line represents the “dressed data”.     tERA QNet project PCI2024-153410 funded by
+which is constructed by adding the input-output relationship    MCIU/ AEI/10.13039/501100011033 and cofounded by
+of a single element from the target domain (the domain the      the European Union; MINECO through the QUANTUM
+model was trained on) to the raw data points in the general-    SPAIN project, and EU through the RTRP - NextGener-
+ized domain.                                                    ationEU within the framework of the Digital Spain 2025
+                                                                Agenda. The CSIC Interdisciplinary Thematic Platform
+                                                                (PTI+) on Quantum Technologies in Spain (QTEP+) is
+                                                                also acknowledged.
+                 IV.   CONCLUSIONS
+
+   In conclusion, we have introduced a novel QELM that                   Appendix A: Extended output layer
+can be used to estimate the degree of entanglement
+of Werner states. This model demonstrates significant              In the original model, only local Z observables ⟨σiz ⟩
+promise for practical applications in quantum informa-          were considered, which limited the amount of informa-
+tion processing. A crucial aspect of our investigation          tion extracted from the quantum system. To complete
+was exploring the QELM’s resilience in the presence of          the analysis, we now extend the output layer by incor-
+noise. Our findings highlight its remarkable robustness,        porating two-point correlations, namely, the expectation
+suggesting its applicability in real-world scenarios where      value of the product of two Pauli matrices, σiz σjz , allow-
+                                                                                                                                 7
+
+ing for a more comprehensive treatment of qubit interac-          to take the product of the projections and perform the
+                                                                                        1
+                                                                                          PNm k k
+tions. This extension provides a larger set of observables,       average: ⟨σiz σjz ⟩ = M  k=1 zi zj . So, the extension of
+capturing not only individual qubit properties but also           the output layer comes with no experimental supplemen-
+correlations between pairs of qubits.                             tary cost, even though the cost of the machine learning
+   The effect of this extension is illustrated in Figure A1,      part is modified.
+where we compare the correlation performance of the
+original and extended models across different noise lev-
+els (ε). The dashed lines represent the original model
+with local Z observables, while the solid lines show the
+performance of the extended model with two-point cor-
+relations. As noise increases (ε = 0.2, 0.5, 0.9), the ex-
+tended model consistently demonstrates lower MSE val-
+ues than the original model, highlighting its improved
+robustness to noise and more detailed measurement ca-
+pabilities. This enhancement enables the model better to
+capture the underlying dynamics of the quantum system,
+resulting in superior performance.
+   In many experimental setups, the expected values of
+the spin-spin correlations can be calculated from the re-
+sults of projective measurements of individual spins. In-
+deed, let us assume that we want to compute ⟨σiz ⟩, ⟨σjz ⟩
+but also ⟨σiz σjz ⟩. For each of the spins, if we run the ex-
+                                                    PNm k
+periment Nm times, we will have ⟨σiz ⟩ = N1m k=1          zi ,    FIG. A1. Effect of the extended output layer on MSE values
+where zik is the k th measurement result. Then, in order          under different noise levels (ε) as a function of h. The system’s
+to calculate the expected value of ⟨σiz σjz ⟩, we only need       parameter are h = 0.1 and N = 5 (Average of 20 realizations)
+
+
+
+
+ [1] P. Wittek, Quantum machine learning: what quantum                 1 (2021).
+     computing means to data mining (Academic Press, 2014).       [11] J. Nokkala, R. Martı́nez-Peña, G. L. Giorgi, V. Pa-
+ [2] M. Schuld, I. Sinayskiy, and F. Petruccione, An intro-            rigi, M. C. Soriano, and R. Zambrini, Gaussian states
+     duction to quantum machine learning, Contemporary                 of continuous-variable quantum systems provide univer-
+     Physics 56, 172 (2015).                                           sal and versatile reservoir computing, Communications
+ [3] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,               Physics 4, 53 (2021).
+     N. Wiebe, and S. Lloyd, Quantum machine learning, Na-        [12] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. So-
+     ture 549, 195 (2017).                                             riano, and R. Zambrini, Dynamical phase transitions in
+ [4] V. Dunjko and H. J. Briegel, Machine learning & artifi-           quantum reservoir computing, Physical Review Letters
+     cial intelligence in the quantum domain: a review of re-          127, 100502 (2021).
+     cent progress, Reports on Progress in Physics 81, 074001     [13] R. A. Bravo, K. Najafi, X. Gao, and S. F. Yelin, Quantum
+     (2018).                                                           reservoir computing using arrays of rydberg atoms, PRX
+ [5] H. Jaeger, The “echo state” approach to analysing and             Quantum 3, 030325 (2022).
+     training recurrent neural networks-with an erratum note,     [14] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz, P. Wein-
+     Bonn, Germany: German National Research Center                    berg, M. Hamdan, A. Zhdanov, S. H. Cantu, H. Zhou,
+     for Information Technology GMD Technical Report 148               R. A. Bravo, et al., Large-scale quantum reservoir learn-
+     (2001).                                                           ing with an analog quantum computer, arXiv preprint
+ [6] W. Maass and H. Markram, On the computational power               arXiv:2407.02553 (2024).
+     of circuits of spiking neurons, Journal of computer and      [15] A. Senanian, S. Prabhu, V. Kremenetski, S. Roy, Y. Cao,
+     system sciences 69, 593 (2004).                                   J. Kline, T. Onodera, L. G. Wright, X. Wu, V. Fatemi,
+ [7] K. Nakajima and I. Fischer, Reservoir computing                   et al., Microwave signal processing using an analog quan-
+     (Springer, 2021).                                                 tum reservoir computer, Nature Communications 15,
+ [8] G.-B. Huang, D. H. Wang, and Y. Lan, Extreme learn-               7490 (2024).
+     ing machines: a survey, International journal of machine     [16] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and
+     learning and cybernetics 2, 107 (2011).                           T. C. H. Liew, Quantum reservoir processing, npj Quan-
+ [9] K. Fujii and K. Nakajima, Harnessing disordered-                  tum Information 5, 35 (2019).
+     ensemble quantum dynamics for machine learning, Phys.        [17] S. Ghosh, T. Paterek, and T. C. Liew, Quantum neuro-
+     Rev. Appl. 8, 024030 (2017).                                      morphic platform for quantum state preparation, Physi-
+[10] P. Mujal, R. Martı́nez-Peña, J. Nokkala, J. Garcı́a-Beni,        cal review letters 123, 260404 (2019).
+     G. L. Giorgi, M. C. Soriano, and R. Zambrini, Oppor-         [18] L. Innocenti, S. Lorenzo, I. Palmisano, A. Ferraro, M. Pa-
+     tunities in Quantum Reservoir Computing and Extreme               ternostro, and G. M. Palma, Potential and limitations
+     Learning Machines, Advanced Quantum Technologies 4,               of quantum extreme learning machines, Communications
+                                                                                                                              8
+
+     Physics 6, 118 (2023).                                           S. Alperin-Lea, A. Anand, M. Degroote, H. Heimonen,
+[19] A. Suprano, D. Zia, L. Innocenti, S. Lorenzo, V. Ci-             J. S. Kottmann, T. Menke, et al., Noisy intermediate-
+     mini, T. Giordani, I. Palmisano, E. Polino, N. Spagnolo,         scale quantum algorithms, Reviews of Modern Physics
+     F. Sciarrino, G. M. Palma, A. Ferraro, and M. Paternos-          94, 015004 (2022).
+     tro, Experimental property reconstruction in a photonic     [29] H. Hauser, Physical reservoir computing in robotics,
+     quantum extreme learning machine, Phys. Rev. Lett.               Reservoir Computing: Theory, Physical Implementa-
+     132, 160802 (2024).                                              tions, and Applications , 169 (2021).
+[20] W. Xiong, G. Facelli, M. Sahebi, O. Agnel, T. Chotibut,     [30] K. Fujii and K. Nakajima, Quantum reservoir computing:
+     S. Thanasilp, and Z. Holmes, On fundamental aspects              A reservoir approach toward quantum machine learn-
+     of quantum extreme learning machines, arXiv preprint             ing on near-term quantum devices, Reservoir Comput-
+     arXiv:2312.15124 (2023).                                         ing: Theory, Physical Implementations, and Applications
+[21] R. Martı́nez Peña, J. Nokkala, G. L. Giorgi, R. Zam-            , 423 (2021).
+     brini, and M. C. Soriano, Information processing capac-     [31] W. Xia, J. Zou, X. Qiu, and X. Li, The reservoir learn-
+     ity of spin-based quantum reservoir computing systems,           ing power across quantum many-body localization tran-
+     Cognitive computation (2020).                                    sition, Frontiers of Physics 17, 33506 (2022).
+[22] W. D. Kalfus, G. J. Ribeill, G. E. Rowlands, H. K. Krovi,   [32] G. Llodrà, P. Mujal, R. Zambrini, and G. L. Giorgi,
+     T. A. Ohki, and L. C. G. Govia, Hilbert space as a com-          Quantum reservoir computing in atomic lattices, arXiv
+     putational resource in reservoir computing, Phys. Rev.           preprint arXiv:2407.02553 (2024).
+     Res. 4, 033007 (2022).                                      [33] R. F. Werner, Quantum states with einstein-podolsky-
+[23] J. Dudas, B. Carles, E. Plouet, F. A. Mizrahi, J. Grol-          rosen correlations admitting a hidden-variable model,
+     lier, and D. Marković, Quantum reservoir computing im-          Phys. Rev. A 40, 4277 (1989).
+     plementation on coherently coupled quantum oscillators,     [34] M. Vetrano, G. L. Monaco, L. Innocenti, S. Lorenzo, and
+     npj Quantum Information 9, 64 (2023).                            G. M. Palma, State estimation with quantum extreme
+[24] A. Sakurai, M. P. Estarellas, W. J. Munro, and                   learning machines beyond the scrambling time, arXiv
+     K. Nemoto, Quantum extreme reservoir computation uti-            preprint arXiv:2409.06782 (2024).
+     lizing scale-free networks, Phys. Rev. Appl. 17, 064044     [35] P. Mujal, R. Martı́nez-Peña, G. L. Giorgi, M. C. Soriano,
+     (2022).                                                          and R. Zambrini, Time-series quantum reservoir comput-
+[25] J. Nokkala, Online quantum time series processing with           ing with weak and projective measurements, npj Quan-
+     random oscillator networks, Scientific Reports 13, 7694          tum Information 9, 16 (2023).
+     (2023).                                                     [36] J. Garcı́a-Beni, G. L. Giorgi, M. C. Soriano, and R. Zam-
+[26] J. Nokkala, G. L. Giorgi, and R. Zambrini, Retriev-              brini, Scalable photonic platform for real-time quantum
+     ing past quantum features with deep hybrid classical-            reservoir computing, Phys. Rev. Appl. 20, 014051 (2023).
+     quantum reservoir computing, Machine Learning: Sci-         [37] A. Sannia, R. Martı́nez-Peña, M. C. Soriano, G. L.
+     ence and Technology 5, 035022 (2024).                            Giorgi, and R. Zambrini, Dissipation as a resource for
+[27] J. Preskill, Quantum computing in the nisq era and be-           quantum reservoir computing, Quantum 8, 1291 (2024).
+     yond, Quantum 2, 79 (2018).
+[28] K. Bharti, A. Cervera-Lierta, T. H. Kyaw, T. Haug,
+

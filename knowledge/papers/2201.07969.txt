@@ -1,0 +1,590 @@
+                                           Computing with two quantum reservoirs connected
+                                           via optimized two-qubit non-selective measurements
+                                           Stephen Vintskevich1,* and Dmitry Grigoriev1,2,*
+                                           1,* Moscow Institute of Physics and Technology, Institutskii Per. 9, Dolgoprudny, Moscow Region 141700, Russia
+                                           2,* Bitronics NeuroLab, Likhachevskiy Proyezd 4, Dolgoprudny, Moscow Region 141701, Russia
+                                           * vintskevich@phystech.edu
+arXiv:2201.07969v2 [quant-ph] 9 May 2022
+
+
+
+
+                                           ABSTRACT
+
+                                           Currently, quantum reservoir computing is one of the most promising and experimentally accessible techniques for hybrid,
+                                           quantum-classical machine learning. However, its applications are limited due to practical restrictions on the size of quantum
+                                           systems and the influence of noise. Here we propose a novel approach to connect two quantum reservoirs in a network to
+                                           overcome these issues and enhance their computing performance. To transfer information between quantum reservoirs, we
+                                           perform optimized two-qubit non-selective measurements. We suggest a general heuristic optimization strategy based on
+                                           tensor network language and matrix representation of two-qubit quantum channels specified for quantum reservoir computing.
+                                           In addition, we introduce a single qubit purification channel and its optimization for further enhancement of quantum reservoir
+                                           computing. We also demonstrate that the optimized channels applied to a seven-qubit network can efficiently transfer
+                                           information between its parts with the resulting performance comparable to a network up to twenty-five qubits connected via a
+                                           classical information link.
+
+
+
+                                           Introduction
+                                           In the seminal paper1 , the authors proposed utilizing complex dynamics of multipartite quantum systems - quantum reservoirs
+                                           (QR) - to perform learning and computational tasks with time-dependent data. This approach was named Quantum Reservoir
+                                           Computing (QRC) as a counterpart to classical Reservoir Computing (RC) - a powerful framework that stems from recurrent
+                                           neural network theory (see work2 and references therein). The detailed QRC framework is depicted in Fig. (1). Formally, the
+                                           components of QRC can be divided into four main parts. First, valuable information is encoded in a state of some quantum
+                                           system - denoted by red arrow and blocks marked by symbol Φe Fig.(1) - (a). It is then processed and transformed via
+                                           dynamics of a QR - blocks with symbol marked by UR in Fig.(1) - (a,c) represents unitary evolution. The third is performing
+                                           measurements of some quantum observable to gather processed encoded information (also named output signal). Finally, these
+                                           output signals - measurement results - are used to train a simple linear model. To implement QRC in practice, one usually
+                                           operates with a huge ensemble of identically prepared quantum systems (see Fig. 1 - (a)) to effectively perform measurements
+                                           using multiple copies of a system. As a physical realization of an ensemble, one can utilize nuclear magnetic resonance (NMR)
+                                           spin systems3–6 , semiconducting quantum dots7 , superconducting qubits8 and bosonic networks9, 10 . The great potential and
+                                           scope of QRC have been recently demonstrated not only for processing classical temporal signals but also for quantum state
+                                           preparation11 and reconstruction12 , training of an entanglement witness operator13 , and quantum tomography14 .
+                                               In contrast to other developing methods, such as quantum neural networks15 , quantum circuit learning16, 17 , and quantum
+                                           machine learning18, 19 , intrinsic parameters of QRs and their dynamics are usually assumed to be fixed and non-tunable.
+                                           However, it is important to emphasize recently were presented methods of enhancements and adjustments, such as boosting QR’s
+                                           computational power through spatial multiplexing technique20 and analyzing QR’s intrinsic dynamics for better performance21 .
+                                           The latter is similar to hyperparameter tuning in neural networks training. A recent approach that addresses the scalability
+                                           and efficiency of QRC is called High Order Reservoir Computing (HQRC22 ), which is worth mentioning within the discussed
+                                           above context. In this paper, the authors proposed adjustments and enhancements of QRC by connecting multiple small QRs
+                                           with five qubits each via a classical information link. Such an approach is promising for realistic experimental implementations
+                                           of QRC based on modern quantum technology23 . Additionally, QRC may be interpreted as the ’inverse’ to recently proposed
+                                           methods that apply machine learning techniques to learn non-Markovian quantum dynamics of a qubit system in a complex
+                                           environment24, 25 .
+                                               In this work, we concentrate on further developing the idea of constructing small networks of multiple QRs. We propose
+                                           a novel approach based on an action of a quantum channel that creates correlation and information transfer between two
+                                           QRs and acts on just two-qubits. A quantum channel is a completely positive, trace-preserving linear map (CPTP) on a set
+                                           of trace class operators that acts on some Hilbert space26 . For simplicity, we named this channel a bridge. As a particular
+implementation of the bridge channel, we perform two-qubit nonselective projective measurements (measurements without
+reading the outcome) in a given two-qubit basis. As it was pointed out in work27 , nonselective measurements can be used
+to transfer information between quantum systems and, as we demonstrated, can be used to improve QRC. One of the most
+vivid properties of multipartite quantum systems - entanglement must be presented on a particular measurement basis to
+transfer information between different QRs. Interestingly, it was proven28 that nonselective projective measurement might even
+entangle two initially disentangled qubit subsystems, but the result substantially depends on a chosen basis. It was also pointed
+out28 that projective nonselective measurements along a maximally entangling basis are useless for any entanglement gain
+between arbitrary two-qubit subsystems. However, even if the measurement two-qubit basis is an entangled basis, one does not
+guarantee good QRC performance. To find an optimal configuration of a bridge channel, we propose a heuristic optimization
+method. The proposed optimization method is based on the language of tensor networks, matrix representation of quantum
+channels, and simple ideas of information transfer based on linear algebra. We utilize a general two-qubit unitary operator
+ansatz to parameterize the bridge channel, which depends on 15 parameters as a result. To numerically optimize the channel’s
+parameters, we employ commonly used optimization algorithms in machine learning, such as Adam29 . Our optimization
+method does not depend on a particular QRC task or encoded information in QRs and can be considered as an adjustment of
+QRs’ dynamics. We also added and optimize auxiliary purification channels acting on bridge’s qubits, which proved are being
+useful for enhancement of QRC performance. We utilize the same ansatz that we are using for the bridge optimization but with
+a slightly different optimization heuristic. Details are presented in the Methods section.
+     We numerically simulate the dynamics of two QRs (denoted by QR-A and QR-B) for performance analysis of QRC assisted
+by optimized bridge and purification channels. For simplicity, we assume that all valuable information is encoded in a single
+qubit of QR-A named encoding qubit. We separately analyze two cases: extracting output signal only from QR-B subsystem
+and extracting output signal from both QR-A and QR-B. Note, QR-A and QR-B are connected only via the bridge channel.
+Based on these simulations we analyze standard metrics for short-term memory tasks (STM)21 , which gives us an understanding
+of the memory capability of QRs, one of the essential characteristics for successful QRC1 . Finally, we discuss possible new
+avenues in research and comparison with other setups (e.g., HQRC22 ).
+
+Results
+General framework.
+In this subsection, we provided an outline of a standard QRC framework. We considered a model of multiple reservoirs
+R p , p = 1, . . . M with similar structures, each consisting of n p qubits. A quantum state of a particular QR at the timestep i is
+described by the positive Hermitian density operator ρ̂ p [i] with the unit trace tr (ρ̂ p [i]) = 1, ∀i. In the case of multiple reservoirs,
+we assume that all reservoirs are completely uncorrelated at an initial time: ρ̂[i] = ⊗M       p=1 ρ̂ p [i]. The unitary evolution dynamics
+                                                                                        [p]
+of each QR is governed by a fully connected Ising-type Hamiltonian ĤR p = ∑ Ji j X̂i X̂ j + hip Ẑi , where X̂, Ẑ are Pauli operators.
+We utilize tensor network notations (we recommend, e.g., works30, 31 and references therein) to describe the dynamics of QRs,
+which is shown in Fig.(1). More details regarding tensor notations and tensor networks are provided in Methods. In general
+QRC approach one operates with a classical discretized temporal signal ~s(t) →~s[i] . The encoding of signal in QRs is performed
+via a set of encoding quantum channels:
+           [p]      [p]
+       {Φe } : Φe [ρ̂] = ρ̂(• p ) (~s[i]) ⊗ tr(• p ) (ρ̂) .                                                                             (1)
+
+Channels in Eq.(1) map the initial state of the overall QR system into a tensor product of states corresponding to two subsystems:
+a state of a subsystem for encoding and a state of the rest of QR. State of encoding subsystem (denoted as • p ) is carrying
+valuable information about the signal, while tr(• p ) (ρ̂) is a state of other QR’s subsystems. Symbol tr(• p ) denotes partial trace
+operation. Thus the subsequent application of encoding and evolution channels maps this valuable information from the input
+signal to a 4Ntotal -dimensional vector in the linear space of trace class operators representing a quantum state of QR. We denote
+Ntotal = ∑Mp=1 n p to be the total number of qubits in the QR system. We use a random binary signal as an input in the present
+work, which is the standard practice in QRC. In principle, one can mix signals’ inputs at particular timesteps and the outputs
+from different QRs on a previous timestep. For instance, it was proposed to connect outputs from different reservoirs via a
+classical information channel (HQRC)20, 22 .
+    To increase the performance of the QRs, one usually uses the temporal multiplexing technique1 by performing K additional
+measurements in between the subsequent timesteps i and i + 1 to get hÔ p iik (see also Fig. 1-(b)). We denoted hÔ p ii as the output
+signal at the discrete timestep i. In the special case of just two reservoirs (QR-A and QR-B), one can measure the following
+                                                       l
+observable: Ô({la , lb }) = (⊗na=1
+                                 A
+                                    Ẑala ) ⊗ (⊗nb=1
+                                                  B
+                                                     Ẑbb ), where {la , lb } ∈ 0, 1. Note that usually, a backaction of measurements on
+QR dynamics is not considered due to the possibility of performing simultaneous measurements of some observable for a big
+ensemble of identical reservoirs (Fig.1). It is assumed for each timestep i that one has performed i − 1 encoding steps which
+
+
+                                                                                                                                      2/11
+Figure 1. The schematic of a general QRC framework. (a) - The idea of physical realization. In practice, one prepares
+identical physical systems (spins, atoms, etc.) using similar initial conditions. Signal encoding procedures and measurements
+are performed on each subsystem to get output signals - ensemble mean values of a given observables. (b) - Dynamics of a
+QRC framework represented as a tensor network. An initial joint state of all QRs is factorized ρ̂[i] = ⊗Mp=1 ρ̂R p [i], p = 1, . . . M;
+                                                                                            [p]
+for i − 1 steps the dynamics of each QR is governed by the alternation of encoding-Φe [•] and the unitary evolution-UR p
+channels followed by the output signal readout step, channels and states are connected via convolution of multi-indices (dark
+lines). The input signal ~si (red arrows) at timestep i can be mixed with QRs’ output signals (beige arrows) at timestep i − 1. (c) -
+readout step with temporal multiplexing. Time interval [i, i + 1], ∀i ∈ [1, imax ] is split into K smaller sub-intervals τik for each
+reservoir. For each timestep tikp = ti+(k/K)
+                                      p
+                                              one performs measurements to extract output signal hÔ p iik .
+
+
+alternate with unitary evolution. Then one begins to extract the output signal at timestep i (Fig.1 - c). Thus, it is implied that
+one must repeat all the operations applied on QRs preceding timestep tikp . Note that for various p, the observables hÔ p iik and
+times tikp might be different. In the present work, we consider the simplest form of the observable Ô ≡ ÎAB/• ⊗ Ẑ(•) , where
+Ẑ(•) is an operator that acts on a Hilbert space of an arbitrary readout qubit, and ÎAB/• is unit operator. Finally, the learning
+procedure with the QRC is straightforward. In the supervised learning setup, we have a training sequence as a function of a
+timestep i - Y[i]. The objective is to minimize the mean square error (MSE):
+
+      W∗ = argmin||Ytrain − Ymod. (W)||2 ; Ymod. (W) = hOiout WT .                                                                  (2)
+                W
+
+In Eq.(2) Ymod. (W) is a linear model that weighs the set of output signals hOiout ≡ {hÔ p iik }, where ik is reshaped in one
+multi-index, || • ||2 is euclidean norm. Dimensions (shapes) of the above matrices are as follows: Ytrain - [T, Lout ],hOiout -
+[T, KNtotal + 1], and W - [Lout , KNtotal + 1]. Thus, to train W one performs the Moore-Penrose pseudoinverse operation:
+                          −1
+      WT∗ = hZiT hZi + λ I    hZiT Ytrain ,                                                                                         (3)
+
+where λ is a regularization term. For our simulations, we set the regularization term’s value λ ∼ 10−8 . The value of the
+regularization term plays an important role in the overall performance of QRC. Moreover, simulations of QRC are sensitive
+even to small numerical variations of the output signals. One needs to tune the regularization term to avoid misinterpretations
+of the QRC simulation results and prevent the QRC algorithm from overfitting. In the following section we consider a new
+QRC setup assisted by the bridge and purification channels and analyze its performance.
+
+A setup of two quantum reservoirs assisted by the bridge channel
+We consider a quantum system of two initially uncorrelated QRs (subsystems QR-A and QR-B) at timestep t to demonstrate our
+approach based on an action of the bridge channel. We only use a single qubit of the QR-A to encode the scalar signal in the
+QR system (Fig.2) via the standard encoding channel presented in the Eq.(1). The standard QRs dynamics, namely alternating
+action of encoding and unitary evolution channels, is now interrupted by the action of a bridge channel. The bridge channel
+is nonselective projective measurement Mba on two chosen qubits: a from QR-A and b from QR-B (see Fig.(2) - (a)). This
+channel Mba acts once between two subsequent encoding procedures. The action of the bridge channel on arbitrary QR’s state
+ρAB reads:
+        0                                  (a,b) ~                     (a,b) ~
+      ρ̂AB = Mba [ρ̂AB ] = ∑ ÎAB/a,b ⊗ Π̂i j   (θ )ρ̂AB ÎAB/a,b ⊗ Π̂i j   (θ ),                                                   (4)
+                            ij
+
+                          (a,b)
+where the operator Π̂i j (~θ ) = Û(~θ ) |ia jb i hia jb | Û † (~θ ), ia , jb ∈ {0, 1} is the projecive operator. Here we used standard
+notations {|ia jb i}, ia , jb ∈ {0, 1} for the two-qubit computational basis that in our case is transformed by the action of the
+unitary operator Û(~θ ). It allows one to parameterize a two-qubit basis used in our nonselective measurements. We denoted
+
+
+                                                                                                                                   3/11
+~θ as the vector of parameters. Note that if the unitary operator Û(~θ ) is factorized as Û(~θ ) = Ua (~θ ) ⊗ Ub (~θ ), the resulting
+ two-qubit measurements basis cannot be used to "connect" (create correlations between) the reservoirs QR-A and QR-B. More
+ details are provided in the Methods section. We used the following ansatz32, 33 to represent arbitrary two-qubit operator Û(~θ ):
+
+
+
+
+Figure 2. The schematics of the QR’s dynamics assisted by the bridge channel Mba which transmits of information between
+QR-A and QR-B represented as tensor network. The bridge channel is implemented as nonselective measurements on two
+chosen qubits (bridge qubits): a from QR-A and b from QR-B. Auxiliary purification channels PA and PB subsequently act
+on the bridge qubits but separated by unitary evolution UA and UB . This alternation is necessary to spread the information
+inside each the QR’s subsystems. Only one qubit in the QR-A is used for the signal encoding SA [t] (red arrow with SA [t]). At an
+initial timestep t, it is assumed that the QR state is factorized. The resulting correlated state (double arrows) of the whole QR at
+time t 0 after all transformations is ρ̂AB (t 0 , SA [t]).
+
+
+      Û(~θ ) = Ûa (θ1...3 ) ⊗ Ûb (θ4...6 )e−i(θ7 X̂⊗X̂+θ8Ŷ ⊗Ŷ +θ9 Ẑ⊗Ẑ)V̂a (θ10...12 ) ⊗ V̂b (θ13...15 ).                      (5)
+
+The vector ~θ in Eq.(5) contains fifteen parameters. Unitary operators {Û, V̂ }a,b are parameterized with three parameters each
+as standard qubit rotation operators along an arbitrary axis34 . We derived the particular ~θ∗ utilized in our simulations using a
+heuristic optimization strategy (see the Methods section). It is important to demonstrate that QR’s dynamics with the bridge
+channel can indeed transfer information from QR-A to QR-B. As a demonstration we analyze the performance of setups where
+we extract output information only form the QR-B with various numbers of qubits in QR-A and QR-B Fig.(3). We utilize the
+temporal multiplexing technique1 in all further calculations, setting K = 10 as our multiplexing parameter.
+    In general one can extract the output signal from each QR’s qubit. For extraction of output signals one performs multiple
+measurements of an observable over all ensemble for a chosen "extraction" qubit, including bridge’s qubits a and b (see Fig.
+(1)). However, the action of the bridge channel severely affects the purity P = trρ̂•2 of any QR’s subsystems states including
+states of a and b, which might worsen the QRC performance. In addition, to simulate the influence of noise on QR’s dynamics.
+We consider an action of the depolarization channel on each qubit (excluding qubits under action of a bridge channel) of the
+QR:
+
+      Φd p. (p)[•] = p/2Î + (1 − p)[•],                                                                                             (6)
+
+where p ∈ [0, 1] - is the probability of depolarization for the chosen qubit. To circumvent this problem, we introduce an ancilla
+qubit system in a fiducial pure state |0ia . Interaction with an ancilla can be used to purify a particular single qubit subsystem35 .
+In our simulations, we deliberately assume that one has access only to the bridge qubits and only one encoding qubit in the
+QR’s subsystem A. Thus, a purification channel acts on the bridge qubits a or b - Fig.(2) - (b1 ,b2 ) and can be written as follows:
+
+      P• [ρ̂AB ] = tr[ÎAB/• ⊗ Û• (γ) ρ̂AB ⊗ |0iaa h0| ÎAB/• ⊗ Û•† (γ)].                                                          (7)
+
+We optimize the purification channel using the same ansatz for the unitary operator Û• (γ) that was used to optimize the bridge
+channel Eq.(5). However, the optimization heuristic for   purification channel is different. It is based on the trade-off between
+                                                         qp             p
+purity P of the particular qubit and the fidelity F = tr(   ρ̂ out ρ̂ in ρ̂ out ) calculated for its state before and after purification.
+Based on the ansatz optimization result, we indeed achieved a significant QRC performance improvement for different setups
+with and without depolarization. Comparison results of QRC performance with and without depolarization are presented in
+Fig.(3) and Fig. (4)).
+    Finally, to quantify the QRC performance of the proposed approaches, we focus on a commonly used QRC task - short-term
+memory task (STM)21 . We analyze this task using several metrics. The first is memory accuracy MA(d)36 given by
+
+      MA(d) = cov2 (Ymod. , Ytest. (d))/(var(Ymod. )var(Ytest. (d))),                                                                (8)
+
+
+                                                                                                                                   4/11
+Figure 3. Comparison of Generalization loss (a), (b) and Memory accuracy (c),(d) with respect to the offset d in the STM
+task without and with action of purification channels P respectively. The channel P is subsequently applied to each bridge
+qubit once per encoding step. Different lines correspond to the setups with different numbers of qubits in subsystems QR-A and
+QR-B. We sampled 100 input signals and calculated average Generalization loss and Memory accuracy and its standard
+deviation (areas around average values) for all considered setups. The output signals are extracted only from the QR-B to check
+the ability of the bridge channel to transfer the information. Note, the timestep of unitary QR dynamics is different for each
+setup and was found experimentally. We chose the timestep that minimizes the sum of Generalization losses for offsets from
+d = 0 to d = 8 in the STM task. The case (Sep. - the dashed line) explicitly indicates that learning and generalization are
+impossible within the case of nonselective measurements in factorized bases.
+
+
+
+
+Figure 4. Comparison of Generalization loss (a), (b) and Memory accuracy (c),(d) without and with action of purification
+channel P respectively in the case of a setup with 3 qubits in QR-A and 4 qubits in QR-B. The system is affected by the noise
+described by depolarization channel (6); Different lines correspond to different depolarization probabilities
+p = 0, 0.001, 0.01, 0.1, 0.5. Output signals are extracted from both QR-A and QR-B to check the QRC performance of the
+whole QR setup. Clearly, the QRC performance is stable against depolarization with probability up to p = 0.1. In the most
+setups the action of purification channel can mitigate influence of depolarization.
+
+
+where Ymod is the prediction of QRC, and Ytest. (d) = s[i − d] is the input signal, shifted by d steps. Symbols var, cov represent
+standard variance and covariance. We take a random binary signal as an input signal to the STM task. Secondly we quantify the
+Generalization loss which is euclidean length (the L2 vector norm) of the prediction error: Gen.Loss = ||Ymod. − Ytest. ||2 .
+    In this section, we demonstrated the usefulness of the auxiliary purification channels. We compared various setups with
+and without the action of purification channels in Fig.(3), Fig. (4). The Fig.(3) shows the STM task with the output signal
+extracted only from the subsystem B for various number of qubits. This figure clearly validates that the bridge channel can
+indeed be used to transfer quantum information between quantum reservoirs. The Generalization loss in Fig.(3) - (a),(b) has a
+spike at d = 0. It requires some time to propagate from the encoding qubit in QR-A to the readout qubits in QR-B. So most of
+the outputs from QR-B at timestep i have no information about the signal si . Results in Fig.(3) also shows that the action of
+purification channel P increases the performance in most setups. The figure (4) focuses on affection of depolarization and
+emphasizes positive influence of purification channel on QRC performance. In some cases QRC performance increases by
+almost 50 %. Finally, Fig. (5) explicitly demonstrates the performance of one chosen setup analyzed in Fig. (4) without action
+
+
+                                                                                                                             5/11
+Figure 5. Visualization of the STM task performance on a random binary input signal for a setup with 3 qubits in QR-A and 4
+qubits in QR-B. STM task offset d = 7 corresponds to a good memory accuracy (see Fig. 4). The left and right plots depict the
+performance of the algorithm on the training (a) and testing data (b) sets respectively. Depolarization is not taken into account
+(p = 0). The purification channel is applied.
+
+
+of depolarization noise (p = 0). The resulting generalization shows good performance on the STM task up to the offset d = 7.
+Our analysis concludes that the bridge channel can transfer valuable information for QRC, and proposed setups are stable to
+noise, especially when the purification channel assists QR dynamics.
+
+Summary
+It is clear that due to practical limitations caused by control difficulties and a magnitude of noise in quantum systems, the
+accessible quantum-enhanced feature space of QR is also limited. In practice, the construction of relatively small QRs is one of
+the most realistic solutions that increase the scalability of QRC. In this paper, we suggested a novel way to connect QRs in a
+network. We proposed utilizing two-qubit nonselective measurements in two-qubit entangled basis to transfer information
+between QRs within the network. This channel, denoted as the bridge, allows one to make a network of reservoirs without
+any classical communication between them. The proposed approach excludes classical information processing for the QRC
+procedure up to the final linear optimization step.
+     In addition, we introduced auxiliary single-qubit purification channels to further enhance QRC performance. Our approach
+can be treated as an intermediate scheme in-between QCL and QRC. The presented numerical optimization algorithms for both
+the bridge and the purification channels are based on the application of tensor network language, and the analysis of matrix
+representation of quantum channels. Note that the optimization strategy is unconditional - it does not depend on a particular
+QRC task or its structure and does not require a lot of computational resources. The optimization strategy can also be extended
+further by considering various parametrizations of interactions between multiple QRs. We demonstrated the performance of
+two QRs connected via the bridge channel by numerical simulations. We observed that the optimized bridge channel with just 7
+qubits produces memory accuracy comparable with a classically connected QRs network up to 25 qubits. We also performed
+simulations to validate that the purification procedure enhances the QRC performance affected by noise.
+     Another possible performance enhancement could be achieved by optimizing the channel application sequence and
+considering more than two-qubit subsystems. The particular parameters of the given QRC setup should be optimized for various
+physical QR realizations: photons, atoms, molecules, etc. The most important problem for further investigation is analyzing the
+performance and scalability of setups with more than two QRs, which is the next step of our research. We believe that further
+development of a proposed technique and enhancements of optimization strategies of information transfer in QRs networks will
+drastically increase the computational power of setups with an arbitrary number of interconnected QRs. As a result, adjustable
+QR networks will expand QRC applications, including classical and quantum information processing tasks.
+
+Methods
+This section provides details regarding the tensor network language and proposes the heuristic optimization strategies for the
+given ansatz used for parametrization of the bridge (4) and purification channels (7).
+    In our analysis we utilize the commonly used language of tensor networks30 . It has a simple graphical representation of
+quantum dynamics of multipartite quantum systems31 . We have demonstrated QRs dynamic and schematic of QRC using
+this language in Fig. 1 and Fig. 2. To describe a QR’s quantum state one can consider a basis in the joint Hilbert space
+Htotal = ⊗ p=M
+            p=1 H p : {|i1 , . . . iM i}. Thus, ρ̂ = ∑{i1 ,...i p } ρi1 ,...iM i0 ,...i0M |i1 , . . . iM i hi1 , . . . iM |. The matrix element ρi1 ,...iM i0 ,...i0M - is a
+                                                                                                             0          0
+                                                                                    1                                                                        1
+
+
+
+                                                                                                                                                                     6/11
+multi-index array which we call tensor. It has rank 2M, but one can rearrange these indices by reshaping this tensor into a vector
+(rank one tensor) by assembling all indices in one big multi-index: i1 , . . . iM i01 , . . . i0M −→ I, I ∈ {0, 4Ntotal }. Such representation
+is handy for describing quantum dynamics, operating, and addressing subsystems of the whole QR. One can always rearrange
+tensor indices to form groups corresponding to particular subsystems of interest. In this case an arbitrary quantum channel acts
+on quantum state ρ̂ 0 = Φ[ρ̂] can be represented as matrix (rank - 2 tensor): ρI 0 = ΦI 0 I ρI . Here, we utilized the Einstein index
+summation rule: each index can appear at most twice in any term. Repeated indices are implicitly summed over. Note, one can
+use alternative basis to represent a multipartite quantum state ρ̂ as a vector. For instance one considers a linear space of trace
+class operators26 acting on Hilbert space Htotal . T (Htotal ) with some operator basis {Ê j }, j = 0, . . . 4Ntotal . Thus, an arbitrary
+                                                                   Ntotal
+quantum state has the following representation: ρ̂ = ∑4j=0                ρ j Ê j with real-valued elements ρ j . Alternatively, one can also
+employ Choi-Jamiolkowski isomorphism to represent quantum channels and their action on quantum states26 . Our analysis and
+derivations operate with both computational basis for multi-qubit systems and multi-qubit Pauli operator basis. In the Fig. 1 -
+(b) we represent state of each reservoir R p as a tensor with one multi-index and whole QR system has M multi-indeces whereas
+quantum channels have 2M indices. Consecutive convolution of indices reflects QRs dynamics - change of ρ̂(t) in time.
+    In the Eq.(4) of the main text we proposed the bridge channel - a way to use nonselective measurements to transfer
+information between QR-A and QR-B. Additionally, to improve the QRC performance, we utilize a purification channel Eq.(7).
+We use a general ansatz Eq. (5) to parametrize both quantum channels. Let us start by considering the bridge channel. Firstly, it
+is easy to show explicitly that the "presence" of entanglement is necessary for information transfer via the bridge channel. We
+assumed that information about a signal is encoded in QR-A at an arbitrary time t. For simplicity, we implied that no information
+about a signal was presented in the QR system before the time t. Thus, an arbitrary initial state of the QR after the encoding can
+                                           [k]             [k]
+be written as follows: ρ̂AB (t) = ∑k qk ρ̂A/a,a (s,t) ⊗ ρ̂b,B/b (t) where state normalization is assumed: ∑k qk = 1. Coefficients qk
+do not depend on an encoded signal, and trA trB (ρ̂AB (t)) = trB trA (ρ̂AB (t)) = 1. If we use coefficients θ7 , . . . θ9 ≡ 0 in Eq.(5) and
+                                                                                                     0
+substitute it into Eq.(4), the resulting state after the action of the bridge channel ρ̂AB (t) = Mba [ρ̂AB (t)] has the following form:
+                                                                                                                             0 [k]       0 [k]
+         0
+                                                                                                  
+                                     [k]                                              [k]
+       ρ̂AB (t) = ∑ qk hia | Q̂a ρ̂A/a,a (s,t)Q̂†a |ia i |ia i hia | ⊗ h jb | Q̂b ρ̂b,B/b Q̂†b | jb i | jb i h jb | = ∑ qk ρ̂A (s,t) ⊗ ρ̂B (t), (9)
+                  ia , jb ,k                                                                                    k
+
+where Q̂a,b = Ûa,b ⊗ V̂a,b are the unitary operators that act on subsystems a or b. Thus, for any observable ÎA ⊗ ÔB , the resulting
+mean value hÎA ⊗ ÔB i does not carry any information about the encoded signal:
+                                  0 [k]               0 [k]                      0 [k]
+       hÎA ⊗ ÔB i = ∑ qk trA (ρ̂A (s,t))trB (ÔB ρ̂B (t)) = ∑ qk trB (ÔB ρ̂B (t)).                                                          (10)
+                          k                                       k
+
+As a result, nonselective measurements parametrized with θ7 , . . . θ9 ≡ 0 cannot lead to information transfer between the QR’s
+subsystems. One can use the channel matrix representation to gain more insights about the structure of a bridge channel. Let
+us fix an orthogonal operator basis set in space T (Htotal ): {σ̂a ⊗ σ̂b ⊗ êξ }. Operators {σa,b ; a, b ∈ {0, . . . 3} are standard
+Pauli operators {Î, X̂, Ŷ , Ẑ} acting on qubits a and b. Basis operators êξ , ξ0,...4(Ntotal −2) −1 act on the subsystem QR-AB/ab.
+We explicitly distinguished basis operators corresponding to the subsystem of bridge qubits. Thus, we can also represent an
+arbitrary QR state ρ̂AB (t) as follows:
+
+                                                                            (σ̂a ⊗ σ̂b )     êξ
+       ρ̂AB (t) = ∑ rab,ξ (t)(σ̂a ⊗ σ̂b ) ⊗ êξ ; rab,ξ (t) = tr(ρ̂AB (t)                ⊗ N −2 )                                              (11)
+                  ab,ξ
+                                                                                 4        2 total
+
+The action of an arbitrary two-qubit channel IAB/ab ⊗ Yba [ρ̂AB (t)] can be represented by:
+         0
+       ρ̂AB (t) = IAB/ab ⊗ Yba [ρAB (t)] = ∑ rab,ξ (t)Yab [σ̂a ⊗ σ̂b ] ⊗ êξ = ∑ ( ∑ ϒab,a0 b0 δξ ,ξ 0 ra0 b0 ,ξ 0 (t)) (σ̂a ⊗ σ̂b ) ⊗ êξ ,   (12)
+                                              ab,ξ                                   ab,ξ a0 b0 ,ξ 0
+
+where ϒab,a0 b0 is a matrix representation of a two-qubit channel Yba [•a,b ] and is given by: ϒab,a0 b0 = 14 tr σ̂a ⊗ σ̂b Yba [σ̂a0 ⊗ σ̂b0 ] .
+                                                                                                                                             
+
+    As we mentioned earlier, both the bridge and the purification channels depend on the same ansatz Eq.(5), which implies
+parametrization of a particular channel and its matrix representation on parameters θ : Yba (θ ) → ϒab,a0 b0 (θ ). To optimize the
+bridge channel Mba (θ ) with the corresponding matrix representation Mab,a0 b0 (θ ) we use the following heuristic observation. In
+the case of nonselective measurements in factorized bases (no entanglement presence in ansatz Eq.(5), Eq.(9)) a 1 - norm of
+                                                                                                           SEP. || ≤ ||M ENT. || . The
+the Mab,a0 b0 (θ ), in general, is less than it is in the case of measurements along entangled bases ||Mab,a    0 b0 1      ab,a0 b0 1
+1-norm, by definition, is the maximum absolute column sum of a matrix. From Fig.(7), it is clear why the 1-norm is a good
+candidate. Let us take a look at an arbitrary factorized two-qubit state ρ̂ab = ρ̂a ⊗ ρ̂b = ∑ab ra rb (σ̂a ⊗ σ̂b ). The corresponding
+coefficients ra rb in a matrix representation are also factorized. Let us assume that ra is some function of the signal s that carries
+
+
+                                                                                                                                               7/11
+some "valuable" information: ra ≡ ra (s). Consequently, if one would like to transfer "valuable" information about the signal
+from a to b, one needs to "mix" the corresponding coefficients and assemble a new non-factorized matrix rab . The matrix
+rab also tends to have the maximum number of non-zero elements that nontrivially depend on the signal. The diversity of
+transformations of valuable information inside a reservoir system is an essential feature of RC, both classical and quantum.
+Indeed, it means that the matrix representation of a bridge channel has to be as "diverse" as possible. This observation can be
+directly verified via a plot of the matrix Mab,a0 b0 (θ ) for various cases (see Fig.7). It is clear that the bridge channel’s matrix in
+the case of nonselective measurements along the entangled basis in Fig.(7)-(a) is the most diverse matrix. We also aim to find
+such matrix Mab,a0 b0 (θ∗ ) to contain as many nonzero values as possible.
+    The above heuristic optimization idea can be further strengthened by analyzing QR’s dynamics using tensor network
+graphical representation. For this purpose, we consider a standard computational multi-qubit basis {|i1A , . . . inB i}. We explicitly
+separate indices corresponding to bridge’s qubits subsystems (I˜a , I˜b , Ia , Ib ). Let us assume that arbitrary states of QR-A and
+QR-B are factorized at initial time moment t. Let us also consider an arbitrary observable ÎA ⊗ ÔB acting on subsystem of
+QR-B. The resulting tensor network is depicted on Fig. (6)-(a). Based on the prescribed index notations, the mean value of the
+observable can be rewritten as a tensor convolution. (Einstein summation rule is assumed), see also Fig. (6)-(b):
+
+       hÎA ⊗ ÔB i(s) = Ã[Ia I˜a ] M̃[Ia I˜a ],[Ib I˜b ] B̃[Ib I˜b ] , Ã[Ia I˜a ] = UA [#],[I˜A Ia ] ρ[I˜A I˜a ] (s), B̃[Ib I˜b ] = OJb UB [Jb ,#],[I˜B Ib ] ρ[I˜B I˜b ]   (13)
+
+where we reshaped bridge tensor to the matrix M̃[Ia I˜a ],[Ib I˜b ] and combined multi-indeces in all tensors to emphasize role of
+M̃[Ia I˜a ],[Ib I˜b ] in information transfer. The symbol # - indicates full convolution of a given tensor along some set of indices, which
+reduce rank of a tensor over 2M, with natural number M. Thus, it is necessary that matrix M̃[Ia I˜a ],[Ib I˜b ] has rank more then
+1 to transfer information from QR-A and QR-B and vice versa. From (6)-(b) and (13), it is also clear that the properties of
+information transfer do not depend on the inner structure of tensors Ã and B̃ and their unitary transformations, including the
+action of an observable operator. It corresponds to simple criteria of information transfer form QR-A to QR-B by assuming
+ ∂                                                                                          0                          ˆ0
+∂ s hÎA ⊗ ÔB i(s) 6= 0. On the other hand, it is clear that hÎA ⊗ ÔB i(s) = trB (trA (ρ̂AB (s))ÎA ⊗ ÔB ) = trB (ρ B (s)ÔB ). Consequently,
+based on (13) and Fig.(6) one needs to maximize 1-norm of rows of reduced tensor M̃[#I˜a ],[Ib I˜b ] reshaped in matrix, owing to
+linear structure of tensor transformations to maximize information transfer from QR-A and QR-B (6)-(c1 )). The same idea
+works if we want to maximize information transfer form QR-B to QR-A (see Fig.(6)-(c2 )), but we need to maximize 1-norm of
+columns of corresponding reduced reduced tensor M̃[Ia I˜a ],[#I˜b ] again reshaped in matrix. However for effective performance of
+QRC we need to exchange information between both QRs Fig.(6)-(c3 )). This observation implies maximization of 1-norm of
+full tensor M̃[Ia I˜a ],[Ib I˜b ] in agreement with idea of "deverse" matrix representation of a bridge channel. The presented approach is
+independent from any observable and structure of initial states of QR-A and QR-B.
+
+
+
+
+Figure 6. (a) The tensor network describing the transfer of valuable information from QR-A to QR-B via action of the bridge
+channel and extraction of processed information via measurements of some arbitrary observable ÔB in QR-B. The black bold
+line at the end of a tensor corresponds to full tensor convolution #, as it was described after (13). (b) - rearranged indices in the
+network to explicitly separate bridge tensor M̃[Ia I˜a ],[Ib I˜b ] for further optimization of information transfer. Sub-figure (c1 ): the
+schematic of information flow from QR-A to QR-B; (c2 ) - schematic of information flow from QR-B to QR-A and (c3 ) -
+corresponds to exchange of information between both QRs, which is necessary for the effective QRC.
+
+    Based on discussion above, we decided to use the following optimization objective:
+       ~θ∗ = argmax~ ||Mab,a0 b0 (~θ )||1 ; θ72 + θ82 + θ92  0.001.                                                                                                          (14)
+                   θ
+
+To solve the optimization problem in Eqs.(14), we apply the Adam optimization algorithm29 with slightly adjusted default
+parameters. Solving this optimization, we have found the following optimal parameters for ansatz Eq.(5) in accordance
+with Eq.(14): θ7 = 0.216, θ8 = 0.469, θ9 = 1.023. We provide all other values of θ∗ and the supporting code in our GitHub
+repository37 .
+    Let us shift to the purification channels. Auxiliary purification channels PA,B improve the accuracy of the QRC affected
+
+
+                                                                                                                                                                              8/11
+Figure 7. This figure presents the matrix plot of the bridge channel’s matrix representation Mab,a0 b0 . (a) are the optimization
+results obtain via the strategy described in Eq.(7). The corresponding matrix Mab,a0 b0 (θ∗ ) is the most "diverse" and provides the
+best QRC performance among the considered cases. (b) is the matrix plot in the case of nonselective measurements along a
+random factorized basis with (θ7 = θ8 = θ9 ≡ 0). (c) is the matrix plot in the case of nonselective measurements along a
+                                                                       SEP || = 4. (d) presents the results of the "anti"
+standard computational basis; this result corresponds to minimal ||Mab,a  0 b0 1
+optimization strategy where we minimize the 1-norm of the matrix ||Mab,a0 b0 ||1 . We use the same values as in (c):
+θ7∗ = θ8∗ = θ9∗ ≈ 0 and minimal norm ||Mab,a0 b0 ||1 ≈ 4. We verified the optimization results (c) and (d) for various initial
+conditions ~θ .
+
+
+
+
+Figure 8. Results of numerical optimization for the purification channel P. We sampled 1000 qubit states with purity
+P ∈ {0.51, 0.53} to verify the optimization results. In (a) we observed a significant increase of P for the corresponding output
+states, while in (b) the fidelity F between the input and output states is close to 0.9. The panel (c) shows the purity for the full
+QR state ρ̂AB affected by the depolarization (setup parameters given in Fig.(4)). In (c1 ) we considered the subsequent 5
+timesteps of QRC dynamics with bridge and purification channels as depicted in Fig.(2).
+
+
+by noise. Specifically, the purification channels can reduce the number of required measurements (over the QR’s ensemble
+of identical systems) to extract output signals - the average values of some observables hÔ• i (s). This follows from the
+intrinsic structure of the QRC framework. Indeed, one addresses only to single corresponding qubit QR-"•" with the state
+ρ̂• = trAB/• (ρ̂AB ) to perform measurements. Physically, it means that we have many identical measurement apparatuses that
+interact with the corresponding QR’s sub-ensemble. Alternatively, if we have just one QR system, we can prepare its state
+using the same sequence of operations multiple times         to perform multiple measurement experiments. Thus, one derives the
+output signals by estimating hÔ• i (s) = tr• ρ̂• Ô• from statistics of measurements. It is clear that qubit states ρ̂• with purity
+P = tr ρ̂•2 ≈ 1/2 + ε, ε  1 yield hÔ• i (s) ≈ const + εtr Ô• |Ψ• (s)i hΨ• (s)| . Here the state |Ψ• (s)i hΨ• (s)| is some pure
+                                                                                      
+
+state (P|Ψ• (s)i ≡ 1), and const a real number that does not depend on a signal. It means that the output signal carrying valuable
+information has a small magnitude ∼ ε. Consequently, it requires many measurements to recover a proper output signal. The
+application of the purification channel seems can help to resolve this issue. In the present work, we assume that we can only
+purify states of the bridge qubits a and b. Without loss of generality, we consider the qubit a. To optimize the purification
+channels PA,B (~γ) presented in Eq.(7) we again address to its matrix representations. We use the same parameterization
+ansatz Û(~γ) - Eq.(5) as we used before in the case of bridge optimization.       A single qubit state has a well-known geometrical
+representation on a Bloch sphere26, 34 : ρ̂a = (1/2) Î + ∑a ra σ̂a , where ~r is a three dimensional euclidean vector, such that
+                                                                       
+                        p
+0 ≤ ||~r|| ≤ 1, ||~r|| = (~r,~r). Purity of state ρ̂a is given by P = (1/2)(1 + ||~r||2 ). The action of a purification channel results a
+transformation of~r in accordance with:
+
+      ~r0 = ~q + Γ~r; qi = 1 tr(σ̂i P(~γ)[I]), Γi j = 1 tr (σ̂i P(~γ)[σ̂ j ]) ; i, j ∈ {1, 2, 3}.                                   (15)
+                           2                          2
+
+                                                                                                                                    9/11
+The optimization heuristic is then straightforward. We aim to maximally increase the state’s Purity and simultaneously
+                                                                                                                    qp preserve
+                                                                                                                        0
+                                                                                                                             p 0
+as much information as we can. As a measure of information "preservation", we use a Fidelity        26, 34 : F = tr(  ρ̂a ρ̂a ρ̂a )
+between qubit’s states before and after purification. Finally, we present an optimization objective P(γ) based on the described
+geometrical interpretation and Purity - Fidelity trade-off. We choose the following form for the optimization objective:
+      ~γ∗ = argminγ |||ΓT (γ)Γ(γ)||F /||~qγ || − 1|                                                                           (16)
+
+The symbol || • ||F in Eq.(16) denotes a Frobenius matrix norm. Fig.(8) demonstrates the effectiveness of the proposed numerical
+optimization. Note that the trade-off between purity and fidelity in a state purification protocol via sampling methods was
+explored in work38 . As mentioned, we use the same numerical approach as the one presented in the bridge channel optimization.
+An application of the Adam optimizer yields the following values: γ7 = 0.44, γ8 = 1.13, γ9 = 0.44. Other values of ~γ∗ and
+all relevant code are provided in ours GitHub repository37 . We utilized the derived parameters γ∗ in the Results to verify
+usefulness of a purification channel P(γ∗ ).
+
+References
+ 1. Fujii, K. & Nakajima, K. Harnessing disordered-ensemble quantum dynamics for machine learning. Phys. Rev. Appl. 8,
+    024030, DOI: 10.1103/PhysRevApplied.8.024030 (2017).
+ 2. Nakajima, K. & Fischer, I. (eds.) Reservoir Computing (Springer Singapore, 2021).
+ 3. Cory, D. et al. NMR based quantum information processing: Achievements and prospects. Fortschritte der Physik 48,
+    875–907, DOI: 10.1002/1521-3978(200009)48:9/11<875::aid-prop875>3.0.co;2-v (2000).
+ 4. Negrevergne, C. et al. Benchmarking quantum control methods on a 12-qubit system. Phys. Rev. Lett. 96, 170501, DOI:
+    10.1103/PhysRevLett.96.170501 (2006).
+ 5. Ryan, C. A., Laforest, M. & Laflamme, R. Randomized benchmarking of single- and multi-qubit control in liquid-state
+    NMR quantum information processing. New J. Phys. 11, 013034, DOI: 10.1088/1367-2630/11/1/013034 (2009).
+ 6. Jones, J. A. Quantum computing with NMR. Prog. Nucl. Magn. Reson. Spectrosc. 59, 91–120, DOI: 10.1016/j.pnmrs.
+    2010.11.001 (2011).
+ 7. Schütz, M. J. Quantum dots for quantum information processing: Controlling and Exploiting the Quantum Dot Environment
+    (Springer, 2016).
+ 8. Georgescu, I. M., Ashhab, S. & Nori, F. Quantum simulation. Rev. Mod. Phys. 86, 153–185, DOI: 10.1103/RevModPhys.
+    86.153 (2014).
+ 9. Mujal, P. et al. Quantum reservoir computing in bosonic networks. In Volpe, G., Pereira, J. B., Brunner, D. & Ozcan, A.
+    (eds.) Emerging Topics in Artificial Intelligence (ETAI) 2021, DOI: 10.1117/12.2596177 (SPIE, 2021).
+10. Nokkala, J. et al. Gaussian states of continuous-variable quantum systems provide universal and versatile reservoir
+    computing. Commun. Phys. 4, DOI: 10.1038/s42005-021-00556-w (2021).
+11. Ghosh, S., Paterek, T. & Liew, T. C. H. Quantum neuromorphic platform for quantum state preparation. Phys. Rev. Lett.
+    123, 260404, DOI: 10.1103/PhysRevLett.123.260404 (2019).
+12. Ghosh, S., Opala, A., Matuszewski, M., Paterek, T. & Liew, T. C. H. Reconstructing quantum states with quantum reservoir
+    networks. IEEE Transactions on Neural Networks Learn. Syst. 1–8, DOI: 10.1109/TNNLS.2020.3009716 (2020).
+13. Ghosh, S., Opala, A., Matuszewski, M., Paterek, T. & Liew, T. C. H. Quantum reservoir processing. npj Quantum Inf. 5,
+    DOI: 10.1038/s41534-019-0149-8 (2019).
+14. Tran, Q. H. & Nakajima, K. Learning temporal quantum tomography. arXiv preprint arXiv:2103.13973 (2021).
+15. Killoran, N. et al. Continuous-variable quantum neural networks.              Phys. Rev. Res. 1, 033063, DOI: 10.1103/
+    PhysRevResearch.1.033063 (2019).
+16. Mitarai, K., Negoro, M., Kitagawa, M. & Fujii, K. Quantum circuit learning. Phys. Rev. A 98, DOI: 10.1103/physreva.98.
+    032309 (2018).
+17. McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R. & Neven, H. Barren plateaus in quantum neural network
+    training landscapes. Nat. Commun. 9, DOI: 10.1038/s41467-018-07090-4 (2018).
+18. Schuld, M. & Killoran, N. Quantum machine learning in feature hilbert spaces. Phys. Rev. Lett. 122, 040504, DOI:
+    10.1103/PhysRevLett.122.040504 (2019).
+
+
+                                                                                                                            10/11
+19. Schuld, M., Sinayskiy, I. & Petruccione, F. An introduction to quantum machine learning. Contemp. Phys. 56, 172–185,
+    DOI: 10.1080/00107514.2014.964942 (2014).
+20. Nakajima, K., Fujii, K., Negoro, M., Mitarai, K. & Kitagawa, M. Boosting computational power through spatial
+    multiplexing in quantum reservoir computing. Phys. Rev. Appl. 11, 034021, DOI: 10.1103/PhysRevApplied.11.034021
+    (2019).
+21. Kutvonen, A., Fujii, K. & Sagawa, T. Optimizing a quantum reservoir computer for time series prediction. Sci. Reports 10,
+    DOI: 10.1038/s41598-020-71673-9 (2020).
+22. Tran, Q. H. & Nakajima, K. Higher-order quantum reservoir computing. arXiv preprint arXiv:2006.08999 (2020).
+23. Lu, D. et al. Enhancing quantum control by bootstrapping a quantum processor of 12 qubits. npj Quantum Inf. 3, 1–7
+    (2017).
+24. Luchnikov, I. A., Vintskevich, S. V., Grigoriev, D. A. & Filippov, S. N. Machine learning non-markovian quantum
+    dynamics. Phys. Rev. Lett. 124, 140502, DOI: 10.1103/PhysRevLett.124.140502 (2020).
+25. Luchnikov, I. et al. Probing non-markovian quantum dynamics with data-driven analysis: Beyond" black-box" machine
+    learning models. arXiv preprint arXiv:2103.14490 (2021).
+26. Heinosaari, T. & Ziman, M. The Mathematical language of Quantum Theory (Cambridge University Press, 2009).
+27. Kalev, A., Mann, A. & Revzen, M. Choice of measurement as the signal. Phys. Rev. Lett. 110, 260502, DOI: 10.1103/
+    PhysRevLett.110.260502 (2013).
+28. Zuppardo, M., Ganardi, R., Miller, M., Bandyopadhyay, S. & Paterek, T. Entanglement gain in measurements with
+    unknown results. Phys. Rev. A 99, 042319, DOI: 10.1103/PhysRevA.99.042319 (2019).
+29. Kingma, D. P. & Ba, J. Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980 (2014).
+30. Orús, R. Tensor networks for complex quantum systems. Nat. Rev. Phys. 1, 538–550, DOI: 10.1038/s42254-019-0086-7
+    (2019).
+31. Luchnikov, I. A., Vintskevich, S. V., Ouerdane, H. & Filippov, S. N. Simulation complexity of open quantum dynamics:
+    Connection with tensor networks. Phys. Rev. Lett. 122, 160401, DOI: 10.1103/PhysRevLett.122.160401 (2019).
+32. Guan, Z. et al. Entangling power of two-qubit gates on mixed states. Phys. Rev. A 89, 012324, DOI: 10.1103/PhysRevA.
+    89.012324 (2014).
+33. Kraus, B. & Cirac, J. I. Optimal creation of entanglement using a two-qubit gate. Phys. Rev. A 63, 062309, DOI:
+    10.1103/PhysRevA.63.062309 (2001).
+34. Nielsen, M. A. & Chuang, I. L. Quantum Computation and Quantum Information (Cambridge University Press, 2009).
+35. Cirac, J. I., Ekert, A. K. & Macchiavello, C. Optimal purification of single qubits. Phys. Rev. Lett. 82, 4344–4347, DOI:
+    10.1103/PhysRevLett.82.4344 (1999).
+36. Jaeger, H. Short term memory in echo state networks. gmd-report 152. In GMD-German National Research Institute for
+    Computer Science (2002), http://www. faculty. jacobs-university. de/hjaeger/pubs/STMEchoStatesTechRep. pdf (Citeseer,
+    2002).
+37. GitHub. Quantum reservoir computing assisted by nonselective measurements along entangled basis: Source code for
+    numerical calculations. https://github.com/StephenVintskevich/qRC (2021).
+38. Di Franco, C. & Paternostro, M. A no-go result on the purification of quantum states. Sci. Reports 3, 1387, DOI:
+    10.1038/srep01387 (2013).
+
+Acknowledgements
+This work is supported by the Russian Science Foundation under Project No. 20-72-00116. We thank Savva Morozov,
+Viacheslav Sadykov, Andrei Nomerotski, Andrey Rogachev and Ning Bao for fruitful discussions and support.
+
+Author contributions statement
+Both authors contributed equally to the paper.
+
+Additional information
+Competing interests The authors declare no competing financial interests.
+
+
+                                                                                                                       11/11
+

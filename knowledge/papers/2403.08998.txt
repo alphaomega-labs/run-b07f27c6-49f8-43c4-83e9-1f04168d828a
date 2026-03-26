@@ -1,0 +1,659 @@
+                                                 Frequency- and dissipation-dependent entanglement advantage in spin-network
+                                                                        Quantum Reservoir Computing
+                                                   Youssef Kora,∗ Hadi Zadeh-Haghighi,∗ Terrence C Stewart,† Khabat Heshami,‡ and Christoph Simon∗
+                                                                                                 (Dated: October 22, 2024)
+                                                             We study the performance of an Ising spin network for quantum reservoir computing (QRC) in
+                                                          linear and non-linear memory tasks. We investigate the extent to which quantumness enhances
+                                                          performance by monitoring the behaviour of quantum entanglement, which we quantify by the
+                                                          partial transpose of the density matrix. In the most general case where the effects of dissipation are
+                                                          incorporated, our results indicate that the strength of the entanglement advantage depends on the
+                                                          frequency of the input signal; the benefit of entanglement is greater with more rapidly fluctuating
+                                                          signals, whereas a low-frequency input is better suited to a non-entangled reservoir. This may be
+                                                          understood as a condition for an entanglement advantage to manifest itself: the system’s quantum
+                                                          memory must survive for long enough for the temporal structure of the input signal to reveal itself.
+arXiv:2403.08998v2 [quant-ph] 18 Oct 2024
+
+
+
+
+                                                          We also find that quantum entanglement empowers a spin-network quantum reservoir to remember
+                                                          a greater number of temporal features.
+
+
+                                                              I.   INTRODUCTION                                 implementations of RC have been realized with photon-
+                                                                                                                ics [9–13], phonons [14, 15], magnons [16–18], spintronics
+                                               At the heart of machine learning lie the mechanisms              [19–21], and nanomaterials structured in neuromorphic
+                                            that enable machines to understand, process, and act                chips [22, 23].
+                                            upon temporal data. The importance of these mecha-                      Quantum reservoir computing (QRC) has been on
+                                            nisms grows rapidly as we push further into the infor-
+                                            mation age, where the complexity and volume of data                               Quantum Reservoir
+                                            are scaling at unprecedented rates. Among the principal
+                                            hurdles in this pursuit is the inherent limitation in pro-
+                                            cessing speeds of conventional computers caused by the
+                                            segregation of processing and memory units, known as                                                                      Decoder
+                                            the von Neumann bottleneck [1]. This stands in contrast
+                                            with biological systems, which handle real-time informa-                                              𝝈𝒙 𝟏 … 𝝈𝒙 𝒏
+
+                                            tion processing with exceeding computational efficiency              input                            𝝈𝒚 𝟏 … 𝝈𝒚 𝒏
+                                                                                                                                                                Learning    output
+                                            and minimal energy expenditure [2, 3].                                                                𝝈𝒛 𝟏 … 𝝈𝒛 𝒏
+                                               Within this landscape, the paradigm of reservoir com-
+                                            puting (RC) [4–6] emerges as a powerful mechanism,
+                                            characterized by a high-dimensional dynamical struc-                         True Qubits
+                                            ture known as a reservoir. This system, upon receiv-                                                                                     [h]
+                                            ing streams of input, engenders transient dynamics fea-
+                                                                                                                FIG. 1. Schematic representation of the spin-based
+                                            turing a fading memory capacity and the ability to per-
+                                                                                                                quantum reservoir computing. The reservoir (red box)
+                                            form nonlinear processing on input data. The complex                consists of N qubits (blue circles) which are randomly con-
+                                            internal dynamics of the reservoir render RC exception-             nected, and stay constant. At each step, the input data is fed
+                                            ally well-suited for machine learning tasks that demand             to only a few of the qubits, true qubits (purple box). After
+                                            memory-retention capabilities, such as speech recogni-              data feeding, the correlation of Pauli matrices, x, y, z from n
+                                            tion, stock market prediction, and autonomous motor                 qubits will be measured and sent to a classical decoder. For
+                                            control for robots [7]. Traditional approaches to RC have           the next iteration, the true qubits will be traced out from the
+                                            been based on either randomly-connected artificial neural           density matrix. The reservoir and the decoder are linked with
+                                            networks or through spiking neural networks [8]. Physical           weights that are the only ones that get modified during the
+                                                                                                                learning process.
+
+
+                                            ∗ Department of Physics and Astronomy, University of Calgary,       the rise in recent years, introducing to RC such counter-
+                                              Calgary, Alberta, Canada; Institute for Quantum Science and       intuitive features of quantum physics as superposition
+                                              Technology, University of Calgary, Calgary, Canada; Hotchkiss     and entanglement [24, 25]. Two distinct QRC mod-
+                                              Brain Institute, University of Calgary, Calgary, Canada           els have been proposed: one is grounded in networks
+                                            † National Research Council, University of Waterloo Collaboration
+                                                                                                                of qubits [25–27] and another in oscillator-based [28–30]
+                                              Centre, Waterloo, Ontario, Canada
+                                            ‡ Theory and Simulation Group, NRC, Ottawa, Canada; Depart-         reservoirs. In this work we focus on the former model.
+                                              ment of Physics, University of Ottawa, Ottawa, Ontario, Canada;   Within this type of QR, transitions of basis states for
+                                              Department of Physics and Astronomy, University of Calgary,       quantum bits (qubits) are propelled by an input stream
+                                              Calgary, Alberta, Canada; Institute for Quantum Science and       (Fig. 1), evolving over time through the reservoir’s quan-
+                                              Technology, University of Calgary, Calgary, Canada                tum dynamics [31, 32]. Input data is fed into the true
+                                                                                                                                2
+
+nodes, typically in the form of a time series. For the         dependent in the presence of dissipation but is always
+readout, besides these true nodes, hidden nodes can also       present in the unitary reservoir. We attribute this phe-
+be used, which influence the time evolution of the true        nomenon to the new timescale introduced by dissipation,
+nodes.                                                         which we conclude must be longer than the timescale
+   The primary obstacle encountered by quantum com-            over which the input varies in order for the entanglement
+puting and quantum machine learning is the noise present       advantage to be realized. In other words, quantum mem-
+in quantum devices. Significant efforts have been ded-         ory must survive for long enough in the system for the
+icated to correcting or mitigating the resulting errors.       input to manifest its temporal features, which is deter-
+Recent studies show that the presence of noise can im-         mined by the frequency scale of the input signal. We also
+prove the convergence of variational quantum algorithms        find quantum entanglement to aid in the remembrance
+[33]. Further, it is suggested that quantum noise, under       of more features. In the high-frequency cases where this
+specific conditions, can enhance the efficacy of quantum       happens, we observe diminishing returns on the entan-
+reservoir computing [34, 35].                                  glement advantage; the positive impact of entanglement
+   For time-series data, the frequency and the stochastic-     on performance exhibits saturation behavior.
+ity of the data play crucial roles in the performance of          The remainder of this paper is organized as follows: in
+machine learning models. Time-series data, character-          section II we describe our dynamical models and method-
+ized by its sequential order, can vary in frequency from       ology for data extraction and coarse-graining. We present
+high-resolution milliseconds to monthly or yearly obser-       and discuss our results in section III, and finally outline
+vations [7, 36, 37]. On the other hand, studies suggest        our conclusions in section IV.
+potential advantages of quantum computing in systems
+characterized by high levels of stochasticity and random-
+ness, though these advantages are not always measured                  II.   MODEL AND METHODOLOGY
+against the most optimized classical solutions [38–40].
+Experimental evidence tentatively indicates that quan-                              A.   Physical System
+tum approaches to simulating stochastic processes might
+require less memory than traditional classical methods,
+                                                                 The quantum reservoir we employ is a network of N =
+under certain conditions [41]. Furthermore, preliminary
+                                                               4 qubits represented by the transverse-field Ising model
+findings propose that, by negotiating the trade-off be-
+                                                               [47, 48], of which the Hamiltonian reads
+tween accuracy and memory usage, quantum models
+could potentially achieve comparable levels of accuracy                             N                           N
+with reduced memory requirements, or conversely, im-
+                                                                                    X                           X
+                                                                             Ĥ =           Jij σ̂ix σ̂jx + h         σ̂iz ,   (1)
+prove accuracy without increasing the memory footprint                              i>j=1                       i=1
+[42]. However, these observations are context-dependent
+and should be considered with caution, as the compar-          where σ̂ia (a = x, y, z) are the Pauli operators, h is the
+isons are not universally applicable across all scenarios.     transverse magnetic field, and Jij are randomly chosen
+   Beyond the inherent noise challenges, the salient as-       from a uniform distribution in the interval [−Js /2, Js /2].
+pects of quantumness —superposition and entanglement           We consider an open system in general, of which the
+— are pivotal in understanding quantum systems. Re-            Markovian dynamics are given by the Lindblad master
+cently, considerable research effort has been devoted to       equation
+the role played by quantumness in giving rise to advan-
+tage in machine learning, whether in distributed learning                                     N                            
+                                                                 dρ̂                         X            †  1 †
+over quantum networks [43], spin-network QRC [44], or                = L̂ρ̂ = −i[Ĥ, ρ̂] + Γ      L̂i ρ̂L̂i − {L̂i L̂i , ρ̂} ,
+oscillator-based QRC [45]. However, there remains much           dt                          i=1
+                                                                                                             2
+to be understood as to the physical circumstances con-                                                                        (2)
+ducing to such a quantum advantage.
+   Here, we conduct a thorough investigation of how the        where Γ controls the strength of the dissipation of our
+quantumness of Ising spin-networks, which we quantify          high-temperature decoherence channel [49] with {L̂i } be-
+by means of the logarithmic negativity measure of entan-       ing the raising and lowering operators of the system given
+glement, relates to performance in QRC memory tasks;           by
+to wit, by investigating the ability of the reservoir to re-
+construct functions of past input, and the possible advan-                                1 x
+                                                                                    σ̂ + =  (σ̂ + iσ̂ y ),                     (3)
+tage of quantum entanglement for this sort of task. We                                    2
+explore how that relationship is affected by dissipation, of                              1
+                                                                                    σ̂ − = (σ̂ x − iσ̂ y ).                    (4)
+which some amount has been observed to enhance perfor-                                    2
+mance [35, 44, 46]; as well as by the frequency of the input
+signal, which we show here has great implications for the      The unitary system undergoes a dynamical phase transi-
+computational advantage granted by entanglement. We            tion between an ergodic phase and a many-body-localized
+find that the presence of that advantage is frequency-         phase when the ratio h/Js falls within a certain range,
+                                                               as reported in the phase diagram in Ref. [32].
+                                                                                                                            3
+
+                                                                 every ∆t = Lδt, where L is the number of time steps
+                                                                 between input injections. We choose ∆t such that h∆t
+                                                                 lies in the range prescribed in Ref. [51] for rich linear
+                                                                 and non-linear dynamical behaviour.
+                                                                    We employ time multiplexing, where outputs are read
+                                                                 at time intervals of ∆t/V , thus allowing for N V virtual
+                                                                 nodes. The signals extracted from these nodes, here re-
+                                                                 stricted to ⟨σz ⟩, are trained in a linear regression to pro-
+                                                                 duce the desired function of the input, either the fun-
+                                                                 damental linear memory task [52] ȳk = sk−τ (ȳk being
+                                                                 the target), or a non-linear NARMA-n task, which is de-
+                                                                 scribed and discussed in the Appendix.
+                                                                    The system is trained on multiple sequences and tested
+                                                                 using a different sequence, f being the same between the
+                                                                 training and testing phases. Tikhonov regularization is
+                                                                 employed with a regularization parameter that is allowed
+                                                                 to slide to maximize performance. The performance of
+                                                                 the reservoir in a memory task with time delay τ , here
+                                                                 referred to as the memory capacity, is quantified as
+
+                                                                                     τ        cov2 (y, ȳ τ )
+                                                                                    CST M =                   ,           (7)
+                                                                                                σy2 σȳ2τ
+
+                                                                 where y is the output signal of the reservoir and ȳ τ is the
+FIG. 2. (left) Examples of input sequences at three differ-      target function at a time delay τ . The memory capacity
+ent frequency scales f = 0.2 (top), f = 1 (middle), f = 5        is subject to the fading memory property of the reser-
+(bottom). The red vertical dashed line corresponds to the        voir computer [53]; it must vanish for sufficiently large τ .
+maximum time delay at which the reservoir is successful in       Thus the total memory capacity of the reservoir may be
+remembering past input, based on the results we report later     defined as
+in the manuscript. (right) The corresponding outputs of the
+                                                                                              ∞
+reservoir at an interaction strength of Js = 1, a transverse                                  X
+                                                                                                      τ
+field of h = 2, an injection period of ∆ = 2.5, and a dissipa-                       CSTM =          CSTM .               (8)
+tion strength of Γ = 0.01.                                                                    τ =0
+
+
+
+
+                 B.   Input and Training                                            C.    Entanglement
+
+
+   An input signal sk with a frequency scale f is gener-           Quantum entanglement is measured by means of the
+ated as follows. 20 frequencies {fi } are chosen with equal      logarithmic negativity [54, 55]
+linear spacing in the interval [f /5000, f /50], thereby pro-                      EN (ρ) = log2 ∥ρΓA ∥1 ,                (9)
+ducing the series
+                      20
+                                                                 where ∥ · ∥1 denotes the trace norm, ρΓA is the partial
+                      X                                          transpose with respect to subsystem A; all bipartitions
+               sk =        sin (2πfi tk + 2πζ) ,          (5)
+                                                                 are averaged over. An example of the behaviour of this
+                      i
+                                                                 quantity is shown in Fig. 3 (top inset), where 4 different
+where tk is the time after k time steps, and ζ is a random       bipartitions are shown, each isolating one of the 4 qubits.
+number uniformly chosen in [0, 1]. All input functions are       The entanglement experiences a sudden drop each time
+rescaled to have a range between 0 and 1. Examples of            the input enters the system, especially the bipartition
+such series at different frequency scales f are shown in         isolating qubit 1, into which the input is injected.
+the left panels of Fig. 2, while the right panels show the
+corresponding outputs for the dissipative reservoir at a
+representative choice of parameters.                                      III.   RESULTS AND DISCUSSION
+   The input is injected into the systems by means of
+reinitializing the state of one qubit that we call qubit 1,        We commence by presenting the results for the log-
+a widely utilized form of input encoding [50]: we trace          arithmic negativity measure of entanglement, which we
+out the qubit in question and prepare it in a state |ψsk ⟩ =
+√                                                                employ to quantify quantumness. Those results are plot-
+               √
+  1 − sk |0⟩ + sk |1⟩, such that                                 ted in Fig. 3 against the interaction strength for a vari-
+                                                                 ety of dissipation strengths and input of frequencies, at
+                  ρ → |ψsk ⟩⟨ψsk | ⊗ Tr1 [ρ]              (6)    a transverse field of h = 2, and an injection period of
+                                                                                                                              4
+
+                                                                  in all subsequent figures. We also note that the average
+                                                                  entanglement goes down as we ramp up the dissipation,
+                                                                  albeit with a qualitatively similar shape as a function of
+                                                                  interaction strength; it peaks at virtually the same loca-
+                                                                  tion and dies at the extremes. However, the entangle-
+                                                                  ment appears to be largely insensitive to the frequency
+                                                                  of the input signal.
+                                                                     Now, in order to set the stage, we go to the special case
+                                                                  of the unitary reservoir at low frequency, of which Fig.
+                                                                  4a presents some intriguing observations. There, the to-
+                                                                  tal memory capacity is computed for the linear memory
+                                                                  task. The results for the the non-linear NARMA task,
+                                                                  qualitatively similar, are presented in Fig. 11 in the ap-
+                                                                  pendix. Fig. 4a shows the evolution of the performance
+                                                                  as we ramp up the interaction strength Js : deep in the
+                                                                  ergodic regime (low Js ) the performance is poor, but im-
+                                                                  proves rapidly as the system approaches the region of the
+                                                                  dynamical phase transition indicated by the back lines.
+                                                                     It’s certainly clear from the left panels of Fig. 4 that no
+                                                                  entanglement leads to poor performance - but too much
+                                                                  entanglement doesn’t seem to be optimal either, for the
+                                                                  maximum of entanglement appears to lead to rather a
+                                                                  dip in performance. This idea is emphasized in Fig. 4c,
+                                                                  in which the memory capacity is plotted this time against
+                                                                  entanglement. Performance is undoubtedly enhanced as
+                                                                  entanglement rises from zero - consistent with the pres-
+                                                                  ence of an entanglement advantage - but this increase
+                                                                  does not continue when the entanglement becomes too
+FIG. 3. (top) Entanglement vs. interaction strength for the       great. This suggests that in the case of the unitary reser-
+reservoir at a transverse field of h = 2, and an injection pe-    voir at low frequency, there exists an entanglement ad-
+riod of ∆t = 2.5. The input of frequency of the signal is fixed   vantage with diminishing returns. While an interesting
+at f = 0.2 while the dissipation strength is varied. (middle)     result, it should be noted that the behavior of the unitary
+Same as top but the dissipation strength is fixed at Γ = 0.01     reservoir at low frequency is merely a special case to lay
+and the input frequency is varied. The black lines mark the
+                                                                  the groundwork for examining the more general case of a
+boundary of the dynamical phase transition reported in [32].
+(bottom) An example of the logarithmic negativity as a func-      reservoir with finite dissipation subjected to an input of
+tion of time - the entanglement abruptly drops whenever the       arbitrary frequency.
+input is injected. Each color corresponds to the bipartition in       The behaviour of the non-unitary reservoir is investi-
+which the respective qubit labeled in the legend is isolated.     gated by switching on the dissipation Γ in eq. (2). We
+                                                                  start at the original conditions of h = 2, ∆t = 2.5, and
+                                                                  the low frequency of f = 0.2. As shown in the top panel
+                                                                  of Fig. 3, the ramping of dissipation lowers the entan-
+∆t = 2.5. In this figure and all subsequent figures, the          glement curves. However, the entanglement is clearly in-
+critical region between the black lines is that in which          sensitive to the input frequency at a given dissipation
+the dynamical phase transition takes place in the uni-            strength, as is shown in Fig. 3 (bottom). Here, it’s
+tary reservoir between thermalization, to the left of the         important to remember that the phase boundaries were
+region, and localization, to the right [32]. It should be         computed in Ref. [32] for the unitary reservoir.
+noted here that the the lowest interaction strengths in all             The behaviour of the memory capacity in the dissi-
+subsequent plots are small but finite.                            pative reservoir subject to an input frequency of f = 0.2,
+   A few interesting properties stand out. Firstly, we note       as illustrated with an example in Fig. 4b, is rather odd:
+that the logarithmic negativity is at its highest to the left     it develops an abrupt and steep rise at very low interac-
+of the dynamical phase transition, well into the ergodic          tion strength, where there is little entanglement. Such
+regime, where thermalization leads to the spreading of            a jump in behaviour, present in both the linear mem-
+entanglement throughout the system. On the other hand,            ory task shown here, and the NARMA task in Fig. 11
+entanglement is lowest at the extremes: at very high in-          in the appendix, makes for a rather striking sight upon
+teraction strength the system is deep into the many-body          comparing the black curves, with zero dissipation, to the
+localized phase and the spread of entanglement is stifled,        blue curves, where even a small amount of dissipation is
+and at very low interaction strength the spins interact           introduced. It indicates a discontinuity in the dissipative
+too weakly to be entangled. The interaction strength              reservoir at low interaction strength and calls into ques-
+that maximizes entanglement is marked with a red line
+                                                                                                                              5
+
+
+
+
+FIG. 4. (top) Total memory capacity in the linear memory           FIG. 5. Total memory capacity vs. interaction strength for
+task vs. interaction strength for the unitary (a) reservoir com-   the dissipative (Γ = 0.01) reservoir at a transverse field of
+pared with the dissipative reservoir Γ = 0.01 (b), at a trans-     h = 2, and an injection period of ∆t = 2.5, subjected to a
+verse field of h = 2, an injection period of ∆t = 2.5, and the     variety of input of frequencies f , in linear memory tasks at
+input of frequency of the signal is fixed at f = 0.2. The black    time delay τ . The red line corresponds to the location of
+lines mark the boundary of the dynamical phase transition of       maximum entanglement.
+the unitary reservoir. The red line corresponds to the loca-
+tion of maximum entanglement. (bottom) The same but vs.
+entanglement.
+                                                                   In those high-frequency cases, the entangled systems are
+                                                                   significantly better than the non-entangled systems, al-
+                                                                   beit with diminishing returns on the benefit of entangle-
+tion the presence of the entanglement advantage that is            ment, since performance saturates as entanglement rises.
+very clear in the case of the unitary reservoir, as illus-         This suggests that there may be an optimal amount of
+trated in Fig. 4d, where the total memory capacity may             entanglement for memory performance.
+be seen to decline as the entanglement rises.                         One interpretation of this phenomenon is that, while
+   The key to unravelling this quandary lies in general-           as low a frequency as 0.2 was perfectly fine for the unitary
+izing the investigation even further to study the effect           reservoir, in the presence of a finite amount of dissipation
+of the input frequency. This is accomplished in Fig. 5,            it is so low as to give rise to an incongruence of covariance
+which reports the linear memory capacities at the usual            dimension and performance, as may be seen by compar-
+conditions of field and injection period, and at a dissi-          ing Fig. 4 and Fig. 10, and a fading of the entanglement
+pation of Γ = 0.01, but computed for different input               advantage. This reveals that the presence of the entan-
+frequencies (the corresponding NARMA results are pre-              glement advantage is dependent on the input frequency
+sented in Fig. 12). Here, f = ∞ corresponds to a se-               - however, this scarcely detracts from the significance of
+quence of random floats between 0 and 1 with no conti-             the entanglement advantage, as a higher frequency signal
+nuity. The entanglement advantage is decidedly restored            is more difficult to process by virtue of its having more
+by raising the input frequency, as the performance starts          features per unit time. This is consistent with the obser-
+exhibiting a peak at intermediate connectivities.                  vation of quantum advantages in highly stochastic and
+   The return of the entanglement advantage is corrob-             random systems [38–40].
+orated by Fig. 6 (whose NARMA counterpart is Fig.                     The revival of the entanglement advantage in the dis-
+13) , where the total memory capacity as a function of             sipative reservoir at high frequency raises an important
+entanglement may be seen to evolve from one extreme                question: how does the unitary reservoir operate at high
+to the other. At low frequency, there is a very clear en-          frequency? Fig. 7 offers an answer to that question by
+tanglement disadvantage as previously observed, as max-            showing the total memory capacities in the linear mem-
+imum memory performance occurs where entanglement                  ory task at f = 5 (NARMA, once again qualitatively
+is smallest and quantum effects are suppressed. As the             similar, is presented in Fig. 14 in the appendix), com-
+frequency of the input signal rises, however, the perfor-          paring the unitary reservoir and the case with a small
+mance enhancement at low entanglement gradually fades.             amount of dissipation (Γ = 0.01). The entanglement ad-
+                                                                                                                                6
+
+
+
+
+FIG. 6. Total memory capacity vs. entanglement for the             FIG. 7. (top) Total memory capacity in the linear memory
+dissipative (Γ = 0.01) reservoir at a transverse field of h = 2,   task vs. interaction strength for the reservoir at a transverse
+and an injection period of ∆t = 2.5, subjected to a variety of     field of h = 2, and an injection period of ∆t = 2.5, subjected
+input of frequencies f , in linear memory tasks.                   to an input frequency of f = 5, at the dissipation strengths
+                                                                   Γ = 0 (a) and Γ = 0.01 (b). The black lines mark the bound-
+                                                                   ary of the dynamical phase transition of the unitary reservoir.
+vantage is very much present in both cases, as shown in            The red line corresponds to the location of maximum entan-
+the bottom panels of Fig. 7. Also noteworthy is that the           glement. (bottom) The same but vs. entanglement.
+small amount of dissipation seems to result in a small
+improvement in memory capacity especially at low con-
+nectivity (obvious on comparing the leftmost points in
+the top panels of Fig. 7), which is consistent with the
+observation reported in [44], and the ideas presented in
+[35, 46].
+   The frequency-dependent nature of the entanglement
+advantage in the dissipative case, as compared to the om-
+nipresence of the entanglement advantage in the unitary
+case, may be attributed to the arising of a new timescale
+upon switching on dissipation. We introduce dissipation
+into the system by allowing Γ in eq. 2 to acquire a non-
+zero value, which gives rise to a new timescale in the
+system: 1/Γ. Our observations indicate that input sig-             FIG. 8. Total memory capacity in the linear memory task
+nals with a timescale longer than 1/Γ do no benefit from           vs. entanglement for the dissipative reservoir Γ = 0.05 at a
+entanglement. This may be seen in the top panels of Fig.           transverse field of h = 2 and an injection period of ∆t = 2.5,
+2, where it’s clear that the lowest frequency input signal         and an input signal of frequencies f = 1 (left) and f = 5
+varies over a timescale of roughly 200, which is longer            (right).
+than the dissipative timescale 1/Γ = 1/0.01 = 100. All
+higher frequency inputs, however, vary over a shorter
+time scale than 1/Γ, and thus derive benefit from en-              tend our analysis by raising the value of Γ from 0.01 to
+tanglement. However, in the unitary case, the dissipa-             0.05, and explore the corresponding performance curves
+tive timescale is of course infinite, and thus all input           as a function of entanglement in Fig. 8. Indeed, these
+signals - even the lowest frequency one - vary over a              results confirm that upon lowering the timescale of dis-
+shorter timescale and the entanglement advantage is al-            sipation by raising Γ to 0.05, an input signal of f = 1
+ways present. We now to turn to higher dissipation in              becomes slow enough that an entanglement disadvantage
+order to verify this idea that the timescale of the input          manifests itself. This stands in contrast to the lower Γ
+signals for which there is an entanglement advantage is            in Fig. 6, where f = 1 is fast enough to be a transition
+dictated by the strength of dissipation Γ. We thus ex-             point between an advantage and a disadvantage. This
+                                                                                                                         7
+
+                                                               range of input frequencies. This suggests that quantum
+                                                               entanglement empowers the system to remember more
+                                                               temporal features.
+
+
+                                                                     IV.    CONCLUSIONS AND OUTLOOK
+
+                                                                  We studied the performance of a spin network QRC
+                                                               system in linear and non-linear memory tasks, and how
+                                                               it relates to such things as the frequency of the input sig-
+                                                               nal, the presence of dissipation in the system, and quan-
+                                                               tumness as measured by entanglement.
+                                                                  In the open system, the most general case, it’s clear
+                                                               that the presence of the entanglement advantage is
+                                                               frequency-dependent in a manner which is decreed by
+                                                               the strength of dissipation in the system. A task with too
+                                                               low a frequency of input signal is too slow to derive any
+                                                               benefit from quantum entanglement entanglement, and
+                                                               the classical limit with weak interactions and no entan-
+                                                               glement performs better in linear and non-linear memory
+                                                               tasks. On the other hand, in the presence of a sufficiently
+FIG. 9. The same as Fig. 6 but with the y-axis of the fre-     involved signal which fluctuates over timescales that are
+quency rescaled by a factor of the input frequency.            shorter than the timescale introduced by the strength of
+                                                               dissipation, quantum entanglement confers a clear advan-
+                                                               tage upon the system in both types of tasks. Put differ-
+                                                               ently, the presence of the quantum entanglement advan-
+is also apparent by comparing the f = 5 panels in both         tage is contingent on the quantum memory’s survival for
+figures; f = 5 is no longer as clear a case of entanglement    long enough that the input may have time to exhibit its
+advantage when the dissipation is raised, but appears to       temporal features - the number of those temporal features
+be in the regime of entanglement indifference. These ob-       is greater for higher-frequency input signals. The more
+servations indicate that quantum memory in the system,         features a signal possesses over the timescale for which
+which decays on a timescale of 1/Γ, only confers a mem-        quantum memory persists, the more benefit conferred by
+ory advantage in the presence of inputs whose features         quantum entanglement. In that sense, we conclude that
+manifest themselves before that quantum memory de-             quantum entanglement enhances the ability of the spin-
+cays. For inputs with longer timescales, classical memory      network quantum reservoir to remember more temporal
+takes over and the entanglement advantage wanes. This          features.
+constitutes a condition that must be satisfied before the         Possible extensions of this study include the integra-
+entanglement advantage may be realized.                        tion of neuromorphic elements into the reservoir. One
+   Finally, we recast the data in Fig. 6 in a new light,       such possibility involves exploring different reservoir ar-
+namely by multiplying the total memory capacities by           chitectures inspired by brain networks, which have been
+the input frequency, as shown in Fig. 9. The point of this     shown to be amenable to being coarse-grained to appro-
+recasting is to render the comparison of the memory ca-        priately large scales while retaining much of their dynam-
+pacities between different frequencies more fair; lower fre-   ical behavior [56]. Another possibility involves studying
+quency tasks are much easier because they contain fewer        the potential dependence of the performance of the sys-
+temporal features, and so this rescaling gives an estimate     tem on system size, i.e., how it scales with the number
+of the memory performance with respect to the number           of qubits. Furthermore, there is the prospect of inves-
+of features per unit time. In the case of f∞ , which again     tigating spin network reservoirs handling tasks that can
+is merely shorthand for the sequence of random floats,         learn functions of multiple inputs, in a manner inspired
+we rescaled the total memory capacity by comparing the         by the brain’s reception of multiple sensory stimuli and
+frequency of stationary points in that case with the fre-      processing them in conjunction.
+quency of stationary points at f = 5. The additional              One among several promising avenues is that of quan-
+insight revealed Fig. 9 is that as we raise the frequency      tum computation and simulation with neutral atoms,
+from f = 0.2 (where the best performance is by the non-        with which the possibilities are myriad [57]; Rydberg
+entangled system), the points corresponding to the en-         atoms are exceptional candidates for the implementa-
+tangled systems are the ones that rise up to effect the        tion of QRC [58] on account of their strong interactions,
+entanglement advantage, rather than the non-entangled          controllable states, and long coherence times – charac-
+system falling off. Indeed, the performance of the unen-       teristics that make them ideal for creating highly inter-
+tangled system remains quite consistent throughout the         active and adaptable quantum reservoirs. Neutral atoms
+                                                                                                                                 8
+
+may be used to implement both the quantum Ising model             lenge Program, the Natural Sciences and Engineering
+[59], which sits at the foundation of spin-network QRC;           Research Council (NSERC) of Canada through its
+and the XY model [60, 61], which would be a fascinat-             NSERC Discovery Grant Program, the Alberta Major
+ing platform on which to implement an additional level            Innovation Fund, and Quantum City. We would also
+of complexity and non-linearity in a quantum reservoir.           like to thank Aaron Goldberg for the useful discussions
+This is one among several platforms that are well-suited          and feedback.
+for QRC implementation, such as superconducting qubits
+[46], photonics [13], and trapped ions [62]. Making con-
+tact with such implementations will be the topic of future
+investigation.
+
+
+             V.   ACKNOWLEDGMENTS
+
+  This work was supported by the National Research
+Council through its Applied Quantum Computing Chal-
+
+
+
+
+ [1] J. von Neumann. First draft of a report on the edvac.             per second classification. Physical Review X, 7(1), Febru-
+     IEEE Annals of the History of Computing, 15(4):27–75,             ary 2017.
+     1993.                                                        [12] Satoshi Sunada and Atsushi Uchida. Photonic neural
+ [2] Chris Eliasmith, Terrence C. Stewart, Xuan Choo,                  field on a silicon chip: large-scale, high-speed neuro-
+     Trevor Bekolay, Travis DeWolf, Yichuan Tang, and                  inspired computing and sensing. Optica, 8(11):1388,
+     Daniel Rasmussen. A large-scale model of the functioning          November 2021.
+     brain. Science, 338(6111):1202–1205, November 2012.          [13] Jorge Garcı́a-Beni, Gian Luca Giorgi, Miguel C. Soriano,
+ [3] Terrence C. Stewart, Trevor Bekolay, and Chris Elia-              and Roberta Zambrini. Scalable photonic platform for
+     smith. Learning to select actions with spiking neurons            real-time quantum reservoir computing. Physical Review
+     in the basal ganglia. Frontiers in Neuroscience, 6, 2012.         Applied, 20(1), July 2023.
+ [4] Herbert Jaeger and Harald Haas. Harnessing nonlinear-        [14] Guillaume Dion, Salim Mejaouri, and Julien Sylvestre.
+     ity: Predicting chaotic systems and saving energy in wire-        Reservoir computing with a single delay-coupled non-
+     less communication. Science, 304:78–80, 2004.                     linear mechanical oscillator. Journal of Applied Physics,
+ [5] Wolfgang Maass, Thomas Natschläger, and Henry                    124(15), October 2018.
+     Markram. Real-time computing without stable states: A        [15] Claude Meffan, Taiki Ijima, Amit Banerjee, Jun Hirotani,
+     new framework for neural computation based on pertur-             and Toshiyuki Tsuchiya. Non-linear processing with a
+     bations. Neural Computation, 14(11):2531–2560, 2002.              surface acoustic wave reservoir computer. Microsystem
+ [6] D. Verstraeten, B. Schrauwen, M. D’Haene, and                     Technologies, 29(8):1197–1206, May 2023.
+     D. Stroobandt. An experimental unification of reservoir      [16] Adam Papp, Wolfgang Porod, and Gyorgy Csaba.
+     computing methods. Neural Networks, 20:391–403, 2007.             Nanoscale neural network using non-linear spin-wave in-
+ [7] Gouhei Tanaka, Toshiyuki Yamane, Jean Benoit                      terference. Nature Communications, 12(1), November
+     Héroux, Ryosho Nakane, Naoki Kanazawa, Seiji Takeda,             2021.
+     Hidetoshi Numata, Daiju Nakano, and Akira Hirose. Re-        [17] Jack C. Gartside, Kilian D. Stenning, Alex Vanstone,
+     cent advances in physical reservoir computing: A review.          Holly H. Holder, Daan M. Arroo, Troy Dion, Francesco
+     Neural Networks, 115:100–123, July 2019.                          Caravelli, Hidekazu Kurebayashi, and Will R. Branford.
+ [8] Wilten Nicola and Claudia Clopath. Supervised learning            Reconfigurable training and reservoir computing in an
+     in spiking neural networks with force training. Nature            artificial spin-vortex ice via spin-wave fingerprinting. Na-
+     Communications, 8(1), December 2017.                              ture Nanotechnology, 17(5):460–469, May 2022.
+ [9] Kristof Vandoorne,         Pauline Mechet,       Thomas      [18] Lukas Körber, Christopher Heins, Tobias Hula, Joo-Von
+     Van Vaerenbergh, Martin Fiers, Geert Morthier,                    Kim, Sonia Thlang, Helmut Schultheiss, Jürgen Fassben-
+     David Verstraeten, Benjamin Schrauwen, Joni Dambre,               der, and Katrin Schultheiss. Pattern recognition in recip-
+     and Peter Bienstman. Experimental demonstration of                rocal space with a magnon-scattering reservoir. Nature
+     reservoir computing on a silicon photonics chip. Nature           Communications, 14(1), July 2023.
+     Communications, 5(1), March 2014.                            [19] Jacob Torrejon, Mathieu Riou, Flavio Abreu Araujo,
+[10] Piotr Antonik, Marc Haelterman, and Serge Massar.                 Sumito Tsunegi, Guru Khalsa, Damien Querlioz,
+     Brain-inspired photonic signal processor for generating           Paolo Bortolotti, Vincent Cros, Kay Yakushiji, Akio
+     periodic patterns and emulating chaotic systems. Physi-           Fukushima, Hitoshi Kubota, Shinji Yuasa, Mark D.
+     cal Review Applied, 7(5), May 2017.                               Stiles, and Julie Grollier.         Neuromorphic comput-
+[11] Laurent Larger, Antonio Baylón-Fuentes, Romain Mar-              ing with nanoscale spintronic oscillators.           Nature,
+     tinenghi, Vladimir S. Udaltsov, Yanne K. Chembo, and              547(7664):428–431, July 2017.
+     Maxime Jacquot. High-speed photonic reservoir comput-        [20] Taishi Furuta, Keisuke Fujii, Kohei Nakajima, Sumito
+     ing using a time-delay-based architecture: Million words          Tsunegi, Hitoshi Kubota, Yoshishige Suzuki, and Shinji
+                                                                                                                                  9
+
+     Miwa. Macromagnetic simulation for reservoir comput-          [34] Yudai Suzuki, Qi Gao, Ken C. Pradel, Kenji Yasuoka,
+     ing utilizing spin dynamics in magnetic tunnel junctions.          and Naoki Yamamoto. Natural quantum reservoir com-
+     Physical Review Applied, 10(3), September 2018.                    puting for temporal information processing. Scientific
+[21] Sumito Tsunegi, Tomohiro Taniguchi, Shinji Miwa, Ko-               Reports, 12(1), January 2022.
+     hei Nakajima, Kay Yakushiji, Akio Fukushima, Shinji           [35] L. Domingo, G. Carlo, and F. Borondo. Taking advan-
+     Yuasa, and Hitoshi Kubota. Evaluation of memory                    tage of noise in quantum reservoir computing. Scientific
+     capacity of spin torque oscillator for recurrent neu-              Reports, 13(1), May 2023.
+     ral networks. Japanese Journal of Applied Physics,            [36] Flavio Abreu Araujo, Mathieu Riou, Jacob Torrejon,
+     57(12):120307, October 2018.                                       Sumito Tsunegi, Damien Querlioz, Kay Yakushiji, Akio
+[22] Adam Z. Stieg, Audrius V. Avizienis, Henry O. Sillin,              Fukushima, Hitoshi Kubota, Shinji Yuasa, Mark D.
+     Cristina Martin-Olmos, Masakazu Aono, and James K.                 Stiles, and Julie Grollier. Role of non-linear data pro-
+     Gimzewski. Emergent criticality in complex turing                  cessing on speech recognition task in the framework of
+     b-type atomic switch networks. Advanced Materials,                 reservoir computing. Scientific Reports, 10(1), January
+     24(2):286–293, October 2011.                                       2020.
+[23] Dmytro D. Yaremkevich, Alexey V. Scherbakov, Luke             [37] Giovanni Ballarin, Petros Dellaportas, Lyudmila Grigo-
+     De Clerk, Serhii M. Kukhtaruk, Achim Nadzeyka,                     ryeva, Marcel Hirt, Sophie van Huellen, and Juan-Pablo
+     Richard Campion, Andrew W. Rushforth, Sergey                       Ortega. Reservoir computing for macroeconomic fore-
+     Savel’ev, Alexander G. Balanov, and Manfred Bayer. On-             casting with mixed-frequency data. International Jour-
+     chip phonon-magnon reservoir for neuromorphic comput-              nal of Forecasting, December 2023.
+     ing. Nature Communications, 14(1), December 2023.             [38] Howard Dale, David Jennings, and Terry Rudolph. Prov-
+[24] Keisuke Fujii and Kohei Nakajima.              Harnessing          able quantum advantage in randomness processing. Na-
+     disordered-ensemble quantum dynamics for machine                   ture Communications, 6(1), September 2015.
+     learning. Phys. Rev. Appl., 8:024030, Aug 2017.               [39] Carsten Blank, Daniel K. Park, and Francesco Petruc-
+[25] K. Fujii and K. Nakajima. Quantum reservoir computing:             cione. Quantum-enhanced analysis of discrete stochastic
+     A reservoir approach toward quantum machine learn-                 processes. npj Quantum Information, 7(1), August 2021.
+     ing on near-term quantum devices. In K. Nakajima and          [40] Kamil Korzekwa and Matteo Lostaglio. Quantum advan-
+     I. Fischer, editors, Reservoir Computing, Natural Com-             tage in simulating stochastic processes. Physical Review
+     puting Series. Springer, Singapore, 2021.                          X, 11(2), April 2021.
+[26] I. A. Luchnikov, S. V. Vintskevich, H. Ouerdane, and          [41] Matthew S. Palsson, Mile Gu, Joseph Ho, Howard M.
+     S. N. Filippov. Simulation complexity of open quantum              Wiseman, and Geoff J. Pryde. Experimentally modeling
+     dynamics: Connection with tensor networks. Physical                stochastic processes with less memory by the use of a
+     Review Letters, 122(16), April 2019.                               quantum processor. Science Advances, 3(2), February
+[27] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini,         2017.
+     and M. C. Soriano. Information processing capacity of         [42] Leonardo Banchi. Accuracy vs memory advantage in the
+     spin-based quantum reservoir computing systems. Cog-               quantum simulation of stochastic processes, 2023.
+     nitive Computation, 15(5):1440–1451, October 2020.            [43] Dar Gilboa and Jarrod R. McClean. Exponential quan-
+[28] L. C. G. Govia, G. J. Ribeill, G. E. Rowlands, H. K.               tum communication advantage in distributed learning,
+     Krovi, and T. A. Ohki. Quantum reservoir computing                 2023.
+     with a single nonlinear oscillator. Physical Review Re-       [44] Niclas Götting, Frederik Lohof, and Christopher Gies.
+     search, 3(1), January 2021.                                        Exploring quantumness in quantum reservoir computing.
+[29] Johannes Nokkala, Rodrigo Martı́nez-Peña, Gian Luca               Phys. Rev. A, 108:052427, Nov 2023.
+     Giorgi, Valentina Parigi, Miguel C. Soriano, and Roberta      [45] Arsalan Motamedi, Hadi Zadeh-Haghighi, and Christoph
+     Zambrini. Gaussian states of continuous-variable quan-             Simon. Correlations between quantumness and learning
+     tum systems provide universal and versatile reservoir              performance in reservoir computing with a single oscilla-
+     computing. Communications Physics, 4(1), March 2021.               tor, 2023.
+[30] Julien Dudas, Baptiste Carles, Erwan Plouet, Frank Al-        [46] Y. Suzuki, Q. Gao, K.C. Pradel, et al. Natural quantum
+     ice Mizrahi, Julie Grollier, and Danijela Marković. Quan-         reservoir computing for temporal information processing.
+     tum reservoir computing implementation on coherently               Scientific Reports, 12:1353, 2022.
+     coupled quantum oscillators. npj Quantum Information,         [47] R. B. Stinchcombe. Ising model in a transverse field. i.
+     9(1), July 2023.                                                   basic theory. Journal of Physics C: Solid State Physics,
+[31] Kohei Nakajima, Keisuke Fujii, Makoto Negoro, Ko-                  6(15):2459, 1973.
+     suke Mitarai, and Masahiro Kitagawa. Boosting com-            [48] P. Pfeuty and R. J. Elliott. The ising model with a trans-
+     putational power through spatial multiplexing in quan-             verse field. ii. ground state properties. Journal of Physics
+     tum reservoir computing. Physical Review Applied,                  C: Solid State Physics, 4:2370, 1971.
+     11(3):034021–1, March 2019.                                   [49] H. Breuer and F. Petruccione. The Theory of Open Quan-
+[32] Rodrigo Martı́nez-Peña, Gian Luca Giorgi, Johannes                tum Systems. Oxford University Press, Oxford, 2002.
+     Nokkala, Miguel C. Soriano, and Roberta Zambrini. Dy-         [50] Pere Mujal, Johannes Nokkala, Rodrigo Martı́nez-Peña,
+     namical phase transitions in quantum reservoir comput-             Gian Luca Giorgi, Miguel C Soriano, and Roberta Zam-
+     ing. Phys. Rev. Lett., 127:100502, Aug 2021.                       brini. Analytical evidence of nonlinearity in qubits and
+[33] Daniel Fry, Amol Deshmukh, Samuel Yen-Chi Chen,                    continuous-variable quantum reservoir computing. J. of
+     Vladimir Rastunkov, and Vanio Markov. Optimizing                   Phys. Complex., 2(4):045008, 2021.
+     quantum noise-induced reservoir computing for nonlin-         [51] R. Martı́nez-Peña, J. Nokkala, G. L. Giorgi, R. Zambrini,
+     ear and chaotic time series prediction. Scientific Reports,        and M. C. Soriano. Information processing capacity of
+     13(1), November 2023.                                              spin-based quantum reservoir computing systems. Cog-
+                                                                                                                           10
+
+     nitive Computation, 15:1440–1451, 2023.
+[52] T. L. Carroll. Optimizing memory in reservoir comput-
+     ers. Chaos, 32:023123, 2022.
+[53] Joni Dambre, David Verstraeten, Benjamin Schrauwen,
+     and Serge Massar. Information processing capacity of
+     dynamical systems. Scientific Reports, 2:514, 2012.
+[54] G. Vidal and R. F. Werner. Computable measure of en-
+     tanglement. Phys. Rev. A, 65:032314, Feb 2002.
+[55] M. B. Plenio. Logarithmic negativity: A full entangle-
+     ment monotone that is not convex. Phys. Rev. Lett.,
+     95:090503, Aug 2005.
+[56] Youssef Kora and Christoph Simon. Coarse-graining and
+     criticality in the human connectome, 2023.
+[57] Loı̈c Henriet, Lucas Beguin, Adrien Signoles, Thierry La-
+     haye, Antoine Browaeys, Georges-Olivier Reymond, and
+     Christophe Jurczak. Quantum computing with neutral
+     atoms. Quantum, 4:327, 2020.
+[58] Rodrigo Araiza Bravo, Khadijeh Najafi, Xun Gao, and
+     Susanne F. Yelin. Quantum reservoir computing using
+     arrays of rydberg atoms. PRX Quantum, 3:030325, Aug
+     2022.
+[59] P. Scholl, M. Schuler, H.J. Williams, et al. Quantum sim-
+     ulation of 2d antiferromagnets with hundreds of rydberg
+     atoms. Nature, 595:233–238, 2021.
+[60] Daniel Barredo, Henning Labuhn, Sylvain Ravets,
+     Thierry Lahaye, Antoine Browaeys, and Charles S.
+     Adams. Coherent excitation transfer in a spin chain of
+     three rydberg atoms. Phys. Rev. Lett., 114:113002, Mar
+     2015.
+[61] A. Piñeiro Orioli, A. Signoles, H. Wildhagen, G. Günter,
+     J. Berges, S. Whitlock, and M. Weidemüller. Relaxation
+     of an isolated dipolar-interacting rydberg quantum spin
+     system. Phys. Rev. Lett., 120:063601, Feb 2018.
+[62] H. Häffner, C.F. Roos, and R. Blatt. Quantum comput-        FIG. 10. Covariance dimension vs. interaction strength at
+     ing with trapped ions. Physics Reports, 469(4):155–203,      the same sets of conditions as Fig. 3. The black lines mark
+     2008.                                                        the boundary of the dynamical phase transition reported in
+[63] A.F. Atiya and A.G. Parlos. New results on recurrent         [32]. The red line corresponds to the location of maximum
+     network training: unifying the algorithms and accelerat-     entanglement.
+     ing convergence. IEEE Transactions on Neural Networks,
+     11(3):697–709, 2000.
+
+                                                                  a small value for all points), and is averaged over many
+                    VI.    APPENDIX                               iterations [44].
+
+          A.    Principal Component Analysis                         The relevant PCA results are summarized in Fig. 10.
+                                                                  The bottom panels (f = 0.2) makes it clear that the
+                                                                  small dip in performance observed in Fig. 4 is rather
+   To estimate the dimensionality of the manifold to
+                                                                  amplified, as the dimensionality experiences a much more
+which the dynamics is restricted, principal component
+                                                                  pronounced dip at that region. There is also a substantial
+analysis is performed as in [44]. Let the quantum dy-
+                                                                  boost in the dimensionality of the unitary reservoir con-
+namics of the system be represented by the trajectory
+                                                                  ferred by criticality, which is consistent with the perfor-
+of the vector evolution X = (x0 , x1 , . . .), where xi are
+                                                                  mance boost at the dynamical phase transition observed
+the density matrices of the system sampled at the mul-
+                                                                  in [32]. As dissipation is raised, covariance dimension is
+tiplexed intervals ∆t/V . A random time index is chosen
+                                                                  suppressed.
+and a cluster of d + 1 nearest neighbours is determined
+                                                                     The top panel of Fig. 10 highlights the ostensible
+and combined into a matrix Xi0 , of which the covariance
+                                                                  strangeness of the results in Fig. 4; upon comparing
+matrix is computed
+                                                                  the two figures, it’s clear that there is a congruence be-
+                 1                                                tween covariance dimension and memory performance of
+      CXi0 =          (Xi0 − X̄i0 )(Xi0 − X̄i0 )T         (10)    the unitary reservoir, as they both rise from zero, peak,
+               Nd − 1
+                                                                  experience a dip, peak again near criticality, and then fall
+The covariance dimension is the number of principal com-          again. When dissipation is switched on, one can see the
+ponents of CXi0 greater than ϵ = 10−6 (which is fixed at          anomaly in Fig. 4, where performance blows up at low
+                                                                                                                     11
+
+
+
+
+    FIG. 11. Same as Fig. 4 but for the NARMA task.
+                                                                  FIG. 13. Same as Fig. 5 but for the NARMA task.
+
+
+
+
+    FIG. 12. Same as Fig. 5 but for the NARMA task.               FIG. 14. Same as Fig. 7 but for the NARMA tasks
+
+
+interaction strength all of a sudden, which is not followed   only present when the input signal varies over a timescale
+by a corresponding rise in dimensionality in the top panel    which is shorter than the timescale of dissipation, 1/Γ.
+of Fig. 10. This may be understood, as explained in the
+main text, in terms of the new timescale introduced by
+the dissipation strength Γ.
+   The congruence of performance and dimensionality in                 B.   The Non-Linear NARMA Task
+the dissipative reservoir is re-established at sufficiently
+high frequency, when the entanglement advantage is re-           The NARMA-n task [63] is given by
+stored. This may be seen by comparing Fig. 10 and Fig                                         
+5. The dimensionality curves, consistently familiar in                                Xn
+shape, are only qualitatively resembled by the memory           ȳk+1 = αȳk + β ȳk    ȳk−j  + γsk−n sk−1 + δ, (11)
+capacity curves at sufficiently high frequency. In short,                           j=1
+our results indicate that the congruence between perfor-
+mance and dimensionality goes hand-in-hand with the           where n is the maximum time delay and α = 0.3, β =
+presence of the entanglement advantage. Such an entan-        0.002, γ = 1.5, δ = 0.1, convergent at a great range of
+glement advantage, as we conclude in the main text, is        frequencies. Figs. 11, 12, 13, 14 present the NARMA
+                                                                                             12
+
+counterparts of the results of the main text, which are   qualitatively similar in nature.
+

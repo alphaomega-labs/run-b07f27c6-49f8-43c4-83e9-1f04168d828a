@@ -1,0 +1,1542 @@
+                                                          Supervised quantum machine learning models are kernel methods
+                                                                                                     Maria Schuld
+                                                                                    Xanadu, Toronto, ON, M5G 2C8, Canada
+
+                                                           With near-term quantum devices available and the race for fault-tolerant quantum computers in
+                                                        full swing, researchers became interested in the question of what happens if we replace a supervised
+                                                        machine learning model with a quantum circuit. While such “quantum models” are sometimes
+                                                        called “quantum neural networks”, it has been repeatedly noted that their mathematical structure
+                                                        is actually much more closely related to kernel methods: they analyse data in high-dimensional
+                                                        Hilbert spaces to which we only have access through inner products revealed by measurements.
+                                                        This technical manuscript summarises and extends the idea of systematically rephrasing supervised
+                                                        quantum models as a kernel method. With this, a lot of near-term and fault-tolerant quantum models
+                                                        can be replaced by a general support vector machine whose kernel computes distances between
+arXiv:2101.11020v2 [quant-ph] 17 Apr 2021
+
+
+
+
+                                                        data-encoding quantum states. Kernel-based training is then guaranteed to find better or equally
+                                                        good quantum models than variational circuit training. Overall, the kernel perspective of quantum
+                                                        machine learning tells us that the way that data is encoded into quantum states is the main ingredient
+                                                        that can potentially set quantum models apart from classical machine learning models.
+
+
+
+                                                                                                I.   MOTIVATION
+
+
+                                               The mathematical frameworks of quantum computing and kernel methods are strikingly similar: both describe
+                                            how information is processed by mapping it to vectors that live in potentially inaccessibly large spaces, without the
+                                            need of ever computing an explicit numerical representation of these vectors (Figure 1). This similarity is particularly
+                                            obvious – and as we will see, useful – in quantum machine learning, an emerging research field that investigates how
+                                            quantum computers can learn from data [1–3]. If the data is “classical” as in standard machine learning problems,
+                                            quantum machine learning algorithms have to encode it into the physical states of quantum systems. This process is
+                                            formally equivalent to a feature map that assigns data to quantum states (see [4, 5] but also earlier notions in [6–8]).
+                                            Inner products of such data-encoding quantum states then give rise to a kernel, a kind of similarity measure that
+                                            forms the core concept of kernel theory.
+                                               The natural shape of this analogy sparked more research in the past years, for example on training generative
+                                            quantum models [9], constructing kernelised machine learning models [10], understanding the separation between the
+                                            computational complexity of quantum and classical machine learning [5, 11, 12] or revealing links between quantum
+                                            machine learning and maximum mean embeddings [13] as well as metric learning [14]. But despite the growing
+                                            amount of literature, a comprehensive review of the link between quantum computation and kernel theory, as well
+                                            as its theoretical consequences, is still lacking. This technical manuscript aims at filling the gap by summarising,
+                                            formalising and extending insights scattered across existing literature and “quantum community folklore”. The
+                                            central statement of this line of work is that quantum algorithms optimised with data can fundamentally be
+                                            formulated as a classical kernel method whose kernel is computed by a quantum computer. This statement holds
+                                            both for the popular class of classically trained variational near-term algorithms (e.g., [15]) as well as for more
+                                            sophisticated fault-tolerant algorithms trained by a quantum computer (e.g., [6]). It will be apparent that once the
+                                            right “spaces” for the analysis are defined (as first proposed in [5]), the theory falls into place itself. This is in stark
+                                            contrast to the more popular, but much less natural, attempt to force quantum theory into the shape of neural
+
+
+
+
+                                            FIG. 1. Quantum computing and kernel methods are based on a similar principle. Both have mathematical
+                                            frameworks in which information is mapped into and then processed in high-dimensional spaces to which we have only limited
+                                            access. In kernel methods, the access to the feature space is facilitated through kernels or inner products of feature vectors.
+                                            In quantum computing, access to the Hilbert space of quantum states is given by measurements, which can also be expressed
+                                            by inner products of quantum states.
+                                                                                                                                   2
+
+
+
+
+FIG. 2. Interpreting a quantum circuit as a machine learning model. After encoding the data with the routine Sx ,
+a quantum circuit “processes” the embedded input, followed by a measurement (left). The processing circuit may depend on
+classically trainable parameters, as investigated in near-term quantum machine learning with variational circuits, or it may
+consist of standard quantum routines such as amplitude amplification or quantum Fourier transforms. The expected outcome
+of the measurement M is interpreted as the model’s prediction, which is deterministic (generative models, which would
+consider the measurement samples as outputs, are not considered here). Since the processing circuit only changes the basis in
+which the measurement is taken, it can conceptually be understood as part of the measurement procedure (right). In this
+sense, quantum models consist of two parts, the data encoding/embedding and the measurement. Training a quantum model
+is the problem of finding the measurement that minimises a data-dependent cost function. Note that while the measurement
+could depend on trainable parameters I will not consider trainable embedding circuits here.
+
+
+networks.1
+   A lot of the results presented here are of theoretical nature, but have important practical implications. Under-
+standing quantum models as kernel methods means that the expressivity, optimisation and generalisation behaviour
+of quantum models is largely defined by the data-encoding strategy or quantum embedding which fixes the kernel.
+Furthermore, it means that while the kernel itself may explore high-dimensional state spaces of the quantum system,
+quantum models can be trained and operated in a low-dimensional subspace. In contrast to the popular strategy of
+variational models (where a quantum algorithm depends on a tractable number of classical parameters that are
+optimised), we do not have to worry about finding the right variational circuit ansatz, or about how to avoid barren
+plateaus problems [16, 17] – but pay the price of having to compute pairwise distances between data points.
+   For classical machine learning research, the kernel perspective can help to demystify quantum machine learning.
+A medium-term benefit may also derive from quantum computing’s extensive tools that describe information in
+high-dimensional spaces, and possibly from interesting new kinds of kernels derived from physics. In the longer term,
+quantum computers promise access to fast linear algebra processing capabilities which are in principle able to deliver
+the polynomial speed-up that allows kernel methods to process big data without relying on approximations and
+heuristics.
+   The manuscript is aimed at readers coming from either a machine learning or quantum computing background,
+but assumes an advanced level of mathematical knowledge of Hilbert spaces and the like (and there will be a lot of
+Hilbert spaces). Instead of giving lengthy introductions to both fields at the beginning, I will try to explain relevant
+concepts such as quantum states, measurements, or kernels as they are needed. Since neither kernel methods nor
+quantum theory are easy to digest, the next section will summarise all the main insights from a high-level point of
+view to connect the dots right from the start.
+   A final side note may be useful: quantum computing researchers love to precede any concept with the word
+“quantum”. In a young and explorative discipline like quantum machine learning (there we go!), this leads to very
+different ideas being labeled as “quantum kernels”, “quantum support vector machines”, “quantum classifiers” or
+even “quantum neural networks”. To not add to this state of confusion I will – besides standard technical terms
+– only use the “quantum” prefix if a quantity is explicitly computed by a quantum algorithm (instead of being a
+mathematical construction in quantum theory). I will therefore speak of “quantum models” and “quantum kernels”,
+but try to avoid constructions like “quantum feature maps” and “quantum reproducing kernel Hilbert space”.
+
+
+                                              II.   SUMMARY OF RESULTS
+
+   First, a quick overview of the scope. Quantum algorithms have been proposed for many jobs in supervised machine
+learning, but the majority of them replace the model, such as a classifier or generator, with an algorithm that runs on
+
+
+1 In some sense, many near-term approaches to quantum machine learning can be understood as a kernel method with a special kind of
+
+  kernel, where the model (and possibly even the kernel [14]) are trained like neural networks. This mix of both worlds makes quantum
+  machine learning an interesting mathematical playground beyond the questions of asymptotic speedups that quantum computing
+  researchers tend to ask by default.
+                                                                                                                                      3
+
+
+
+
+FIG. 3. Quantum models as linear models in a feature space. A quantum model can be understood as a model that
+maps data into a feature space in which the measurement defines a linear decision boundary. This feature space is not
+identical to the Hilbert space of the quantum system. Instead we can define it as the space of complex matrices enriched with
+the Hilbert-Schmidt inner product – which is the space where density matrices live in.
+
+
+a quantum computer. These algorithms – I will call them quantum models – usually consist of two parts: the data
+encoding, which maps data inputs x to quantum states ∣φ(x)⟩ (effectively embedding them into the space of quantum
+states), and a measurement M. Statistical properties of the measurement are then interpreted as the output of the
+model. Training a quantum model means to find the measurement which minimises a cost function that depends on
+training data. This overall definition is fairly general, and it includes most near-term supervised quantum machine
+learning algorithms as well as many more complex, fault-tolerant quantum algorithms (see Figure 2). Throughout
+this manuscript I will interpret the expected measurement – or in practice, the average over measurement outcomes –
+as a prediction, but the results may carry over to other settings, such as generative quantum models (e.g., [18]). I
+will also consider the embedding fixed and not trainable as proposed in [14, 19].
+   The bridge between quantum machine learning and kernel methods is formed by the observation that quantum
+models map data into a high-dimensional feature space, in which the measurement defines a linear decision
+boundary as shown in Figure 3. Note that for this to hold we need to define the data-encoding density matrices
+ρ(x) = ∣φ(x)⟩⟨φ(x)∣ as the feature “vectors”2 instead of the Dirac vectors ∣φ(x)⟩ (see Section V A). This was first
+proposed in Ref. [5]. Density matrices are alternative descriptions of quantum states as Hermitian operators which
+are handy because they can also express probability distributions over quantum states (in which case they are
+describing so-called mixed instead of pure states). We can therefore consider the space of complex matrices enriched
+with the Hilbert-Schmidt inner product as the feature space of a quantum model and state:
+      1. Quantum models are linear models in the “feature vectors” ρ(x).
+As famously known from support vector machines [20], linear models in feature spaces can be efficiently evaluated
+and trained if we have access to inner products of feature vectors, which is a function κ in two data points x, x′
+called the kernel. Kernel theory essentially uses linear algebra and functional analysis to derive statements about
+the expressivity, trainability and generalisation power of linear models in feature spaces directly from the kernel.
+For us this means that we can learn a lot about the properties of quantum models if we study inner products
+κ(x, x′ ) = tr [ρ(x′ )ρ(x)], or, for pure states, κ(x, x′ ) = ∣ ⟨φ(x′ ) ∣φ(x) ⟩ ∣2 (see in particular Ref. [12]). I will call these
+functions “quantum kernels’.
+   To understand what kernels can tell us about quantum machine learning, we need another important concept from
+kernel theory: the reproducing kernel Hilbert space (RKHS). An RKHS is an alternative feature space of a kernel –
+and therefore reproduces all “observable” behaviour of the machine learning model. More precisely, it is a feature
+space of functions x → gx (⋅) = κ(x, ⋅), which are constructed from the kernel. The RKHS contains one such function
+for every input x, as well as their linear combinations (for example, for the popular Gaussian kernel these linear
+combinations are sums of Gaussians centered in the individual data points). In an interesting – and by no means
+trivial – twist, these functions happen to be identical to the linear models in feature space. For quantum machine
+learning this means that the space of quantum models and the RKHS of the quantum kernel contain exactly the
+same functions (see Section V B). What we gain is an alternative representation of quantum models, one that only
+depends on the quantity tr [ρ(x′ )ρ(x)] (see Figure 4).
+   This alternative representation can be very useful for all sorts of things. For example, it allows us to study the
+universality of quantum models as function approximators by investigating the universality of the RKHS, which in
+turn is a property of the quantum kernel. But probably the most important use is to study optimisation: minimising
+typical cost functions over the space of quantum models is equivalent to minimising the same cost over the RKHS of
+
+
+
+2 The term feature vectors derives from the fact that they are elements of a vector space, not that they are vectors in the sense of the
+
+  space CN or RN .
+                                                                                                                             4
+
+
+
+
+FIG. 4. Overview of the link between quantum models and kernel methods. The strategy with which data is
+encoded into quantum states is a feature map from the space of data to the feature space F “of density matrices” ρ. In
+this space, quantum models can be expressed as a linear model whose decision boundary is defined by the measurement.
+According to kernel theory, an alternative feature space with the same kernel is the RKHS F , whose vectors are functions
+arising from fixing one entry of the kernel (i.e., the inner product of data-encoding density matrices). The RKHS is equivalent
+to the space of quantum models, which are linear models in the data-encoding feature space. These connections can be used
+to study the properties of quantum models as learners, which turn out to be largely determined by the kernel, and therefore
+by the data-encoding strategy.
+
+
+the quantum kernel (see Section VI A). The famous representer theorem uses this to show that “optimal models”
+(i.e., those that minimise the cost) can be written in terms of the quantum kernel as
+                                         M                               M
+                              fopt (x) = ∑ αm tr [ρ(xm )ρ(x)] = tr [( ∑ αm ρ(xm )) ρ(x)] ,                                 (1)
+                                        m=1                             m=1
+
+where xm , m = 1, . . . , M is the training data and αm ∈ R (see Section VI B). Looking at the expression in the round
+brackets, this enables us to say something about optimal measurements for quantum models:
+
+      2. Quantum models that minimise typical machine learning cost functions have measurements that can
+      be written as “kernel expansions in the data”, M = ∑m αm ρ(xm ).
+
+In other words, we are guaranteed that the best measurements for machine learning tasks only have M degrees of
+freedom {αm }, rather than the O(22n ) degrees of freedom needed to express a general measurement on a standard
+n-qubit quantum computer. Even more, if we include a regularisation term into the cost function, the kernel defines
+entirely which models are actually penalised or preferred by regularisation. Since the kernel only depends on the
+way in which data is encoded into quantum states, one can conclude that data encoding fully defines the minima of
+a given cost function used to train quantum models (see Section VI C).
+   But how can we find the optimal model in Eq. (1)? We could use the near-term approach to quantum machine
+learning and simply train an ansatz, hoping that it learns the right measurement. But as illustrated in Figure 5,
+variational training typically only searches through a small subspace of all possible quantum models/measurements.
+This has a good reason: to train a circuit that can express any quantum model (and is hence guaranteed to find the
+optimal one) would require parameters for all O(22n ) degrees of freedom, which is intractable for all but toy models.
+However, also here kernel theory can help: not only is the optimal measurement defined by M ≪ 22n degrees of
+freedom, finding the optimal measurement has the same favourable scaling (see Section VI D) if we switch to a
+kernel-based training approach.
+
+      3. The problem of finding the optimal measurement for typical machine learning cost functions trained
+      with M data samples can be formulated as an M -dimensional optimisation problem.
+
+If the loss is convex, as is common in machine learning, the optimisation problem is guaranteed to be convex as well.
+Hence, under rather general assumptions, we are guaranteed that the “hard” problem of picking the best quantum
+model shown in Eq. (1) is tractable and of a simple structure, even without reverting to variational heuristics. In
+addition, convexity – the property that there is only one global minimum – may help with trainability problems like
+the notorious “barren plateaus” [16] in variational circuit training. If the loss function is the hinge loss, things reduce
+to a standard support vector machine with a quantum kernel, which is one of the algorithms proposed in [4] and [5].
+                                                                                                                                5
+
+
+
+
+FIG. 5. Kernel-based training vs. variational training. Training a quantum model as defined here tries to find the
+optimal measurement Mopt over all possible quantum measurements. Kernel theory guarantees that in most cases this optimal
+measurement will have a representation that is a linear combination in the training data with coefficients α = (α1 , . . . , αM ).
+Kernel-based training therefore optimises over the parameters α directly, effectively searching for the best model in an
+M -dimensional subspace spanned by the training data (blue). We are guaranteed that Mopt α = Mopt , and if the loss is convex
+this is the only minimum, which means that kernel-based training will find the best measurement out of all measurements.
+Variational training parametrises the measurement instead by a general ansatz that depends on K parameters θ = (θ1 , . . . , θK ),
+and tries to find the optimal measurement Mopt θ  in the subspace explored by the ansatz. This θ-subspace is not guaranteed
+to contain the globally optimal measurement Mopt , and optimisation is usually non-convex. We are therefore guaranteed
+that kernel-based training finds better or the same minima to variational training, but at the expense of having to compute
+pairwise distances of data points for training and classification.
+
+
+   Altogether, approaching quantum machine learning from a kernel perspective can have profound implications for
+the way we think about it. Firstly, most quantum models can be formulated as general support vector machines (in
+the sense of [20]) with a kernel evaluated on a quantum computer. As a corollary, we know that the measurements
+of optimal quantum models live in a low-dimensional subspace spanned by the training data, and that we can train
+in that space. Kernel-based training is guaranteed to find better minima – or as phrased here, measurements –
+than variational circuit training, at the expense of having to evaluate pair-wise distances of data points in feature
+space. (In the conclusion I will discuss how larger fault-tolerant quantum computers could potentially help with
+this as well!). Secondly, if the kernel defines the model, and the data encoding defines the kernel, we have to be
+very aware of the data encoding strategy we use in quantum machine learning – a step that has often taken the
+backseat over other parts of quantum models. Thirdly, since quantum models can always be rewritten as a classical
+model plus quantum kernel, the separation between classical and quantum machine learning lies only in the ability
+of quantum computers to implement classically hard kernels. The first steps into investigating such separations have
+been made in papers like [11, 12], but it is still unclear whether any useful applications turn out to be enabled solely
+by quantum computers.
+   The remainder of the paper will essentially follow the structure of this synopsis to discuss every statement in more
+mathematical detail.
+
+
+                     III.   QUANTUM COMPUTING, FEATURE MAPS AND KERNELS
+
+  Let us start by laying the ground work for the kernel perspective on quantum machine learning. First I review
+the link between the process of encoding data into quantum states and feature maps, and construct the “quantum
+kernel” that we will use throughout the manuscript. I will then give some examples of data-encoding feature maps
+and quantum kernels, including a general description that allows us to understand these kernels via Fourier series.
+
+
+                              A.    Encoding data into quantum states is a feature map
+
+  First, a few important concepts from quantum computing, which can be safely skipped by readers with a
+background in the field. Those who deem the explanations to be too casual shall be referred to the wonderful script
+by Michael Wolf [21].
+
+      Quantum state. According to quantum theory, the state of a quantum system is fully described by a
+      length-1 vector ∣ψ⟩ (or, more precisely, a ray represented by this vector) in a complex Hilbert space
+      H. The notation ∣⋅⟩ can be intimidating, but simply reminds of the fact that the Hilbert space has an
+      inner product ⟨⋅, ⋅⟩, which for Hilbert spaces describing quantum systems is denoted as ⟨⋅ ∣⋅ ⟩, and that its
+      vectors constitute “the right side” of the inner product. Quantum theory textbooks then introduce the
+                                                                                                                               6
+
+      left side of the inner product as a functional ⟨ϕ∣ from a dual space H∗ acting on elements of the original
+      Hilbert space. Mainstream quantum computing considersn rather simple quantum systems of n binary
+      subsystems called “qubits”, whose Hilbert space is the C2 . The dual space H∗ can then be thought of
+      as the space of complex 2n -dimensional “row vectors”. A joint description of two quantum systems ∣ψ⟩
+      and ∣ϕ⟩ is expressed by the tensor product ∣ψ⟩ ⊗ ∣φ⟩.
+
+      Density matrix. There is an alternative representation of a quantum state as a Hermitian operator called
+      a density matrix. The density matrix corresponding to a state vector ∣ψ⟩ reads
+                                                          ρ = ∣ψ⟩⟨ψ∣ .                                                 (2)
+                                                              n
+      If we represent quantum states as vectors in C2 , then the corresponding density matrix is given by
+      the outer product of a vector with itself – resulting in a matrix (and hence the name). The density
+      matrix contains all observable information of ∣ψ⟩, but is useful to model probability distributions {pk }
+      over multiple quantum states {∣ψk ⟩⟨ψk ∣} as so-called mixed states
+                                                      ρ = ∑ pk ∣ψk ⟩⟨ψk ∣ ,                                            (3)
+                                                          k
+      without changing the equations of quantum theory. For simplicity I will assume that we are dealing with
+      pure states in the following, but as far as I know everything should hold for mixed states as well.
+
+      Quantum computations. A quantum computation applies physical operations to quantum states, which
+      – in analogy to classical circuits – are known as “quantum gates”. The gates are applied to a small
+      amount of qubits at a time. A collection of quantum gates (possibly followed by a measurement, which
+      will be explained below) is called a quantum circuit. Any physical operation acting on the quantum
+      system maps from a density matrix ρ to another density matrix ρ′ . In the most basic setting, such a
+      transformation is described by a unitary operator U , with ρ′ = U † ρU , or ∣ψ ′ ⟩ = U ∣ψ⟩.3 Unitary operations
+      are length-preserving linear transformations, which is why we often say that a unitary “rotates” the
+      quantum state. In the finite-dimensional case, a unitary operator can conveniently be represented by a
+      unitary matrix, and the evolution of a quantum state becomes a matrix multiplication.
+   Consider a physical operation or quantum circuit U (x) that depends on data x ∈ X from some data domain X .
+For example, if the domain is the set of all bit strings of length n, the quantum circuit may apply specific operations
+only if bits are 1 and do nothing if they are 0. After the operation, the quantum state ∣φ(x)⟩ = U (x) ∣ψ⟩ depends on
+x. In other words, the data-dependent operation “encodes” or “embeds” x into a vector ∣φ(x)⟩ from a Hilbert space
+(and I will use both terms interchangeably). This is a common definition of a feature map in machine learning, and
+we can say that any data-dependent quantum computation implements a feature map.
+   While from a quantum physics perspective it seems natural – and has been done predominantly in the early
+literature – to think of x → ∣φ(x)⟩ as the feature map that links quantum computing to kernel methods, we will
+see below that quantum models are not linear in the Hilbert space of the quantum system [5], which means that
+the apparatus of kernel theory does not apply elegantly. Instead, I will define x → ρ(x) as the feature map and
+call it the data-encoding feature map. Note that consistent with the proposed naming scheme, the term “quantum
+feature map” would be misleading, since the result of the feature map is a state, which without measurement is just
+a mathematical concept.
+Definition 1 (Data-encoding feature map). Given a n-qubit quantum system with states ∣ψ⟩, and let F be the space
+of complex-valued 2n × 2n -dimensional matrices equipped with the Hilbert-Schmidt inner product ⟨ρ, σ⟩F = tr{ρ† σ}
+for ρ, σ ∈ F. The data-encoding feature map is defined as the transformation
+                                                          φ ∶ X → F,                                                         (4)
+
+                                                 φ(x) = ∣φ(x)⟩⟨φ(x)∣ = ρ(x),                                                 (5)
+and can be implemented by a data-encoding quantum circuit U (x).
+  While density matrices of qubit systems live in a subspace of F (i.e., the space of positive semi-definite trace-class
+operators), it will be useful to formally define the data-encoding feature space as above. Firstly, it makes sure that
+the feature space is a Hilbert space, and secondly, it allows measurements to live in the same space [21], which we
+will need to define linear models in F. Section III C will discuss that this definition of the feature space is equivalent
+to the tensor product space of complex vectors ∣ψ⟩ ⊗ ∣ψ ∗ ⟩ used in [12].
+
+
+3 The unitary operator is the quantum equivalent of a stochastic matrix which acts on vectors that represent discrete probability
+
+  distributions.
+                                                                                                                           7
+
+
+
+
+FIG. 6. Example of a data-encoding feature map and quantum kernel. A scalar input is encoded into a single-qubit
+quantum state, which is represented as a point on a Bloch sphere. The embedding uses a feature map facilitated by a
+Pauli-X rotation. As can be seen when plotting the quantum states encoding equidistant points on an interval, the embedding
+preserves the structure of the data rather well, but is periodic. The embedding gives rise to a quantum kernel κ. When we fix
+the first input at zero, we can visualise the distance measure, which is a squared cosine function.
+
+
+                             B.    The data-encoding feature map gives rise to a kernel
+
+  Let us turn to kernels.
+
+      Kernels. Unsurprisingly, the central concept of kernel theory are kernels, which in the context of machine
+      learning are defined as real or complex-valued positive definite functions in two data points, κ ∶ X ×X → K,
+      where K can be C or R. For every such function we are guaranteed that there exist at least one feature
+      map such that inner products of feature vectors φ(x) from the feature Hilbert space F form the kernel,
+      κ(x, x′ ) = ⟨φ(x′ ), φ(x)⟩F . Vice versa, every feature map gives rise to a kernel. The importance of kernels
+      for machine learning is that they are a means of “computing” in feature space without ever accessing or
+      numerically processing the vectors φ(x): everything we need to do in machine learning can be expressed
+      by inner products of feature vectors, instead of the feature vectors themselves. In the cases that are
+      practically useful, these inner products can be computed by a comparably simple function. This makes
+      the computations in intractably large spaces tractable.
+
+  With the Hilbert-Schmidt inner product from Definition 1 we can immediately write down the kernel induced
+by the data-encoding feature map, which we will call the “quantum kernel” (since it is a function computed by a
+quantum computer):
+Definition 2 (Quantum kernel). Let φ be a data-encoding feature map over domain X . A quantum kernel is the
+inner product between two data-encoding feature vectors ρ(x), ρ(x′ ) with x, x′ ∈ X ,
+
+                                       κ(x, x′ ) = tr [ρ(x′ )ρ(x)] = ∣ ⟨φ(x′ ) ∣φ(x) ⟩ ∣2 .                              (6)
+
+   To justify the term “kernel” we need to show that the quantum kernel is indeed a positive definite function.
+The quantum kernel is a product of the complex-valued kernel κc (x, x′ ) = ⟨φ(x′ ) ∣φ(x) ⟩ and its complex conjugate
+                                                ∗
+κc (x, x′ )∗ = ⟨φ(x) ∣φ(x′ ) ⟩ = ⟨φ(x′ ) ∣φ(x) ⟩ . Since products of two kernels are known to be kernels themselves, we
+only have to show that the complex conjugate of a kernel is also a kernel. For any xm ∈ X , m = 1 . . . M , and for any
+cm ∈ C, we have
+                                                      ′   ∗                                   ′
+                                   ∗                        ∗
+                             ∑ cm cm′ (κc (x , x )) = ∑ cm cm′ ⟨φ(x ) ∣φ(x ) ⟩
+                                            m m                    m      m
+
+                            m,m′                                m,m′
+
+
+                                                              = (∑ cm ⟨φ(xm )∣) (∑ c∗m ∣φ(xm )⟩)
+                                                                 m                    m
+                                                              = ∥ ∑ c∗m ∣φ(xm )⟩ ∥2
+                                                                 m
+                                                              ≥ 0,
+
+which means that the complex conjugate of a kernel is also positive definite.
+Example III.1. Consider an embedding that encodes a scalar input x ∈x R into the quantum state of a single qubit.
+The embedding is implemented by the Pauli-X rotation gate RX (x) = e−i 2 σx , where σx is the Pauli-X operator. The
+data-encoding feature map is then given by φ ∶ x → ρ(x) with
+                            x                  x       x                  x       x                 x
+               ρ(x) = cos2 ( ) ∣0⟩⟨0∣ + i cos ( ) sin ( ) ∣0⟩⟨1∣ − i cos ( ) sin ( ) ∣1⟩⟨0∣ + sin2 ( ) ∣1⟩⟨1∣ ,          (7)
+                            2                  2       2                  2       2                 2
+                                                                                                                           8
+
+and the quantum kernel becomes
+                                                    x′                x′          x − x′
+                                                                              2               2
+                                 ′          x                 x
+                           κ(x, x ) = ∣cos ( ) cos ( ) + sin ( ) sin ( )∣ = cos (        ) ,                             (8)
+                                            2       2         2       2             2
+which is a translation invariant squared cosine kernel. We will stick with this simple example throughout the following
+sections. It is illustrated in Figure 6.
+
+
+                                C.     Making sense of matrix-valued feature vectors
+
+  For readers that struggle to think of density matrices as feature vectors the data-encoding feature map (and
+further below, linear models) may be hard to visualise. I want to therefore insert a brief comment on an alternative
+version of the data-encoding feature map.
+  For all matters and purposes, the data-encoding feature map can be replaced by an alternative formulation
+                                                  φv ∶ X → Fv ⊂ H ⊗ H∗ ,                                                 (9)
+
+                                                  φv = ∣φ(x)⟩ ⊗ ∣φ∗ (x)⟩ ,                                              (10)
+         ∗
+where ∣φ (x)⟩ denotes the quantum state created from applying the complex conjugated (but not transposed) unitary
+∣φ∗ (x)⟩ = U ∗ (x) ∣0⟩ instead of ∣φ(x)⟩ = U (x) ∣0⟩, and Fv is the space of tensor products of a data-encoding Dirac
+vector with its complex conjugate. Note that since the complex conjugate of a unitary is a unitary, the unusual
+notation ∣φ∗ (x)⟩ describes a valid quantum state which can be prepared by a physical circuit. The alternative feature
+space Fv is a subspace of the Hilbert space H ⊗ H∗ with the property that inner products are real. One can show
+(but I won’t do it here) that Fv is indeed a Hilbert space.
+  The inner product in this alternative feature space Fv is the absolute square of the inner product in the Hilbert
+space H of quantum states,
+                                                  ⟨ψ∣ϕ⟩Fv = ∣ ⟨ψ ∣ϕ ⟩H ∣2 ,                                             (11)
+and is therefore equivalent to the inner product in F. This guarantees that it leads to the same quantum kernel.
+   The subscript v refers to the fact that ∣φ(x)⟩ ⊗ ∣φ∗ (x)⟩ is a vectorisation of ρ(x), which reorders the 2n matrix
+elements as a vector in C4n . To see this, let us revisit Example III.1 from above.
+Example III.2. Consider the embedding from Example III.1. The vectorised version of the data-encoding feature
+map is given by
+                                                    x                  x           x               x
+                φv ∶ x → ∣φ(x)⟩ ⊗ ∣φ∗ (x)⟩ = (cos ( ) ∣0⟩ − i sin ( ) ∣1⟩) ⊗ (cos ( ) ∣0⟩ + i sin ( ) ∣1⟩) (12)
+                                                    2                  2           2               2
+                                             ⎛     cos2 ( x2 )       ⎞
+                                             ⎜ i cos ( x ) sin ( x ) ⎟
+                                           =⎜          2         2 ⎟
+                                             ⎜−i cos ( x ) sin ( x )⎟ ,                                    (13)
+                                             ⎜          2         2 ⎟
+                                             ⎝      sin2 ( x2 )      ⎠
+and one can verify easily that the inner product of two such vectors leads to the same kernel.
+   Vectorised density matrices are common in the theory of open quantum systems [22], where they are written as
+∣ρ⟫ (see also the Choi-Jamiolkowski isomorphism). I will adopt this notation in Section VI B below to replace the
+Hilbert-Schmidt inner product tr [ρ† σ] with ⟪ρ ∣σ ⟫, which can be more illustrative at times. Note that the vectorised
+feature map, as opposed to Definition 1, cannot capture mixed quantum states and is therefore less powerful.
+
+
+                                     IV.   EXAMPLES OF QUANTUM KERNELS
+
+   To fill the definition of the quantum kernel with life, let us have a look at typical information encoding strategies
+or data embeddings in quantum machine learning, and the kernels they give rise to (following [4], and see Table I).
+Note that it has been shown that there are kernels that cannot be efficiently computed on classical computers [11].4
+As important as such results are, the question of quantum kernels that are actual useful for every-day problems is
+still wide open.
+
+
+4 The argument basically defines a feature map based on a computation that is conjectured by quantum computing research to be
+
+  classically hard.
+                                                                                                                   9
+
+                                   encoding                             kernel κ(x, x′ )
+                                   basis encoding                       δx,x
+                                   amplitude encoding                   ∣x† x′ ∣2
+                                   repeated amplitude encoding (∣x† x′ ∣2 )r
+                                                                          N                  ′          2
+                                   rotation encoding                    ∏k=1 ∣ cos(xk − xk )∣
+                                                                                ′ 2
+                                   coherent state encoding              e−∣x−x ∣
+                                                                                      isx itx′
+                                   general near-term encoding           ∑s,t∈Ω e         e       cs,t
+
+TABLE I. Overview of data encoding strategies used in the literature and their quantum kernels. If bold
+notation is used, the input domain is assumed to be the X ⊆ RN .
+
+
+                              A.    Data encoding that relates to classical kernels
+
+   The following strategies to encode data all have resemblance to kernels from the classical machine learning
+literature. This means that, sometimes up to an absolute square value, we can identify them with standard kernels
+such as the polynomial or Gaussian kernel. These kernels are plotted in Figure 7 using simulations of quantum
+computations implemented in the quantum machine learning software library PennyLane [23]. Note that I switch to
+bold notation when the input space is CN or RN
+
+   Basis encoding. Basis encoding is possibly the most common information encoding strategy in qubit-based
+quantum computing. Inputs x ∈ X are assumed to be binary strings of length n, and X = {0, 1}⊗n . Every binary
+string has a unique integer representation ix = ∑n−1  k
+                                                 k=0 2 xk . The data-encoding feature map maps the binary string to
+a computational basis state,
+
+                                                      φ ∶ x → ∣ix ⟩⟨ix ∣ .                                      (14)
+
+The quantum kernel is given by the Kronecker delta
+
+                                              κ(x, x′ ) = ∣ ⟨ix′ ∣jx ⟩ ∣2 = δx,x′ ,                             (15)
+
+which is of course a very strict similarity measure on input space, and arguably not the best choice of data encoding
+for quantum machine learning tasks. Basis encoding requires O(n) qubits.
+                                                                                         n
+  Amplitude encoding. Amplitude encoding assumes that X = C2 , and that the inputs are normalised as
+∥x∥2 = ∑i ∣xi ∣2 = 1. The data-encoding feature map associates each input with a quantum state whose amplitudes in
+the computational basis are the elements in the input vector,
+                                                                  N
+                                            φ ∶ x → ∣x⟩⟨x∣ = ∑ xi x∗j ∣i⟩⟨j∣ .                                  (16)
+                                                                i,j=1
+
+This data-encoding strategy leads to an identity feature map, which can be implemented by a non-trivial quantum
+circuit (for obvious reasons also known as “arbitrary state preparation”), which takes time O(2n ) [24]. The quantum
+kernel is the absolute square of the linear kernel
+
+                                             κ(x, x′ ) = ∣ ⟨x′ ∣x ⟩ ∣2 = ∣x† x′ ∣2 .                            (17)
+
+It is obvious that this quantum kernel does not add much power to a linear model in the original feature space, and
+it is more of interest for theoretical investigations that want to eliminate the effect of the feature map. Amplitude
+encoding requires O(n) qubits.
+
+  Repeated amplitude encoding. Amplitude encoding can be repeated r times,
+
+                                               φ ∶ x → ∣x⟩⟨x∣ ⊗ ⋯ ⊗ ∣x⟩⟨x∣                                      (18)
+
+to get powers of the quantum kernel in amplitude encoding
+
+                                        κ(x, x′ ) = (∣ ⟨x′ ∣x ⟩ ∣2 )r = (∣(x′ )† x∣2 )r .                       (19)
+                                                                                                                                    10
+
+
+
+
+FIG. 7. Quantum kernels of different data embeddings. Plots of some of the functions κ(x̃, x) for the kernels introduced
+above, using x = (x1 , x2 ) ∈ R2 for illustration purposes. The first entry x̃ is fixed at x̃ = (0, 0) for basis and rotation embedding,
+and at x̃ = ( √12 , √12 ) for the variations of amplitude embedding. The second value is depicted as the x-y plane.
+
+
+
+A constant non-homogenity can be added by extending the original input with constant dummy features. Repeated
+amplitude encoding requires O(rn) qubits.
+
+  Rotation encoding. Rotation encoding is a qubit-based embedding that assumes X = Rn (where n is again the
+number of qubits) without any normalisation condition. Since it is 2π-periodic one may want to limit Rn to the
+hypercube [0, 2π]⊗n . The ith feature xi is encoded into the ith qubit via a Pauli rotation. For example, a Pauli-Y
+rotation puts the qubit into state ∣qi (xi )⟩ = cos(xi ) ∣0⟩ + sin(xi ) ∣1⟩. The data-encoding feature map is therefore given
+by
+
+                                                                      1       n
+                    φ ∶ x → ∣φ(x)⟩⟨φ(x)∣ with ∣φ(x)⟩ =                ∑     ∏ cos(xk ) k sin(xk )
+                                                                                           q         1−qk
+                                                                                                            ∣q1 , . . . , qn ⟩ ,   (20)
+                                                                q1 ,...,qn =0 k=1
+
+
+and the corresponding quantum kernel is related to the cosine kernel:
+                                           n                                              n
+                              κ(x, x′ ) = ∏ ∣ sin xk sin x′k + cos xk cos x′k ∣2 = ∏ ∣ cos(xk − x′k )∣2 .                          (21)
+                                          k=1                                            k=1
+
+
+Rotation encoding requires O(n) qubits.
+
+  Coherent state encoding. Coherent states are known in the field of quantum optics as a description of light
+modes. Formally, they are superpositions of so called Fock states, which are basis states from an infinite-dimensional
+discrete basis {∣0⟩ , ∣1⟩ , ∣2⟩ , ...}, instead of the binary basis of qubits. A coherent state has the form
+
+                                                                     ∞
+                                                               ∣α∣2     αk
+                                                       ∣α⟩ = e− 2 ∑ √ ∣k⟩ ,                                                        (22)
+                                                                    k=0  k!
+
+for α ∈ C. Encoding a real scalar input xi ∈ R into a coherent state ∣αxi ⟩, corresponds to a data-encoding feature
+map with an infinite-dimensional feature space,
+
+                                                                              ∣xi ∣2 ∞   xk
+                                      φ ∶ xi → ∣αxi ⟩⟨αxi ∣ , with ∣αxi ⟩ = e− 2 ∑ √i ∣k⟩ .                                        (23)
+                                                                                     k=0  k!
+
+We can encode a real vector x = (x1 , ..., xn ) into n joint coherent states,
+
+                                             ∣αx ⟩⟨αx ∣ = ∣αx1 ⟩⟨αx1 ∣ ⊗ ⋅ ⋅ ⋅ ⊗ ∣αxn ⟩⟨αxn ∣ .                                    (24)
+
+The quantum kernel is a Gaussian kernel [7]:
+
+                                                                      ∣x′ ∣2
+                                                               ∣x∣2
+                                                                                    2
+                                                                             T ′
+                                                             −( 2 +     2 −x x )
+                                                                                               ′ 2
+                                            κ(x, x′ ) = ∣e                          ∣ = e−∣x−x ∣                                   (25)
+
+Preparing coherent states can be done with displacement operations in quantum photonics.
+                                                                                                                          11
+
+                                 B.     Fourier representation of the quantum kernel
+
+   It is suspicious that all embeddings plotted in Figure 7 have a periodic, trigonometric structure. This is a
+fundamental characteristic of how physical parameters enter quantum states. To see this we will define a general class
+of embeddings (also called “time-evolution encoding”) that is used a lot in near-term quantum machine learning, and
+which includes all examples above if we allow for classical pre-processing of the features. This strategy assumes that
+X = RN for some arbitrary N (whose relation to the number of qubits n depends on the embedding), which means
+that I will stick to the bold notation. The embedding of xi is executed by gates of the form e−ixi Gi where Gi is
+di ≤ 2n -dimensional Hermitian operator called the generating Hamiltonian. For the popular choice of Pauli rotations,
+Gi = 21 σ with the Pauli operator σ ∈ {σz , σy , σz }. The gates can be applied to different qubits as in rotation encoding,
+or to the same qubits, and to be general we allow for arbitrary quantum computations between each encoding gate.
+   Refs. [25] and [26] showed that the Dirac vectors ∣φ(x)⟩ can be represented in terms of periodic functions of
+the form eixi ω , where ω ∈ R can be interpreted as a frequency. The frequencies involved in the construction of the
+data-encoding feature vectors are solely determined by the generating Hamiltonians {Gi } of the gates that encode
+the data. For popular choices of Hamiltonians, the frequencies ω are integer-valued, which means that the feature
+space is constructed from Fourier basis functions eixi n , n ∈ Z. This allows us to describe and analyse the quantum
+kernel with the tools of Fourier analysis.
+   Let me state the result for the simplified case that each input xi is only encoded once, and that all the encoding
+Hamiltonians are the same (G1 = ⋅ ⋅ ⋅ = GN = G). The proof is deferred to Appendix A, which also shows how our
+example of Pauli-X encoding can be cast as a Fourier series.
+Theorem 1 (Fourier representation of the quantum kernel). Let X = RN and S(x) be a quantum circuit that
+encodes the data inputs x = (x1 , . . . , xN ) ∈ X into a n-qubit quantum state S(x) ∣0⟩ = ∣φ(x)⟩ via gates of the form
+e−ixi G for i = 1, . . . , N . Without loss of generality G is assumed to be a d ≤ 2n -dimensional diagonal operator with
+spectrum λ1 , . . . , λd . Between such data-encoding gates, and before and after the entire encoding circuit, arbitrary
+unitary evolutions W (1) , . . . , W (N +1) can be applied, so that
+
+                                      S(x) = W (N +1) e−ixN G W (N ) . . . W (2) e−ix1 G W (1) .                        (26)
+The quantum kernel κ(x, x′ ) can be written as
+                                                                                ′
+                                                   κ(x, x′ ) = ∑ eisx eitx cst ,                                        (27)
+                                                               s,t∈Ω
+
+where Ω ⊆ RN , and cst ∈ C. For every s, t ∈ Ω we have −s, −t ∈ Ω and cst = c∗−s−t , which guarantees that the quantum
+kernel is real-valued.
+   While the conditions of this theorem may sound restrictive at first, it includes a fairly general class of quantum
+models. The standard way to control a quantum system is to apply an evolution of Hamiltonian G for time t, which
+is exactly described by the form e−itG . The time t is associated with the input to the quantum computer (which
+may be the original input x ∈ X or the result of some pre-processing, in which case we can just redefine the dataset
+to be the pre-processed one). In short, most quantum kernels will be of the form shown in Eq. (27).
+   Importantly, for the class of Pauli generators, the kernel becomes a Fourier series:
+Corollary 1.1 (Fourier series representation of the quantum kernel). For the setting described in Theorem 1, if
+the eigenvalue spectrum of G is such that any difference λi − λj for i, j = 1, . . . , d is in Z, then Ω becomes the
+set of N -dimensional integer-valued vectors n = (n1 , . . . , nN ), n1 , . . . nN ∈ Z. In this case the quantum kernel is a
+multi-dimensional Fourier series,
+                                                                            ′   ′
+                                                κ(x, x′ ) = ∑ einx ein x cn,n′ ,                                        (28)
+                                                            n,n′ ∈Ω
+
+  Expressions (27) and (28) reveal a lot about the structure of quantum kernels, for example that they are not
+necessarily translation invariant, κ(x, x′ ) ≠ g(x − x′ ), unless the data-encoding strategy leads to cst = c̃st δst = cs and
+                                                                            ′
+                                                    κ(x, x′ ) = ∑ eis(x−x ) c̃s .                                       (29)
+                                                                s∈Ω
+                ′            ′
+Since e−ixi G eixi G = e−i(xi −xi )G , this is true for all data embeddings that encode each original input into a separate
+physical subsystem, like rotation encoding introduced above.
+  It is an interesting question if this link between data embedding and Fourier basis functions given to us by physics
+can help design particularly suitable kernels for applications, or be used to control smoothness properties of the
+kernel in a useful manner.
+                                                                                                                                 12
+
+
+
+
+FIG. 8. Kernels generated by rotation embeddings. Plots of the quantum kernel κ(x̃, x) with x̃ = (0, 0) using a very
+general data encoding strategy that repeats the input encoding into a single qubit one, two and three times. It is obvious
+that the repetition decreases the smoothness of the kernel by increasing the Fourier basis functions from which the kernel is
+inherently constructed.
+
+
+              V.    QUANTUM MODELS AND REPRODUCING KERNEL HILBERT SPACES
+
+   I will now discuss the observation that quantum models are linear models in the feature space F of the data-
+encoding feature map. This automatically allows us to apply the results of kernel methods to quantum machine
+learning. A beautiful summary of these results can be found in [20] and [27], which serve as a basis for many of the
+following insights.
+
+
+                               A.   Quantum models are linear models in feature space
+
+  First, let us define a quantum model. For this we need measurements.
+      Measurements. In quantum computing, a measurement produces the observable result of a quantum
+      circuit, and can therefore be seen as the final step of a quantum algorithm5 . Mathematically speaking,
+      a measurement corresponds to a Hermitian operator M acting on vectors in the Hilbert space of the
+      quantum system H. Just like density matrices, measurement operators can be represented as elements
+      of the space of 2n × 2n -dimensional complex matrices [21], and therefore live in a subspace of the
+      data-encoding feature space F. This will become quite crucial below.
+      A Hermitian operator can always be diagonalised and written as
+                                                       M = ∑ µi ∣µi ⟩⟨µi ∣ ,                                            (30)
+                                                              i
+
+      where µi are the eigenvalues of M and {∣µi ⟩} is an orthonormal basis in the Hilbert space H of the
+      quantum system. Note that ∣µi ⟩⟨µi ∣ is an outer product, and can be thought of as a (density) matrix.
+      The apparatus of quantum theory allows us to compute expected outcomes or expectations of measurement
+      results. Such expectations derive from expressing the quantum state in the eigenbasis of the measurement
+      operator, ∣ψ⟩ = ∑i ⟨µi ∣ψ ⟩ ∣µi ⟩, and using the fact that M ∣µi ⟩ = µi ∣µi ⟩ and ⟨µi ∣µi ⟩ = 1:
+                    tr [ρM] = ⟨ψ∣M∣ψ⟩ = ∑ ⟨ψ ∣µj ⟩ ⟨µi ∣ψ ⟩ ⟨µj ∣ M ∣µi ⟩ = ∑ ∣ ⟨ψ ∣µi ⟩ ∣2 µi = ∑ p(µi )µi .           (31)
+                                             i,j                                i                  i
+
+      The above used the “Born rule”, which states that the probability of measuring outcome µi is given by
+                                                        p(µi ) = ∣⟨µi ∣ψ⟩∣2 .                                           (32)
+      It is clear that the right hand side of Eq. (31) is an expectation of a random variable in the classical
+      sense of probability theory, but the probabilities themselves are computed by an unusual mathematical
+
+
+5 An important exception is when the outcome of a measurement is used to influence the quantum circuit itself, but I do not consider
+
+  those complications here.
+                                                                                                                         13
+
+      framework. Finally, it is good to know that the expectation of a measurement Mϕ = ∣ϕ⟩⟨ϕ∣ (where ∣ϕ⟩ is
+      an arbitrary quantum state) gives us the overlap of ∣ϕ⟩ and ∣ψ⟩,
+
+                                                 tr [ρMϕ ] = ⟨ψ∣Mϕ ∣ψ⟩ = ∣⟨ϕ∣ψ⟩∣2 .                              (33)
+
+      Note that only because we can write down a measurement mathematically, we cannot necessarily
+      implement it efficiently on a quantum computer. However, for measurements of type Mϕ there is a very
+      efficient routine called the SWAP test to do so, if we can prepare the corresponding state efficiently. In
+      practice, more complicated measurements are implemented by applying a circuit W to the final quantum
+      state, followed by a simple measurement (such as the well-known Pauli-Z measurement σz that probes
+      the state of qubits, which effectively implements M = W † σz W ).
+      Of course, actual quantum computers can only ever produce an estimate of the above statistical properties,
+      namely by repeating the entire computation K times and computing the empirical probability/frequency
+                                       K
+      or the empirical expectation K1
+                                      ∑i=1 µi . However, repeating a fixed computation tens of thousands of
+      times can be done in a fraction of a second on most hardware platforms, and only leads to a small
+      constant overhead.
+
+  We can define a quantum model as a measurement performed on a data-encoding state:
+
+Definition 3 (Quantum model). Let ρ(x) be a quantum state that encodes classical data x ∈ X and M a Hermitian
+operator representing a quantum measurement. A quantum model is the expectation of the quantum measurement as
+a function of the data input,
+
+                                                            f (x) = tr [ρ(x)M] .                                        (34)
+
+The space of all quantum models contains functions f ∶ X → R. For pure-state embeddings with ρ(x) = ∣φ(x)⟩⟨φ(x)∣,
+this simplifies to
+
+                                                         f (x) = ⟨φ(x)∣ M ∣φ(x)⟩ .                                      (35)
+
+  As mentioned above, this definition is very general, but does not consider the important class of generative
+quantum models.
+
+Example V.1. Getting back to the standard example of the Pauli-X rotation encoding, we can upgrade it to a full
+quantum model with parametrised measurement by applying an additional arbitrary rotation R(θ1 , θ2 , θ3 ), which is
+parametrised by three trainable angles and is expressive enough to represent any single-qubit computation. After this,
+we measure in the Pauli-Z basis, yielding the overall quantum model:
+
+                                 f (x) = tr [ρ(x)M(θ1 , θ2 , θ3 )] = ⟨φ(x)∣ M(θ1 , θ2 , θ3 ) ∣φ(x)⟩ ,                   (36)
+
+with measurement M(θ1 , θ2 , θ3 ) = R† (θ1 , θ2 , θ3 )σz R(θ1 , θ2 , θ3 ),
+
+                                                        ⎛ei(− 21 − 23 ) cos( θ22 ) −ei(− 21 + 23 ) sin( θ22 )⎞
+                                                              θ    θ                      θ   θ
+
+                                   R(θ1 , θ2 , θ3 ) =                                                                   (37)
+                                                        ⎝ ei( 2 − 2 ) sin( θ22 ) ei( 2 + 2 ) cos( θ22 ) ⎠
+                                                             θ1 θ3                     θ1 θ3
+
+
+
+
+and ∣φ(x)⟩ = Rx (x) ∣0⟩. One can use a computer-algebra system (or, for the patient among us, lengthy calculations)
+to verify that the quantum model is equivalent to the function
+
+                                         f (x) = cos(θ2 ) cos(x) − sin(θ1 ) sin(θ2 ) sin(x),                            (38)
+
+and hence independent of the third parameter.
+
+  Next, let us define what a linear (machine learning) model in feature space is:
+
+Definition 4 (Linear model). Let X be a data domain and φ ∶ X → F a feature map. We call any function
+
+                                                             f (x) = ⟨φ(x), w⟩F ,                                       (39)
+
+with w ∈ F a linear model in F.
+
+  From these two definitions we immediately see that:
+                                                                                                                   14
+
+Theorem 2 (Quantum models are linear models in data-encoding feature space). Let f (x) = tr [ρM] be a quantum
+model with feature map φ ∶ x ∈ X → ρ(x) ∈ F and data domain X . The quantum model f is a linear model in F.
+  It is interesting to note that the measurement M can always be expressed as a linear combination ∑k γk ρ(xk ) of
+data-encoding states ρ(xk ) where xk ∈ X .
+Theorem 3 (Quantum measurements are linear combinations of data-encoding states). Let fM (x) = tr [ρM] be a
+quantum model. There exists a measurement Mexp ∈ F of the form
+
+                                                      Mexp = ∑ γk ρ(xk )                                         (40)
+                                                                k
+
+with xk ∈ X , such that fM (x) = fMexp (x) for all x ∈ X .
+Proof. We can divide M into the part that lies in the image of X and the remainder R,
+
+                                                        M = Mexp + R.                                            (41)
+
+Since the trace is linear, we have:
+
+                                         tr [ρ(x)M] = tr [ρ(x)Mexp ] + tr [ρ(x)R] .                              (42)
+
+The data-encoding state ρ(x) only has contributions in F, which means that the inner product tr [ρ(x)R] is always
+zero.
+  Below we will see that optimal measurements with respect to typical machine learning cost functions can be
+expanded in the training data only.
+  Note that the fact that a quantum model can be expressed as a linear model in the feature space does not mean
+that it is linear in the Hilbert space of the Dirac vectors ∣φ(x)⟩, nor is it linear in the data input x. As mentioned
+before, in the context of variational circuits the measurement usually depends on trainable parameters, which is
+realised by applying a parametrised quantum operation or circuit that “rotates” the basis of a fixed measurement.
+Variational quantum models are also not necessarily linear in their actual trainable parameters.
+  As a last comment for readers that prefer the vectorised version of the data-encoding feature map, by writing
+the measurement operator M = ∑i µi ∣µi ⟩⟨µi ∣ in its eigenbasis, we can likewise write a quantum model as the inner
+product of a vectorised feature vector ∣φ(x)⟩ ⊗ ∣φ∗ (x)⟩ ∈ Fv with some other vector ∑i µi ∣µi ⟩ ⊗ ∣µi ⟩ ∈ Fv .
+
+                                        f (x) = ⟨φ(x)∣ M ∣φ(x)⟩                                                  (43)
+                                             = ∑ µi ∣ ⟨µi ∣φ(x) ⟩ ∣   2
+                                                                                                                 (44)
+                                                i
+
+                                             = ( ⟨φ(x)∣ ⊗ ⟨φ∗ (x)∣ )( ∑ µi ∣µi ⟩ ⊗ ∣µ∗i ⟩ ),                     (45)
+                                                                          i
+
+or using the vectorised density matrix notation introduced above,
+
+                                                      f (x) = ⟪ρ(x) ∣w ⟫ ,                                       (46)
+
+with w = ∑i µi ∣ρi ⟫.
+
+
+           B.   The RKHS of the quantum kernel and the space of quantum models are equivalent
+
+  So far we were dealing with two different kinds of Hilbert spaces: The Hilbert space H of the quantum system,
+and the feature space F that contains the embedded data. I will now construct yet another feature space for the
+quantum kernel, but one derived directly from the kernel and with no further notion of a quantum model. This time
+the feature space is a Hilbert space F of functions, and due to its special construction it is called the reproducing
+kernel Hilbert space (RKHS). The relevance of this feature space is that the functions it contains turn out to be
+exactly the quantum model functions f (which is a bit surprising at first: this feature space contains linear models
+defined in an equivalent feature space!).
+  The RKHS F of the quantum kernel can be defined as follows (as per Moore- Aronsajn’s construction6 ):
+
+
+6 See also http://www.stats.ox.ac.uk/
+                                      ~sejdinov/teaching/atml14/Theory_2014.pdf for a great overview.
+                                                                                                                             15
+
+
+
+
+FIG. 9. Intuition for the functions living in the reproducing kernel Hilbert space (RKHS). The RKHS F contains
+functions that are linear combinations of kernel functions where one “slot” is fixed in a possible data sample xk ∈ X . This
+illustration of one such function f ∈ F , using a Gaussian kernel, shows how the kernel regulates the “smoothness” of the
+functions in F , as a wider kernel will simplify f . Since the RKHS is equivalent to the space of linear models that it has been
+derived from, the kernel fundamentally defines the class of functions that the linear model can express.
+
+
+Definition 5 (Reproducing kernel Hilbert space). Let X ≠ ∅. The reproducing kernel Hilbert space of a kernel
+κ over X is the Hilbert space F created by completing the span of functions f ∶ X → R, f (⋅) = κ(x, ⋅), x ∈ X (i.e.,
+including the limits of Cauchy series). For two functions f (⋅) = ∑i αi κ(xi , ⋅), g(⋅) = ∑j βj κ(xj , ⋅) ∈ F , the inner
+product is defined as
+                                                 ⟨f, g⟩F = ∑ αi βj κ(xi , xj ),                                            (47)
+                                                              ij
+
+with αi , βj ∈ R.
+  Note that according to Theorem 1 the “size” of the space of common quantum models, and likewise the RKHS of
+the quantum kernel, are fundamentally limited by the generators of the data-encoding gates. If we consider κ as the
+quantum kernel, the definition of the inner product reveals with
+                                                ⟨κ(x, ⋅), κ(x′ , ⋅)⟩F = κ(x, x′ ),                                         (48)
+that x → κ(x, ⋅) is a feature map of this kernel (but one mapping data to functions instead of matrices, which feels a
+bit odd at first). In this sense, F can be regarded as an alternative feature space to F. The name of this unique
+feature space comes from the reproducing property
+                                              ⟨f, κ(x, ⋅)⟩F = f (x) for all f ∈ F,                                         (49)
+which also shows that the kernel is the evaluation functional δx which assigns f to f (x). An alternative definition
+of the RKHS is the space in which the evaluation functional is bounded, which gives the space a lot of favourable
+properties from a mathematical perspective.
+   To most of us, the definition of an RKHS is terribly opaque when first encountered, so a few words of explanation
+may help (see also Figure 9). One can think of the RKHS as a space whose elementary functions κ(x, ⋅) assign a
+distance measure to every data point. Functions of this form were also plotted in Figure 7 and 8. By feeding another
+data point x′ into this “similarity measure”, we get the distance between the two points. As a vector space, F also
+contains linear combinations of these building blocks. The functions living in F are therefore linear combinations of
+data similarities, just like for example kernel density estimation constructs a smooth function by adding Gaussians
+centered in the data. The kernel then regulates the “resolution” of the distance measure, for example by changing
+the variance of the Gaussian.
+   Once one gets used to this definition, it is immediately apparent that the functions living in the RKHS of the
+quantum kernel are what we defined as quantum models:
+Theorem 4. Functions in the RKHS F of the quantum kernel are linear models in the data-encoding feature space
+F and vice versa.
+Proof. The functions in the RKHS of the quantum kernel are of the form f (⋅) = ∑k γk κ(xk , ⋅), with xk ∈ X . We get
+
+                                                 f (x) = ∑ γk κ(xk , x)                                                    (50)
+                                                          k
+
+                                                       = ∑ γk tr [ρ(xk )ρ(x)]                                              (51)
+                                                          k
+
+                                                       = tr [∑ γk ρ(xk )ρ(x)]                                              (52)
+                                                               k
+                                                       = tr [Mρ(x)] .                                                      (53)
+                                                                                                                      16
+
+Using Theorem 3 we know that all quantum models can be expressed by measurements ∑k γk ρ(xk ), and hence by
+functions in the RKHS.
+
+   In fact, the above observation applies to any linear model in a feature space that gives rise to the quantum kernel
+(see Theorem 4.21 in [20]).
+   As a first taste of how the connection of quantum models and kernel theory can be exploited for quantum machine
+learning, consider the question whether quantum models are universal function approximators. If quantum models
+are universal, the RKHS of the quantum kernel must be universal (or dense in the space of functions we are interested
+in). This leads to the definition of a universal kernel (see [20] Definition 4.52):
+
+Definition 6 (Universal kernel). A continuous kernel κ on a compact metric space X is called universal if the
+RKHS F of κ is dense in C(X ), i.e., for every function g in the set of functions C(X ) mapping from elements in
+X to a scalar value, and for all  > 0 there exists an f ∈ F such that
+
+                                                          ∥f − g∥∞ ≤ .                                             (54)
+
+   The reason why this is useful is that there are a handful of known necessary conditions for a kernel to be universal,
+for example if its feature map is injective (see [20] for more details). This immediately excludes quantum models
+defined on the data domain X = R which use single-qubit Pauli rotation gates of the form eixσ (with σ a Pauli matrix)
+to encode data: since such rotations are 2π-periodic, two different x, x′ ∈ X get mapped to the same data-encoding
+state ρ(x). In other words, and to some extent trivially so, on a data domain that extends beyond the periodicity of a
+quantum model we never have a chance for universal function approximation. Another example for universal kernels
+are kernels of the form κ(x, x′ ) = ∑∞          ′
+                                       k=1 ck ⟨x , x⟩ (see [20] Corollary 4.57). Vice versa, the universality proof for a
+                                                     k
+
+type of quantum model in [26] suggests that some quantum kernels of the form (1) are universal in the asymptotic
+limit of exponentially large circuits.
+   I want to finish with a final note about the relation between “wavefunctions” and functions in the RKHS of
+quantum systems (see also the appendix of [4]). Quantum states are sometimes called “wavefunctions”, since an
+alternative definition of the Hilbert space of a quantum system is the space of functions f (⋅) = ψ(⋅) which map a
+measurement outcome i corresponding to basis state ∣i⟩ to an “amplitude” ψ(i) = ⟨i ∣ψ ⟩. (The dual basis vector ⟨i∣
+can here be understood as the evaluating functional δi which returns this amplitude.) Hence, the Hilbert space
+of a quantum system can be written as a space of functions mapping from {i} → C. But the functions that we
+are interested in for machine learning are functions in the data, not in the possible measurement outcomes. This
+means that the Hilbert space of the quantum system is only equivalent to the RKHS of a quantum machine learning
+model if we associate data with the measurement outcomes. This is true for many proposals of generative quantum
+machine learning models [18, 28], and it would be interesting to transfer the results to this setting.
+
+
+                                     VI.    TRAINING QUANTUM MODELS
+
+  While the question of universality addresses the expressivity of quantum models, the remaining sections will look
+at questions of trainability and optimisation, for which the kernel perspective has the most important results to offer.
+Notably, we will see that the optimal measurements of quantum models for typical machine learning cost functions
+only have relatively few degrees of freedom. Similarly, the process of finding these optimal models (i.e., training over
+the space of all possible quantum models) can be formulated as a low-dimensional optimisation problem. Most of
+the results are based on the fact that for kernel methods, the task of training a model is equivalent to optimising
+over the model’s corresponding RKHS.
+
+
+                 A.   Optimising quantum models is equivalent to optimising over the RKHS
+
+   In machine learning we want to find optimal models, or those that minimise the cost functions derived from
+learning problems. This process is called training. From a learning theory perspective, training can be phrased as
+regularised empirical risk minimisation, and the problem of training quantum models can be cast as follows:
+
+Definition 7 (Regularised empirical risk minimisation of quantum models). Let X , Y be data input and output
+domains, p a probability distribution on X from which data is drawn, and L ∶ X × Y × R → [0, ∞) a loss function that
+quantifies the quality of the prediction of a quantum model f (x) = tr [ρ(x)M]. Let
+
+                                           RL (f ) = ∫          L(x, y, f (x)) dp(x, y)                             (55)
+                                                         X ×Y
+                                                                                                                       17
+
+be the expected loss (or “risk”) of f under L, where L may depend explicitly on x. Since p is unknown, we approximate
+the risk by the empirical risk
+
+                                                          1 M
+                                           R̂L (f ) =       ∑ L(x , y, f (x )).
+                                                                 m         m
+                                                                                                                     (56)
+                                                          M m=1
+
+Regularised empirical risk minimisation of quantum models is the problem of minimising the empirical risk over all
+possible quantum models while also minimising the norm of the measurement M,
+
+                                             inf λ∥M∥2F + R̂L (tr [ρ(x)M]),                                          (57)
+                                            M∈F
+
+where λ ∈ R+ is a positive hyperparameter that controls the strength of the regularisation term.
+   We saw in Section V that quantum models are equivalent to functions in the RKHS of the quantum kernel, which
+allows us to replace the term R̂L (tr [ρ(x)M]) in the empirical risk by R̂L (f ), f ∈ F .
+   But what about the regularisation term? Since with Theorem 3 we can write
+
+                                         ∥M∥2F = tr [M2 ]                                                            (58)
+                                                  = ∑ γi γj tr [ρ(x )ρ(x )]
+                                                                    i       j
+                                                                                                                     (59)
+                                                    ij
+
+                                                  = ∑ γi γj κ(xi , xj )                                              (60)
+                                                    ij
+
+                                                  = ⟨∑ γi κ(xi , ⋅), ∑ γi κ(xi , ⋅)⟩F                                (61)
+                                                        i               i
+                                                  = ⟨f, f ⟩F ,                                                       (62)
+
+the norm of M ∈ F is equivalent to the norm of a corresponding f ∈ F . Hence, the regularised empirical risk
+minimisation problem in Eq. (57) is equivalent to
+
+                                                    inf γ∥f ∥2F + R̂L (f ),                                          (63)
+                                                    f ∈F
+
+which minimises the regularised risk over the RKHS of the quantum kernel. We will see in the remaining sections
+that this allows us to characterise the problem of training and its solutions to a surprising degree.
+
+
+           B.   The measurements of optimal quantum models are expansions in the training data
+
+   The representer theorem, one of the main achievements of classical kernel theory, prescribes that the function f
+from the RKHS which minimises the regularised empirical risk can always be expressed as a weighted sum of the
+kernel between x and the training data. Together with the connection between quantum models and the RKHS
+of the quantum kernel, this fact will allow us to write optimal quantum machine learning models in terms of the
+quantum kernel.
+   More precisely, the representer theorem can be stated as follows (for a more general version, see [27], Theorem
+5.1):
+Theorem 5 (Representer theorem). Let X , Y be an input and output domain, κ ∶ X × X → R a kernel with a
+corresponding reproducing kernel Hilbert space F , and given training data D = {(x1 , y 1 ), . . . , (xM , y M ) ∈ X × Y}.
+Consider a strictly monotonic increasing regularisation function g∶ [0, ∞) → R, and an arbitrary loss L∶ X × Y × R →
+R ∪ {∞}. Any minimiser of the regularised empirical risk
+
+                                         fopt = argmin {R̂L (f ) + g (∥f ∥F )} ,                                     (64)
+                                                   f ∈F
+
+admits a representation of the form:
+                                                             M
+                                              fopt (x) = ∑ αm κ(xm , x),                                             (65)
+                                                             m=1
+
+where αm ∈ R for all 1 ≤ m ≤ M .
+                                                                                                               18
+
+  Note that the crucial difference to the form in Theorem (3) is that m does not sum over arbitrary data from X ,
+but over a finite training data set. For us this means that the optimal quantum model can be written as
+                                       M                                  M
+                            fopt (x) = ∑ αm tr [ρ(x)ρ(xm )] = ∑ αm ∣⟨φ(x)∣φ(xm )⟩∣2 .                        (66)
+                                      m=1                                 m=1
+
+This in turn defines the measurements M of optimal quantum models.
+
+Theorem 6 (Optimal measurements). For the settings described in Theorem 5, the measurement that minimises
+the regularised empirical risk can be written as an expansion in the training data xm , m = 1 . . . M ,
+
+                                                   Mopt = ∑ αm ρ(xm ),                                       (67)
+                                                              m
+
+with αm ∈ R.
+
+Proof. This follows directly by noting that
+                                                        M
+                                           fopt (x) = ∑ αm tr [ρ(x)ρ(xm )]                                   (68)
+                                                        m=1
+                                                                     M
+                                                    = tr [ρ(x) ∑ αm ρ(xm )]                                  (69)
+                                                                    m=1
+                                                    = tr [ρ(x)Mopt ]                                         (70)
+
+
+
+   As mentioned in the summary and Figure 5, in variational circuits we typically only optimise over a subspace of
+the RKHS since the measurements M are constrained by a particular circuit ansatz. We can therefore not guarantee
+that the optimal measurement can be expressed by the variational ansatz. However, the above guarantees that there
+will always be a measurement of the form of Eq. (67) for which the quantum model has a lower regularised empirical
+risk than the best solution of the variational training.
+   As an example, we can use the apparatus of linear regression to show that the optimal measurement for a quantum
+model under least-squares loss can indeed be written as claimed in Eq. (67). For this I will assume once more that
+X = RN where N = 2n and n is the number of qubits, and switch to bold notation. I will also use the (here much
+more intuitive) vectorised notation in which the quantum model f (x) = tr [ρ(x)M] becomes f (x) = ⟨⟪M ∣ρ(x) ⟫,
+with the vectorised measurement ∣M⟫ = ∑k γk ∣ρ(xk )⟫.
+   A well-known result from linear regression states that the vector w that minimises the least-squares loss of a
+linear model f (x) = wT x is given by
+
+                                                    w = (X† X)−1 X† y,                                       (71)
+
+if the inverse of X† X exist. Here, X is the matrix that contains the data vectors as rows,
+
+                                                     ⎛ x11 ⋯ x1N ⎞
+                                                   X=⎜
+                                                     ⎜ ⋮ ⋱ ⋮ ⎟,
+                                                                 ⎟                                           (72)
+                                                     ⎝xM1
+                                                              M⎠
+                                                           ⋯ xN
+
+and y is an M -dimensional vector containing the target labels. A little trick exposes that w can be written as a
+linear combination of training inputs,
+
+                                   w = X† (X(X† X)−2 X† y) = X† α = ∑ αm xm ,                                (73)
+                                                                                       m
+
+where α = (α1 , . . . , αM ).
+  Since a quantum model is a linear model in feature space, we can associate the vectors in linear regression with
+the vectorised measurement and density matrix, and immediately derive
+                                                                                       −1
+                                                              m′            m′
+                                  ∣M⟫ = ∑ y (∑ ∣ρ(x
+                                               m
+                                                                   )⟫⟪ρ(x        )∣)        ∣ρ(xm )⟫ ,       (74)
+                                           m       m′
+                                                                                                                     19
+
+by making use of the fact that in our notation
+
+                                              X† X ⇐⇒ ∑ ∣ρ(xm )⟫⟪ρ(xm )∣ ,                                         (75)
+                                                        m
+
+and
+
+                                                 X† y ⇐⇒ ∑ y m ∣ρ(xm )⟫ .                                          (76)
+                                                            m
+
+Note that although this looks like an expansion in the feature states, the “coefficient” of ∣ρ(xm )⟫ still contains an
+operator. However, with Eq. (73) and writing ∑m ∣ρ(xm )⟫⟪ρ(xm )∣ in its diagonal form,
+
+                                         ∑ ∣ρ(x )⟫⟪ρ(x )∣ = ∑ hk ∣hk ⟫⟪hk ∣ ,
+                                               m      m
+                                                                                                                   (77)
+                                         m                            k
+
+we have
+
+                                                  ∣M⟫ = ∑ αm ∣ρ(xm )⟫ ,                                            (78)
+                                                         m
+
+with
+                                                                          ′     ′
+                                    αm = ∑ h−2
+                                            k ⟪hk ∣ρ(x ) ⟫ ∑ y
+                                                      m        m
+                                                                 ⟪hk ∣ρ(xm ) ⟫ .                                   (79)
+                                          k                      m′
+
+The optimal measurement in “matrix form” reads
+
+                                     M = ∑ αm ρ(xm ) = ∑ αm ∣φ(xm )⟩⟨φ(xm )∣ ,                                     (80)
+                                             m               m
+
+as claimed by the representer theorem.
+  Of course, it may require a large routine to implement this measurement fully quantumly, since it involves inverting
+operators acting on the feature space. Alternatively one can compute the desired {αm } classically and use the
+quantum computer to just measure the kernel. In the last section we will see ideas of how to use quantum algorithms
+to do the inversion, but these quantum training algorithms are complex enough to require fault-tolerant quantum
+computers which we do not have available today.
+
+
+                     C.   The kernel defines which models are punished by regularisation
+
+   In statistical learning theory, the role of the regulariser in the regularised empirical risk minimisation problem
+is to “punish” some functions and favour others. Above, we specifically looked at regularisers of the form ∥f ∥2F ,
+f ∈ F , which was shown to be equivalent to minimising the norm of the measurement (or the length of the vectorised
+measurement) in feature space. But what is it exactly that we are penalising here? It turns out that the kernel does
+not only fix the space of quantum models themselves, it also defines which functions are penalised in regularised
+empirical risk minimisation problems. This is beautifully described in [27] Section 4.3, and I will only give a quick
+overview here.
+   To understand regularisation, we need to have a closer look at the regularising term ∥f ∥2F = ⟨f, f ⟩F . But with the
+construction of the RKHS it actually remains very opaque what this inner product actually computes. It turns
+out that for every RKHS F there is a transformation Υ ∶ F → L2 (X ) that maps functions in the RKHS to square
+integrable functions on X . What we gain is a more intuitive inner product formed by an integral,
+
+                                       ⟨f, f ⟩F = ⟨Υf, Υf ⟩L2 = ∫ (Υf (x))2 dx.                                    (81)
+                                                                      X
+
+The operator Υ can be understood as extracting the information from the model f which gets integrated over in the
+usual L2 norm, and hence penalised during optimisation. For example, for some kernels this can be shown to be the
+derivative of functions, and regularisation therefore provably penalise models with “large” higher-order derivatives –
+which means it favours smooth functions.
+  The important point is that every kernel defines a unique transformation Υ, and therefore a unique kind of
+regularisation. This is summarised in Theorem 4.9 in [27], which I will reprint here without proof:
+                                                                                                                      20
+
+Theorem 7 (RKHS and Regularization Operators). For every RKHS with reproducing kernel κ there exists a
+corresponding regularization operator Υ ∶ F → D (where D is an inner product space) such that for all f ∈ F ,
+
+                                                 ⟨Υκ(x, ⋅), Υf (⋅)⟩D = f (x),                                       (82)
+
+and in particular
+
+                                           ⟨Υκ(x, ⋅), Υκ(x′ , ⋅)⟩D = κ(x, x′ ).                                     (83)
+
+Likewise, for every regularization operator Υ ∶ F → D, where F is some function space equipped with a dot product,
+there exists a corresponding RKHS F with reproducing kernel κ such that these two equations are satisfied.
+   In short, the quantum kernel or data-encoding strategy does not only tell us about universality and optimal
+measurements, it also fixes the regularisation properties in empirical risk minimisation. Which data encoding actually
+leads to which regularisation property is still an interesting open question for research.
+
+
+          D.   Picking the best quantum model is a low-dimensional (convex) optimisation problem
+
+   Besides the representer theorem, a second main achievement of kernel theory is to recognise that optimising the
+empirical risk of convex loss functions over functions in an RKHS can be formulated as a finite-dimensional convex
+optimisation problem (or in less cryptic language, optimising over extremely large spaces is surprisingly easy when
+we use training data, something noted in [12] before).
+   The fact that the optimisation problem is finite-dimensional – and we will see the dimension is equal to the
+number of training data – is important, since the feature spaces in which the model classifies the data are usually
+very high-dimensional, and possibly even infinite-dimensional. This is obviously true for the data-encoding feature
+space of quantum computations as well – which is precisely why variational quantum machine learning parametrise
+circuits with a small number of trainable parameters instead of optimising over all unitaries/measurements. But
+even if we optimise over all quantum models, the results of this section guarantee that the dimensionality of the
+problem is limited by the size of the training data set.
+   The fact that optimisation is convex means that there is only one global minimum, and that we have a lot of
+tools to find it [29] - in particular, more tools than mere gradient descent. Convex optimisation problems can be
+roughly solved in time O(M 2 ) in the number of training data. Although prohibitive for large datasets, it makes the
+optimisation guaranteed to be tractable (and below we will see that quantum computers could in principle help to
+train with a runtime of O(M )).
+   Let me make the statement more precise. Again, it follows from the fact that optimising over the RKHS of the
+quantum kernel is equivalent to optimising over the space of quantum models.
+Theorem 8 (Training quantum models can be formulated as a finite-dimensional convex program). Let X be a
+data domain and Y an output domain, L ∶ X × Y × R → [0, ∞) be a loss function, F the RKHS of the quantum kernel
+over a non-empty convex set X with the reproducing kernel κ. Furthermore, let λ ≥ 0 be a regularisation parameter
+and D = {(xm , y m ), m = 1, . . . , M } ⊂ X × Y a training data set. The regularised empirical risk minimisation problem
+is finite-dimensional, and if the loss is convex, it is also convex.
+Proof. Recall that according to the Representer Theorem 5, the solution to the regularised empirical risk minimisation
+problem
+
+                                                 fopt = inf λ∥f ∥2F + R̂L (f )                                      (84)
+                                                        f ∈F
+
+has a representation of the form
+
+                                            fopt (x) = ∑ αm tr [ρ(xm )ρ(x)] .                                       (85)
+                                                         m
+
+We can therefore write
+                                                 1                      m m′
+                                    R̂L (f ) =     ∑ L(x , y , ∑ αm′ κ(x , x )).
+                                                        m m
+                                                                                                                    (86)
+                                                 M m           m′
+
+If the loss L is convex, then this term is also convex, and it is M -dimensional since it only involves the M degrees of
+freedom αm .
+                                                                                                                                  21
+
+  Now let us turn to the regularisation term and try to show the same. Consider
+                                                               ′                              ′
+                        ∥f ∥2F = ∑ αm αm′ tr [ρ(xm )ρ(xm )] = ∑ αm αm′ κ(xm , xm ) = αT Kα,                                     (87)
+                                 m,m′                                m,m′
+
+                                                                                                     ′
+where K ∈ RM ×M is the kernel matrix or Gram matrix with entries Km,m′ = κ(xm , xm ), and α = (α1 , . . . , αM ) is
+the vector of coefficients αm . Since K is by definition of the kernel positive definite, this term is also convex. Both
+α and K are furthermore finite-dimensional.
+  Together, training a quantum model to find the optimal solution from Eq. (66) can be done by solving the
+optimisation problem
+                                           1                      m m′
+                                             ∑ L(x , y , ∑ αm′ κ(x , x )) + λα Kα,
+                                                  m m                         T
+                                     inf                                                                                        (88)
+                                    α∈RM   M m           m′
+
+which optimises over M trainable parameters, and is convex for convex loss functions.
+  A support vector machine is a special case of kernel-based training which uses a special convex loss function,
+namely the hinge loss, for L:
+                                                 L(f (x), y) = max(0, 1 − f (x)y),                                              (89)
+where one assumes that y ∈ {−1, 1}. As derived in countless textbooks, the resulting optimisation problem can be
+constructed from geometric arguments as maximising the “soft” margin of the closest vectors to a decision boundary.
+Under this loss, Eq. (88) reduces to
+                                                           1            m m′  m m′
+                                    αopt = max ∑ αm −         ∑ αm αm′ y y κ(x , x ).                                           (90)
+                                             α     m       2 m,m′
+
+Training a support vector machine with hinge loss and a quantum kernel κ is equivalent to finding the general
+quantum model that minimises the hinge loss. The “quantum support vector machine” in [4, 5] is therefore not one
+of many ideas to build a hybrid classifier, it is a generic blueprint of how to train quantum models in a kernel-based
+manner.
+
+
+        VII.    SHOULD WE SWITCH TO KERNEL-BASED QUANTUM MACHINE LEARNING?
+
+   The fact that quantum models can be formulated as kernel methods with a quantum kernel raises an important
+question for current quantum machine learning research: how do kernel-based models, i.e., solutions to the problem
+in Eq. (88), compare to models whose measurements are trained variationally? Let us revisit Figure 5 in light of the
+results of the previous section.
+   We saw in Section VI D how kernel-based training optimises the measurement over a subspace spanned by M
+encoded training inputs by finding the best coefficients αm , m = 1 . . . M . We also saw in Section VI B that this
+subspace contains the globally optimal measurement. Variational training instead optimises over a subspace defined
+by the parametrised ansatz, which may or may not overlap with the training-data subspace, and could therefore not
+have access to the global optimum. The advantages of kernel-based training are therefore that we are guaranteed to
+find the globally optimal measurement over all possible quantum models. If the loss is convex, the optimisation
+problem is furthermore of a favourable structure that comes with a lot of guarantees about the performance and
+convergence of optimisation algorithms. But besides these great properties, in classical machine learning with big
+data, kernel methods were superseded by neural networks or approximate kernel methods [30] because of their
+poor scaling. Training involves computing the pair-wise distances between all training data in the Gram matrix
+of Eq. (88), which has at least a runtime of O(M 2 ) in the number of training samples M .7 In contrast, training
+neural networks takes time O(M ) that only depends linearly on the number of training samples. Can the training
+of variational quantum circuits offer a similar advantage over kernel-based training?
+   The answer is that it depends. So far, training variational circuits with gradient-based methods on hardware
+is based on so-called parameter-shift rules [31, 32] instead of backpropagation. This strategy introduces a linear
+scaling with the number of parameters ∣θ∣, and the number of circuits that need to be evaluated to train a variational
+
+
+7 Note that this is also true when using the trained model for predictions, where we need to compute the distance between a new input
+
+  to any training input in feature space as shown in Eq. (66). However, in maximum margin classifiers, or support vector machines in
+  the stricter sense, most αm coefficients are zero, and only the distances to a few “support vectors” are needed.
+                                                                                                                       22
+
+quantum model therefore grows with O(∣θ∣M ). If the number of parameters in an application grows sufficiently
+slowly with the dataset size, variational circuits will almost be able to match the good scaling behaviour of neural
+networks, which is an important advantage over kernel-based training. But if, like in neural networks, the number
+of parameters in a variational ansatz grows linearly with the number of data, variational quantum models end
+up having the same quadratic scaling as the kernel-based approach regarding the number of circuits to evaluate.
+Practical experiments with 10 − 20 parameters and about 100 data samples show that the constant overhead of
+gradient calculations on hardware make kernel-based training in fact much faster for small-scale applications.8 In
+addition, there is no guarantee that the final measurement is optimal, we have high-dimensional non-convex training
+landscapes, and the additional burden of choosing a good variational ansatz. In conclusion, the kernel perspective is
+not only a powerful and theoretically appealing alternative to think about quantum machine learning, but may also
+speed up current quantum machine learning methods significantly.
+   As a beautiful example of the mutually beneficial relation of quantum computing and kernel methods, the story
+does not end here. While all of the above is based on models evaluated on a quantum computer but trained classically,
+convex optimisation problems happen to be exactly the kind of thing quantum computers are good at [33]. We
+can therefore ask whether quantum models could not in principle be trained by quantum algorithms. “In principle”
+alludes to the fact that such algorithms would likely be well beyond the reach of near-term devices, since training is
+a more complex affair that requires fully error-corrected quantum computers which we do not have yet.
+   The reasons why quantum training could help to lower this scaling are hidden in results from the early days of
+quantum machine learning, when quantum-based training was actively studied in the hope of finding exponential
+speedups for classical machine learning [6, 34, 35]. While these speedups only hold up under very strict assumptions
+of data loading oracles, they imply quadratic speedups for rather general settings (see also Appendix B). They can
+be summarised as follows: given a feature map implemented by a fault-tolerant quantum computer, we can train
+kernel methods in time that grows linearly in the data. If a kernel can be implemented as a quantum computation
+(like the Gaussian kernel [7]), this speedup would also hold for “classical models” – which are then merely run on a
+quantum computer.
+   Of course, fault-tolerant quantum computers may still take many years to develop and are likely to have a large
+constant overhead due to the expensive nature of quantum error correction. But in the longer term, this shows that
+the use of quantum computing is not only to implement interesting kernels. Quantum computers have the potential
+to become a game changer for kernel-based machine learning in a similar way to how GPU-accelerated hardware
+enabled deep learning.
+
+
+                                             ACKNOWLEDGEMENTS
+
+  I want to thank Johannes Jakob Meyer, Nathan Killoran, Olivia di Matteo and Filippo Miatto, Nicolas Quesada
+and Ilya Sinayskiy for their time and helpful comments.
+
+
+
+
+ [1] P. Wittek, Quantum machine learning: what quantum computing means to data mining (Academic Press, 2014).
+ [2] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost, N. Wiebe, and S. Lloyd, Quantum machine learning, Nature 549,
+     195 (2017).
+ [3] M. Schuld and F. Petruccione, Supervised learning with quantum computers (Springer, 2018).
+ [4] M. Schuld and N. Killoran, Quantum machine learning in feature hilbert spaces, Physical Review Letters 122, 040504
+     (2019).
+ [5] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Harrow, A. Kandala, J. M. Chow, and J. M. Gambetta, Supervised
+     learning with quantum-enhanced feature spaces, Nature 567, 209 (2019).
+ [6] P. Rebentrost, M. Mohseni, and S. Lloyd, Quantum support vector machine for big data classification, Physical Review
+     Letters 113, 130503 (2014).
+ [7] R. Chatterjee and T. Yu, Generalized coherent states, reproducing kernels, and quantum support vector machines, arXiv
+     preprint arXiv:1612.03713 (2016).
+ [8] M. Schuld, A. Bocharov, K. Svore, and N. Wiebe, Circuit-centric quantum classifiers, arXiv preprint arXiv:1804.00633
+     (2018).
+ [9] J.-G. Liu and L. Wang, Differentiable learning of quantum circuit born machines, Physical Review A 98, 062324 (2018).
+[10] C. Blank, D. K. Park, J.-K. K. Rhee, and F. Petruccione, Quantum classifier with tailored quantum kernel, npj Quantum
+     Information 6, 1 (2020).
+
+
+
+8 See https://pennylane.ai/qml/demos/tutorial_kernel_based_training.html.
+                                                                                                                               23
+
+[11] Y. Liu, S. Arunachalam, and K. Temme, A rigorous and robust quantum speed-up in supervised machine learning, arXiv
+     preprint arXiv:2010.02174 (2020).
+[12] H.-Y. Huang, M. Broughton, M. Mohseni, R. Babbush, S. Boixo, H. Neven, and J. R. McClean, Power of data in quantum
+     machine learning, arXiv preprint arXiv:2011.01938 (2020).
+[13] J. M. Kübler, K. Muandet, and B. Schölkopf, Quantum mean embedding of probability distributions, Physical Review
+     Research 1, 033159 (2019).
+[14] S. Lloyd, M. Schuld, A. Ijaz, J. Izaac, and N. Killoran, Quantum embeddings for machine learning, arXiv preprint
+     arXiv:2001.03622 (2020).
+[15] M. Benedetti, E. Lloyd, S. Sack, and M. Fiorentini, Parameterized quantum circuits as machine learning models, Quantum
+     Science and Technology 4, 043001 (2019).
+[16] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Babbush, and H. Neven, Barren plateaus in quantum neural network
+     training landscapes, Nature communications 9, 1 (2018).
+[17] Z. Holmes, K. Sharma, M. Cerezo, and P. J. Coles, Connecting ansatz expressibility to gradient magnitudes and barren
+     plateaus, arXiv preprint arXiv:2101.02138 (2021).
+[18] M. Benedetti, D. Garcia-Pintos, O. Perdomo, V. Leyton-Ortega, Y. Nam, and A. Perdomo-Ortiz, A generative modeling
+     approach for benchmarking and training shallow quantum circuits, npj Quantum Information 5, 1 (2019).
+[19] A. Pérez-Salinas, A. Cervera-Lierta, E. Gil-Fuster, and J. I. Latorre, Data re-uploading for a universal quantum classifier,
+     Quantum 4, 226 (2020).
+[20] I. Steinwart and A. Christmann, Support vector machines (Springer Science & Business Media, 2008).
+[21] M. Wolf, Quantum channels and operations: Guided tour (2012).
+[22] V. Jagadish and F. Petruccione, An invitation to quantum channels, arXiv preprint arXiv:1902.00909 (2019).
+[23] V. Bergholm, J. Izaac, M. Schuld, C. Gogolin, M. S. Alam, S. Ahmed, J. M. Arrazola, C. Blank, A. Delgado, S. Jahangiri,
+     et al., Pennylane: Automatic differentiation of hybrid quantum-classical computations, arXiv preprint arXiv:1811.04968
+     (2018).
+[24] R. Iten, R. Colbeck, I. Kukuljan, J. Home, and M. Christandl, Quantum circuits for isometries, Physical Review A 93,
+     032318 (2016).
+[25] J. G. Vidal and D. O. Theis, Input redundancy for parameterized quantum circuits, arXiv preprint arXiv:1901.11434
+     (2019).
+[26] M. Schuld, R. Sweke, and J. J. Meyer, The effect of data encoding on the expressive power of variational quantum
+     machine learning models, arXiv preprint arXiv:2008.08605 (2020).
+[27] B. Schölkopf, A. J. Smola, F. Bach, et al., Learning with kernels: support vector machines, regularization, optimization,
+     and beyond (MIT press, 2002).
+[28] S. Cheng, J. Chen, and L. Wang, Information perspective to probabilistic modeling: Boltzmann machines versus born
+     machines, Entropy 20, 583 (2018).
+[29] S. Boyd, S. P. Boyd, and L. Vandenberghe, Convex optimization (Cambridge university press, 2004).
+[30] A. Rahimi and B. Recht, Random features for large-scale kernel machines, Advances in neural information processing
+     systems 20, 1177 (2007).
+[31] K. Mitarai, M. Negoro, M. Kitagawa, and K. Fujii, Quantum circuit learning, Physical Review A 98, 032309 (2018).
+[32] M. Schuld, V. Bergholm, C. Gogolin, J. Izaac, and N. Killoran, Evaluating analytic gradients on quantum hardware,
+     Physical Review A 99, 032331 (2019).
+[33] A. W. Harrow, A. Hassidim, and S. Lloyd, Quantum algorithm for linear systems of equations, Physical Review Letters
+     103, 150502 (2009).
+[34] N. Wiebe, D. Braun, and S. Lloyd, Quantum algorithm for data fitting, Physical Review Letters 109, 050505 (2012).
+[35] S. Lloyd, M. Mohseni, and P. Rebentrost, Quantum principal component analysis, Nature Physics 10, 631 (2014).
+
+
+
+
+                                            Appendix A: Proof of Theorem 1
+
+
+  First, note that we are able to assume without loss of generality that the encoding generator G is diagonal because
+one can diagonalise Hermitian operators as G = V e−ixi Σ V † with
+
+
+                                                           ⎛e−ixi λ1 ⋮     0 ⎞
+                                                 −ixi Σ
+                                                e         =⎜
+                                                           ⎜ 0       ⋱            ⎟
+                                                                                  ⎟                                         (A1)
+                                                           ⎝ 0           −ix      ⎠
+                                                                     ⋮ e     i λd
+
+
+
+
+where {λ1 , . . . , λd } are the eigenvalues of G. Formally one can “absorb” V, V † into the arbitrary circuits W before
+and after the encoding gate. The remainder is just a matter of writing the matrix multiplications that represent
+the quantum circuit as a sum in the computational basis, and trying to introduce notation that hides irrelevant
+complexity:
+                                                                                                                                                                                                 24
+
+
+
+       κ(x, x′ ) = ∣ ⟨φ(x′ ) ∣φ(x) ⟩ ∣2                                                                                                                                                       (A2)
+                      RRR                                                                                                                                                      RRR2
+                        RRR                                                                                                                                                      RR
+                 = RRRR⟨0∣ (W (1) )† (e−ix1 Σ )† ⋯(e−ixN Σ )† (W (N +1) )† W (N +1) e−ixN Σ ⋯e−ix1 Σ W (1) ∣0⟩RRRRR
+                                          ′            ′
+                                                                                                                                                                                              (A3)
+                          RRR                                 ´¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¸¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹ ¹¶    RRR
+                            RR                                                                                        1                                                             RR
+                                                             ′                     ′
+                       = ∣⟨0∣ (W (1) )† (e−ix1 Σ )† ⋯(e−ixN Σ )† e−ixN Σ ⋯e−ix1 Σ W (1) ∣0⟩∣
+                                                                                                                                            2
+                                                                                                                                                                                              (A4)
+                             RRR                                                                                               ∗                          R                              R2
+                                                                                                                                                 (1) R
+                                         d             d
+                       = RRRRR ∑                              e−i(λj1 x1 −λk1 x1 +⋅⋅⋅+λjN xN −λkN xN )) (W1k1 . . . WkN −1 kN ) WjN jN −1 . . . Wj1 1 RRRRR
+                                                                               ′                   ′      (1)        (N )        (N )
+                                                      ∑                                                                                                                                       (A5)
+                               RRRj1 ,...,jN =1 k1 ,...,kN =1                                                                                             RRR
+                                 RRR                                     RRR2
+                       = RRRRR∑ ∑ e−i(Λj x−Λk x ) (wk )∗ wj RRRRR
+                                                            ′
+                                                                                                                                                                                              (A6)
+                                   RRR j k                                 RRR
+                                                                                           ′
+                       = ∑ ∑ ∑ ∑ e−i(Λj −Λl )x ei(Λk −Λh )x (wk wh )∗ wj wl                                                                                                                   (A7)
+                             j    k     h     l
+
+                                    (i)
+Here, the scalars Wab , i = 1, . . . , N , refer to the element ⟨a∣ W (i) ∣b⟩ of the unitary operator W (i) , the bold multi-index
+j summarises the set (j1 , . . . , jN ) where ji ∈ {1, . . . , d} and Λj is a vector containing the eigenvalues selected by the
+multi-index (and similarly for k, h, l).
+
+   We can now summarise all terms where Λj − Λl = s and Λk − Λh = t, in other words where the differences of
+eigenvalues amount to the same vectors s, t. Then
+                                                                                                      ′
+                                                      κ(x, x′ ) = ∑ e−isx eitx                                ∑                     ∑               wj wl (wk wh )∗                           (A8)
+                                                                           s,t∈Ω                          j,l∣Λj −Λl =s k,h∣Λk −Λh =t
+                                                                                                      ′
+                                                                       = ∑ e−isx eitx cst .                                                                                                   (A9)
+                                                                           s,t∈Ω
+
+The frequency set Ω contains all vectors {Λj − Λk } with Λj = (λj1 , . . . , λjN ), j1 , . . . , jN ∈ [1, . . . , d]. Let me illustrate
+this rather unwieldy notation with our standard example of encoding a real scalar input x via a Pauli-X rotation.
+Example A.1. Consider the embedding from Example III.2. We have W (1) = W (2) = 1. With a singular value
+decomposition one can write the rotation operator as
+                                                                                       Rx (x) = e−ix 2 σx = V † e−ix 2 Σ V,
+                                                                                                              1                        1
+                                                                                                                                                                                              (A10)
+with
+                                                                                                    1   1 1
+                                                                                                 V =√ (     ).                                                                                (A11)
+                                                                                                     2 −1 1
+The unitary operators V, V † can be absorbed into the general unitaries applied before and after the encoding, which
+sets W (1) = V † and W (2) = V . The remaining 12 Σ is a diagonal operator with eigenvalues {λ1 = − 21 , λ2 = 12 }. We get
+                                                                           RRR 2 2 2                                           RRR2
+                                                           κ(x, x′ ) = RRRRR ∑ ∑ ∑ e−i(λj x−λk x ) (V1k )∗ (Vki )∗ Vij Vj1 RRRRR .
+                                                                                                ′
+                                                                                                                                                                                              (A12)
+                                                                             RRRj=1 k=1 i=1                                      RRR
+
+Due to unitarity, inner products of different rows/columns of V , V † are zero, and so ∑2i=1 (Vki )∗ Vij = δkj , leading to
+                                                                          RRR 2                            RRR2
+                                                          κ(x, x′ ) = RRRRR ∑ e−iλj (x−x ) (V1j )∗ Vj1 RRRRR
+                                                                                        ′
+                                                                                                                                                                                              (A13)
+                                                                            RRRj=1                           RRR
+                                                                                                 ′                                              ′
+                                                                          = ∣e−iλ1 (x−x ) (V11 )∗ V11 + e−iλ2 (x−x ) (V12 )∗ V21 ∣
+                                                                                                                                                                        2
+                                                                                                                                                                                              (A14)
+                                                                              1 x−x′ 1 x−x′ 2
+                                                                          = ∣ ei 2 + e−i 2 ∣                                                                                                  (A15)
+                                                                              2          2
+                                                                                    x − x′ 2
+                                                                          = ∣ cos (        )∣                                                                                                 (A16)
+                                                                                      2
+                                                                                          x − x′
+                                                                          = cos2 (               ).                                                                                           (A17)
+                                                                                            2
+                                                                                                                   25
+
+This is the same result as in the “straight” computation from Eq. (38).
+
+
+                         Appendix B: Convex optimisation with quantum computers
+
+   The family of quantum algorithms for convex optimisation in machine learning consists of many variations, but is
+altogether based on results that establish fast linear algebra processing routines for quantum computers. They are
+very technical in design, which is why they may not be easily accessible to many machine learning researchers (or in
+fact, for anyone who does not spend years of her life studying quantum computational complexity). This is why I
+will only summarise the results from a high-level perspective here.
+
+    • Given access to a quantum algorithm that encodes data into quantum states, we can prepare a mixed quantum
+      state ρ representing a M × M kernel Gram matrix in time O(M N ), where N is the size of the inputs x ∈ RN
+      (see [6] or [3] Section 6.2.5),
+    • We can prepare a quantum state ∣y⟩ representing M binary labels as amplitudes in time O(M ) (see for example
+      [24], or [3] Section 5.2.1).
+    • Given ∣y⟩, as well as k ∈ O(−1 ) “copies” of ρ(x) (meaning that we have to repeat the first step k times), we
+      can prepare ∣α⟩ = ρ−1 (x) ∣y⟩, a state whose amplitudes correspond to the coefficients α in Theorem (8), to
+      precision  in time O(k log d), where d is the rank of ρ (see [35], where this quantum algorithm was called
+     “quantum principal component analysis”, or [3] Section 5.4.3).
+    • We can estimate the amplitudes of ∣α⟩ in time O(S/˜
+                                                        2 ) to precision ˜, where S ≤ M is the number of nonzero
+      amplitudes (following from standard probability theory applied to quantum measurements, or [3] Section
+      5.1.3).
+
+Overall, this is a recipe to compute the S coefficients of the support vectors in time that is linear in the number of
+data points, a feat that is unlikely to be possible with a classical computer, at least not without imposing more
+structure on the problem, or allowing for heuristic results.
+

@@ -1,0 +1,32 @@
+{
+  "package": "omegaxiv-qrc-ising-core",
+  "version": "0.1.0",
+  "dependencies": [
+    {
+      "name": "numpy",
+      "spec": ">=1.26,<3",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": ["qrc_ising_core.core"]
+    },
+    {
+      "name": "sympy",
+      "spec": ">=1.12,<2",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": ["qrc_ising_core.symbolic"]
+    },
+    {
+      "name": "mpmath",
+      "spec": ">=1.3,<2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": ["sympy"]
+    }
+  ],
+  "edges": [
+    {"from": "omegaxiv-qrc-ising-core", "to": "numpy"},
+    {"from": "omegaxiv-qrc-ising-core", "to": "sympy"},
+    {"from": "sympy", "to": "mpmath"}
+  ]
+}

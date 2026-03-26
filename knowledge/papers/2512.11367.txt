@@ -1,0 +1,1211 @@
+                                              Maritime object classification with SAR imagery using quantum kernel methods
+                                                                  John Tanner,1, ∗ Nicholas Davies,1 Pascal Elahi,2, 1 Casey R. Myers,3, 2
+                                                                       Du Huynh,1 Wei Liu,1 Mark Reynolds,1 and Jingbo Wang1
+                                                                         1
+                                                                         Centre for Quantum Information, Simulation and Algorithms,
+                                                              The University of Western Australia, 35 Stirling Hwy, Crawley WA, 6009, Australia
+                                                              2
+                                                                Pawsey Supercomputing Centre, 1 Bryce Avenue, Kensington WA, 6151, Australia
+                                                                               3
+                                                                                 School of Physics, Mathematics and Computing,
+                                                              The University of Western Australia, 35 Stirling Hwy, Crawley WA, 6009, Australia
+                                                                                           (Dated: September 3, 2024)
+arXiv:2512.11367v1 [quant-ph] 12 Dec 2025
+
+
+
+
+                                                           Illegal, unreported, and unregulated (IUU) fishing causes global economic losses of $10–25 billion
+                                                        annually and undermines marine sustainability and governance. Synthetic Aperture Radar (SAR)
+                                                        provides reliable maritime surveillance under all weather and lighting conditions, but classifying
+                                                        small maritime objects in SAR imagery remains challenging. We investigate quantum machine
+                                                        learning for this task, focusing on Quantum Kernel Methods (QKMs) applied to real and complex
+                                                        SAR chips extracted from the SARFish dataset. We tackle two binary classification problems, the
+                                                        first for distinguishing vessels from non-vessels, and the second for distinguishing fishing vessels
+                                                        from other types of vessels. We compare QKMs applied to real and complex SAR chips against
+                                                        classical Laplacian, RBF, and linear kernels applied to real SAR chips. Using noiseless numerical
+                                                        simulations of the quantum kernels, we find that QKMs are capable of obtaining equal or better
+                                                        performance than the classical kernel on these tasks in the best case, but do not demonstrate a
+                                                        clear advantage for the complex SAR data. This work presents the first application of QKMs to
+                                                        maritime classification in SAR imagery and offers insight into the potential and current limitations
+                                                        of quantum-enhanced learning for maritime surveillance.
+
+
+                                                            I.   INTRODUCTION                               for such tasks, particularly with datasets where the ob-
+                                                                                                            jects of interest occupy only a small fraction of the total
+                                               Image processing in the form of detecting and classify-      pixel area.
+                                            ing objects is a mainstay of machine learning (ML). The            A pertinent example of this paradigm is the use of
+                                            first part of this processing, namely detecting objects of      satellite-based imaging applied to boat detection and
+                                            interest, is a well-explored problem that has been tack-        classification. Boat detection is of particular interest as
+                                            led using a variety of techniques. For example, classical       illegal, unreported, and unregulated (IUU) fishing poses
+                                            approaches such as constant false alarm rate detectors          a significant threat to marine ecosystems and maritime
+                                            are widely used in the context of radar imagery [1–6].          governance worldwide. For context, the impacts of IUU
+                                            More recent work, however, has focused on applying              fishing are far-reaching, contributing to the degradation
+                                            deep learning approaches for detection [7–10], including        of marine conservation efforts outlined in the United Na-
+                                            with the YOLO framework [11] and its variants [12–14].          tions Sustainable Development Goals [24], and causing
+                                            The second component of image processing, classifica-           substantial economic losses estimated at $10–25 billion
+                                            tion, has likewise been addressed using deep learning           USD annually [25, 26]. IUU fishing also exacerbates
+                                            methods [15–18], in addition to other ML approaches             political instabilities by fuelling piracy, which in turn
+                                            such as classical kernel methods [19, 20] and ensemble-         threatens global shipping and international trade [27].
+                                            style combinations of classifiers [21–23]. An active open
+                                                                                                              To help combat these issues, Synthetic Aperture
+                                            question in the scientific community is whether quan-
+                                                                                                            Radar (SAR) uses radio waves and advanced signal
+                                            tum algorithms can improve on classical ML techniques
+                                                                                                            processing techniques to generate high-resolution im-
+                                                                                                            ages of the Earth’s surface, regardless of lighting and
+                                                                                                            weather conditions, enabling persistent surveillance dur-
+                                            ∗ john.tanner@uwa.edu.au
+                                                                                                            ing both day and night under any atmospheric circum-
+                                                                                                                                2
+
+stances [28]. However, despite the high spatial resolu-         Section VI we conclude and provide suggestions about
+tion, the relative size of boats compared with the sur-         possible future research directions.
+rounding environment remains small, making the asso-
+ciated classification tasks particularly challenging. To
+address this difficulty, recent work [15, 29] has explored                       II.   RELATED WORK
+the use of complex-valued SAR imagery, leveraging both
+amplitude and phase information for the purposes of                In 2022 the SARFish dataset [44] was introduced and
+classification. This shift toward inherently complex            later made available to the public for use in a competi-
+data suggests a potential role for quantum algorithms,          tion [29] to test boat detection and classification meth-
+since quantum computers operate natively in complex             ods. The dataset builds off the xView3-SAR dataset [45]
+Hilbert spaces and may therefore provide advantages             by providing coincident real-valued ground range de-
+when learning from complex-valued features.                     tected (GRD) and complex-valued single look complex
+   In this paper we focus on the second component of            (SLC) products, whereas the xView3-SAR dataset pro-
+image processing, the classification of pre-detected mar-       vided just GRD products. The dataset’s purpose was
+itime objects, and tackle the tasks using quantum ker-          to stimulate the use of complex-valued SAR imagery.
+nel methods (QKMs) [30, 31], which are kernel methods              Unfortunately the competition had no entrants and so
+that use a quantum computer to efficiently evaluate a           the potential of the dataset, one of the largest datasets
+kernel function. Recent studies suggest that QKMs may           containing Sentinel-1 SAR imagery for maritime surveil-
+offer computational advantages over classical ML meth-          lance, is largely untapped. However, there have been
+ods [32], since they give us access to kernels which can-       other attempts at processing this dataset. In this sec-
+not be evaluated efficiently with a classical computer,         tion we will discuss prior studies that applied deep learn-
+such as those used in [33–36]. Prior works have investi-        ing models to SAR datasets1 for classification, followed
+gated applications of quantum algorithms in the context         by those that employed classical kernel methods. Fi-
+of SAR data, including for the purposes of image forma-         nally, we review previous work applying quantum algo-
+tion [37, 38], denoising [39–41] and classification [42, 43].   rithms to SAR imagery, including for the purposes of
+This paper, however, provides the first study which in-         image formation, image denoising and classification.
+vestigates the efficacy of quantum kernel methods for
+classifying maritime objects.
+                                                                          A.    Deep Learning with SAR data
+   We compare the learning performance metrics ob-
+tained with QKMs applied to both real and complex
+SAR imagery from the SARFish dataset [29], with those              An earlier study [18] applied well-established deep
+obtained using classical Laplacian, radial basis function       learning models to a dataset with three classes con-
+(RBF) and linear kernels applied to real SAR data.              sisting of 146 bulk carriers, 156 containers, and 144 oil
+We perform the comparison on two binary classifica-             tankers. The authors reported reasonably high accura-
+tion tasks: the first involves classifying detected mar-        cies of 0.9766 (VGG-16), 0.9248 (VGG-19 [46]), 0.9548
+itime objects as vessels or otherwise (e.g. oil rigs), and      (Xception [47]), and 0.8947 (InceptionV3 [48]).
+the second involves classifying detected vessels as fishing        More recently, [15] applied contrastive learning to the
+vessels or otherwise (e.g. cargo ships).                        SARFish dataset tackling a 3-class classification prob-
+   The paper proceeds as follows. In Section II we dis-         lem with classes given by non-vessels, non-fishing ves-
+cuss related works. In Section III we describe kernel           sels, and fishing vessels on both GRD and SLC data.
+methods, both classical and quantum, including the              They reported average F1 scores of approximately 0.87
+kernel-based ML algorithms that we apply in this work.          and also concluded that complex-valued data provided
+In Section IV we describe the configuration of our ex-          no clear performance gain.
+periments, including the datasets, preprocessing, choice
+of classical and quantum kernels (the latter of which we
+simulate without noise), and computational implemen-            1 For further details about other publicly available SAR datasets,
+
+tation details. In Section V we provide the results of our        including the OpenSARShip and FUSAR-Ship datasets, see
+experiments and discuss their implications. Finally, in           Appendix E of [45] and Section 2.3 of [29].
+                                                                                                                      3
+
+   Guan et al. (2023) [17] introduced a custom deep             Yan et al. [23] presented a multi-stage ship classifica-
+learning architecture named FishNet, which was applied       tion framework that incorporated an ensemble of classi-
+to their newly constructed FishingVesselSAR dataset          fiers (which included an SVM) refined using a random
+containing real SAR data. FishNet outperformed 27            forest. The training data included 8,000 AIS-verified
+baseline deep learning models and six advanced SAR-          samples across four classes: cargo ships, tankers, fish-
+specific methods, achieving 0.8979 classification accu-      ing vessels, and passenger ships. The model was tested
+racy, which was between 0.0677 and 0.4759 higher than        on non-AIS SAR data, partly constructed by the au-
+all other compared models. FishNet also outperformed         thors and partly drawn from the FUSAR-Ship dataset.
+all of the other models and methods in terms of preci-       In isolation, SVMs achieved accuracies of 0.7425 and
+sion, recall, and F1 -score.                                 0.7575 depending on the feature set used, while the full
+   Overall, deep learning models have demonstrated           ensemble model yielded accuracies of 0.8550 and 0.8725.
+high performance on SAR-based classification tasks.             Together, these studies highlight the continued rel-
+However, many early studies relied on limited datasets,      evance and versatility of kernel-based approaches for
+making it challenging to determine the robustness of         SAR image classification. Despite the growing preva-
+their results.                                               lence of deep learning methods, kernel methods can
+                                                             still perform competitively across a range of tasks and
+                                                             datasets. Moreover, their suitability for small datasets
+        B.   Kernel methods with SAR data                    make them an attractive option for applications where
+                                                             data scarcity or other domain-specific constraints pose
+   One of the first applications of kernel methods to mar-   challenges. These strengths motivate our exploration
+itime boat classification was Ji et al. [22]. This study     of kernel-based models in the quantum setting, where
+used multiple handcrafted feature descriptors, whose         quantum-enhanced kernels offer the potential to cap-
+outputs were combined using a support vector machine         ture richer structure in SAR datasets.
+(SVM) with a radial basis function (RBF) kernel. Their
+method was applied to a small dataset of TerraSAR-
+X SAR imagery consisting of 250 samples across three                 C.    Quantum algorithms with SAR
+classes including 150 bulk carriers, 50 oil tankers, and
+50 container ships. This approach applied to the 3-class        With the renewed interest in quantum computing,
+classification task returned accuracies between 0.81 and     studies have turned to applying quantum algorithms to
+0.95. Other early studies [20, 21], also typically using     SAR data. Initial work has focused on the processing
+smaller datasets tasks, and found low accuracies when        needed to produce SAR data. Two concurrent stud-
+dealing with more than 3 classes. However [21] con-          ies [37, 38] proposed quantum versions of the classical
+ducted an experiment with 150 carriers, 50 container         Range-Doppler Algorithm (RDA), the standard method
+ships, and 50 oil tankers and reported a classification      for SAR image formation. Both leverage the Quan-
+accuracy of 0.9462.                                          tum Fourier Transform (QFT) to replace classical fast
+   A recent study by Al Hinai et al. [19] proposed and       Fourier transforms (FFT), achieving a reduced runtime
+applied feature extraction techniques tailored for SAR       complexity of O(N ) versus the classical O(N log N ),
+ship classification and evaluated their performance us-      where N is the total number of pixels in the output
+ing SVMs with both linear and RBF kernels. Their ex-         image. These results suggest potential quantum advan-
+periments were conducted on the OpenSARShip dataset          tages in the raw processing stage of SAR pipelines.
+using both GRD and SLC products for a 3-class classifi-         In the area of quantum-assisted SAR image denoising,
+cation task, and on the FUSAR-Ship dataset where they        multiple approaches have emerged. QSpeckleFilter [39]
+considered both 3-class (bulk carriers, container ships,     introduced a QML-based speckle filtering model that
+and tankers) and 5-class (with the addition of cargo         targeted one of the key noise sources in SAR data. Sim-
+ships and fishing vessels) problems. For the OpenSAR-        ilarly, Wang et al. [40] proposed a quantum morpho-
+Ship, the highest accuracies achieved were 0.785 (GRD)       logical filtering algorithm, which performed grayscale
+and 0.719 (SLC). For the FUSAR-Ship dataset, accura-         morphological operations on all pixels simultaneously,
+cies of 0.774 (3-class) and 0.510 (5-class) were reported.   aiming to suppress noise more efficiently than classical
+                                                                                                                      4
+
+counterparts.                                               the original data sometimes translate into simpler lin-
+   Quantum approaches for SAR image classification          ear structures. This can aid the process of learning,
+tasks have also been recently explored [41, 42, 49].        for example, by making it easier for a ML algorithm
+For example, Naik et al. [43] used a hybrid quantum-        to determine the boundary between classes in a binary
+classical model on the 10-class MSTAR dataset [50],         classification (see Figure 1). Additionally, in many cases
+comparing a 1-layer quanvolution plus CNN architec-         kernel methods reap the benefits of allowing an optimal
+ture with a purely classical 2-layer CNN. The quantum       solution to be found via a deterministic procedure (as-
+model achieved 0.95 accuracy, close to the 0.96 of the      suming fixed hyperparameters), which allows us to avoid
+classical model, suggesting that shallow hybrid quantum     complications that may arise when utilising variational
+models can remain competitive.                              ML models.
+   Overall, while quantum approaches have begun to ap-         To formalise this, consider a training dataset D =
+pear in SAR research, they remain largely exploratory.      {(xi , yi )}M
+                                                                        i=1 ⊂ X × {±1} for some binary classification
+The focus has been on accelerating classical processes      task. Here X ≡ Fd (with F = C or F = R) is the input
+(e.g., via QFT) or integrating quantum components into      data domain of dimension d ∈ N, xi ∈ X is the ith
+hybrid neural networks. To our knowledge, no work to        input training data sample, yi ∈ {±1} is the class label
+date has applied quantum kernel methods to SAR im-          for the ith training data sample, and M ∈ N is the total
+agery tasks. This leaves open a promising direction for     number of training data samples. A kernel is then a
+future research which we consider in this work.             symmetric function K : X × X → R such that the Gram
+                                                            matrix Kij ≡ K(xi , xj ) of K is positive semi-definite for
+                                                            all choices of the set {x1 , . . . , xm } ⊂ X and all m ∈ N.
+                                                               Any kernel K can be expressed in the form
+                  III.   METHODS
+                                                                           K(x, x′ ) = ⟨ϕ(x), ϕ(x′ )⟩F ,            (1)
+  In this section, we begin with an overview of gen-
+eral kernel methods, highlighting the key structures and    for some function ϕ : X → F called a feature map,
+theorems that underpin their formulation. We then de-       whose codomain F is a Hilbert space over R called a
+scribe the specific kernel-based ML algorithms used in      feature space. Kernel functions can hence be viewed
+this study, and finish the section with a discussion of     as implicitly calculating inner products between embed-
+quantum kernel methods and the roles that quantum           dings of inputs in a (usually high-dimensional) feature
+computers play in these algorithms. For further details     space.
+about quantum computing, we refer the reader to Chap-          Every kernel K also uniquely determines a Hilbert
+ters 1, 2 and 4 of [51].                                    space over R known as the reproducing kernel Hilbert
+                                                            space (RKHS) associated with K. We denote this space
+                                                            by RK . The RKHS RK contains functions mapping
+                 A.   Kernel methods
+                                                            X → R and is formally defined as the completion of the
+                                                            real linear span of functions given by the kernel with its
+                                                            second argument fixed,
+   Kernel methods [52] are a class of ML algorithms                                     
+used to capture intricate patterns in moderately sized                    RK ≡ spanR K(·, x)|x ∈ X .              (2)
+datasets. In principle kernel methods can be applied to
+datasets of arbitrary size, but the training costs scale    In kernel-based supervised ML, the task usually reduces
+quadratically in the number of training data points,        to selecting an appropriate function in RK which min-
+making it difficult to scale beyond a few thousand train-   imises a regularised empirical risk functional on the
+ing samples. The key idea underlying the use of ker-        training data. So how can one explicitly find such a
+nel methods is that of a kernel function, which im-         function?
+plicitly computes inner products between embeddings            In general, elements of RK do not admit representa-
+of input data in a high (possibly infinite) dimensional     tions as real linear combinations of finitely many ele-
+feature space. By mapping the input data into the           ments in {K(·, x)|x ∈ X . However, under some fairly
+high-dimensional feature space, non-linear structures in    unrestrictive conditions on the input data domain X and
+                                                                                                                                         5
+
+                                                                      K(·, x′ )
+
+
+
+
+                                                                                                                     0
+                                                                          ϕ(x′ )
+
+                         X ≡ Rd                         ϕ(·)                                 ⟨ϕ(·), ϕ(x′ )⟩F
+                                                                                                                 R
+                                                                      F
+
+FIG. 1: A kernel K, which implicitly computes an inner-product in a high-dimensional feature space F , can be used to simplify a
+binary classification problem if the associated feature map ϕ arranges the inputs in F in a desirable way. For example, above we see
+input data samples belonging to two different classes (shown as red triangles and blue squares) being arranged in F in such a way that
+allows a separating hyperplane to be found. This allows the class label associated with the points to be extracted by simply projecting
+along some axis in F and taking the sign of the resulting value. In the situation shown in the figure, this axis is ϕ(x′ ), however in the
+more general case the choice of this axis is usually determined as a linear combination of the form M
+                                                                                                   P
+                                                                                                      i=1 αi ϕ(xi ) where the xi ’s are the
+input training datapoints (see Equation (4)).
+
+
+
+the kernel K [52, Lemma 4.33], the powerful represen-                   ing the sign to predict class labels) are given by first
+ter theorem [52, 53] applies. In such cases, the theorem                embedding the argument into F using the feature map,
+ensures that for many common learning problems, min-                    and then returning the inner product of the embedded
+                                                                                                              PM
+imisers of the regularised empirical risk can be written                embedded argument with the vector i=1 αi ϕ(xi ).
+as a finite linear combination of the form
+                              M
+                              X
+                    F (·) =         αi K(·, xi ),              (3)
+                              i=1                                                   B.    Support vector classification
+where the coefficients {αi }M  i=1 are real numbers and
+{xi }M
+     i=1  are the    input training  data samples. Thus,                   Support vector machines (SVMs), such as SVC, are
+rather than searching over the entire high (possibly infi-              widely regarded as some of the most successful algo-
+nite) dimensional RKHS, one can instead optimise over                   rithms in machine learning, especially for tackling non-
+the finite-dimensional subspace specified by the vec-                   linear classification problems such as those considered in
+tor α = (α1 , . . . , αM ) ∈ RM . This finite representa-               this work. The core principle underlying SVC is based
+tion enables practical computation of the solution us-                  on finding a hyperplane in F that maximises the mar-
+ing theoretically deterministic algorithms, as is the case              gin between two classes. This contributes to improv-
+with both support vector classification (SVC) and ker-                  ing generalisation and robustness against noisy training
+nel ridge classification (KRC).                                         data, such as the data obtained with SAR imagery. By
+   As a final note, by substituting (1) into (3), we have               leveraging kernel functions, SVC can effectively capture
+that the minimisers of the regularised empirical risk                   both linear and non-linear patterns, making it a flexible
+functional can be written as                                            and broadly applicable method across various domains.
+                        *      M
+                                           +
+                              X                                         However, despite its advantages, precisely determining
+              F (·) = ϕ(·),       αi ϕ(xi )  .         (4)              the runtime complexity for SVC can be difficult.
+                                i=1                 F                      When using a training dataset D = {(xi , yi )}M  i=1 ⊂
+Equation (4) shows us that the models we obtain from                    X × {±1}, SVC involves searching for the solution to
+kernel methods (up to a possible bias term, and tak-                    the following convex quadratic program, called the soft-
+                                                                                                                        6
+
+margin dual optimisation problem:                                             C.   Kernel ridge classification
+                       M                      M
+                   1 X                       X
+                                                                  Kernel ridge regression (KRR) is another widely suc-
+            min            αi αj yi yj Kij −     αi
+          α∈[0,C]M 2                                           cessful classical machine learning method which involves
+                     i,j=1                   i=1
+                                                        (5)    seeking a function in the RKHS of a given kernel that
+                           M
+                           X                                   minimises a regularised least-squares objective func-
+                    s.t.          αi yi = 0.
+                                                               tion. Kernel ridge classification (KRC), more commonly
+                            i=1
+                                                               known as regularised least-squares classification [57],
+Here C ≥ 0 is a regularisation parameter specify-              adapts KRR for binary classification by treating class la-
+ing the penalty associated with an incorrectly classi-         bels as continuous real numbers taking on the values ±1.
+fied data point, Kij = K(xi , xj ) is an M × M matrix          Unlike many modern algorithms that rely on iterative or
+called the kernel matrix, and the solution is the vector       approximate procedures, KRC inherits from KRR the
+α = (α1 , . . . , αM ) ∈ [0, C]M . Finding a solution to (5)   desirable property of admitting a unique closed-form so-
+corresponds to finding a hyperplane which maximises            lution, resulting from the convexity of its objective func-
+the margin between the classes in F, while allowing for        tion. Once the solution has been determined, predic-
+incorrect classifications of some data points at a cost        tions for new inputs are obtained by taking the sign of
+proportional to C. This means that a solution is per-          the predicted continuous labels for those inputs. Com-
+mitted even when the classes are not linearly separable        pared with SVC, KRC is conceptually simpler, requiring
+after being embedded in F.                                     only the solution of a linear system, and has been empir-
+   Solving (5) can be achieved deterministically (up to        ically observed to perform comparably or better, often
+the choice of strategy for selecting pairs of dual coeffi-     with lower computational costs [58]. Additionally, the
+cients) using the sequential minimisation optimisation         runtime complexity of KRC is much more clear cut than
+(SMO) algorithm [52, 54]. Classification prediction for        for SVC, further motivating the algorithm.
+new data, x ∈ X , using the model is                              As with SVC, we consider a training dataset D =
+                                                  !            {(xi , yi )}M
+                                                                           i=1 ⊂ X ×{±1}. Applying KRC to this dataset
+                             M
+                            X                                  then involves finding the solution to the convex minimi-
+          f (x) = sign         αi yi K(x, xi ) + b ,     (6)   sation problem:
+                           i=1
+                                                                                             2
+                                                                          M         M                 M
+where b ∈ R can be determined with the Karush-Kuhn-                       X         X                 X
+                                                                  min        yi −     αj Kij  + λ        αp Kpq αq , (7)
+Tucker conditions [55, 56].                                      α∈RM
+   The SMO algorithm used to solve (5) has a runtime                    i=1          j=1             p,q=1
+
+that scales somewhere between O(M ) and O(M 2 ) with
+                                                               where λ > 0 is a regularisation parameter specifying
+respect to the size of the dataset M [54], but this does
+                                                               the penalty associated with increasing the norm of the
+not account for specific aspects of the problem at hand.
+                                                               resultant function in the RKHS.
+For example, the fact that we need to calculate the sym-
+                                                                  As mentioned, we can determine the unique vector
+metric M ×M kernel matrix incurs a runtime of O(M 2 ).
+                                                               α ∈ RM which solves (7) using standard techniques
+And even though the SMO algorithm is guaranteed to
+                                                               from convex optimisation (see Section 11.3.2 in [53]).
+converge in theory, large values of the regularisation pa-
+                                                               Specifically, the vector which solves (7) is given by
+rameter C often incur significantly longer runtimes by
+leading to an ill-conditioned problem, making it diffi-                              α = (K + λI)−1 y,                (8)
+cult for the SMO algorithm to converge to the actual
+solution as a result of numerical instabilities. This, and     where α = (α1 , . . . , αM ) ∈ RM is the solution, I is
+other factors, such as the specific solver and kernel be-      an M × M identity matrix, and y = (y1 , . . . , yM ) ∈
+ing employed, makes precisely quantifying the runtime          {±1}×M is the vector of labels for the training data
+complexity of SVC a non-trivial task. The lack of clear        samples. Note that since the kernel matrix K is positive
+runtime complexity bounds motivates us to also con-            semi-definite, the matrix K +λI will always be invertible
+sider another kernel-based ML algorithm for classifica-        as long as λ > 0. And the larger the value of λ (i.e.
+tion in this work, which we now discuss.                       the more regularisation), the more well-conditioned the
+                                                                                                                         7
+
+matrix K + λI will be, hence improving the numerical          ture map from X to a high-dimensional feature space,
+stability of the algorithm.                                   given by the Hilbert space to which the quantum states
+  Once the solution α ∈ RM has been determined ac-            (viewed as density operators) belong. By performing
+cording to (8), predictions are made using                    specific measurements, one can then evaluate the kernel
+                                           !                  function associated with this feature map and construct
+                            M
+                            X                                 the full kernel matrix, which is later used to train a clas-
+              g(x) = sign      αi K(x, xi ) .    (9)          sical model.
+                           i=1                                   Formally, for all n ∈ N we denote by Hn the Hilbert
+Notice that determining α using the right hand side           space over R of 2n × 2n Hermitian matrices with the
+of (8) involves matrix inversion of the M × M matrix          Frobenius inner-product ⟨A, B⟩Hn = tr(A† B). An n-
+K + λI, which generally takes O(M 3 ) time. However we        qubit quantum feature map is then a map ϕQ : X → Hn ,
+can equivalently determine α by solving the system of         defined such that
+linear equations (K + λI)α = y which can be achieved
+                                                                                  ϕQ (x) = U (x)|0⟩⟨0|U † (x)         (10)
+in O(M 2.373 ) time [59]. So we see that, in contrast with
+SVC, the runtime complexity of KRC is clear.                  for all x ∈ X , where U (x) is a 2n × 2n unitary matrix
+   To conclude this section, we offer some brief remarks                                                          n
+                                                              called the data-encoding unitary for x, and |0⟩ ∈ C2 is
+on Kernel Ridge Classification (KRC). The use of a            the initial quantum state in which all qubits occupy the
+squared error loss in the first term of (7) is a natu-        +1-eigenstate of the Pauli-Z operator. Given a quan-
+ral choice for regression tasks, but is less well-suited      tum feature map ϕQ , the associated quantum kernel
+to classification. To see this, consider an input train-      KQ : X × X → R, is defined by
+ing data sample xj for some j ∈ {1, . . . , M }. Sup-
+pose that the model prediction is large and positive, e.g.                                                       2
+PM                        3
+                                                                            KQ (x, x′ ) = ⟨0|U † (x′ )U (x)|0⟩        (11)
+   i=1 αi K(xj , xi ) = 10 , resulting in a predicted label
+of +1 according to (9). In this case, the squared loss        for all x, x′ ∈ X . Note that, as in (1), KQ (x, x′ ) is just
+penalty will be roughly the same regardless of whether        the inner-product ⟨ϕQ (x), ϕQ (x′ )⟩Hn .
+the true label yj is +1 or -1. This is counter-intuitive in      If the physical implementation of U (x) for all
+a classification context since the contribution to the loss   x ∈ X on a quantum computer has time complexity
+function should ideally depend significantly on whether       O(poly(n)), then a quantum computer can efficiently
+the predicted label is correct or not.                        evaluate KQ . In particular, from Eq. (11) and the Born
+   Nonetheless, KRC has been observed to perform sur-         rule we see that KQ (x, x′ ) is just the expectation value
+prisingly well in practice. In [58], the authors applied      of the observable |0⟩⟨0| measured from the pure state
+KRC to a range of benchmark datasets and found that           U † (x′ )U (x)|0⟩. This provides us with one physical pro-
+it achieved test set accuracies comparable to those of        cedure for evaluating the kernel KQ on quantum hard-
+Support Vector Machines (SVMs), while requiring sig-          ware2 .
+nificantly less computational time, up to an order of            Training involves evaluating all the entries of Kij =
+magnitude less in some cases. This empirical success,         KQ (xi , xj ), where {xi }Mi=1 are the training data sam-
+together with the clear runtime complexity, motivates         ples, and passing the matrix to a classical algorithm.
+our use of KRC in this work.                                  Finally, with reference to (6) and (9), making further
+                                                              predictions using the trained model requires another
+                                                              O(M ) evaluations of the quantum kernel. Overall, this
+            D.   Quantum kernel methods                       incurs a runtime complexity of O(M (M + N ) poly(n))
+                                                              on quantum hardware, where N denotes the number of
+  Quantum kernel methods (QKMs) [31], are hybrid              testing datapoints.
+quantum-classical algorithms that use a quantum com-
+puter to compute the kernel matrix, which is then
+passed to a classical algorithm such as SVC or KRC.
+                                                              2 There are others methods though, such as the SWAP test [60,
+The core idea is to prepare quantum states that de-
+pend on classical input data, effectively defining a fea-       Section III.B].
+                                                                                                                           8
+
+   Note that many other descriptions of QKMs, such                                  A.    Datasets
+as in [61], incorporate variational parameters into the
+QKM framework. In this work however, we consider                In this work, we make use of datasets containing chip
+only fixed feature maps with no conventional variational     images of maritime objects extracted from the SARFish
+parameters, only hyperparameters such as C and λ             dataset [29, 44]. As discussed in Section II, the SARFish
+which are tuned via cross-validation. This is highly de-     dataset is a free and open-source SAR dataset con-
+sirable since variational quantum models are known to        taining coincident real-valued GRD and complex-valued
+suffer from the barren plateau phenomenon [62] which         SLC products, both of which are derived from Sentinel-1
+can impact their efficacy. In this work, all of the train-   imagery. The dataset consists of two subsets split based
+ing is performed classically without variational parame-     on the polarisation of the emitted microwave pulse from
+ters, meaning that the QKMs we apply circumvent bar-         the satellite: so-called VV and VH. In [29], the authors
+ren plateaus. It also means that the QKMs inherit all        state that the appearance of ships is usually more promi-
+of the nice properties of the kernel-based algorithm to      nent in the VH polarisation. For this reason, we conduct
+which they are passed, such as the ability to determine      our experiments using the VH products.
+an optimal solution from the corresponding RKHS de-             The GRD data product contains unsigned int16 pixel
+terministically when using SVC or KRC.                       values describing the real intensity of the reflected sig-
+   While QKMs share similarities with other QML ap-          nal, with each pixel representing a physical area of 10m
+proaches, they present their own advantages and disad-       × 10m. SLC products contain complex int16 pixel val-
+vantages. For example, they lack generalisation guar-        ues describing amplitude and phase information of the
+antees [63], in some cases may require a number of           reflected signal, with each pixel representing a physical
+measurements scaling exponentially in the number of          area of 2.3m × 14.1m. The dataset also contains a list
+qubits [64, 65], and are susceptible to quantum hard-        of detected objects for each image product.
+ware noise [66]. Such limitations are beyond the scope          Each detected object has several labels, the key ones
+of this work, but we believe acknowledging them is im-       being: whether it belongs to a GRD or SLC image;
+portant since they can significantly impact real-world       the location (as a row and column value) in the image,
+implementation. Despite these challenges, many still         and two relevant classification labels named is vessel,
+believe that QKMs may offer computational advantages         is fishing, along with the confidence of either label.
+over classical methods by enabling the evaluation of ker-    The is vessel and is fishing labels are binary la-
+nels that cannot be computed efficiently on classical        bels describing whether the detected object is a marine
+hardware, such as those used in [33–36]. The success         vessel, and whether a marine vessel is a fishing vessel,
+of these works which utilise QKMs motivates our con-         respectively. The confidence label takes on three val-
+sideration of them here.                                     ues, HIGH, MEDIUM, or LOW, and describes the level
+                                                             of confidence in the is vessel and is fishing labels
+                                                             for that object.
+                                                                Using the GRD and SLC products together with the
+                                                             is vessel, is fishing and confidence labels, we ex-
+                                                             tracted 6 datasets, one for each choice of is vessel
+  IV.   NUMERICAL EXPERIMENTAL SETUP                         or is fishing with either 16 × 16 GRD chips, 16 × 16
+                                                             SLC chips, or 70×12 SLC chips3 . Some examples of the
+                                                             16 × 16 GRD chips can be seen in Figure 2(a), together
+   Here we discuss our training methodology.            A    with their associated is vessel labels, from which one
+schematic diagram illustrating the overall workflow can      can see the difficulty in visually distinguishing between
+be found in Figure 2. We start by describing our pre-        the classes. To construct the datasets, we first discard
+processing of SAR data, then discuss our workflow and
+the specific kernels, both classical and quantum, which
+we trial and perform noiseless simulations for. We fin-
+                                                             3 Note that the 70×12 SLC chips corresponds to a similar surface
+ish with a brief description of our specific computational
+implemention.                                                  area as the 16 × 16 GRD chips
+                                                                                                                      9
+
+all detected objects without a HIGH confidence label to       transformation derived from the training data is then
+reduce label noise and ensure that the extracted GRD          applied to the associated testing datasets. In our exper-
+and SLC chips have reliable ground-truth annotations.         iments, we trial every number of principal components
+This confidence level does not imply better image qual-       from 1 up to 12, resulting in the chip images being rep-
+ity, it simply indicates that the labels are expected to be   resented by vectors of length 1 to 12, with real or com-
+accurate, often supported by AIS-verified information.        plex entries depending on whether we started with GRD
+Using the remaining detected objects, we then randomly        or SLC chips, respectively. Our decision not to extend
+sample balanced datasets containing 1250 data samples         beyond 12 principal components was largely a result
+each, resulting in 625 samples per class. This is so that     of computational restrictions, but also of the fact that
+we can reserve 80% of the data for training and still         this number of components resulted in a large portion
+maintain 1000 training data samples, a suitable amount        (more than 80%) of the variance in the data being pre-
+for applying kernel methods.                                  served, the remainder of which we expect to be largely
+                                                              attributed to noisy fluctuations typical of SAR imagery.
+                                                              These final vectors are then used as the input training
+                   B.   Preprocessing                         and testing data samples.
+
+  Once each of the 6 datasets described in the previous
+subsection was extracted from the SARFish dataset, we                    C.   Machine learning workflow
+performed three main preprocessing steps. A visual de-
+piction of each of the preprocessing steps can be seen in        Each of the 6 datasets described in the previous sub-
+Figure 2(a).                                                  sections defines a binary classification problem, with in-
+  We start by applying the function h : C → C, defined        put data samples given by the preprocessed vectors, and
+such that                                                     labels given by the associated is vessel or is fishing
+                h(z) = ln(1 + |z|)ei arg(z) ,         (12)    values. A visual depiction of the machine learning ap-
+                                                              proach that we employ can be seen in Figure 2(b) and
+for all z ∈ C, to all pixel values in all chip images.        2(c). Specifically, we approach the learning tasks by
+Applying h to non-negative real inputs, such as the un-       seeking a classical or quantum kernel-based model which
+signed int16 values present in the GRD chips, gives the       can accurately predict the is vessel or is fishing la-
+same output as the numpy [67] function log1p. However         bels for the testing data.
+h also accepts complex arguments, transforming the ar-           The first step in the learning procedure involves feed-
+guments in such a way that preserves phase informa-           ing the preprocessed training vectors obtained via PCA
+tion and only alters their complex modulus. We choose         to the data-encoding unitary that defines the quantum
+to perform this preprocessing step so that pixel values       kernel we are working with (see Section III D). This
+with (complex or real) moduli many orders of magni-           data-enconding step is not required when using classical
+tude larger than others will not dominate the variance        kernels, and we instead pass the preprocessed training
+of the pixel values.                                          vectors to a formula such as (13), (14) or (15) to calcu-
+   Next, we split the sampled data into training and          late the kernel matrix entries.
+testing data. Specifically, we employ stratified sampling        Next, once the entire training kernel matrix has been
+and use 80% of the total data for training (1000 samples      calculated, we pass the kernel matrix to a classical
+with 500 from each class) and the remaining 20% for           kernel-based ML algorithm, such as SVC or KRC (see
+testing (250 samples with 125 from each class).               Section III B and III C). Using this algorithm, we per-
+   In the final preprocessing step, we flatten each chip      form a 10-fold cross-validation on the training data to
+into a vector and apply principal component analysis          find suitable hyperparameter values for the (classical or
+(PCA) on each of the training datasets to derive an or-       quantum) kernels using a grid search [53]. These hyper-
+thogonal linear transformation. The choice of PCA for         parameter values are listed in Table II of Appendix A.
+dimensionality reduction is natural in this context and       Of the trialled values, the best value of each hyperpa-
+has been applied in prior studies that apply quantum          rameter is selected based on the average validation ac-
+kernel methods to classical datasets [61, 68, 69]. The        curacy over all 10 folds of the training data. These hy-
+                                                                                                                                                                                                                                                                                                                                                                                            10
+
+                                                                                                                                                  (a) Dataset preprocessing
+       Raw chip-image dataset                                                                                         Processed chip-image dataset                                                                             Training dataset (80%)
+                                                                                                                                                                                                                                       is_vessel=False                              is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                    ◦                  ◦
+
+
+
+
+                                                                                                                                                                                                                                                                                                        with principal component analysis
+      Non-vessels                                             Vessels                                                    Non-vessels                         Vessels                                                                                                                                                                                      ◦                ◦
+                  is_vessel=False                                    is_vessel=True                                             is_vessel=False                is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+
+
+
+
+                                                                                                                                                                                    data into training and testing datasets
+                                                                                                                                                                                     Apply stratified sampling to split the
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+
+
+
+
+                                                                                                                                                                                                                                                                                                              Reduce dimensionality
+                                                                                                                                                                                                                                       is_vessel=False                              is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                    ◦                  ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                  is_vessel=False                                    is_vessel=True                                             is_vessel=False                is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                      from (12)                                                                                                                                                                                                                                           ◦                ◦
+                                                                                                                                                                                                                                       is_vessel=False                              is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                    ◦                  ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                  is_vessel=False                                    is_vessel=True                                             is_vessel=False                is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                                                                                                                                                       is_vessel=False                              is_vessel=True
+                                                                                                      Apply h
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                    ◦                  ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                  is_vessel=False                                    is_vessel=True                                             is_vessel=False                is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+
+                                                                                                                                                                                                                                                                                                                                            Apply derived PCA transform
+                  is_vessel=False                                    is_vessel=True                                             is_vessel=False                is_vessel=True
+                                                                                                                                                                                                                                Testing dataset (20%)                                                                                              to the testing data
+                                                                                                                                                                                                                                       is_vessel=False                              is_vessel=True
+                                                                                                                                                                                                                                                                                                                                                    ◦                  ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+                                                                                                                                                                                                                                                                                                                                                          ◦                ◦
+
+
+
+
+                                                                     (b) Training                                                                                                                                                                                                                    (c) Testing
+       Data-encoding unitary                                                                                            Quantum kernel matrix                                                                                     Data-encoding unitary                                                                                           Quantum kernel matrix
+                                                                                          Evaluate quantum
+
+
+
+
+                                                                                                                                                                                                                                                                                                              Evaluate quantum
+                                                                                                                             for training                                                                                                                                                                                                              for testing
+                                                                                           kernel function
+
+
+
+
+                                                                                                                                                                                                                                                                                                               kernel function
+    q0 0.5*x[0]
+         RY                           RY
+                                    0.5*x[0]                                                                                                                                                                                 q0 0.5*x[0]
+                                                                                                                                                                                                                                    RY                     RY
+                                                                                                                                                                                                                                                         0.5*x[0]                                                                                                                      
+                                                                                                                      KQ (x1 , x1 )               ...      KQ (x1 , xM )                                                                                                                                                                        KQ (x1 , x1 )   ...     KQ (x1 , xM )
+    q1 0.5*x[1]
+         RY                                      RY
+                                               0.5*x[1]
+                                                                                                                  
+                                                                                                                            .                                          .
+                                                                                                                                                                                                                              q1 0.5*x[1]
+                                                                                                                                                                                                                                    RY                                RY
+                                                                                                                                                                                                                                                                    0.5*x[1]
+                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                      .                        .
+                                                                                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                  .                                                                                                                                                                                                          .                    
+                                                                                                                           .                          .               .                                                                                                                                                                            .             .          .     
+    q2 0.5*x[2]
+           RY                                               RY                                                                                      .
+                                                                                                                                                                                                                               q2 0.5*x[2]
+                                                                                                                                                                                                                                      RY                                         RY                                                                               .
+                                                                                                                                                                                                                                                                                                                                                                                  
+                                                                                                                           .                                          .                                                                                                                                                                            .                        .     
+                                                          0.5*x[2]                                                                                                                                                                                                             0.5*x[2]
+                                                                                                                      KQ (xM , x1 )               ...      KQ (xM , xM )                                                                                                                                                                        KQ (xN , x1 )   ...     KQ (xN , xM )
+    q3 0.5*x[3]
+         RY                                                 RY
+                                                          0.5*x[3]
+                                                                                                                                                                                                                               q3 0.5*x[3]
+                                                                                                                                                                                                                                    RY                                           RY
+                                                                                                                                                                                                                                                                               0.5*x[3]
+
+
+
+
+        Kernel-based algorithm                                                                                                  Trained model
+                                                                                      Tune hyper-                                                                                                                                              Predict labels for                                                                                   Calculate learning
+                                         SVC                                          parameters                                y(x) from (6)                                                                                                   the testing data                                                                                   performance metrics
+                                          or                                                                                           or                                                                                                      using the trained                                                                                    from the true and
+                                         KRC                                           via cross-                               f (x) from (9)                                                                                                       model                                                                                         predicted test labels
+                                                                                       validation
+
+
+
+
+FIG. 2: Schematic diagram of our kernel-based machine-learning workflow with four qubits. (a) Raw chip-image data is first prepro-
+cessed by applying the function h from (12), which rescales pixel intensities; examples of 16 × 16 GRD chips with their is vessel labels
+illustrate the visual similarity between classes. We then split the data into 80% training and 20% testing sets with stratified sampling,
+flatten the chips and apply PCA to obtain lower-dimensional real (GRD) or complex (SLC) feature vectors. (b) The PCA-transformed
+training vectors xi are encoded using the Ry1DSt quantum kernel (though any quantum or classical kernel could be used; classical
+kernels require no data-encoding unitary and are computed using formulas such as (13), (14), or (15)). The resulting training kernel
+matrix is passed to an SVC or KRC classifier, whose hyperparameters are selected via 10-fold cross-validation before retraining on
+the full training set to obtain the final trained model. (c) The same encoding is applied to both training xi and testing xi vectors
+to compute the testing kernel matrix, which is combined with the trained model to predict labels for the test samples. Performance
+metrics are then computed using the true and predicted labels.
+
+
+
+perparameter values are then used to re-train a model                                                                                                                                                                         testing datasets to the data-encoding unitary to calcu-
+on the complete training dataset.                                                                                                                                                                                             late another kernel matrix for testing. This is equiva-
+                                                                                                                                                                                                                              lent to calculating the terms in the sum which defines
+  Finally, after the training stage is complete, we feed                                                                                                                                                                      the trained model in (6) and (9). The prediced labels
+the preprocessed vectors from both the training and
+                                                                                                                           11
+
+are compared to the true labels to assess performance.        we apply the transformation x 7→ βx before feeding it
+                                                              to the data-encoding unitary. Definitions of all quan-
+                                                              tum gates used here can be found in Sections 4.2 and
+                       D.    Kernels                          4.3 of [51].
+
+  We now provide definitions of the various classical           The first quantum kernel, called the Ry1DSt kernel,
+and quantum kernels which are trialled and used in            has a base layer that includes RY rotation gates on each
+the workflow described in the previous subsection and         qubit, rotating the states of the qubits by an angle pro-
+Figure 2. We start by defining the classical kernels.         portional to the associated real input feature. Following
+The first classical kernel is the linear kernel, denoted      the RY gates in each base layer is a 1-dimensional (1D)
+Klin : X × X → R, which is defined by the standard            sequence of CNOT gates arranged in a “staircase” pat-
+Euclidean inner product of its arguments,                     tern (thus we include “St” in the name of this kernel).
+                                                              An example of the data-encoding unitary can be found
+                   Klin (x, x′ ) = ⟨x, x′ ⟩.          (13)    in Figue 3 with 4 qubits, 2 layers and a bandwidth of
+The second is the radial basis function (RBF) kernel,         β = 0.5.
+denoted KRBF : X × X → R, defined such that
+                                           ′ 2
+               KRBF (x, x′ ) = e−γ∥x−x ∥ ,            (14)
+where ∥ · ∥ is the standard Euclidean norm. The third
+and final classical kernel is the Laplacian kernel, denoted       q0 0.5*x[0]
+                                                                       RY            RY
+                                                                                   0.5*x[0]
+KLap : X × X → R, defined such that
+                                           ′
+                                                                  q1 0.5*x[1]
+                                                                       RY                       RY
+                                                                                              0.5*x[1]
+                KLap (x, x′ ) = e−γ∥x−x ∥1 ,          (15)
+                                                                  q2 0.5*x[2]
+                                                                       RY                                  RY
+                                                                                                         0.5*x[2]
+where ∥ · ∥1 is the l1 norm. We choose to trial these
+classical kernels since the RBF and Laplacian kernels are         q3 0.5*x[3]
+                                                                       RY                                  RY
+                                                                                                         0.5*x[3]
+known to perform well compared with other standard
+kernels on a variety of problems [70, 71], including in
+the context of SAR imagery [72], while the linear kernel      FIG. 3: The data-encoding unitary for the Ry1DSt quantum
+provides an interpretable baseline.                           kernel with 4 qubits, 2 layers and a bandwidth of β = 0.5.
+   We now define the quantum kernels trialled and sim-
+ulated (without noise) in this work. As discussed in
+Section III D, specifying a quantum kernel amounts to
+choosing a data-encoding unitary acting on the initial
+state |0⟩, where all qubits begin in the +1-eigenstate of
+the Pauli-Z operator. We consider three such unitaries:          The second quantum kernel, called the RyRz1DAlt
+two for real-valued features and one for complex-valued       kernel, has a base layer that includes RY and RZ rota-
+features. Each unitary uses one qubit per feature, so         tion gates on each qubit which both rotate by an an-
+trialling between 1 and 12 principal components cor-          gle proportional to the associated real input feature.
+responds to using between 1 and 12 qubits. For each           Following the rotation gates is a collection of CNOT
+architecture, we also vary the number of base layers (2,      gates. In one layer the CNOT gates are controlled on
+3, or 4), excluding a single layer since it would produce     even numbered qubits and target the qubit one position
+no entanglement for the kernels considered.                   below. In the next layer the CNOT gates are instead
+   We additionally tune the bandwidth hyperparame-            controlled on odd numbered qubits. Since we alternate
+ter [68, 69], denoted β ∈ R, which scales the input fea-      between these two layers we include “Alt” in the name
+tures prior to encoding and has been shown to substan-        of this kernel. An example of the data-encoding unitary
+tially improve the generalisation performance of quan-        can be found in Figure 4 with 4 qubits, 2 layers and a
+tum kernel models. Thus, for each data sample x ∈ X ,         bandwidth of β = 0.5.
+                                                                                                                                                                         12
+
+                                                                                                              circuit was similarly employed in kernel-based learning
+     q0 0.5*x[0] 0.5*x[0]
+                     RY           RZ                     RY
+                                                       0.5*x[0]
+                                                                          RZ
+                                                                       0.5*x[0]
+                                                                                                              in [75] and adopted in [61], which motivates our inclu-
+                                                                                                              sion of the circuit in the current work. Contrarily, we are
+                                                                                                              not aware of the CRyRz1DSt kernel being used in prior
+     q1 0.5*x[1]
+          RY RZ
+                 0.5*x[1]
+                                                         RY
+                                                       0.5*x[1]
+                                                                          RZ
+                                                                       0.5*x[1]                               works, but we employ this kernel here in an attempt
+                                                                                                              to meaningfully encode phase information from the pre-
+     q2 0.5*x[2]
+          RY RZ
+                 0.5*x[2]
+                                                         RY
+                                                       0.5*x[2]
+                                                                          RZ
+                                                                       0.5*x[2]                               processed vector representations of the SLC chips. The
+                                                                                                              justification for this is that it injects a relative phase be-
+     q3 0.5*x[3]
+          RY RZ
+                 0.5*x[3]
+                                                         RY
+                                                       0.5*x[3]
+                                                                          RZ
+                                                                       0.5*x[3]
+                                                                                                              tween the components of the state of each qubit (in the
+                                                                                                              eigenbasis of the Pauli-Z operator) equal to the com-
+                                                                                                              plex argument of the associated complex input feature.
+FIG. 4: The data-encoding unitary for the RyRz1DAlt quantum                                                   Also notice that by scaling the input features by the
+kernel with 4 qubits, 2 layers and a bandwidth of β = 0.5.                                                    real bandwidth β ∈ R, we preserve the complex phases
+                                                                                                              of the input features.
+   The third and final quantum kernel, called the
+CRyRz1DSt kernel, has a base layer that includes RY
+and RZ rotation gates. The angle for the RY gate is
+proportional to the modulus of the associated complex
+input feature, while the angle for the RZ gate is pro-                                                                          E.    Implementation
+portional the phase. We include “C” at the beginning
+of the name of this kernel to indicate that the kernel                                                           In this section we provide details about the computa-
+takes complex arguments as input. Following the rota-                                                         tional implementation of the machine learning workflow
+tion gates is a collection of CNOT gates arranged again                                                       depicted in Figure 2. Firstly, in the preprocessing stage,
+in a “staircase” pattern, identical to the arrangement of                                                     the application of the function h is straightforward and
+CNOT gates in the RY1DSt kernel. An example of the                                                            was implemented with a custom function, while the
+data-encoding unitary can be found in Figue 5 with 4                                                          stratified sampling of the datasets into training and test-
+qubits, 2 layers and a bandwidth of β = 0.5.                                                                  ing datasets was implemented with the sklearn [76]
+                                                                                                              function train test split. Next, to apply PCA we
+                                                                                                              implement a standard ComplexPCA class since sklearn
+q0       RY
+     0.5*abs(x[0])
+                          RZ
+                      arg(x[0])
+                                           RY
+                                       0.5*abs(x[0])
+                                                                  RZ
+                                                              arg(x[0])                                       does not support complex data. To check the correct-
+q1       RY
+     0.5*abs(x[1])
+                          RZ
+                      arg(x[1])
+                                                                  RY
+                                                            0.5*abs(x[1])
+                                                                                      RZ
+                                                                                    arg(x[1])
+                                                                                                              ness of our implementation we tested our class against
+                                                                                                              sklearn.PCA using real GRD inputs, and observed the
+q2       RY
+     0.5*abs(x[2])
+                          RZ
+                      arg(x[2])
+                                                                                      RY
+                                                                                  0.5*abs(x[2])
+                                                                                                    RZ
+                                                                                                  arg(x[2])   results to be identical for the GRD data.
+q3       RY
+     0.5*abs(x[3])
+                          RZ
+                      arg(x[3])
+                                                                                      RY
+                                                                                  0.5*abs(x[3])
+                                                                                                    RZ
+                                                                                                  arg(x[3])
+                                                                                                                 In the training and testing stages, the ker-
+                                                                                                              nel matrices derived from a quantum kernel
+                                                                                                              were calculated using the qiskit [77] function
+FIG. 5: The data-encoding unitary for the CRyRz1DSt quantum                                                   FidelityQuantumKernel.        Following this, we per-
+kernel with 4 qubits, 2 layers and a bandwidth of β = 0.5.
+                                                                                                              formed the 10-fold cross-validation by grid search with
+                                                                                                              the sklearn class model selection.GridSearchCV
+   The Ry1DSt unitary operator is also sometimes called                                                       with svm.SVC and a custom KRC estimator based
+a hardware efficient ansatz [73, 74]. A close variant of                                                      on kernel ridge.KernelRidge to implement SVC
+this unitary was used to study exponential concentra-                                                         and KRC, respectively. These methods automatically
+tion in [65], though the analysis in [65] did not consider                                                    calculate the kernel matrices for various standard
+the bandwidth parameter which may help to remedy the                                                          classical kernels, while the quantum kernel matrices
+exponential concentration phenomena [69]. Either way,                                                         were passed as precomputed kernels. The learning
+the appearance of this circuit in these works motivates                                                       performance metrics are then calculated using the
+our consideration of the circuit here. The RyRz1DAlt                                                          sklearn function classification report.
+                                                                                                                     13
+
+         V.    RESULTS AND DISCUSSION                         the Ry1DSt kernel, followed closely by the Laplacian
+                                                              kernel.
+   In this section we state and discuss the best numer-
+ical results obtained with each of the kernels which
+were applied to each dataset for both the is vessel                    B.    Results for the is fishing task
+and is fishing classification tasks. Specifically, in Ta-
+ble I, we provide the best learning performance metrics          Table I shows that both the RyRz1DAlt and Lapla-
+obtained with the kernel-based models whose hyperpa-          cian kernel obtained the greatest test accuracy of 0.9040.
+rameters were tuned via a 10-fold cross-validation on         The RyRz1DAlt kernel also obtained the greatest test
+the training data, and were then re-trained with the          precision of 0.9391, while the Laplacian obtained the
+best trialled hyperparameters on the full training set.       greatest test F1 -score of 0.9055. Meanwhile, the greatest
+This includes the accuracy, precision, recall, and F1 -       test recall of 0.9360 was obtained by the both Ry1DSt
+score achieved by the models on both the training and         and RBF kernels. On the training data, as in the case
+testing datasets. Note that the precision, recall, and F1 -   of the is vessel task, the CRyRz1DSt kernel obtained
+score are for the true class in each task. The definitions    perfect metric values, with all kernels except the Linear
+of these metrics can be found, for example, in Section        kernel obtaining perfect recall. On the test set however,
+IV.A of [17]. Also note that all configuration details and    the CRyRz1DSt kernel obtained comparatively modest
+hyperparameter values used to obtain the metric values        metric values, with an accuracy of 0.8000 and 0.7920
+reported in Table I are provided in Tables III and IV         using the 16 × 16 and 70 × 12 SLC chips, respectively.
+of Appendix A. Further results, including the accuracy,       In comparison the linear kernel obtained an accuracy of
+precision, recall, and F1 -scores obtained on the false       0.7920, emphasising that the CRyRz1DSt kernel may
+class of the training and testing datasets, together with     not be exploiting the phase information in an effective
+the macro and weighted averages of the reported met-          manner.
+rics, can be found in the Github repository (see Data
+Availability).
+                                                                            C.   Insights and Limitations
+
+          A.   Results for the is vessel task                    Overall, the results show that quantum kernels, es-
+                                                              pecially the Ry1DSt and RyRz1DAlt kernels perform
+   As shown in Table I, the Ry1DSt kernel achieved the        competitively with the strong baselines obtained with
+highest accuracy of 0.8920, the highest recall of 0.8960,     the Laplacian and RBF kernels. This is emphasised by
+and the highest F1 -score of 0.8924 on the testing dataset    the fact that both of these quantum kernels obtained
+for the is vessel classification task. On the other           higher testing metric values than the RBF kernel in all
+hand, the Laplacian kernel obtained the highest preci-        cases except in the is fishing task, where the RBF and
+sion of 0.9000. On the training data, the Laplacian and       Ry1DSt kernels obtained equally higher test recall than
+the CRyRz1DSt kernel obtained perfect accuracy, pre-          the RyRz1DAlt kernel. It should be noted though, that
+cision, recall and F1 -scores. However the CRyRz1DSt          the reasonably good performance of the linear kernel,
+kernel performed quite poorly on the testing dataset,         which obtained accuracies of 0.7400 and 0.7920 on the
+obtaining accuracies of just 0.6640 and 0.6560 using the      is vessel and is fishing tasks (respectively), sug-
+16 × 16 and 70 × 12 SLC chips, respectively, which is         gests that the GRD datasets have a moderate degree
+lower than even the linear kernel which obtained a test       of linear separability. However, to improve performance
+accuracy of 0.7400 with the GRD chips. This indicates         further, we see that the employment of non-linear ker-
+that the CRyRz1DSt kernel is heavily overfitting the          nels is necessary, which motivates their application in
+data, suggesting that the kernel is expressive enough to      this context.
+fit the data, but may not be an appropriate choice for           The accuracies obtained in this work are also com-
+exploiting the phase information available in the SLC         petitive with those reported in the related works dis-
+chips. Overall, based on test performance, the best per-      cussed in Section II, with only a few exceptions being
+forming kernel for the is vessel classification task was      the test accuracies obtained in [18, 22, 42]. However
+                                                                                                                                 14
+
+                                            Accuracy         Precision          Recall          F1 score
+          Task      Data type        Kernel
+                                         Training Testing Training Testing Training Testing Training Testing
+                                Linear    0.7060 0.7400 0.7036 0.7459 0.7120 0.7280 0.7078 0.7368
+                               Laplacian 1.0000 0.8840 1.0000 0.9000 1.0000 0.8640 1.0000 0.8816
+                  16 × 16 GRD    RBF      0.8970 0.8560 0.9214 0.8739 0.8680 0.8320 0.8939 0.8525
+        is vessel               Ry1DSt    0.9670 0.8920 0.9698 0.8889 0.9640 0.8960 0.9669 0.8924
+                              RyRz1DAlt 0.9450 0.8760 0.9423 0.8917 0.9480 0.8560 0.9452 0.8735
+                  16 × 16 SLC CRyRz1DSt 1.0000 0.6640 1.0000 0.7356 1.0000 0.5120 1.0000 0.6038
+                  70 × 12 SLC CRyRz1DSt 1.0000 0.6560 1.0000 0.6612 1.0000 0.6400 1.0000 0.6504
+                                Linear    0.7980 0.7920 0.7411 0.7386 0.9160 0.9040 0.8193 0.8129
+                               Laplacian  0.9990 0.9040 0.9980 0.8915 1.0000 0.9200 0.9990 0.9055
+                  16 × 16 GRD    RBF      0.9960 0.8800 0.9921 0.8417 1.0000 0.9360 0.9960 0.8864
+       is fishing               Ry1DSt    0.9800 0.8920 0.9615 0.8603 1.0000 0.9360 0.9804 0.8966
+                              RyRz1DAlt 0.9990 0.9040 0.9980 0.9391 1.0000 0.8640 0.9990 0.9000
+                  16 × 16 SLC CRyRz1DSt 1.0000 0.8000 1.0000 0.7586 1.0000 0.8800 1.0000 0.8148
+                  70 × 12 SLC CRyRz1DSt 1.0000 0.7920 1.0000 0.8349 1.0000 0.7280 1.0000 0.7778
+
+TABLE I: The best learning performance metrics obtained by the models trained on the full training dataset for the is vessel and
+is fishing classification tasks using each kernel with the hyperparameter values listed in Tables III and IV. The best value of each
+reported metric obtained for either task on the training and testing datasets are highlighted in bold.
+
+
+
+each of these works focused on different datasets, and              but also maritime object detection and vessel length re-
+the first two did not incorporate any quantum aspects               gression.
+in their models, which makes a direct comparison hard
+to justify. It is also worth noting that, as was the case
+for the datasets used in [21, 22], the reasonably high
+performance of each kernel (e.g. even the linear kernel
+                                                                       Overall, our results demonstrate that quantum ma-
+achieved 0.7400 and 0.7920 test accuracies) may suggest
+                                                                    chine learning methods, specifically QKMs, have the
+that our datasets have limited complexity, which makes
+                                                                    potential to provide quantum-enhanced learning to im-
+comparisons with other works difficult.
+                                                                    prove surveillance capabilities for IUU fishing. However
+   In contrast, as discussed in Section II, a few related           we note that our results were obtained via classical simu-
+works which dealt with the SARFish dataset include [15]             lations, and implementation on quantum hardware may
+in which the authors reported obtaining F1 scores of                present challenges. Another point worth making is that
+0.871, 0.871 and 0.866 by utilising 32×32 GRD, 23×140               we scaled up our simulations to just 12 qubits, mean-
+SLC and the magnitude of 23 × 140 SLC chips. Our                    ing there may be further improvements possible on the
+work differs from this reference since the authors tack-            learning performance metrics if we scale up beyond this
+led the classification task as a 3-class problem, but               number. However we did not perform such an investi-
+our best F1 scores of 0.8924 and 0.9055 for the two                 gation here due to computational restrictions. While it
+tasks are higher. Another relevant work for compari-                would normally be possible to scale up to significantly
+son is [45], which describes the xView3 challenge which             more than 12 qubits on classical hardware, we note that
+tackled a subset of the SARFish dataset. The winner                 by tuning the bandwidth and the number of layers, we
+of the xView3 challenge, BloodAxe, reported F1 -scores              introduce multiplicative factors on the overall computa-
+on the is vessel and is fishing classification tasks of             tional costs which prevented us from pushing the qubit
+0.9392 and 0.8425, respectively. Once again, comparing              count higher. However, with the arrival of fault-tolerant
+with the best F1 -scores obtained in this work of 0.8924            quantum hardware we expect that it will be possible to
+and 0.9055, we see that we achieved a greater F1 -score             scale the qubit count to significantly larger numbers,
+for the latter task using the Ry1DSt kernel. However                beyond what is possible in classical simulations, which
+it should be noted that BloodAxe’s machine learning                 may provide opportunities for significant learning im-
+workflow not only dealt with the classification aspect,             provements.
+                                                                                                                     15
+
+   VI.   CONCLUSION AND FUTURE WORK                           formation available in the complex SLC chips. Although
+                                                              we did not observe a notable advantage of using the SLC
+                                                              data in our experiments, we note that the complex ker-
+   In this work, we investigate the efficacy of quantum
+                                                              nels achieved perfect training performance. A natural
+kernel methods in maritime object classification using
+                                                              next step would be to provide more training samples
+SAR imagery from the Sentinel-1 sensor for the pur-
+                                                              to the CRyRz1DSt quantum kernel in hopes of closing
+poses of IUU fishing surveillance. Specifically, using
+                                                              the generalisation gap. Alternatively, investigating new
+both real GRD and complex SLC chip images, we com-
+                                                              approaches for encoding complex features in quantum
+pare the performance of a variety of quantum kernels
+                                                              kernels (with the exception of amplitude encoding) ap-
+with classical linear, Laplacian, and RBF kernels. The
+                                                              pears to be a promising and largely unexplored research
+results show that quantum kernels can obtain competi-
+                                                              direction.
+tive learning performance metric values, either matching
+or exceeding those obtained with the classical kernels.
+This suggests that quantum kernels may provide op-                         ACKNOWLEDGEMENTS
+portunities for quantum-enhanced learning, supporting
+global efforts to combat IUU fishing. However, the spe-
+cific kernel we trialled with the complex SAR data did           This project is led by the Centre for Quantum Infor-
+not perform competitively, suggesting that it may not         mation, Simulation and Algorithms (QUISA) and sup-
+be an effective choice to exploit the phase information       ported by the Defence Science and Technology Group
+available in the complex SLC chips.                           (DSTG) and the Advanced Strategic Capabilities Ac-
+                                                              celerator (ASCA) through its Emerging and Disruptive
+   This work naturally lends itself to several possible di-   Technologies (EDT) Program. Substantial computa-
+rections for future research. First, performance may be       tional resources were provided by the Pawsey Super-
+improved by increasing the number of qubits used in           computing Research Centre. The authors thank Jack
+the quantum kernels. For example, the quantum ker-            Blyth and Tuan Nguyen for their insightful discussions
+nels applied to the is vessel task performed best with        and suggestions on the machine learning and prepro-
+12 qubits, which is the largest number trialled in this       cessing methods used in this work. J.T. acknowledges
+work (see Table III). To this end, it may be valuable to      receiving an Australian Government Research Training
+implement the quantum kernels on real hardware with           Program (RTP) Scholarship.
+larger numbers of qubits, or to simulate the circuits us-
+ing approximate tensor network methods, given that the
+circuits are shallow and one-dimensional in nature.                          DATA AVAILABILITY
+   From another perspective, it would be interesting to
+systematically reduce the amount of training data sup-           The datasets analysed in this study are derived from
+plied to the models. This would allow us to investigate       the publicly available SARFish dataset, as described in
+whether there are differences in the generalisation ca-       [29]. Links to download the original dataset are pro-
+pabilities of classical and quantum kernels when only         vided therein. We provide all code necessary to extract
+small datasets are available. Similarly, exploring al-        the GRD and SLC chips from the SARFish dataset and
+ternative preprocessing methods could further improve         to reproduce the exact training and testing splits used
+performance and enhance learning outcomes.                    in our experiments. These resources are available in our
+   Finally, we encourage the community to continue            public GitHub repository at https://github.com/John-
+seeking methods for effectively exploiting the phase in-      J-Tanner/Extract-SARFish-Data.
+
+
+
+
+ [1] K. El-Darymli, P. McGuire, D. Power, and C. Moloney.          Sensing, 7(1):071598, March 2013.
+     Target detection in synthetic aperture radar imagery:     [2] J. Li, Y. Liu, X. Wang, Z. Jiang, and Y. Li. A robust
+     a state-of-the-art survey. Journal of Applied Remote          cfar algorithm based on superpixel merging operation
+                                                                                                                              16
+
+     for sar ship detection. In Proceedings of the 2024 7th           for ship target detection in sar images. IEEE access,
+     International Conference on Image and Graphics Pro-              13:29523–29540, 2025.
+     cessing, ICIGP ’24, page 388–393, New York, NY, USA,        [15] J. Williams, B. Yip, B. McCarthy, T.-T. Cao, and
+     2024. Association for Computing Machinery.                       A. Robles-Kelly. Contrastive learning for ship classi-
+ [3] X. Wen, S. Zhang, J. Wang, T. Yao, and Y. Tang.                  fication using real and complex sar imagery. In 2023
+     A cfar-enhanced ship detector for sar images based on            International Conference on Digital Image Computing:
+     yolov5s. Remote Sensing, 16(5), 2024.                            Techniques and Applications (DICTA), pages 531–538,
+ [4] C. Wang, B. Guo, Ji. Song, F. He, and C. Li. A                   2023.
+     novel cfar-based ship detection method using range-         [16] C. Wang, H. Zhang, F. Wu, B. Zhang, and S. Tian. Ship
+     compressed data for spaceborne sar system. IEEE                  classification with deep learning using cosmo-skymed
+     Transactions on Geoscience and Remote Sensing, 62:1–             sar data. In 2017 IEEE International Geoscience and
+     15, 2024.                                                        Remote Sensing Symposium (IGARSS), pages 558–561,
+ [5] L. Færch, W. Dierking, N. Hughes, and A. P. Doul-                2017.
+     geris. A comparison of constant false alarm rate object     [17] Y. Guan, X. Zhang, S. Chen, G. Liu, Y. Jia, Y. Zhang,
+     detection algorithms for iceberg identification in l- and        G. Gao, J. Zhang, Z. Li, and C. Cao. Fishing vessel
+     c-band sar imagery of the labrador sea. The Cryosphere,          classification in sar images using a novel deep learning
+     17(12):5335–5355, 2023.                                          model. IEEE Transactions on Geoscience and Remote
+ [6] T. Xie, M. Liu, M. Zhang, S. Qi, and J. Yang. Ship               Sensing, 61:1–21, 2023.
+     detection based on a superpixel-level cfar detector for     [18] Y. Wang, C. Wang, and H. Zhang. Ship classification in
+     sar imagery. International Journal of Remote Sensing,            high-resolution sar images using deep learning of small
+     43(9):3412–3428, 2022.                                           datasets. Sensors, 18(9), 2018.
+ [7] C. Schwegmann, W. Kleynhans, B. P. Salmon,                  [19] A. A. Al Hinai and R. Guida. Confidence-aware ship
+     L. Mdakane, and R. Meyer. Very deep learning for                 classification using contour features in sar images. Re-
+     ship discrimination in synthetic aperture radar imagery.         mote Sensing, 17(1), 2025.
+     pages 104–107, 07 2016.                                     [20] H. Lang and S. Wu. Ship classification in moderate-
+ [8] T. Zhang, X. Zhang, X. Ke, X. Zhan, J. Shi, S. Wei,              resolution sar image by naive geometric features-
+     D. Pan, J. Li, H. Su, Y. Zhou, and D. Kumar. Ls-ssdd-            combined multiple kernel learning. IEEE Geoscience
+     v1.0: A deep learning dataset dedicated to small ship            and Remote Sensing Letters, PP:1–5, 09 2017.
+     detection from large-scale sentinel-1 sar images. Remote    [21] H. Lang, J. Zhang, X. Zhang, and J. Meng. Ship clas-
+     Sensing, 12(18), 2020.                                           sification in sar image by joint feature and classifier se-
+ [9] J. Li, C. Xu, H. Su, L. Gao, and T. Wang. Deep learning          lection. IEEE Geoscience and Remote Sensing Letters,
+     for sar ship detection: Past, present and future. Remote         13(2):212–216, 2016.
+     Sensing, 14(11), 2022.                                      [22] K. Ji, X. Xing, W. Chen, H. Zou, and J. Chen. Ship
+[10] H. Gupta, O. P. Verma, T. K. Sharma, H. Varshney,                classification in terrasar-x sar images based on classifier
+     S. Agarwal, and W. Pak. Ship detection using ensemble            combination. In 2013 IEEE International Geoscience
+     deep learning techniques from synthetic aperture radar           and Remote Sensing Symposium - IGARSS, pages 2589–
+     imagery. Scientific Reports, 14(1):29397, 2024.                  2592, 2013.
+[11] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi.         [23] Z. Yan, X. Song, L. Yang, and Y. Wang. Ship classifica-
+     You only look once: Unified, real-time object detection,         tion in synthetic aperture radar images based on multi-
+     2016.                                                            ple classifiers ensemble learning and automatic identifi-
+[12] M. Yasir, S. Liu, S. Pirasteh, M. Xu, H. Sheng, J. Wan,          cation system data transfer learning. Remote Sensing,
+     F. A. P. de Figueiredo, F. J. Aguilar, and J. Li.                14(21), 2022.
+     Yoloshiptracker: Tracking ships in sar images using         [24] I. Okafor-Yarwood. Illegal, unreported and unregulated
+     lightweight yolov8. International Journal of Applied             fishing, and the complexities of the sustainable devel-
+     Earth Observation and Geoinformation, 134:104137,                opment goals (sdgs) for countries in the gulf of guinea.
+     2024.                                                            Marine Policy, 99:414–422, 2019.
+[13] H. Wang, J. Shi, H. Karimian, F. Liu, and F. Wang.          [25] D. J. Agnew, J. Pearce, G. Pramod, T. Peatman,
+     Yolosar-lite: a lightweight framework for real-time ship         R. Watson, J. R. Beddington, and T. J. Pitcher. Es-
+     detection in sar imagery. International Journal of Dig-          timating the worldwide extent of illegal fishing. PLOS
+     ital Earth, 17(1):2405525, 2024.                                 ONE, 4(2):1–8, 02 2009.
+[14] P. Selvam, P. S. Sundari, M. Tamilselvi, T. Suresh,         [26] H. Welch, T. Clavelle, T. D. White, M. A. Cimino, J. V.
+     M. Murugappan, and M. E. H. Chowdhury. Yolo-                     Osdel, T. Hochberg, D. Kroodsma, and E. L. Hazen.
+     sail: Attention-enhanced yolov5 with optimized bi-fpn            Hot spots of unseen fishing vessels. Science Advances,
+                                                                                                                           17
+
+     8(44):eabq2109, 2022.                                            age denoising algorithm based on grayscale morphology.
+[27] R. Desai and G. Shambaugh. Measuring the global                  iScience, 27(5):109627–, 2024.
+     impact of destructive and illegal fishing on maritime       [41] L. Miller, G. Uehara, and A. Spanias. Quantum im-
+     piracy: A spatial analysis. PLOS ONE, 16:e0246835,               age fusion methods for remote sensing. In 2024 IEEE
+     02 2021.                                                         Aerospace Conference, pages 1–9, 2024.
+[28] R. Torres, P. Snoeij, D. Geudtner, D. Bibby, M. David-      [42] L. Miller, G. Uehara, A. Sharma, and A. Spanias. Quan-
+     son, E. Attema, P. Potin, B. Rommen, N. Floury,                  tum machine learning for optical and sar classification.
+     M. Brown, I. Navas Traver, P. Deghaye, B. Dues-                  In 2023 24th International Conference on Digital Signal
+     mann, B. Rosich, N. Miranda, C. Bruno, M. L’Abbate,              Processing (DSP), pages 1–5, 2023.
+     R. Croci, A. Pietropaolo, M. Huchler, and F. Rostan.        [43] S. Naik, N. Vaughn, G. Uehara, A. Spanias, and
+     Gmes sentinel-1 mission. Remote Sensing of Environ-              K. Jaskie. Quantum classification for synthetic aperture
+     ment, 120:9–24, 2012. The Sentinel Missions - New Op-            radar. In Automatic Target Recognition XXXIV, Pro-
+     portunities for Science.                                         ceedings of SPIE - The International Society for Optical
+[29] C. Luckett, B. McCarthy, T.-T. Cao, and A. Robles-               Engineering. SPIE, 2024.
+     Kelly. The sarfish dataset and challenge. In Proceedings    [44] T.-T. V. Cao, C. Luckett, J. Williams, T. Cooke, B. Yip,
+     of the IEEE/CVF Winter Conference on Applications                A. Rajagopalan, and S. Wong. Sarfish: Space-based
+     of Computer Vision, pages 752–761, 2024.                         maritime surveillance using complex synthetic aperture
+[30] M. Schuld and F. Petruccione. Supervised Learning with           radar imagery. 2022 International Conference on Dig-
+     Quantum Computers. Springer International Publish-               ital Image Computing: Techniques and Applications
+     ing, 2018.                                                       (DICTA), pages 1–8, 2022.
+[31] M. Schuld and F. Petruccione. Quantum Models as             [45] F. Paolo, T. T. Lin, R. Gupta, B. Goodman, N. Patel,
+     Kernel Methods, pages 217–245. Springer International            D. Kuster, D. Kroodsma, and J. Dunnmon. xview3-sar:
+     Publishing, 2021. DOI: 10.1007/978-3-030-83098-4 6.              Detecting dark fishing activity using synthetic aperture
+[32] M. Nadim, M. Hassan, A. K. Mandal, C. K. Roy, B. Roy,            radar imagery, 2022.
+     and K. A. Schneider. Comparative analysis of quantum        [46] K. Simonyan and A. Zisserman. Very deep convolutional
+     and classical support vector classifiers for software bug        networks for large-scale image recognition, 2015.
+     prediction: an exploratory study. Quantum Machine           [47] F. Chollet. Xception: Deep learning with depthwise sep-
+     Intelligence, 7(1), March 2025.                                  arable convolutions. In 2017 IEEE Conference on Com-
+[33] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Harrow,          puter Vision and Pattern Recognition (CVPR), pages
+     A. Kandala, J. M. Chow, and J. M. Gambetta. Super-               1800–1807, 2017.
+     vised learning with quantum-enhanced feature spaces.        [48] C. Szegedy, V. Vanhoucke, S. Ioffe, J. Shlens, and
+     Nature 567, 209–212 (2019).                                      Z. Wojna. Rethinking the inception architecture for
+[34] Y. Liu, S. Arunachalam, and K. Temme. A rigorous                 computer vision. In 2016 IEEE Conference on Com-
+     and robust quantum speed-up in supervised machine                puter Vision and Pattern Recognition (CVPR), pages
+     learning. Nat. Phys. 17, 1013–1017 (2021).                       2818–2826, 2016.
+[35] H.-Y. Huang, M. Broughton, M. Mohseni, R. Babbush,          [49] M. Schmitt, L. H. Hughes, and X. X. Zhu. The sen1-
+     S. Boixo, H. Neven, and J. R. McClean. Power of data             2 dataset for deep learning in sar-optical data fusion,
+     in quantum machine learning. Nat. Commun. 12, 2631               2018.
+     (2021).                                                     [50] Sandia National Laboratories U.S. Air Force. Mstar
+[36] Y. Wu, B. Wu, J. Wang, and X. Yuan. Quantum phase                public dataset.       https://www.sdms.afrl.af.mil/
+     recognition via quantum kernel methods. Quantum 7,               index.php?collection=mstar, 1995. Accessed via the
+     981 (2023).                                                      Sensor Data Management System (SDMS), X-band
+[37] A. Giovagnoli, S. Huber, and G. Krieger. A quantum               spotlight SAR, 10 target types.
+     range-doppler algorithm for synthetic aperture radar        [51] M. Nielsen and I. Chuang. Quantum Computation and
+     image formation, 2025.                                           Quantum Information. Cambridge University Press,
+[38] K. Al Salahat, M. El Moussawi, and A. J. Ghandour.               2000.
+     Quantum meets sar: A novel range-doppler algorithm          [52] B. Schölkopf and A. J. Smola. Learning with Ker-
+     for next-gen earth observation, 2025.                            nels: Support Vector Machines, Regularization, Opti-
+[39] F. Mauro, A. Sebastianelli, M. P. Del Rosso, P. Gamba,           mization, and Beyond. MIT Press, Cambridge, MA,
+     and S. L. Ullo. Qspecklefilter: a quantum machine                USA, 2001.
+     learning approach for sar speckle filtering, 2024.          [53] M. Mohri, A. Rostamizadeh, and A. Talwalkar. Foun-
+[40] L. Wang, Y. Liu, F. Meng, T. Luan, W. Liu, Z. Zhang,             dations of Machine Learning. MIT Press, Cambridge,
+     and X. Yu. A quantum synthetic aperture radar im-                MA, USA, 2018.
+                                                                                                                            18
+
+[54] J. Platt. Sequential minimal optimization: A fast algo-     [68] A. Canatar, E. Peters, C. Pehlevan, S. M. Wild, and
+     rithm for training support vector machines. Technical            R. Shaydulin. Bandwidth enables generalization in
+     Report MSR-TR-98-14, Microsoft, April 1998.                      quantum kernel models, 2023.
+[55] H. W. Kuhn and A. W. Tucker. Nonlinear Program-             [69] R. Shaydulin and S. M. Wild. Importance of kernel
+     ming, pages 247–258. Springer Basel, Basel, 2014.                bandwidth in quantum machine learning. Phys. Rev.
+[56] W. Karush. Minima of Functions of Several Variables              A, 106:042407, Oct 2022.
+     with Inequalities as Side Conditions, pages 217–245.        [70] J. Tanner, J. Pye, and J. Wang. Learning out-of-time-
+     Springer Basel, Basel, 2014.                                     ordered correlators with classical kernel methods. Phys.
+[57] R. Rifkin, G. Yeo, and T. Poggio. Regularized least-             Rev. B, 111:144301, Apr 2025.
+     squares classification. Advances in Learning Theory:        [71] D. Virmani and H. Pandey. Comparative analysis on
+     Methods, Model and Applications, NATO Science Se-                effect of different svm kernel functions for classifica-
+     ries III: Computer and Systems Sciences, 190, 06 2003.           tion. In Deepak Gupta, Ashish Khanna, Aboul Ella
+[58] G. Fung and O. L. Mangasarian. Proximal support vec-             Hassanien, Sameer Anand, and Ajay Jaiswal, edi-
+     tor machine classifiers. KDD ’01, page 77–86, New York,          tors, International Conference on Innovative Comput-
+     NY, USA, 2001. Association for Computing Machinery.              ing and Communications, pages 657–670, Singapore,
+[59] F. Le Gall. Powers of tensors and fast matrix multipli-          2023. Springer Nature Singapore.
+     cation. In Proceedings of the 39th International Sympo-     [72] B. Yekkehkhany, A. Safari, S. Homayouni, and
+     sium on Symbolic and Algebraic Computation, ISSAC                M. Hasanlou. A comparison study of different kernel
+     ’14, page 296–303, New York, NY, USA, 2014. Associ-              functions for svm-based classification of multi-temporal
+     ation for Computing Machinery.                                   polarimetry sar data. ISPRS - International Archives
+[60] A. E. Paine, V. E. Elfving, and O. Kyriienko. Quan-              of the Photogrammetry, Remote Sensing and Spatial In-
+     tum kernel methods for solving regression problems and           formation Sciences, XL-2/W3:281–285, 10 2014.
+     differential equations. Phys. Rev. A, 107:032428, Mar       [73] A. Kandala, A. Mezzacapo, K. Temme, M. Takita,
+     2023.                                                            M. Brink, J. M. Chow, and J. M. Gambetta.
+[61] J. Schnabel and M. Roth. Quantum kernel methods un-              Hardware-efficient variational quantum eigensolver for
+     der scrutiny: a benchmarking study. Quantum Machine              small molecules and quantum magnets.              Nature,
+     Intelligence, 7(1), apr 2025.                                    549(7671):242–246, 2017.
+[62] M. Larocca, S. Thanasilp, S. Wang, K. Sharma, J. Bia-       [74] L. Leone, S. F. E. Oliviero, L. Cincio, and M. Cerezo.
+     monte, P. J. Coles, L. Cincio, J. R. McClean, Z. Holmes,         On the practical usefulness of the hardware efficient
+     and M. Cerezo. Barren plateaus in variational quan-              ansatz. Quantum, 8:1395, July 2024.
+     tum computing. Nature Reviews Physics, 7(4):174–189,        [75] T. Haug, C. N. Self, and M. S. Kim. Quantum ma-
+     March 2025.                                                      chine learning of large datasets using randomized mea-
+[63] S. Jerbi, L. J. Fiderer, H. P. Nautrup, J. M. Kübler,           surements. Machine Learning: Science and Technology,
+     H. J. Briegel, and V. Dunjko. Quantum machine learn-             4(1):015005, jan 2023.
+     ing beyond kernel methods. Nat Commun 14, 517               [76] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel,
+     (2023).                                                          B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer,
+[64] J. M. Kübler, S. Buchholz, and B. Schölkopf. The induc-        R. Weiss, and V. Dubourg et al. Scikit-learn: Machine
+     tive bias of quantum kernels. 2021. arXiv:2106.03747.            learning in Python. JMLR 12(85), 2825-2830 (2011).
+[65] S. Thanasilp, S. Wang, Cerezo M., and Z. Holmes.            [77] A. Javadi-Abhari, M. Treinish, K. Krsulich, C. J. Wood,
+     Exponential concentration in quantum kernel methods.             J. Lishman, J. Gacon, S. Martiel, P. D. Nation, L. S.
+     Nat Commun 15, 5200 (2024).                                      Bishop, A. W. Cross, B. R. Johnson, and J. M. Gam-
+[66] T. Hubregtsen, D. Wierichs, E. Gil-Fuster, P.-J. H. S.           betta. Quantum computing with Qiskit, 2024.
+     Derks, P. K. Faehrmann, and J. J. Meyer. Train-
+     ing quantum embedding kernels on near-term quantum
+     computers. Phys. Rev. A 106, 042431 (2022).
+[67] C. R. Harris, K. J. Millman, S. J. van der Walt, R. Gom-
+     mers, P. Virtanen, D. Cournapeau, E. Wieser, J. Tay-
+     lor, S. Berg, N. J. Smith, R. Kern, M. Picus, S. Hoyer,
+     M. H. van Kerkwijk, M. Brett, A. Haldane, J. F. del Rı́o,
+     M. Wiebe, P. Peterson, P. Gérard-Marchant, K. Shep-
+     pard, T. Reddy, W. Weckesser, H. Abbasi, C. Gohlke,
+     and T. E. Oliphant. Array programming with numpy.
+     Nature, 585(7825):357–362, September 2020.
+                                                                                                                      19
+
+                                         Appendix A: Hyperparameter values
+
+
+  In this appendix, Table II provides a list of the hyperparameter values which were trialled for each kernel during
+the 10-fold cross-validation performed during the training procedure. Tables III and IV then specify the algorithm
+and hyperparameter values that were used to obtain the learning performance metrics report in Table I of Section
+V.
+
+                  Kernel        Hyperparameter              Cross-validated hyperparameter values
+                                                  { 10−4 , 10−3.5 , 10−3 , 10−2.5 , 10−2 , 10−1.5 , 10−1 , 10−0.5 ,
+                                       C
+                                                        1, 100.5 , 10, 101.5 , 102 , 102.5 , 103 , 103.5 , 104 }
+                 All kernels                      { 10−4 , 10−3.5 , 10−3 , 10−2.5 , 10−2 , 10−1.5 , 10−1 , 10−0.5 ,
+                                       λ
+                                                        1, 100.5 , 10, 101.5 , 102 , 102.5 , 103 , 103.5 , 104 }
+                             Principal components             { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }
+                                                  { 10−4 , 10−3.5 , 10−3 , 10−2.5 , 10−2 , 10−1.5 , 10−1 , 10−0.5 ,
+                    RBF                γ
+                                                        1, 100.5 , 10, 101.5 , 102 , 102.5 , 103 , 103.5 , 104 }
+                                                  { 10−4 , 10−3.5 , 10−3 , 10−2.5 , 10−2 , 10−1.5 , 10−1 , 10−0.5 ,
+                 Laplacian             γ
+                                                        1, 100.5 , 10, 101.5 , 102 , 102.5 , 103 , 103.5 , 104 }
+                                       β                 { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
+                  Ry1DSt
+                                    Layers                                     { 2, 3, 4}
+                                       β                 { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
+                RyRz1DAlt
+                                    Layers                                     { 2, 3, 4}
+                                       β                 { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
+                CRyRz1DSt
+                                    Layers                                     { 2, 3, 4}
+
+TABLE II: Lists of hyperparameters values which were trialled during the 10-fold cross-validation performed on
+the training datasets. The hyperparameters C and λ refer to the regularisation strength parameters in (5) and (7).
+The number of principal components (Principal components) corresponds to the dimensions of the preprocessed
+vectors obtained via PCA (see Figure 2). In the case of all quantum kernels, the number of principal components
+also equates to the number of qubits in the associated data-encoding unitary. The hyperparameter γ corresponds
+to the parameter appearing in definitions of the RBF and Laplacian kernels in (14) and (15). The hyperparameter
+β corresponds to the bandwidth hyperparameter discussed in the third paragraph of Section IV D. The number of
+layers (Layers) correspond to the number of times that the base layer of each quantum kernel is repeated in the
+associated data-encoding unitary.
+
+
+
+        Dataset    Kernel   Algorithm Principal components C (SVC) or λ (KRC)    γ   β Layers
+                   Linear      KRC              10                10−4          ×    ×   ×
+                  Laplacian    KRC               9                10−1         10−1 ×    ×
+                    RBF        SVC              12                  1         10−1.5 ×   ×
+     16 × 16 GRD
+                   Ry1DSt      SVC              12                100.5         × 0.3    3
+                 RyRz1DAlt     KRC              12                  1           × 0.2    3
+     16 × 16 SLC CRyRz1DSt     SVC               9                10−4          × 0.4    4
+     70 × 12 SLC CRyRz1DSt     SVC              10                10−4          × 0.5    3
+
+TABLE III: A list of the algorithms (either SVC as discussed in Section III B or KRC as discussed in Section III C)
+and hyperparameters used to obtain the learning performance metrics reported in Table I for the is vessel task.
+Note that when a cell contains ×, this indicates that the associated hyperparameter is not relevant to the kernel
+described by the row in which it appears.
+                                                                                                               20
+
+       Dataset     Kernel   Algorithm Principal components C (SVC) or λ (KRC)    γ   β Layers
+                   Linear      SVC               6               10−2.5         ×    ×   ×
+                  Laplacian    KRC              12               10−0.5        10−1 ×    ×
+                    RBF        KRC              12                  1         10−0.5 ×   ×
+     16 × 16 GRD
+                   Ry1DSt      KRC              11               10−0.5         × 0.3    4
+                 RyRz1DAlt     SVC              11                  1           × 0.8    3
+     16 × 16 SLC CRyRz1DSt     KRC              11               10−0.5         × 0.2    2
+     70 × 12 SLC CRyRz1DSt     KRC              12                  1           × 0.5    4
+
+TABLE IV: A list of the algorithms (either SVC as discussed in Section III B or KRC as discussed in Section III C)
+and hyperparameters used to obtain the learning performance metrics reported in Table I for the is fishing task.
+Note that when a cell contains ×, this indicates that the associated hyperparameter is not relevant to the kernel
+described by the row in which it appears.
+

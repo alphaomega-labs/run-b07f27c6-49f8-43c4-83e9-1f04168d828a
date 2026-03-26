@@ -1,0 +1,648 @@
+                                                   Robust Quantum Reservoir Computing for Molecular Property Prediction
+
+                                                                          Daniel Beaulieu,1, ∗ Milan Kornjača,2 Zoran Krunic,3 Michael
+                                                                       Stivaktakis,4 Thomas Ehmer,5 Sheng-Tao Wang,2 and Anh Pham1
+                                                                                              1
+                                                                                                Deloitte Consulting LLP
+                                                                  2
+                                                                      QuEra Computing Inc., 1284 Soldiers Field Road, Boston, MA, 02135, USA
+                                                                                     3
+                                                                                       Amgen, Thousand Oaks, CA 91320 USA
+                                                                             4
+                                                                               Technical University of Darmstadt, Darmstadt, Germany
+                                                                                        5
+                                                                                          Merck KGaA, Darmstadt, Germany
+                                                                                             (Dated: December 10, 2024)
+                                                           Machine learning has been increasingly utilized in the field of biomedical research to accelerate
+                                                        the drug discovery process. In recent years, the emergence of quantum computing has been followed
+                                                        by extensive exploration of quantum machine learning algorithms. Quantum variational machine
+                                                        learning algorithms are currently the most prevalent but face issues with trainability due to vanishing
+arXiv:2412.06758v1 [quant-ph] 9 Dec 2024
+
+
+
+
+                                                        gradients. An emerging alternative is the quantum reservoir computing (QRC) approach, in which
+                                                        the quantum algorithm does not require gradient evaluation on quantum hardware. Motivated by the
+                                                        potential advantages of the QRC method, we apply it to predict the biological activity of potential
+                                                        drug molecules based on molecular descriptors. We observe more robust QRC performance as the
+                                                        size of the dataset decreases, compared to standard classical models, a quality of potential interest for
+                                                        pharmaceutical datasets of limited size. In addition, we leverage the uniform manifold approximation
+                                                        and projection technique to analyze structural changes as classical features are transformed through
+                                                        quantum dynamics and find that quantum reservoir embeddings appear to be more interpretable in
+                                                        lower dimensions.
+
+
+                                                            I.   INTRODUCTION                                 QML models. There, the need to estimate gradients
+                                                                                                              on quantum hardware leads to fundamental trainabil-
+                                              Predicting drug activities is an important and difficult        ity issues due to entanglement and noise-induced barren
+                                           task in pharmaceutical discovery. This task has tradi-             plateaus [28–30]. QRC has been proposed as an alterna-
+                                           tionally been performed using a labor-intensive process            tive approach, in which the gradient estimation can be
+                                           of repeated trials and errors within a laboratory set-             fully off-loaded to classical post-processing [23, 31–34].
+                                           ting [1, 2]. Recently, machine learning techniques have            The QRC algorithm we employ in this study leverages
+                                           been employed to accelerate the discovery process [3–5].           entangled quantum dynamics of neutral atom arrays, a
+                                           Within a machine learning workflow, molecules can be               platform that has already shown promise for quantum
+                                           mapped to features using different molecular descriptors,          simulation, optimization, and machine learning [23, 35–
+                                           such as physiological, biochemical properties or molecu-           41].
+                                           lar fingerprints, which can then be used to predict a tar-            We applied the QRC algorithm to the dataset within
+                                           get variable such as therapeutic efficacy [6–9]. However,          the Merck Molecular Activity challenge (MMACD) [42],
+                                           an immediate challenge is how to extract the relevant              with the task of predicting pharmacological activity
+                                           molecular features to improve the overall performance of           based on molecular fingerprints [43]. We systematically
+                                           the model, since the structure-property relationship for           report the performance of the classical and QRC models
+                                           molecules is complex [1, 3, 10]. Recently, the advent of           across different dataset sample sizes and feature choices
+                                           quantum computing has given rise to a novel machine                generated by the quantum reservoir dynamics. We then
+                                           learning paradigm [11–14]. Various quantum machine                 compare classical features and embedded quantum reser-
+                                           learning (QML) versions of classical ML models such as             voir features by employing the uniform manifold approx-
+                                           generative, support vector machines (SVMs), and neural             imation and projection (UMAP) technique. Our results
+                                           networks have been explored [15–18]. Quantum kernel                reveal a slower performance decay with decreasing train-
+                                           methods, in particular, have shown potential advantage             ing dataset size when QRC embeddings are used com-
+                                           on synthetic datasets of quantum origin [19–23]. As a              pared to classical features. The UMAP analysis reveals
+                                           result, there are early attempts to apply QML algorithms           more structure for QRC-embedded data when projected
+                                           for predicting the properties of molecules and pharmaco-           to low dimensional spaces. Together, the results indicate
+                                           logical activity [24–26].                                          that the QRC approach has the potential to build a more
+                                              In this manuscript, we explore the performance of               robust and interpretable model with less training data,
+                                           quantum reservoir computing (QRC) for molecular prop-              which could be relevant for health-related applications.
+                                           erty prediction. Reservoir computing [27] addresses
+                                           the potential drawback of widely employed variational
+
+
+                                           ∗ dabeaulieu@deloitte.com
+                                                                                                                            2
+
+               Data Preparation &Classical
+         1     Model Design &Development       2    QRC Modeling / Embedding               3     UMAP Data Analysis
+
+
+
+         Merck Molecular                            Encode Data
+          Activity Data
+
+
+
+         Exploratory Data                          Local Detuning
+             Analysis
+
+
+
+        Modeling Pipeline                             Create
+        (All Classical Data)                        Embeddings
+
+
+
+                                                          Classical Training
+          SHAP Feature
+                                                          Modeling Pipeline
+           Importance
+            (Classical)
+
+
+        Create Clustering                       QRC Embedding            QRC One-Body
+             Based                                 Results                Embedding
+          Subsamples
+
+
+
+                      Modeling Pipeline
+                                                               Results
+                       (Subsamples)
+
+
+
+FIG. 1: Machine learning modeling workflow and analysis of the different embeddings. (1) A schematic
+workflow used to determine the optimal classical model, the feature selection process with the SHAP method to
+enable QRC simulation, and the subroutine to perform dataset subsampling. (2) An outline of the quantum reservoir
+computing algorithm. Both two-body observable embeddings and one-body observable embeddings are estimated and
+utilized to train the classical models. (3) UMAP analysis is used to interpret the difference between classical and
+quantum features.
+
+
+                        II.    METHODS                                    B.   Research Modeling Workflow Overview
+
+                   A.      Molecular dataset                           As shown in Fig. 1, the modeling process starts with
+                                                                    data preparation and exploratory data analysis, as de-
+   To explore how quantum reservoir computing can be                scribed in Appendix B 1. We then model all available
+utilized to make predictions of molecular activities, we            data to select the best candidate model for the raw clas-
+applied the QRC technique to predict the activity (ACT)             sical data, as described in Appendix B 2. The best model
+values based on molecular descriptors as presented in the           is used as a basis for SHAP feature importance selec-
+MMACD [42]. The dataset contains 15 different biolog-               tion to select the top 18 features. Clustering based
+ical activity prediction problems, each represented by a            sampling is used to create five subsamples of 100, 200,
+unique set of molecular descriptors. The MMACD has                  and 800 records. The modeling pipeline is applied to
+been used extensively in the machine learning commu-                each such subsampled dataset for several subsample sizes.
+nity [44–46]. In this manuscript, we perform general                We feed the subsamples into the Julia QRC simulation
+modeling and the QRC pipeline to five of the smallest               pipeline [23] and create QRC embeddings. The QRC em-
+MMACD datasets, 4, 5, 9, 14, and 15, out of the entirety            beddings are fed into the classical modeling pipeline for
+of the MMACD. For our UMAP projection and more de-                  all subsamples. Subsequent analysis of the embeddings
+tailed analysis, we focus our study on one of the 15 ACT            is performed using the UMAP technique [47].
+datasets, MMACD 4. MMACD 4 was selected as the
+ideal candidate for probing the robustness of QRC due
+to having the smallest sample size. In addition, we chose                         C.    Machine Learning Pipeline
+MMACD 14 to perform our 25 subsample QRC modeling
+on analysis so as to reduce potential dataset bias for our             In this study, we implemented a machine learning
+25 subsample results.                                               pipeline to evaluate the performance of various regres-
+                                                                    sion algorithms on the MMACD, as shown in Fig. 1. The
+                                                                    first step in our pipeline is the pre-processing step that
+                                                                    involves inputting missing values using a data standard-
+                                                                    ization procedure described in Appendix B 1. The next
+                                                                                                                            3
+
+step is to conduct an exploratory data analysis to de-        the dynamics of the Rydberg Hamiltonian that governs
+termine salient features and transform data as necessary,     the analog dynamics of neutral atom arrays [39]:
+also described in more detail in Appendix B 1. Subse-
+quently, we bined the pre-processing steps and the spec-                   Ω(t) X
+                                                                   H(t) =           (|gj ⟩ ⟨rj | + |rj ⟩ ⟨gj |)
+ified regression modeling algorithms for fitting the mod-                   2    j
+els to the training data, which is described in Appendix                   X                X
+A. The next step in the machine learning pipeline illus-                 +    Vjk nj nk −        [∆g (t) + fj ∆l (t)] nj . (1)
+trated in Fig. 1 is the use of the SHAP method [48, 49]                     j<k              j
+to choose the most important features and reduce the
+feature dimension to 18. We choose 18 data features to        Here, Ω(t) represents the global Rabi drive amplitude
+balance computational feasibility (of simulating the QRC      between a ground (|gj ⟩, j indexes atoms) and an ex-
+dynamics) with maintaining the most relevant molecu-          cited state of an atom (|rj ⟩), nj = |rj ⟩ ⟨rj |, while
+lar information. We find that the difference in classical     Vjk = C/∥rj − rk ∥6 describes the interactions between
+model performance with the top 18 predictors and all          atoms. The detuning is split into the global term, ∆g (t)
+predictors is less than 1 percent in modeling MMACD           and the site-dependent term ∆l (t), with site modulation
+4 dataset. The biological relevance of our selected fea-      fj ∈ [−1, 1].
+tures is implicitly addressed through our use of estab-          The data features were normalized and encoded into
+lished molecular descriptors from the MMACD dataset.          the local detuning pattern, fj , with constant ∆l =
+   We then proceed to assign data to clusters of differ-      6 rad/µs. We set Ω = 2π rad/µs, set the atoms in the lin-
+ent sizes. These cluster values serve two purposes. First,    ear chain with interatomic distance of 10 µm, and probe
+they ensure a representative subsample of the ensemble        the quantum dynamics starting from the all-ground state
+from which the data is sampled. Second, they allow us to      for 4.3 µs, with a step-size of 0.4 µs. The expectation val-
+test the performance of QRC-embedded data versus raw          ues of the local observables in the computational basis are
+features across various sample sizes. Optionally, we em-      collected, including one-body ⟨Zi ⟩ and two-body ⟨Zi Zj ⟩
+ploy the QRC algorithm to create the QRC embeddings,          observables. These expectation values form feature em-
+which are used as input training data for our ensemble of     beddings, which are then fed further into the classical
+classical models. Overall, the goal of this pipeline is to    model-based postprocessing pipeline.
+pass the data, either the raw features or QRC embedded
+features, to a series of regression models, and compare
+their predictive abilities. In this procedure, we ensure           E.   Uniform Manifold Approximation and
+                                                                        Projection (UMAP) 2D Projection
+that the data is processed in the same way for a fair
+comparison at different subsample sizes (100, 200, and
+800).                                                            To try to understand the embeddings and have better
+   In our pipeline, we evaluated ten different regression     interpretability, we utilized UMAP to project the high
+algorithms, described in Appendix A: Random Forest Re-        dimensional data to low dimensional spaces [47]. The
+gressor, AdaBoost Regressor, Gradient Boosting Regres-        UMAP algorithm is applied to the dataset features to
+sor, Bagging Regressor, SVR, Decision Tree Regressor,         generate 2D embeddings. These embeddings are used to
+Extra Tree Regressor, Linear Regression, SGD Regres-          visualize the molecular descriptors and, optionally, to fa-
+sor, and KNeighbors Regressor as implemented in the           cilitate the training of machine learning models. Using
+Scikit-learn package [50]. For each algorithm, we com-        UMAP for dimensionality reduction offers an interpreta-
+pare their predictive ability using the mean squared error    tion of the data’s structure in a low-dimensional space,
+(MSE). We iterate over the list of algorithms, fitting each   enabling us to identify patterns that are not immediately
+model to the training data, predicting on the test data,      apparent in high-dimensional space, as demonstrated in
+and computing the performance metrics. We then decide         previous studies [55]. Specifically, we projected the data
+to report the results for two models – random forest re-      features to 2D with UMAP, to compare the QRC gener-
+gressor [51], as it consistently performed the best across    ated feature embeddings with raw features. UMAP pro-
+sample sizes and embedding types, and Gaussian radial         jection was guided by several parameters: the number
+basis function (RBF) kernel [52] since it is a representa-    of neighbors was set to 200 to maximize global structure
+tive classical kernel algorithm.                              vs local structure in the data; the minimum distance be-
+                                                              tween points in the low-dimensional space was set to 0.9
+                                                              to control the tightness of UMAP’s embedding and maxi-
+         D.   Quantum Reservoir Computing                     mize global UMAP structure; and the metric for distance
+                                                              calculation chosen is Minkowski, a generalization of both
+  The QRC method was applied to the 18 classical fea-         Euclidean distance and Manhattan distance. The same
+tures selected from our SHAP analysis, with the numeri-       parameters were used to perform the UMAP projection
+cal simulations of neutral atom dynamics performed with       for both the quantum and classical features.
+the Bloqade simulator [53, 54]. The neutral-atom QRC
+protocol, described in [23], encodes the data features into
+                                                                                                                      4
+
+
+
+
+(a) MMACD 4 Results, 5 subsamples                              (b) MMACD 5 Results, 5 subsamples
+
+
+
+
+(c) MMACD 9 Results, 5 subsamples                              (d) MMACD 14 Results, 5 subsamples
+
+
+
+
+                                (e) MMACD 15 Results, 5 subsamples
+
+
+
+FIG. 2: The performance of the classical and quantum methods on the MMACD datasets. (a)-(e) Test
+mean square error (smaller is better) is reported for the five smallest datasets in MMACD and for two classical and
+two quantum feature methods. In all cases, we report averages across five dataset subsamples, with standard deviation
+over that sample reported as uncertainty estimate.
+
+
+
+
+FIG. 3: The performance of the classical and quantum methods on MMACD 14 with 25 subsamples of
+100 records. QRC, raw data, and Gaussian RBF results for the MMACD 14 data. Here, we report averages across
+twenty-five dataset subsamples, with standard deviation over that sample as uncertainty estimate.
+
+
+          III.   RESULTS AND DISCUSSION                        sion was chosen as the classical model of choice since
+                                                               it outperformed other models in the workflow regardless
+     A.    QRC and classical model performance                 of the training data. Our main results on the perfor-
+                                                               mance of classical and QRC-enhanced pipelines are sum-
+  Based on the results of the initial pass of classical data   marized in Fig. 2 [56]. Taking Fig. 2(d) as a representa-
+through the modeling pipeline, the random forest regres-
+                                                                                                                      5
+
+
+
+
+    (a) Gaussian Process Regressor RBF Kernel                 (b) Classical SHAP
+
+
+
+
+    (c) QRC One-Body Embedding                                (d) QRC Embedding
+
+FIG. 4: UMAP 2D projections for 200 record samples from MMACD 4 dataset and sub-sample 4.
+
+
+tive example, the QRC embeddings appear to result in          ered. To check the robustness of our results against lim-
+an improvement upon the classical model performance           ited dataset subsampling, we also ran simulations with
+for small training data sizes (e.g., 100 and 200 records).    25 subsamples of 100 records for MMACD 14, as shown
+The average MSE is better for the QRC-enhanced mod-           in Fig. 3. While the performance estimates and the sizes
+els versus purely classical models across an average of       of error bars for classical methods and the one-body em-
+five samples for 100 records. When compared to the            bedding QRC remain similar to the 5 subsample case,
+classical Gaussian RBF kernel, we find that the QRC           the two-body QRC embedding performance estimate im-
+embedding encodes the data in a manner that outper-           proves and becomes more certain. As a result, we observe
+forms the classical Gaussian RBF kernel in both the en-       QRC performance improvements over classical methods
+tire data sample and the five subsample averages for 100,     that are outside of the error estimates in spite of the
+200, and 800 records. In addition, we also observe that       small dataset size. Overall, the consistent QRC per-
+QRC embeddings that include two-body observables out-         formance improvements that we observe across multiple
+performed one-body-observable embeddings. For larger          molecular activity datasets at small sample sizes indi-
+subsamples consisting of 800 records, the classical input     cate that the feature engineering process utilizing QRC
+features yielded similar performance as the QRC embed-        techniques could help improve the stability of the classi-
+ded features across an average of 5 runs.                     cal machine learning model, reducing the need for large
+   Furthermore, Fig. 2 also reveals a consistent trend        training datasets. This could make QRC potentially
+where QRC embeddings perform equally or better than           valuable in application areas involving small datasets,
+classical methods across the five different MMACD data        which are common in chemistry and health applications
+sets. QRC two-body observable embeddings generally            where data collection is expensive and complex.
+match or outperform QRC one-body observable embed-
+dings across these five data sets as well. In contrast, the
+800 data records results consistently show that QRC em-                            B.   UMAP results
+bedded data no longer has the advantage at this sample
+size. We note, however, that the QRC performance ad-            In this section, we present the findings from our UMAP
+vantage size is generically comparable to the performance     analysis. UMAP was utilized to project high-dimensional
+error estimates. This is, in large part, a direct conse-      data into a two-dimensional space, enabling the visual-
+quence of the small sample size of the datasets consid-
+                                                                                                                         6
+
+TABLE I: MMACD activity classification performance on 2D UMAP embeddings. 2D UMAP embedding
+data for MMACD dataset 4 is converted to binary classification task by high/low median cut. Performance of support
+vector machine (SVM) on 100, 200, and 800 record subsamples is reported with both QRC and classical embedding
+features. A five-subsample average is used to estimate the uncertainty as the standard deviation over the sample.
+
+                                          100 records                    200 records                     800 records
+                  Metric          Mean            Std. Dev.      Mean            Std. Dev.       Mean            Std. Dev.
+Classical        Accuracy         0.660            ±0.095        0.737            ±0.041         0.709            ±0.027
+                 Precision        0.672            ±0.115        0.784            ±0.098         0.727            ±0.065
+                  Recall          0.653            ±0.073        0.680            ±0.143         0.689            ±0.077
+                    F1            0.660            ±0.084        0.716            ±0.061         0.702            ±0.019
+  QRC            Accuracy         0.747            ±0.077        0.760            ±0.042         0.742            ±0.033
+                 Precision        0.766            ±0.068        0.776            ±0.061         0.763            ±0.063
+                  Recall          0.707            ±0.101        0.747            ±0.139         0.713            ±0.062
+                    F1            0.734            ±0.085        0.752            ±0.062         0.734            ±0.028
+
+
+
+ization and identification of clusters. This dimensionality   classes. The classical and QRC UMAP embeddings were
+reduction technique preserves the local and global struc-     input for a Support Vector Machine, whose performance
+ture of the data [47, 55], facilitating the interpretation    we calculate from the five-run average for the 100, 200,
+of data patterns and relationships. We summarize rep-         and 800 record subsamples. As can be seen in Table
+resentative results for the case of 200-sized subsampled      I, the QRC UMAP embedding outperforms the classical
+datasets derived from MMACD 4 in Fig. 4. Although             embedding for all record sizes, thus quantifying the differ-
+there is a clear concentration of high activity values for    ence between UMAP embeddings in Fig. 4. However, we
+raw classical features, the correlation of data geometry      note again that the performance improvements are com-
+and molecular activity is manifestly improved for QRC         parable to the error estimates, in large part due to the
+embeddings. The QRC one-body-observable embedding             small sample sizes in the dataset. We conjecture that the
+shows a similar pattern to the regular QRC embedding          improved interpretability of the QRC embeddings in low
+but with a tighter clustering of low ACT values. QRC          dimensions might lead to the better performance of the
+data clustering in low dimensions also has manifest ad-       QRC method for small sample sizes observed throughout
+vantages when compared with the classical non-linear          MMACD datasets previously. While the abundance of
+Gaussian kernel. Thus, we hypothesize that the improved       data can overcome suboptimal data clustering in a high-
+QRC clustering in the low dimensional space is not purely     dimensional data representation, the interpretability of
+an effect of the QRC kernel non-linearity but is an intrin-   the data in terms of simpler low-dimensional structures
+sic feature of the QRC embeddings.                            might lead to performance gains when data is scarce.
+   The distinct clustering patterns observed in the UMAP
+visualization (Fig. 4) after SHAP-based feature selec-
+tion reveal fundamental differences in how classical and            IV.     CONCLUSIONS AND OUTLOOK
+quantum methods process molecular information. The
+scattered distribution in the classical approach indicates       In conclusion, our study presented a systematic ex-
+a more continuous representation of molecular features,       ploration of QRC method on biomedical data exempli-
+suggesting linear or gradual transitions between differ-      fied by MMACD. We investigated the performance of
+ent molecular activities. In contrast, the emergence of       both classical and QRC models at different sample sizes
+two clear clusters in the QRC visualization suggests that     as well as the interpretability of the data at low fea-
+the quantum processing has identified distinct underly-       ture dimensions using the UMAP technique. Our re-
+ing patterns in the molecular activity space, potentially     sults suggest that QRC embeddings result in compara-
+leveraging quantum effects to better distinguish between      tively more robust, stable model performance for smaller
+different molecular behavior classes. This enhanced clus-     datasets. The stability in QRC performance for small
+tering capability of QRC on low dimensional UMAP pro-         training data is further augmented by the manifestly
+jection suggests the potential to capture complex, nonlin-    more interpretable nature of QRC-derived features when
+ear relationships between molecular features with a more      projected by UMAP to low-dimensional feature space.
+interpretable and therefore also more robust model.           Consequently, this study suggests a potential for QRC-
+   In order to quantify the relationship between the in-      enhanced models in the domain of biomedical data sci-
+terpretability in UMAP and the model performance, we          ence for use cases that necessitate small training set sizes
+used the 2D UMAP manifold embeddings in a readily in-         and readily interpretable, robust models.
+terpretable binary classification task. The classification       We believe the results presented in this paper will mo-
+task was derived from the original by splitting the target    tivate future studies across several directions. Firstly,
+activity variable at the median into high and low-value       the use of quantum hardware could allow for effective
+                                                                                                                              7
+
+QRC embedding generation for more classical input fea-            help in learning the correlations using Bayesian network
+tures than the cost of numerical simulations allows for           learning methods [57, 58]. Finally, collaborative efforts
+– in fact, recent QRC experiments have been effective             with experimental laboratories will be crucial for empiri-
+at 100 feature (qubit) scale [23]. Further increase in            cally validating QRC’s computational predictions, bridg-
+qubit counts and improved coherence times could en-               ing the gap between theoretical advantages and practical
+able QRC to handle larger datasets and more complex               clinical applications [26].
+molecular systems, facilitating more extensive compar-
+isons with classical methods. In fact, such extensions to
+more varied and feature-rich datasets could be a route
+to overcome the main caveat of our results and the large
+                                                                                 ACKNOWLEDGEMENTS
+uncertainty estimates that result from modeling on small
+dataset sizes. Furthermore, a wide range of alternative
+feature selection techniques, such as genetic algorithms,           We would like to thank Gopal Karemore, Scott Buch-
+could be relevant for selecting relevant molecular descrip-       holz, Fangli Liu, Yuval Boger, and Chen Zhao for
+tors for the QRC pipeline and validating their biologi-           the fruitful discussion and support during this research
+cal relevance. Alternatively, a QRC pre-processing could          project.
+
+
+
+
+ [1] R. Liu, H. Wang, K. Glover, M. Feasel, and A. Wal-           [15] S. Lloyd, M. Schuld, A. Ijaz, J. Izaac, and N. Killoran,
+     lqvist, Journal of Chemical Information and Modeling              “Quantum embeddings for machine learning,” (2020),
+     59 (2018), 10.1021/acs.jcim.8b00348.                              arXiv:2001.03622 [quant-ph].
+ [2] S. Q. Pantaleão, P. O. Fernandes, J. E. Gonçalves, V. G.   [16] M. Schuld, “Supervised quantum machine learning mod-
+     Maltarollo, and K. M. Honorio, ChemMedChem 17,                    els are kernel methods,”         (2021), arXiv:2101.11020
+     e202100542 (2022).                                                [quant-ph].
+ [3] J. Vamathevan, D. Clark, P. Czodrowski, I. Dunham,           [17] N. Killoran, T. R. Bromley, J. M. Arrazola, M. Schuld,
+     E. Ferran, G. Lee, B. Li, A. Madabhushi, P. Shah,                 N. Quesada, and S. Lloyd, Physical Review Research 1
+     M. Spitzer, and S. Zhao, Nature Reviews Drug Discovery            (2019), 10.1103/physrevresearch.1.033063.
+     18, 463 (2019).                                              [18] P. Huembeli, G. Carleo, and A. Mezzacapo, “Entangle-
+ [4] J. Deng, Z. Yang, H. Wang, I. Ojima, D. Samaras, and              ment forging with generative neural network models,”
+     F. Wang, Nature Communications 14, 6395 (2023).                   (2022), arXiv:2205.00933 [quant-ph].
+ [5] X. Zeng, H. Xiang, L. Yu, J. Wang, K. Li, R. Nussi-          [19] V. Havlı́ček, A. D. Córcoles, K. Temme, A. W. Harrow,
+     nov, and F. Cheng, Nature Machine Intelligence 4, 1004            A. Kandala, J. M. Chow, and J. M. Gambetta, Nature
+     (2022).                                                           567, 209–212 (2019).
+ [6] R. Team, “Rdkit: Open-source cheminformatics,” http:         [20] M. Schuld and N. Killoran, Physical Review Letters 122
+     //www.rdkit.org (), accessed: 2024-06-04.                         (2019), 10.1103/physrevlett.122.040504.
+ [7] A. E. Comesana, T. T. Huntington, C. D. Scown, K. E.         [21] Y. Liu, S. Arunachalam, and K. Temme, Nature Physics
+     Niemeyer, and V. H. Rapp, Fuel 321, 123836 (2022).                17, 1013–1017 (2021).
+ [8] A. Cereto-Massagué, M. J. Ojeda, C. Valls, M. Mulero,       [22] H.-Y. Huang, M. Broughton, M. Mohseni, R. Babbush,
+     S. Garcia-Vallvé, and G. Pujadas, Methods 71, 58                 S. Boixo, H. Neven, and J. R. McClean, Nature Com-
+     (2015), virtual Screening.                                        munications 12 (2021), 10.1038/s41467-021-22539-9.
+ [9] C. Mellor, R. Marchese Robinson, R. Benigni, D. Ebbrell,     [23] M. Kornjača, H.-Y. Hu, C. Zhao, J. Wurtz, P. Wein-
+     S. Enoch, J. Firman, J. Madden, G. Pawar, C. Yang,                berg, M. Hamdan, A. Zhdanov, S. H. Cantu, H. Zhou,
+     and M. Cronin, Regulatory Toxicology and Pharmacol-               R. A. Bravo, K. Bagnall, J. I. Basham, J. Campo,
+     ogy 101, 121 (2019).                                              A. Choukri, R. DeAngelo, P. Frederick, D. Haines,
+[10] T.-S. Vu, M.-Q. Ha, D.-N. Nguyen, V.-C. Nguyen,                   J. Hammett, N. Hsu, M.-G. Hu, F. Huber, P. N.
+     Y. Abe, T. Tran, H. Tran, H. Kino, T. Miyake, K. Tsuda,           Jepsen, N. Jia, T. Karolyshyn, M. Kwon, J. Long,
+     and H.-C. Dam, npj Computational Materials 9, 215                 J. Lopatin, A. Lukin, T. Macrı̀, O. Marković, L. A.
+     (2023).                                                           Martı́nez-Martı́nez, X. Meng, E. Ostroumov, D. Paque-
+[11] M. C. Caro, H.-Y. Huang, M. Cerezo, K. Sharma,                    tte, J. Robinson, P. S. Rodriguez, A. Singh, N. Sinha,
+     A. Sornborger, L. Cincio, and P. J. Coles, Nature Com-            H. Thoreen, N. Wan, D. Waxman-Lenz, T. Wong, K.-
+     munications 13 (2022), 10.1038/s41467-022-32550-3.                H. Wu, P. L. S. Lopes, Y. Boger, N. Gemelke, T. Kita-
+[12] M. Schuld, I. Sinayskiy, and F. Petruccione, Contempo-            gawa, A. Keesling, X. Gao, A. Bylinskii, S. F. Yelin,
+     rary Physics 56, 172–185 (2014).                                  F. Liu, and S.-T. Wang, “Large-scale quantum reservoir
+[13] G. Carleo, I. Cirac, K. Cranmer, L. Daudet, M. Schuld,            learning with an analog quantum computer,” (2024),
+     N. Tishby, L. Vogt-Maranto, and L. Zdeborová, Re-                arXiv:2407.02553 [quant-ph].
+     views of Modern Physics 91 (2019), 10.1103/revmod-           [24] K. Batra, K. M. Zorn, D. H. Foil, E. Minerali, V. O.
+     phys.91.045002.                                                   Gawriljuk, T. R. Lane, and S. Ekins, Journal of Chemical
+[14] J. Biamonte, P. Wittek, N. Pancotti, P. Rebentrost,               Information and Modeling 61, 2641 (2021).
+     N. Wiebe, and S. Lloyd, Nature 549, 195–202 (2017).          [25] A. S. Bhatia, M. K. Saggi, and S. Kais, Journal of Chem-
+                                                                       ical Information and Modeling 63, 6476 (2023).
+                                                                                                                              8
+
+[26] M. G. Vakili, C. Gorgulla, A. Nigam, D. Bezrukov,                 ini, M. J. Gullans, M. Greiner, V. Vuletić, and M. D.
+     D. Varoli, A. Aliper, D. Polykovsky, K. M. P. Das,                Lukin, Nature 626, 58–65 (2023).
+     J. Snider, A. Lyakisheva, A. H. Mansob, Z. Yao, L. Bitar,    [42] A. Kulkarni, “Merck molecular activity challenge,”
+     E. Radchenko, X. Ding, J. Liu, F. Meng, F. Ren, Y. Cao,           https://kaggle.com/competitions/MerckActivity
+     I. Stagljar, A. Aspuru-Guzik, and A. Zhavoronkov,                 (2012), accessed: 2024-06-04.
+     “Quantum computing-enhanced algorithm unveils novel          [43] The Competition was sponsored in 2012 by Merck & Co.,
+     inhibitors for kras,” (2024), arXiv:2402.08210 [quant-            Inc, located today at 26 E Lincoln Ave, Rahway, NJ
+     ph].                                                              07065, US, USA. Merck KGaA and Merck & Co. are sepa-
+[27] H. Jaeger and H. Haas, Science 304, 78 (2004).                    rate entities. Merck KGaA is headquartered in Germany,
+[28] J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Bab-               operates globally as EMD in North America, focusing on
+     bush, and H. Neven, Nature Communications 9 (2018),               pharmaceuticals, life sciences, and performance materi-
+     10.1038/s41467-018-07090-4.                                       als, whereas Merck & Co., headquartered in the USA,
+[29] C. O. Marrero, M. Kieferová,            and N. Wiebe,            operates as MSD outside North America, primarily fo-
+     “Entanglement induced barren plateaus,”            (2021),        cusing on pharmaceuticals, vaccines, and animal health.
+     arXiv:2010.15968 [quant-ph].                                 [44] B. Ramsundar, S. Kearnes, P. Riley, D. Webster, D. Kon-
+[30] M. Larocca, S. Thanasilp, S. Wang, K. Sharma, J. Bia-             erding, and V. Pande, “Massively multitask networks for
+     monte, P. J. Coles, L. Cincio, J. R. McClean, Z. Holmes,          drug discovery,” (2015), arXiv:1502.02072 [stat.ML].
+     and M. Cerezo, “A review of barren plateaus in varia-        [45] G. B. Goh, C. Siegel, A. Vishnu, N. O. Hodas,
+     tional quantum computing,” (2024), arXiv:2405.00781               and N. Baker, “Chemception: A deep neural network
+     [quant-ph].                                                       with minimal chemistry knowledge matches the perfor-
+[31] K. Fujii and K. Nakajima, Physical Review Applied 8               mance of expert-developed qsar/qspr models,” (2017),
+     (2017), 10.1103/physrevapplied.8.024030.                          arXiv:1706.06689 [stat.ML].
+[32] R. Martı́nez-Peña, G. L. Giorgi, J. Nokkala, M. C. So-      [46] Y. Hechtlinger, P. Chakravarti, and J. Qin, “A gen-
+     riano, and R. Zambrini, Phys. Rev. Lett. 127, 100502              eralization of convolutional neural networks to graph-
+     (2021).                                                           structured data,” (2017), arXiv:1704.08165 [stat.ML].
+[33] R. A. Bravo, K. Najafi, X. Gao, and S. F. Yelin, PRX         [47] L. McInnes, J. Healy, and J. Melville, “Umap: Uniform
+     Quantum 3, 030325 (2022).                                         manifold approximation and projection for dimension re-
+[34] A. Senanian, S. Prabhu, V. Kremenetski, S. Roy, Y. Cao,           duction,” (2020), arXiv:1802.03426 [stat.ML].
+     J. Kline, T. Onodera, L. G. Wright, X. Wu, V. Fatemi,        [48] S. M. Lundberg and S.-I. Lee, in Proceedings of the 31st
+     and P. L. McMahon, “Microwave signal processing us-               International Conference on Neural Information Process-
+     ing an analog quantum reservoir computer,” (2023),                ing Systems, NIPS’17 (Curran Associates Inc., Red Hook,
+     arXiv:2312.16166 [quant-ph].                                      NY, USA, 2017) p. 4768–4777.
+[35] P. Scholl, M. Schuler, H. J. Williams, A. A. Eberharter,     [49] S. Team, “Introduction to shap,” (), accessed: 2024-09-
+     D. Barredo, K.-N. Schymik, V. Lienhard, L.-P. Henry,              13.
+     T. C. Lang, T. Lahaye, A. M. Laüchli, and A. Browaeys,      [50] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel,
+     Nature 595, 233 (2021).                                           B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer,
+[36] S. Ebadi, T. T. Wang, H. Levine, A. Keesling, G. Se-              R. Weiss, V. Dubourg, J. Vanderplas, A. Passos, D. Cour-
+     meghini, A. Omran, D. Bluvstein, R. Samajdar, H. Pich-            napeau, M. Brucher, M. Perrot, and E. Duchesnay, Jour-
+     ler, W. W. Ho, S. Choi, S. Sachdev, M. Greiner,                   nal of Machine Learning Research 12, 2825 (2011).
+     V. Vuletić, and M. D. Lukin, Nature 595, 227 (2021).        [51] S. L. Team, “Random forest regressor,” https:
+[37] G. Semeghini, H. Levine, A. Keesling, S. Ebadi, T. T.             //scikit-learn.org/stable/modules/generated/
+     Wang, D. Bluvstein, R. Verresen, H. Pichler, M. Kali-             sklearn.ensemble.RandomForestRegressor.html           (),
+     nowski, R. Samajdar, A. Omran, S. Sachdev, A. Vish-               accessed: 2024-09-13.
+     wanath, M. Greiner, V. Vuletić, and M. D. Lukin, Sci-       [52] S. L. Team, “Forecasting of co2 level on mona loa
+     ence 374, 1242 (2021).                                            dataset using gaussian process regression (gpr),”
+[38] S. Ebadi, A. Keesling, M. Cain, T. T. Wang, H. Levine,            https://scikit-learn.org/stable/auto_examples/
+     D. Bluvstein, G. Semeghini, A. Omran, J.-G. Liu,                  gaussian_process/plot_gpr_co2.html (), accessed:
+     R. Samajdar, X.-Z. Luo, B. Nash, X. Gao, B. Barak,                2024-09-13.
+     E. Farhi, S. Sachdev, N. Gemelke, L. Zhou, S. Choi,          [53] “Bloqade.jl: Package for the quantum computation and
+     H. Pichler, S.-T. Wang, M. Greiner, V. Vuletić, and              quantum simulation based on the neutral-atom architec-
+     M. D. Lukin, Science 376, 1209 (2022).                            ture.” (2023).
+[39] J. Wurtz, A. Bylinskii, B. Braverman, J. Amato-Grill,        [54] “GitHub - QuEraComputing/QRC-tutorials: A set of
+     S. H. Cantu, F. Huber, A. Lukin, F. Liu, P. Weinberg,             tutorials for quantum reservoir learning. — github.com,”
+     J. Long, S.-T. Wang, N. Gemelke, and A. Keesling,                 https://github.com/QuEraComputing/QRC-tutorials
+     “Aquila: Quera’s 256-qubit neutral-atom quantum com-              (2024), [Accessed 04-10-2024].
+     puter,” (2023), arXiv:2306.11727 [quant-ph].                 [55] M. W. Dorrity, L. M. Saunders, C. Queitsch, S. Fields,
+[40] J. Balewski, M. Kornjaca, K. Klymko, S. Darbha, M. R.             and C. Trapnell, Nature Communications 11, 1537
+     Hirsbrunner, P. Lopes, F. Liu, and D. Camps, “Engi-               (2020).
+     neering quantum states with neutral atoms,” (2024),          [56] 800 record samples for MMACD 5, 9, 14, and 15 features
+     arXiv:2404.04411 [quant-ph].                                      were chosen based on SHAP gradient method as com-
+[41] D. Bluvstein, S. J. Evered, A. A. Geim, S. H. Li,                 pared to MMACD 4 which used SHAP kernel method to
+     H. Zhou, T. Manovitz, S. Ebadi, M. Cain, M. Kalinowski,           save on compute resources, as the change is verified to
+     D. Hangleiter, J. P. Bonilla Ataides, N. Maskara, I. Cong,        have minimal impact on the results.
+     X. Gao, P. Sales Rodriguez, T. Karolyshyn, G. Semegh-
+                                                                                                                        9
+
+[57] K. Sachs, O. Perez, D. Pe’er, D. A. Lauffenburger, and          model predicts the value of a target variable by
+     G. P. Nolan, Science (New York, N.Y.) 308, 523–529              learning simple decision rules inferred from the data
+     (2005).                                                         features [59].
+[58] X. Gao, E. R. Anschuetz, S.-T. Wang, J. I. Cirac,
+     and M. D. Lukin, Physical Review X 12 (2022),                2. Bagging Regressor: An ensemble meta-estimator
+     10.1103/physrevx.12.021037.                                     that fits base regressors each on random subsets of
+[59] S. L. Team, “Decision trees,” https://scikit-learn.             the original dataset and then aggregates their indi-
+     org/stable/modules/tree.html (), accessed: 2024-09-             vidual predictions to form a final prediction. This
+     13.                                                             is typically used to reduce variance for algorithms
+[60] S.    L.    Team,     “Bagging     regressor,”    https:
+                                                                     like decision trees [60].
+     //scikit-learn.org/stable/modules/generated/
+     sklearn.ensemble.BaggingRegressor.html (), ac-               3. Gradient Boosting Regressor: An ensemble tech-
+     cessed: 2024-09-13.
+                                                                     nique that builds models sequentially, each new
+[61] S. L. Team, “Gradient boosting regression,”
+     https://scikit-learn.org/stable/auto_examples/
+                                                                     model attempting to correct errors made by the
+     ensemble/plot_gradient_boosting_regression.html                 previous ones. Models are built using the gradient
+     (), accessed: 2024-09-13.                                       descent algorithm to minimize the loss [61].
+[62] S. L. Team, “Decision tree regression with adaboos,”
+     https://scikit-learn.org/stable/auto_examples/               4. Random Forest Regressor: An ensemble of decision
+     ensemble/plot_adaboost_regression.html (), ac-                  trees, typically trained via the bagging method. It
+     cessed: 2024-09-13.                                             is used for regression by averaging the predictions
+[63] S.    L.    Team,    “Linear    regression,”    https://        of each component tree [51].
+     scikit-learn.org/stable/modules/linear_model.
+     html (), accessed: 2024-09-13.                               5. AdaBoost Regressor: An adaptive boosting algo-
+[64] S. L. Team, “Support vector regressor,” https://                rithm that adjusts the weights of incorrectly pre-
+     scikit-learn.org/stable/modules/svm.html (), ac-                dicted instances so that subsequent classifiers focus
+     cessed: 2024-09-13.                                             more on difficult cases [62].
+[65] S.    L.    Team,     “Knearest    neighbor,”     https:
+     //scikit-learn.org/stable/modules/neighbors.html             6. Gaussian Process Regressor (GPR) with a Radial
+     (), accessed: 2024-09-13.                                       Basis Function (RBF) kernel: Effective for captur-
+[66] S. L. Team, “Extra tree regressor,” https:                      ing smooth, non-linear relationships in the data.
+     //scikit-learn.org/stable/modules/generated/                    The RBF kernel with an added level of noise allows
+     sklearn.tree.ExtraTreeRegressor.html (), accessed:              the model to provide both predictions and uncer-
+     2024-09-13.                                                     tainty estimates [52].
+[67] S. L. Team, “Sgd regressor,” https://scikit-learn.
+     org/stable/modules/generated/sklearn.linear_                 7. Linear Regression: A linear approach to modeling
+     model.SGDRegressor.html (), accessed: 2024-09-13.               the relationship between a dependent variable and
+[68] J. Schmidhuber, Neural Networks 61, 85–117 (2015).              one or more independent variables [63].
+[69] P. Chalise, D. C. Koestler, M. Bimali, Q. Yu, and B. L.
+     Fridley, Transl Cancer Res 1 (2014), 10.3978/j.issn.2218-    8. Support Vector Regression (SVR): An extension of
+     676X.2014.06.03.                                                the Support Vector Machine (SVM) that supports
+                                                                     linear and non-linear regression [64].
+  Appendix A: Classical machine learning models                   9. K-Neighbors Regressor: A type of instance-based
+                                                                     learning or non-generalizing learning that does not
+  Multiple regression models are trained on both classi-             attempt to construct a general internal model but
+cal and quantum-embedded training data. The perfor-                  simply stores instances of the data [65].
+mance of these models is evaluated using metrics such as
+                                                                 10. Extra Tree Regressor: Implements a meta estima-
+the Mean Squared Error (MSE). The program compares
+                                                                     tor that fits a number of randomized decision trees
+the performance of classical raw features, Gaussian Pro-
+                                                                     on various sub-samples of the dataset and uses av-
+cess Regressor with RBF kernel embedded data, and data
+                                                                     eraging to improve the predictive accuracy and con-
+embedded with Quantum Reservoir Computing (QRC)
+                                                                     trol over-fitting [66].
+to assess the potential performance benefits of quantum
+and classical data embedding methods.                            11. SGD Regressor: A linear model fitted by minimiz-
+  Although in the final analysis we used only random for-            ing a regularized empirical loss with SGD, the gra-
+est regressor and Gaussian RBF kernel, we tested many                dient of the loss is estimated each sample at a time,
+other models to see if they performed better on our data.            and the model is updated along the way with a de-
+The following regression algorithms were included in this            creasing learning rate [67].
+study:
+                                                                 12. Neural Network: We employed a four-layer neural
+   1. Decision Tree Regressor: A non-parametric super-               network for regression to approximate the depth of
+      vised learning method used for regression. This                the QRC regression model. The model sequentially
+                                                                                                                       10
+
+      processes input data, extracting and consolidating                    3.   SHAP Feature Selection
+      features through the hidden layers, and employs a
+      rectified linear unit activation function to predict        Our pipeline utilizes SHAP (SHapley Additive exPla-
+      continuous target values in the output layer [68].       nations) values to identify important features. The se-
+                                                               lected features are then used to create a subset of the
+                                                               original dataset, ensuring that only the most relevant de-
+    Appendix B: Details of the modeling pipeline               scriptors are included in the subsequent analysis. As seen
+                                                               in Fig. 1, after our initial classical models were created,
+                                                               we applied SHAP to the data and determined the most
+              1.   Data Preparation Steps
+                                                               important features for our champion model. The origi-
+                                                               nal MMACD dataset 4 has 4,308 columns which would
+   Loading and Cleaning Data: The program begins               correspond to 4,308 qubits when encoded with the QRC.
+by loading the dataset and performing necessary clean-         Due to the limited computing resources, we were able to
+ing operations. This includes removing any unnamed             perform the QRC simulation for 18 SHAP features out
+columns that may have been introduced during data ex-          of 4,308, corresponding to 18 qubits. The SHAP kernel
+port or import processes.                                      method fits a specified model, in our case, the Random
+   Exploratory Data Analysis: The initial ex-                  Forest regressor, which performed the best on the entire
+ploratory data analysis steps of the program involve           data set, to our data [48]. The SHAP kernel method ex-
+preparing the dataset and selecting relevant features for      plains the model’s predictions by computing SHAP val-
+the analysis. The dataset used in this study is de-            ues for the training data, which quantify the contribution
+rived from the MMACD challenge, which includes var-            of each feature to the model’s predictions [48]. Following
+ious molecular descriptors and activity labels. We ex-         the computation of SHAP values, we identify the most
+amine the univariate statistics for individual columns in      important features by averaging the absolute SHAP val-
+boxplots, scatterplots check for missing values, outlier       ues and ordering them by relative importance. We then
+values, as well as skew and kurtosis of the data distribu-     select the top features to retain for further analysis.
+tion.
+   Data Standardization: Next the dataset undergoes
+standardization to ensure that all features are on a com-              4.   Clustering Subsample Algorithm
+parable scale, which is essential for the performance of
+many machine learning algorithms. The process begins              Next, in our research modeling and visualization work-
+by selecting a subset of the dataset, retaining only the       flow (See Fig. 1), we create clustering-based subsamples.
+columns deemed consistent and relevant for the analysis,       Our sampling methodology helps create subsamples that
+while excluding any non-essential columns such as iden-        can be efficiently processed on our quantum simulator
+tifiers or target variables. This selected subset is then      while at the same time being representative of the en-
+standardized so that each feature has a mean of zero and       tire dataset without the risk of the same record being in
+a standard deviation of one using scikit-learn’s standard-     multiple subsamples [69]. To create valid subsamples of
+scalar function [50]. This normalization step is crucial       the MMACD dataset 4, we created a methodology for
+for mitigating the effects of differing scales among fea-      subsampling that clusters data in order to improve the
+tures and ensuring that each feature contributes equally       representativeness of the subsample to the total popula-
+to the model’s performance. We then use scikit-learn’s         tion [69]. We remove the target variable, then we apply
+train-test-split function to divide the data into training     the KMeans clustering algorithm to the remaining nu-
+and test data sets of the desired size [50].                   meric data, predicting cluster assignments for each data
+                                                               point. This clustering step helps in grouping similar data
+                                                               points together. Next, we calculate the sample size per
+             2.    Initial Candidate Model
+                                                               cluster and sample data points from each cluster with no
+                                                               replacement so each record is included in only one sub-
+  In the initial candidate model evaluation phase, sev-        sample [69]. Our sampling methodology separates the
+eral key metrics are initialized to systematically assess      features and target values from the sampled subset and
+the performance of the machine learning models. The            splits this subset into training and testing sets, strati-
+training dataset is based on raw classical features that are   fied by the cluster predictions. The optional modeling
+run against all models in the machine learning pipeline        step is creating the QRC embeddings, as described in
+(See Fig. A). The model’s performance metrics are com-         more detail in the section II D. After that, we return to
+pared against one another, including MSE. We select the        the modeling pipeline to put the QRC embedded data,
+model with the best performance as our initial candidate       Gaussian Process Regressor with RBF kernel, and raw
+model, which we then use as the basis for the SHAP fea-        classical features as training and test data into the mod-
+ture selection based on feature importance.                    els as input data.
+                                                                                               11
+
+
+
+
+     (a) 100 Records Classical SHAP                            (b) 100 Records QRC Embedding
+
+
+
+
+     (c) 800 Records Classical SHAP                            (b) 800 Records QRC Embedding
+
+FIG. 5: UMAP 2D projections for 100 and 800 record samples of MMACD dataset 4.
+
+
+    Appendix C: Supplementary UMAP Results
+
+   The patterns in the 2D UMAP representation of the
+data, as presented in Fig. 5 largely mirror the patterns
+shown in the main text of the article for the 200 record
+sample, except that the pattern is less manifest in the 800
+record samples. For 100 records, as seen in Fig. 4, there
+is an area of high ACT concentration for the classical
+data, while for the QRC two-body observable embedded
+data there is a clearer pattern in the data for all activity
+values. The same can be seen in the 800 record sample,
+with classical data having a tendency towards high values
+clustering to the lower values of the X-axis but otherwise,
+no other clear pattern. For the 800 record QRC two-body
+observable embeddings (Fig. 5), there is a clear pattern of
+the highest values being on the left and a decrease in ACT
+values towards the higher values of the X-axis, albeit with
+a more complex data cluster topology. The 100 and 800
+record samples reinforce the observation of the clearer
+structure of the QRC embedded features versus the raw
+classical features.
+
