@@ -21,29 +21,24 @@
   },
   "artifacts": [
     {
-      "kind": "github_repo",
-      "label": "GitHub Repo",
-      "uri": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a"
-    },
-    {
       "kind": "paper_pdf",
       "label": "Paper PDF",
-      "uri": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/paper/main.pdf"
+      "uri": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/paper/main.pdf"
     },
     {
       "kind": "paper_thumbnail",
       "label": "Paper Thumbnail",
-      "uri": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/paper/thumbnail.png"
+      "uri": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/paper/thumbnail.png"
     },
     {
       "kind": "latex_sources",
       "label": "LaTeX Sources",
-      "uri": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/blob/main/paper/main.tex"
+      "uri": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/blob/paper-v5/paper/main.tex"
     },
     {
       "kind": "sources",
       "label": "Sources",
-      "uri": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/blob/main/sources/sources.json"
+      "uri": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/blob/paper-v5/sources/sources.json"
     }
   ],
   "artifacts_summary": "Recovered writing_presentation output in validation-recovery mode, preserving the compiled manuscript package and fixing equation_usage_map compliance by providing non-empty equation_ref labels for all mapped equations.",
@@ -138,140 +133,140 @@
         "path": "packages/qrc-ising-core/packaging_manifest.json",
         "sha256": "dcb9a491791e09d36d8748e3c200bc82496c440226d90940ee5e5e56377f0838",
         "size_bytes": 11910,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/packaging_manifest.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/packaging_manifest.json"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/README.md",
         "sha256": "f48f18bbf72ec3dcfbe39843d42fbdd3f570097da786b1ff41271b833ad62d2b",
         "size_bytes": 3461,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/README.md"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/README.md"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/requirements.txt",
         "sha256": "d2adb42ac01c665fe140fece68e6c83695faab355231676000f3da56edc9d076",
         "size_bytes": 57,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/requirements.txt"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/requirements.txt"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/dependency_graph.json",
         "sha256": "a6022aed4356a1aa589959b414d2139a49723cd88363f1b8e4c79b100326bdea",
         "size_bytes": 14912,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/dependency_graph.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/dependency_graph.json"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/pyproject.toml",
         "sha256": "d323d88a70ad4c9abd3964a4e7278e05ce3d8e5ea0a31187df54b979170e39e2",
         "size_bytes": 636,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/pyproject.toml"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/pyproject.toml"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/extraction_plan.json",
         "sha256": "03fbad974e8d27e6ba842308b4eddda8e2b77b24f06cb61522355f60c687ed36",
         "size_bytes": 1177,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/extraction_plan.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/extraction_plan.json"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/mcp_server.example.json",
         "sha256": "7f1a4a7ee59455a187df034f37423e9a1a57a1a75df33a2e70ee3270df80a98b",
         "size_bytes": 202,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/mcp_server.example.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/mcp_server.example.json"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/src/qrc_ising_core/__init__.py",
         "sha256": null,
         "size_bytes": null,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/src/qrc_ising_core/__init__.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/src/qrc_ising_core/__init__.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/src/qrc_ising_core/core.py",
         "sha256": "8668696ad75873761f6e12c37dba1a31a28a98ee655bb6a7d6c59a521bed293e",
         "size_bytes": 6536,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/src/qrc_ising_core/core.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/src/qrc_ising_core/core.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/src/qrc_ising_core/symbolic.py",
         "sha256": "b8903a36a763530e1f36547093456b7f46cfaee7abed130aac4fa9ed651c989a",
         "size_bytes": 3063,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/src/qrc_ising_core/symbolic.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/src/qrc_ising_core/symbolic.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/src/qrc_ising_core/mcp_adapter.py",
         "sha256": "d158ee6d0b20e01a1acaf1bb9d7ca6fbe06b5b2c571c995716494a661a60be32",
         "size_bytes": 2696,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/src/qrc_ising_core/mcp_adapter.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/src/qrc_ising_core/mcp_adapter.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/src/qrc_ising_core/mcp_server.py",
         "sha256": "f0b02cbc84c2218a973bf9de8e22e9cef5fbfe195d4586b9db1d6a786ff157ad",
         "size_bytes": 2187,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/src/qrc_ising_core/mcp_server.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/src/qrc_ising_core/mcp_server.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/tests/test_core.py",
         "sha256": "ff4e206f023ffd6de63cae113c1efd54df915445377a28f1f6e9400eb5886c6d",
         "size_bytes": 1596,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/tests/test_core.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/tests/test_core.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/tests/test_symbolic.py",
         "sha256": "288601df4ca8dd5c54fe95ed0ba38cdb1839f09d29704ec7dde78248aa061981",
         "size_bytes": 672,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/tests/test_symbolic.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/tests/test_symbolic.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/tests/test_mcp_adapter.py",
         "sha256": "577f70cf7b2dc398c715b550e4347156f309bacbfd0610805084b0809940e826",
         "size_bytes": 1357,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/tests/test_mcp_adapter.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/tests/test_mcp_adapter.py"
       },
       {
         "kind": "other",
         "path": "packages/qrc-ising-core/examples/basic_usage.py",
         "sha256": "d464c51ec8dfcf4a63dc0e01caecfe47e8b9a4c9b4a97058f1ae3823160b84b1",
         "size_bytes": 586,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/examples/basic_usage.py"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/examples/basic_usage.py"
       },
       {
         "kind": "wheel",
         "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
         "sha256": "b7ef190701359e50cadb37d9501b3245148d5f5bf36e5147f3aa5d8ea2db6588",
         "size_bytes": 8830,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl"
       },
       {
         "kind": "sdist",
         "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz",
         "sha256": "bd5c2064725814e39d82ce567f0494a626b0e1e73ea378979e213f733cf294a0",
         "size_bytes": 8504,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz"
       },
       {
         "kind": "other",
         "path": "packages/registry/index.json",
         "sha256": "f2edf3ce6c12b112df6c61e4d8041b6ac71ab6e0a4907c618e9aa1dd320ece0f",
         "size_bytes": 156,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/registry/index.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/registry/index.json"
       },
       {
         "kind": "other",
         "path": "packages/registry/qrc-ising-core.json",
         "sha256": "969cb1a02cf84dc985ce25bbb35bf63caf91634c45abf3f2fcd02ba3ea0a5c65",
         "size_bytes": 390,
-        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/registry/qrc-ising-core.json"
+        "url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/registry/qrc-ising-core.json"
       }
     ],
     "dependencies": [
@@ -565,7 +560,7 @@
     ],
     "dependency_graph_mermaid": "graph TD\n  pkg[omegaxiv-qrc-ising-core]\n  pkg --> mcp[mcp]\n  pkg --> numpy[numpy]\n  pkg --> sympy[sympy]\n  mcp --> anyio[anyio]\n  mcp --> httpx[httpx]\n  mcp --> httpx_sse[httpx-sse]\n  mcp --> jsonschema[jsonschema]\n  mcp --> pydantic[pydantic]\n  mcp --> pydantic_settings[pydantic-settings]\n  mcp --> pyjwt[pyjwt]\n  mcp --> python_multipart[python-multipart]\n  mcp --> sse_starlette[sse-starlette]\n  mcp --> starlette[starlette]\n  mcp --> typing_extensions[typing-extensions]\n  mcp --> typing_inspection[typing-inspection]\n  mcp --> uvicorn[uvicorn]\n  sympy --> mpmath[mpmath]",
     "dependency_graph_path": "packages/qrc-ising-core/dependency_graph.json",
-    "dependency_graph_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/dependency_graph.json",
+    "dependency_graph_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/dependency_graph.json",
     "distribution_name": "omegaxiv-qrc-ising-core",
     "handle": "qrc-ising-core",
     "handle_alternatives": [
@@ -575,15 +570,19 @@
     "handle_confirmed": true,
     "import_name": "qrc_ising_core",
     "install_command": "pip install omegaxiv && ox install qrc-ising-core==0.1.0",
+    "install_ready": true,
     "install_target": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
     "manager_install_command": "pip install omegaxiv",
     "manifest_path": "packages/qrc-ising-core/packaging_manifest.json",
     "package_type": "library",
     "readme_path": "packages/qrc-ising-core/README.md",
-    "readme_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/README.md",
+    "readme_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/README.md",
+    "registry_index_url": "https://raw.githubusercontent.com/alphaomega-labs/registry/main/packages/index.json",
+    "registry_record_url": "https://raw.githubusercontent.com/alphaomega-labs/registry/main/handles/qrc-ising-core.json",
+    "registry_status": "synced",
     "requirements_path": "packages/qrc-ising-core/requirements.txt",
-    "requirements_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/packages/qrc-ising-core/requirements.txt",
-    "version": "0.1.0"
+    "requirements_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/paper-v5/packages/qrc-ising-core/requirements.txt",
+    "version": "0.1.2"
   },
   "paper_pdf_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/paper/main.pdf",
   "paper_thumbnail_url": "https://raw.githubusercontent.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a/main/paper/thumbnail.png",
@@ -599,16 +598,20 @@
     "https://arxiv.org/pdf/2008.08605",
     "https://arxiv.org/pdf/2101.11020"
   ],
+  "repo_commit_sha": "0c96e4d4ce7da347324bc07a0d918fc61f9dfdb4",
+  "repo_ref": "paper-v5",
   "repo_url": "https://github.com/alphaomega-labs/run-b07f27c6-49f8-43c4-83e9-1f04168d828a",
   "request_text": "Title: Quantum Reservoir Computing\nAbstract: Assess whether quantum reservoirs (with PCA\u2011encoded inputs) can outperform classical ones and how entanglement changes feature mapping.\nFull Description: I want to know if there is a quantum advantage in Quantum Reservoir Computing for image classification. If we take an image, and compute its PCA decomposition, and I feed the first X components to the reservoir as inputs (e.g. angle encoding), is there an advantage to using a quantum reservoir? What is the role of entanglement? How does the reservoir transform the features with and without entanglement? As a reservoir, we can take a simple transverse Ising model and angle encoding, and measuring a subset of pauli operators. You can try the MNIST dataset for digit classification, although I feel that the PCA is already so discriminatory (the only information in the picture is the digit, so *any* substantial difference between pictures immediately translates to a different classificaiton) that it will be hard to improve anything with QRC. Would other datasets be better test cases? \n\nPapers listing to download for review and context and notation:\n\nhttps://arxiv.org/pdf/2509.06873\nhttps://arxiv.org/pdf/2409.00998\nhttps://arxiv.org/pdf/2602.14677\nhttps://arxiv.org/pdf/2008.08605\nhttps://arxiv.org/pdf/2101.11020\nhttps://arxiv.org/pdf/2407.02553\nhttps://arxiv.org/pdf/2412.06758\nProblem Type: Open Question\nDifficulty: Advanced\nDomain: Quantum Computing\nOriginator: Marius-Constantin Dinu\nCompute Budget: 1 APU, Apple Silicon, 128GB\nRequired Accelerator: CPU only available\nTarget Deadline: 2026-03-10\nTags: quantum computing, reservoir computing\nCategories: Quantum Computing\nExpected Artifacts: Paper, Code, Package\nRelated Links: https://arxiv.org/pdf/2509.06873, https://arxiv.org/pdf/2409.00998, https://arxiv.org/pdf/2602.14677, https://arxiv.org/pdf/2008.08605, https://arxiv.org/pdf/2101.11020\nDataset Links: None",
   "root_run_id": "b07f27c6-49f8-43c4-83e9-1f04168d828a",
   "run_id": "c7672c33-c209-4279-8e0d-c6a7dab7f303",
   "session_id": "b07f27c6-49f8-43c4-83e9-1f04168d828a",
+  "snapshot_branch": "snapshot/paper-v5",
   "tags": [
     "quantum computing",
     "reservoir computing"
   ],
   "target_deadline": "2026-03-10",
   "title": "Quantum Reservoir Computing",
-  "updated_at": "2026-03-26T22:26:18.889848+00:00"
+  "updated_at": "2026-03-26T22:26:18.889848+00:00",
+  "version": 5
 }
