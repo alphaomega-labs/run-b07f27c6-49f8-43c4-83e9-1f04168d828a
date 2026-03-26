@@ -13,84 +13,368 @@
       "source_symbol": "SimCell",
       "exported_module": "qrc_ising_core.core",
       "exported_symbol": "QRCScenario",
-      "rationale": "Preserves structured simulation scenario object from project contribution."
+      "rationale": "Preserves the typed scenario object used to model qubit-reservoir parity conditions and noise/shot controls."
     },
     {
       "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
       "source_symbol": "simulate_accuracy",
       "exported_module": "qrc_ising_core.core",
       "exported_symbol": "simulate_accuracy",
-      "rationale": "Primary implementation symbol that computes QRC-Ising proxy accuracy under noise/shot constraints."
+      "rationale": "Primary implementation symbol computing reservoir accuracy under Ising dynamics, entanglement, and measurement constraints."
     },
     {
       "source_path": "experiments/qrc_validation/src/qrc_validation/simulate.py",
       "source_symbol": "make_row",
       "exported_module": "qrc_ising_core.core",
       "exported_symbol": "simulate_metrics",
-      "rationale": "Promotes reusable metrics output while preserving derived fields from the original simulator."
+      "rationale": "Exports reusable per-scenario metrics used for error-rate and robustness analysis."
     },
     {
       "source_path": "experiments/qrc_validation/src/qrc_validation/symbolic_checks.py",
       "source_symbol": "run_symbolic_checks",
       "exported_module": "qrc_ising_core.symbolic",
       "exported_symbol": "run_symbolic_checks",
-      "rationale": "Exports theorem/claim symbolic consistency checks used by the contribution."
+      "rationale": "Carries forward symbolic FC1/FC2/FC3 theorem-consistency checks for claim-evidence closure."
     }
   ],
   "dependencies": [
     {
-      "name": "numpy",
-      "spec": ">=1.26,<3",
+      "name": "annotated-types",
+      "spec": ">=0.6.0",
       "source": "runtime",
-      "transitive": false,
+      "transitive": true,
       "required_by": [
-        "qrc_ising_core.core"
+        "pydantic"
       ]
     },
     {
-      "name": "sympy",
-      "spec": ">=1.12,<2",
+      "name": "anyio",
+      "spec": "<5,>=3.6.2, >=4.5, >=4.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpx",
+        "mcp",
+        "sse-starlette",
+        "starlette"
+      ]
+    },
+    {
+      "name": "attrs",
+      "spec": ">=22.2.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "certifi",
+      "spec": null,
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "httpx"
+      ]
+    },
+    {
+      "name": "click",
+      "spec": ">=7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "h11",
+      "spec": ">=0.16, >=0.8",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "httpcore",
+      "spec": "==1.*",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpx"
+      ]
+    },
+    {
+      "name": "httpx",
+      "spec": ">=0.27.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "httpx-sse",
+      "spec": ">=0.4",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "idna",
+      "spec": ">=2.8",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "anyio",
+        "httpx"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "spec": ">=4.20.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "spec": ">=2023.03.6",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema"
+      ]
+    },
+    {
+      "name": "mcp",
+      "spec": "<2,>=1.0",
       "source": "runtime",
       "transitive": false,
       "required_by": [
-        "qrc_ising_core.symbolic"
+        "omegaxiv-qrc-ising-core"
       ]
     },
     {
       "name": "mpmath",
-      "spec": ">=1.3,<2",
+      "spec": "<1.4,>=1.1.0",
       "source": "runtime",
       "transitive": true,
       "required_by": [
         "sympy"
       ]
+    },
+    {
+      "name": "numpy",
+      "spec": "<3,>=1.26",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "pydantic",
+      "spec": "<3.0.0,>=2.11.0, >=2.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "spec": "==2.41.5",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "pydantic"
+      ]
+    },
+    {
+      "name": "pydantic-settings",
+      "spec": ">=2.5.2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "pyjwt",
+      "spec": ">=2.10.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "python-dotenv",
+      "spec": ">=0.21.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "spec": ">=0.0.9",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "referencing",
+      "spec": ">=0.28.4, >=0.31.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "jsonschema-specifications"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "spec": ">=0.25.0, >=0.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "sse-starlette",
+      "spec": ">=1.6.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "starlette",
+      "spec": ">=0.27, >=0.49.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "sse-starlette"
+      ]
+    },
+    {
+      "name": "sympy",
+      "spec": "<2,>=1.12",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "typing-extensions",
+      "spec": ">=4.10.0, >=4.12.0, >=4.14.1, >=4.4.0, >=4.9.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-core",
+        "referencing",
+        "starlette",
+        "typing-inspection"
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "spec": ">=0.4.0, >=0.4.1, >=0.4.2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "typing_extensions",
+      "spec": ">=4.5",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "anyio"
+      ]
+    },
+    {
+      "name": "uvicorn",
+      "spec": ">=0.31.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
     }
   ],
+  "dependency_graph_path": "packages/qrc-ising-core/dependency_graph.json",
+  "dependency_graph_mermaid": "graph TD\n  pkg[omegaxiv-qrc-ising-core]\n  pkg --> mcp[mcp]\n  pkg --> numpy[numpy]\n  pkg --> sympy[sympy]\n  mcp --> anyio[anyio]\n  mcp --> httpx[httpx]\n  mcp --> httpx_sse[httpx-sse]\n  mcp --> jsonschema[jsonschema]\n  mcp --> pydantic[pydantic]\n  mcp --> pydantic_settings[pydantic-settings]\n  mcp --> pyjwt[pyjwt]\n  mcp --> python_multipart[python-multipart]\n  mcp --> sse_starlette[sse-starlette]\n  mcp --> starlette[starlette]\n  mcp --> typing_extensions[typing-extensions]\n  mcp --> typing_inspection[typing-inspection]\n  mcp --> uvicorn[uvicorn]\n  sympy --> mpmath[mpmath]",
+  "readme_path": "packages/qrc-ising-core/README.md",
+  "requirements_path": "packages/qrc-ising-core/requirements.txt",
+  "extraction_plan_path": "packages/qrc-ising-core/extraction_plan.json",
+  "mcp": {
+    "server_name": "qrc-ising-core",
+    "transport": "stdio",
+    "entrypoint": {
+      "kind": "python_module",
+      "module": "qrc_ising_core.mcp_server",
+      "args": []
+    },
+    "env": {},
+    "cwd": null,
+    "startup_timeout_sec": 20,
+    "tool_timeout_sec": 120
+  },
   "artifacts": [
     {
       "path": "packages/qrc-ising-core/README.md",
-      "size_bytes": 2293,
-      "sha256": "4cc2cab50b8bd768491a45fd912360f6ecb8ecff741b980ccf54a6dc48055c3a"
+      "size_bytes": 3461,
+      "sha256": "f48f18bbf72ec3dcfbe39843d42fbdd3f570097da786b1ff41271b833ad62d2b"
     },
     {
       "path": "packages/qrc-ising-core/pyproject.toml",
-      "size_bytes": 619,
-      "sha256": "a73a62a0b7b465fcf75055a4a0a36349feebbf2cf710a3d6a10759d7d8f78fab"
+      "size_bytes": 636,
+      "sha256": "d323d88a70ad4c9abd3964a4e7278e05ce3d8e5ea0a31187df54b979170e39e2"
     },
     {
       "path": "packages/qrc-ising-core/requirements.txt",
-      "size_bytes": 30,
-      "sha256": "4b349f36eafe2c377ad8559ff284376b83d52808f3ee9ad8b9510b9ef13ebb9e"
+      "size_bytes": 57,
+      "sha256": "d2adb42ac01c665fe140fece68e6c83695faab355231676000f3da56edc9d076"
     },
     {
       "path": "packages/qrc-ising-core/dependency_graph.json",
-      "size_bytes": 732,
-      "sha256": "f584f4e1b2d80d837b8cb20a06f1363fc17e6e68e792cce0a164ec2b358617cd"
+      "size_bytes": 14912,
+      "sha256": "a6022aed4356a1aa589959b414d2139a49723cd88363f1b8e4c79b100326bdea"
     },
     {
       "path": "packages/qrc-ising-core/extraction_plan.json",
       "size_bytes": 1177,
       "sha256": "03fbad974e8d27e6ba842308b4eddda8e2b77b24f06cb61522355f60c687ed36"
+    },
+    {
+      "path": "packages/qrc-ising-core/mcp_server.example.json",
+      "size_bytes": 202,
+      "sha256": "7f1a4a7ee59455a187df034f37423e9a1a57a1a75df33a2e70ee3270df80a98b"
     },
     {
       "path": "packages/qrc-ising-core/src/qrc_ising_core/__init__.py",
@@ -108,6 +392,16 @@
       "sha256": "b8903a36a763530e1f36547093456b7f46cfaee7abed130aac4fa9ed651c989a"
     },
     {
+      "path": "packages/qrc-ising-core/src/qrc_ising_core/mcp_adapter.py",
+      "size_bytes": 2696,
+      "sha256": "d158ee6d0b20e01a1acaf1bb9d7ca6fbe06b5b2c571c995716494a661a60be32"
+    },
+    {
+      "path": "packages/qrc-ising-core/src/qrc_ising_core/mcp_server.py",
+      "size_bytes": 2187,
+      "sha256": "f0b02cbc84c2218a973bf9de8e22e9cef5fbfe195d4586b9db1d6a786ff157ad"
+    },
+    {
       "path": "packages/qrc-ising-core/tests/test_core.py",
       "size_bytes": 1596,
       "sha256": "ff4e206f023ffd6de63cae113c1efd54df915445377a28f1f6e9400eb5886c6d"
@@ -118,19 +412,24 @@
       "sha256": "288601df4ca8dd5c54fe95ed0ba38cdb1839f09d29704ec7dde78248aa061981"
     },
     {
+      "path": "packages/qrc-ising-core/tests/test_mcp_adapter.py",
+      "size_bytes": 1357,
+      "sha256": "577f70cf7b2dc398c715b550e4347156f309bacbfd0610805084b0809940e826"
+    },
+    {
       "path": "packages/qrc-ising-core/examples/basic_usage.py",
       "size_bytes": 586,
       "sha256": "d464c51ec8dfcf4a63dc0e01caecfe47e8b9a4c9b4a97058f1ae3823160b84b1"
     },
     {
       "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl",
-      "size_bytes": 6194,
-      "sha256": "53feffefb3ff9993ae47f6906af8ee5ca2e640d10093e832a975feeff0e6fc6b"
+      "size_bytes": 8830,
+      "sha256": "293df6c6c16a6f36285b267111292744fdc0f1a8057f570eb031f253ce940cbd"
     },
     {
       "path": "packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0.tar.gz",
-      "size_bytes": 6207,
-      "sha256": "eb1c5947849009cf740f961de0d5abee8c65d3fd58e803695809d5026127f4c8"
+      "size_bytes": 8494,
+      "sha256": "e8b6d271b1650eed88c9ad9d16109d96c09c5cf7cac2d52ec0f081cc6464a584"
     }
   ]
 }

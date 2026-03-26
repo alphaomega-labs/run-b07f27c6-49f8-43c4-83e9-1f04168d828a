@@ -1,5 +1,6 @@
 MANIFEST.in
 README.md
+mcp_server.example.json
 pyproject.toml
 requirements.txt
 src/omegaxiv_qrc_ising_core.egg-info/PKG-INFO
@@ -9,6 +10,9 @@ src/omegaxiv_qrc_ising_core.egg-info/requires.txt
 src/omegaxiv_qrc_ising_core.egg-info/top_level.txt
 src/qrc_ising_core/__init__.py
 src/qrc_ising_core/core.py
+src/qrc_ising_core/mcp_adapter.py
+src/qrc_ising_core/mcp_server.py
 src/qrc_ising_core/symbolic.py
 tests/test_core.py
+tests/test_mcp_adapter.py
 tests/test_symbolic.py

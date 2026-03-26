@@ -1,32 +1,802 @@
 {
-  "package": "omegaxiv-qrc-ising-core",
-  "version": "0.1.0",
-  "dependencies": [
+  "root": "omegaxiv-qrc-ising-core",
+  "generated_from": "/tmp/qrc_pkg_smoke",
+  "nodes": [
     {
-      "name": "numpy",
-      "spec": ">=1.26,<3",
-      "source": "runtime",
+      "name": "omegaxiv-qrc-ising-core",
+      "version": "0.1.0",
       "transitive": false,
-      "required_by": ["qrc_ising_core.core"]
+      "required_by": []
     },
     {
-      "name": "sympy",
-      "spec": ">=1.12,<2",
-      "source": "runtime",
+      "name": "annotated-types",
+      "version": "0.7.0",
+      "transitive": true,
+      "required_by": [
+        "pydantic"
+      ]
+    },
+    {
+      "name": "anyio",
+      "version": "4.13.0",
+      "transitive": true,
+      "required_by": [
+        "httpx",
+        "mcp",
+        "sse-starlette",
+        "starlette"
+      ]
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "certifi",
+      "version": "2026.2.25",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "httpx"
+      ]
+    },
+    {
+      "name": "click",
+      "version": "8.3.1",
+      "transitive": true,
+      "required_by": [
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "transitive": true,
+      "required_by": [
+        "httpx"
+      ]
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "httpx-sse",
+      "version": "0.4.3",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "idna",
+      "version": "3.11",
+      "transitive": true,
+      "required_by": [
+        "anyio",
+        "httpx"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "transitive": true,
+      "required_by": [
+        "jsonschema"
+      ]
+    },
+    {
+      "name": "mcp",
+      "version": "1.26.0",
       "transitive": false,
-      "required_by": ["qrc_ising_core.symbolic"]
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
     },
     {
       "name": "mpmath",
-      "spec": ">=1.3,<2",
-      "source": "runtime",
+      "version": "1.3.0",
       "transitive": true,
-      "required_by": ["sympy"]
+      "required_by": [
+        "sympy"
+      ]
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.3",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "pydantic",
+      "version": "2.12.5",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "version": "2.41.5",
+      "transitive": true,
+      "required_by": [
+        "pydantic"
+      ]
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.13.1",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "pyjwt",
+      "version": "2.12.1",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.2",
+      "transitive": true,
+      "required_by": [
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.22",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "jsonschema-specifications"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "version": "0.30.0",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.3.3",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "starlette",
+      "version": "1.0.0",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "sse-starlette"
+      ]
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.15.0",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-core",
+        "referencing",
+        "starlette",
+        "typing-inspection"
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.2",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.15.0",
+      "transitive": true,
+      "required_by": [
+        "anyio"
+      ]
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.42.0",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
     }
   ],
   "edges": [
-    {"from": "omegaxiv-qrc-ising-core", "to": "numpy"},
-    {"from": "omegaxiv-qrc-ising-core", "to": "sympy"},
-    {"from": "sympy", "to": "mpmath"}
+    {
+      "from": "anyio",
+      "to": "idna",
+      "spec": ">=2.8"
+    },
+    {
+      "from": "anyio",
+      "to": "typing_extensions",
+      "spec": ">=4.5"
+    },
+    {
+      "from": "httpcore",
+      "to": "certifi",
+      "spec": null
+    },
+    {
+      "from": "httpcore",
+      "to": "h11",
+      "spec": ">=0.16"
+    },
+    {
+      "from": "httpx",
+      "to": "anyio",
+      "spec": null
+    },
+    {
+      "from": "httpx",
+      "to": "certifi",
+      "spec": null
+    },
+    {
+      "from": "httpx",
+      "to": "httpcore",
+      "spec": "==1.*"
+    },
+    {
+      "from": "httpx",
+      "to": "idna",
+      "spec": null
+    },
+    {
+      "from": "jsonschema",
+      "to": "attrs",
+      "spec": ">=22.2.0"
+    },
+    {
+      "from": "jsonschema",
+      "to": "jsonschema-specifications",
+      "spec": ">=2023.03.6"
+    },
+    {
+      "from": "jsonschema",
+      "to": "referencing",
+      "spec": ">=0.28.4"
+    },
+    {
+      "from": "jsonschema",
+      "to": "rpds-py",
+      "spec": ">=0.25.0"
+    },
+    {
+      "from": "jsonschema-specifications",
+      "to": "referencing",
+      "spec": ">=0.31.0"
+    },
+    {
+      "from": "mcp",
+      "to": "anyio",
+      "spec": ">=4.5"
+    },
+    {
+      "from": "mcp",
+      "to": "httpx",
+      "spec": ">=0.27.1"
+    },
+    {
+      "from": "mcp",
+      "to": "httpx-sse",
+      "spec": ">=0.4"
+    },
+    {
+      "from": "mcp",
+      "to": "jsonschema",
+      "spec": ">=4.20.0"
+    },
+    {
+      "from": "mcp",
+      "to": "pydantic",
+      "spec": "<3.0.0,>=2.11.0"
+    },
+    {
+      "from": "mcp",
+      "to": "pydantic-settings",
+      "spec": ">=2.5.2"
+    },
+    {
+      "from": "mcp",
+      "to": "pyjwt",
+      "spec": ">=2.10.1"
+    },
+    {
+      "from": "mcp",
+      "to": "python-multipart",
+      "spec": ">=0.0.9"
+    },
+    {
+      "from": "mcp",
+      "to": "sse-starlette",
+      "spec": ">=1.6.1"
+    },
+    {
+      "from": "mcp",
+      "to": "starlette",
+      "spec": ">=0.27"
+    },
+    {
+      "from": "mcp",
+      "to": "typing-extensions",
+      "spec": ">=4.9.0"
+    },
+    {
+      "from": "mcp",
+      "to": "typing-inspection",
+      "spec": ">=0.4.1"
+    },
+    {
+      "from": "mcp",
+      "to": "uvicorn",
+      "spec": ">=0.31.1"
+    },
+    {
+      "from": "omegaxiv-qrc-ising-core",
+      "to": "mcp",
+      "spec": "<2,>=1.0"
+    },
+    {
+      "from": "omegaxiv-qrc-ising-core",
+      "to": "numpy",
+      "spec": "<3,>=1.26"
+    },
+    {
+      "from": "omegaxiv-qrc-ising-core",
+      "to": "sympy",
+      "spec": "<2,>=1.12"
+    },
+    {
+      "from": "pydantic",
+      "to": "annotated-types",
+      "spec": ">=0.6.0"
+    },
+    {
+      "from": "pydantic",
+      "to": "pydantic-core",
+      "spec": "==2.41.5"
+    },
+    {
+      "from": "pydantic",
+      "to": "typing-extensions",
+      "spec": ">=4.14.1"
+    },
+    {
+      "from": "pydantic",
+      "to": "typing-inspection",
+      "spec": ">=0.4.2"
+    },
+    {
+      "from": "pydantic-core",
+      "to": "typing-extensions",
+      "spec": ">=4.14.1"
+    },
+    {
+      "from": "pydantic-settings",
+      "to": "pydantic",
+      "spec": ">=2.7.0"
+    },
+    {
+      "from": "pydantic-settings",
+      "to": "python-dotenv",
+      "spec": ">=0.21.0"
+    },
+    {
+      "from": "pydantic-settings",
+      "to": "typing-inspection",
+      "spec": ">=0.4.0"
+    },
+    {
+      "from": "referencing",
+      "to": "attrs",
+      "spec": ">=22.2.0"
+    },
+    {
+      "from": "referencing",
+      "to": "rpds-py",
+      "spec": ">=0.7.0"
+    },
+    {
+      "from": "referencing",
+      "to": "typing-extensions",
+      "spec": ">=4.4.0"
+    },
+    {
+      "from": "sse-starlette",
+      "to": "anyio",
+      "spec": ">=4.7.0"
+    },
+    {
+      "from": "sse-starlette",
+      "to": "starlette",
+      "spec": ">=0.49.1"
+    },
+    {
+      "from": "starlette",
+      "to": "anyio",
+      "spec": "<5,>=3.6.2"
+    },
+    {
+      "from": "starlette",
+      "to": "typing-extensions",
+      "spec": ">=4.10.0"
+    },
+    {
+      "from": "sympy",
+      "to": "mpmath",
+      "spec": "<1.4,>=1.1.0"
+    },
+    {
+      "from": "typing-inspection",
+      "to": "typing-extensions",
+      "spec": ">=4.12.0"
+    },
+    {
+      "from": "uvicorn",
+      "to": "click",
+      "spec": ">=7.0"
+    },
+    {
+      "from": "uvicorn",
+      "to": "h11",
+      "spec": ">=0.8"
+    }
+  ],
+  "flattened_dependencies": [
+    {
+      "name": "annotated-types",
+      "spec": ">=0.6.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "pydantic"
+      ]
+    },
+    {
+      "name": "anyio",
+      "spec": "<5,>=3.6.2, >=4.5, >=4.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpx",
+        "mcp",
+        "sse-starlette",
+        "starlette"
+      ]
+    },
+    {
+      "name": "attrs",
+      "spec": ">=22.2.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "certifi",
+      "spec": null,
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "httpx"
+      ]
+    },
+    {
+      "name": "click",
+      "spec": ">=7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "h11",
+      "spec": ">=0.16, >=0.8",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpcore",
+        "uvicorn"
+      ]
+    },
+    {
+      "name": "httpcore",
+      "spec": "==1.*",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "httpx"
+      ]
+    },
+    {
+      "name": "httpx",
+      "spec": ">=0.27.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "httpx-sse",
+      "spec": ">=0.4",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "idna",
+      "spec": ">=2.8",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "anyio",
+        "httpx"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "spec": ">=4.20.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "spec": ">=2023.03.6",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema"
+      ]
+    },
+    {
+      "name": "mcp",
+      "spec": "<2,>=1.0",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "mpmath",
+      "spec": "<1.4,>=1.1.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "sympy"
+      ]
+    },
+    {
+      "name": "numpy",
+      "spec": "<3,>=1.26",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "pydantic",
+      "spec": "<3.0.0,>=2.11.0, >=2.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "pydantic-core",
+      "spec": "==2.41.5",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "pydantic"
+      ]
+    },
+    {
+      "name": "pydantic-settings",
+      "spec": ">=2.5.2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "pyjwt",
+      "spec": ">=2.10.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "python-dotenv",
+      "spec": ">=0.21.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "spec": ">=0.0.9",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "referencing",
+      "spec": ">=0.28.4, >=0.31.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "jsonschema-specifications"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "spec": ">=0.25.0, >=0.7.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "jsonschema",
+        "referencing"
+      ]
+    },
+    {
+      "name": "sse-starlette",
+      "spec": ">=1.6.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    },
+    {
+      "name": "starlette",
+      "spec": ">=0.27, >=0.49.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "sse-starlette"
+      ]
+    },
+    {
+      "name": "sympy",
+      "spec": "<2,>=1.12",
+      "source": "runtime",
+      "transitive": false,
+      "required_by": [
+        "omegaxiv-qrc-ising-core"
+      ]
+    },
+    {
+      "name": "typing-extensions",
+      "spec": ">=4.10.0, >=4.12.0, >=4.14.1, >=4.4.0, >=4.9.0",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-core",
+        "referencing",
+        "starlette",
+        "typing-inspection"
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "spec": ">=0.4.0, >=0.4.1, >=0.4.2",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp",
+        "pydantic",
+        "pydantic-settings"
+      ]
+    },
+    {
+      "name": "typing_extensions",
+      "spec": ">=4.5",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "anyio"
+      ]
+    },
+    {
+      "name": "uvicorn",
+      "spec": ">=0.31.1",
+      "source": "runtime",
+      "transitive": true,
+      "required_by": [
+        "mcp"
+      ]
+    }
   ]
 }

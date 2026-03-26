@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "qrc-ising-core": {
+      "transport": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "qrc_ising_core.mcp_server"
+      ],
+      "env": {}
+    }
+  }
+}
