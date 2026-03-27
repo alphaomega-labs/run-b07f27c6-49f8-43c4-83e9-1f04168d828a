@@ -16,18 +16,18 @@ simulation logic.
 Canonical user flow:
 
 1. `pip install omegaxiv`
-2. `ox install qrc-ising-core==0.1.0`
+2. `ox install qrc-ising-core==0.1.1`
 
 Add MCP registration to the same install flow:
 
-- `ox install qrc-ising-core==0.1.0 --mcp`
-- `ox install qrc-ising-core==0.1.0 --mcp=codex`
-- `ox install qrc-ising-core==0.1.0 --mcp=claude`
-- `ox install qrc-ising-core==0.1.0 --mcp=all`
+- `ox install qrc-ising-core==0.1.1 --mcp`
+- `ox install qrc-ising-core==0.1.1 --mcp=codex`
+- `ox install qrc-ising-core==0.1.1 --mcp=claude`
+- `ox install qrc-ising-core==0.1.1 --mcp=all`
 
 Maintainer/dev-only local package install (not the canonical user path):
 
-- `pip install packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.0-py3-none-any.whl`
+- `pip install packages/qrc-ising-core/dist/omegaxiv_qrc_ising_core-0.1.1-py3-none-any.whl`
 
 ## Configuration
 
